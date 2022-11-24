@@ -1,6 +1,0 @@
-[submodule "tau-corrections"]
-	path = tau-corrections
-	url = ssh://git@gitlab.cern.ch:7999/kandroso/tau-corrections.git
-[submodule "jme-corrections"]
-	path = jme-corrections
-	url = ssh://git@gitlab.cern.ch:7999/kandroso/jme-corrections.git
