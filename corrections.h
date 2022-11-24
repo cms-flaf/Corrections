@@ -14,14 +14,9 @@ using RVecVecI = ROOT::VecOps::RVec<RVecI>;
 using RVecLV = ROOT::VecOps::RVec<LorentzVectorM>;
 
 enum class UncScale : int {
-  Down = -1,
-  Central = 0,
-  Up = +1,
+    Down = -1,
+    Central = 0,
+    Up = +1,
 };
-
-// RVecLV DeltaP4(const RVecLV& a, const RVecLV& b)
-// {
-//   RVecLV delta;
-// }
 
 }
