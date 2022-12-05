@@ -29,3 +29,10 @@ class METCorrProducer:
                     df = df.Define(f'MET_p4_{syst_name}_delta', f'MET_p4_{syst_name} - MET_p4_{nano}')
 
         return df, source_dict_upd
+
+    '''
+    def getPFMETWeight(self, df, weight_list):
+        for source in [ central ] + TauCorrProducer.energyScaleSources:
+            updateWeightDict(weight_list, source)
+        return df, weight_list
+    '''

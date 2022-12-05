@@ -30,3 +30,11 @@ class TauCorrProducer:
                 df = df.Define(f'Tau_p4_{syst_name}_delta', f'Tau_p4_{syst_name} - Tau_p4_{nano}')
 
         return df, source_dict
+
+
+    def getESWeight(self, df, weight_list):
+        for source in [ central ] + TauCorrProducer.energyScaleSources:
+            for scale in getScales(source):
+                syst_name = getSystName(source, scale)
+                updateWeightDict(weight_list, syst_name)
+        return df, weight_list

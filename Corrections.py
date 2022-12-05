@@ -59,4 +59,16 @@ def applyScaleUncertainties(df):
                 if obj not in source_objs:
                     suffix = 'Central' if obj in [ "Tau", "MET" ] else 'nano'
                     df = df.Define(f'{obj}_p4_{syst_name}', f'{obj}_p4_{suffix}')
+    print(syst_dict)
     return df, syst_dict
+
+
+def getWeights(df):
+    if not initialized:
+        raise RuntimeError('Corrections are not initialized')
+    weight_dict = {}
+    df, weight_dict = tau.getESWeight(df, weight_dict)
+    df = df.Define('w_genWeightD', 'std::copysign<double>(1., genWeight)')
+    weight_dict.append('genWeightD')
+    print(weight_dict)
+    return df,weight_dict
