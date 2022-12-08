@@ -1,15 +1,18 @@
 import os
 import ROOT
+import yaml
 from RunKit.sh_tools import sh_call
 
 from .tau import TauCorrProducer
 from .met import METCorrProducer
+from .pu import puWeightProducer
 from .CorrectionsCore import *
 
 
 initialized = False
 tau = None
 met = None
+pu = None
 
 period_names = {
     'Run2_2016_HIPM': '2016preVFP_UL',
@@ -21,6 +24,7 @@ period_names = {
 def Initialize(period):
     global initialized
     global tau
+    global pu
     global met
     if initialized:
         raise RuntimeError('Corrections are already initialized')
@@ -39,6 +43,7 @@ def Initialize(period):
         print(f'correction config output: {output}')
         raise RuntimeError("Correction library is not found.")
     ROOT.gSystem.Load(corr_lib)
+    pu = puWeightProducer(period=period_names[period])
     tau = TauCorrProducer(period=period_names[period])
     met = METCorrProducer()
     initialized = True
@@ -59,16 +64,33 @@ def applyScaleUncertainties(df):
                 if obj not in source_objs:
                     suffix = 'Central' if obj in [ "Tau", "MET" ] else 'nano'
                     df = df.Define(f'{obj}_p4_{syst_name}', f'{obj}_p4_{suffix}')
-    print(syst_dict)
     return df, syst_dict
 
 
-def getWeights(df):
+
+def getWeights(df, config=None, sample=None):
     if not initialized:
         raise RuntimeError('Corrections are not initialized')
-    weight_dict = {}
-    df, weight_dict = tau.getESWeight(df, weight_dict)
-    df = df.Define('w_genWeightD', 'std::copysign<double>(1., genWeight)')
-    weight_dict.append('genWeightD')
-    print(weight_dict)
-    return df,weight_dict
+    lumi = config['GLOBAL']['luminosity']
+    sampleType = config[sample]['sampleType']
+    with open('config/crossSections.yaml', 'r') as xs_file:
+        xs_dict = yaml.safe_load(xs_file)
+    xs_name = config[sample]['crossSection']
+    xs = xs_dict[xs_name]['crossSec']
+    xs_stitching = 1
+    xs_stitching_incl = 1
+    xs_inclusive = 1
+    stitching_weight = 1
+    if sampleType == 'DY' or sampleType=='W':
+        xs_stitching_name = config[sample]['crossSectionStitch']
+        inclusive_sample_name = 'DYJetsToLL_M-50' if sampleType=='DY' else 'WJetsToLNu'
+        xs_stitching = xs_dict[xs_stitching_name]['crossSec']
+        xs_stitching_incl = xs_dict[config[inclusive_sample_name]['crossSectionStitch']]['crossSec']
+        xs_inclusive = xs_dict[config[inclusive_sample_name]['crossSection']]['crossSec']
+
+    stitching_weight_string = f' {xs_stitching} * {stitching_weight} * ({xs_inclusive}/{xs_stitching_incl})'
+    df = pu.getWeight(df)
+    df = df.Define('genWeightD', 'std::copysign<double>(1., genWeight)')
+    scale = 'Central'
+    df = df.Define('weight', f'genWeightD * {lumi} * {xs} * {stitching_weight_string} * puWeight_{scale}')
+    return df, [ scale ]
