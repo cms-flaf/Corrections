@@ -75,22 +75,24 @@ def getWeights(df, config=None, sample=None):
     sampleType = config[sample]['sampleType']
     with open('config/crossSections.yaml', 'r') as xs_file:
         xs_dict = yaml.safe_load(xs_file)
-    xs_name = config[sample]['crossSection']
-    xs = xs_dict[xs_name]['crossSec']
     xs_stitching = 1
     xs_stitching_incl = 1
     xs_inclusive = 1
-    stitching_weight = 1
+    df = df.Define("stitching_weight", f'GetStitchingWeight(static_cast<SampleType>(sample_type), LHE_Vpt, LHE_Njets )')
+
     if sampleType == 'DY' or sampleType=='W':
         xs_stitching_name = config[sample]['crossSectionStitch']
         inclusive_sample_name = 'DYJetsToLL_M-50' if sampleType=='DY' else 'WJetsToLNu'
         xs_stitching = xs_dict[xs_stitching_name]['crossSec']
         xs_stitching_incl = xs_dict[config[inclusive_sample_name]['crossSectionStitch']]['crossSec']
         xs_inclusive = xs_dict[config[inclusive_sample_name]['crossSection']]['crossSec']
+    else:
+        xs_name = config[sample]['crossSection']
+        xs_inclusive = xs_dict[xs_name]['crossSec']
 
-    stitching_weight_string = f' {xs_stitching} * {stitching_weight} * ({xs_inclusive}/{xs_stitching_incl})'
+    stitching_weight_string = f' {xs_stitching} * stitching_weight * ({xs_inclusive}/{xs_stitching_incl})'
     df = pu.getWeight(df)
     df = df.Define('genWeightD', 'std::copysign<double>(1., genWeight)')
     scale = 'Central'
-    df = df.Define('weight', f'genWeightD * {lumi} * {xs} * {stitching_weight_string} * puWeight_{scale}')
+    df = df.Define('weight', f'genWeightD * {lumi} * {stitching_weight_string} * puWeight_{scale}')
     return df, [ scale ]

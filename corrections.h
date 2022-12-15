@@ -20,3 +20,17 @@ enum class UncScale : int {
 };
 
 }
+
+float GetStitchingWeight(const SampleType& sampleType, const float LHE_Vpt, const int LHE_Njets ){
+    if(sampleType==SampleType::DY)
+    {
+        if(LHE_Vpt==0.) return 1/2.;
+        else return 1/3.;
+    }
+    else if(sampleType==SampleType::W)
+    {
+        if(LHE_Njets>0) return 1/2.;
+        else return 1.;
+    }
+    return 1.;
+}
