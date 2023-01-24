@@ -96,3 +96,17 @@ def getWeights(df, config=None, sample=None):
     scale = 'Central'
     df = df.Define('weight', f'genWeightD * {lumi} * {stitching_weight_string} * puWeight_{scale}')
     return df, [ scale ]
+
+def getDenumerator(df, sources):
+    if not initialized:
+        raise RuntimeError('Corrections are not initialized')
+    df = pu.getWeight(df)
+    df = df.Define('genWeightD', 'std::copysign<double>(1., genWeight)')
+    syst_names =[]
+    for source in sources:
+        for scale in getScales(source):
+            syst_name = getSystName(source, scale)
+            pu_scale = scale if source == pu.uncSource else central
+            df = df.Define(f'weight_denum_{syst_name}', f'genWeightD * puWeight_{pu_scale}')
+            syst_names.append(syst_name)
+    return df,syst_names
