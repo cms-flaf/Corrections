@@ -72,7 +72,7 @@ def findRefSample(config, sample_type):
         if sampleDef.get('sampleType', None) == sample_type and sampleDef.get('isReference', False):
             refSample.append(sample)
     if len(refSample) != 1:
-        raise RuntimeError("there is more than 1 reference sample!")
+        raise RuntimeError(f'multiple refSamples for {sample_type}: {refSample}')
     return refSample[0]
 
 def getNormalisationCorrections(df, config, sample):
