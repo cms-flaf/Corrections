@@ -4,22 +4,8 @@
 
 namespace correction {
 
-class puCorrProvider {
+class puCorrProvider : public CorrectionsBase<puCorrProvider> {
 public:
-
-    static void Initialize(const std::string& fileName)
-    {
-        _getGlobal() = std::make_unique<puCorrProvider>(fileName);
-    }
-
-    static const puCorrProvider& getGlobal()
-    {
-        const auto& corr = _getGlobal();
-        if(!corr)
-            throw std::runtime_error("puCorrProvider: not initialized.");
-        return *corr;
-    }
-
     static const std::string& getScaleStr(UncScale scale)
     {
         static const std::map<UncScale, std::string> names = {
@@ -29,9 +15,9 @@ public:
         };
         return names.at(scale);
     }
-    puCorrProvider(const std::string& fileName) :
+    puCorrProvider(const std::string& fileName, const std::string& jsonName) :
         corrections_(CorrectionSet::from_file(fileName)),
-        puweight(corrections_->at("Collisions18_UltraLegacy_goldenJSON"))
+        puweight(corrections_->at(jsonName))
     {
     }
 
@@ -42,11 +28,6 @@ public:
         return w;
     }
 private:
-    static std::unique_ptr<puCorrProvider>& _getGlobal()
-    {
-        static std::unique_ptr<puCorrProvider> corr;
-        return corr;
-    }
     std::unique_ptr<CorrectionSet> corrections_;
     Correction::Ref puweight;
 

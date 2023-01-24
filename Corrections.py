@@ -66,30 +66,43 @@ def applyScaleUncertainties(df):
                     df = df.Define(f'{obj}_p4_{syst_name}', f'{obj}_p4_{suffix}')
     return df, syst_dict
 
+def findRefSample(config, sample_type):
+    refSample = []
+    for sample, sampleDef in config.items:
+        if sampleDef.get('sampleType', None) == sample_type and sampleDef.get('isReference', False):
+            refSample.append(sample)
+    if len(refSample) != 1:
+        raise RuntimeError("there is more than 1 reference sample!")
+    return refSample[0]
 
-
-def getWeights(df, config=None, sample=None):
+def getNormalisationCorrections(df, config, sample):
     if not initialized:
         raise RuntimeError('Corrections are not initialized')
     lumi = config['GLOBAL']['luminosity']
     sampleType = config[sample]['sampleType']
-    with open('config/crossSections.yaml', 'r') as xs_file:
+    xsFile = config['GLOBAL']['crossSectionsFile']
+    xsFilePath = os.path.join(os.environ['ANALYSIS_PATH'], xsFile)
+    with open(xsFilePath, 'r') as xs_file:
         xs_dict = yaml.safe_load(xs_file)
-    xs_stitching = 1
-    xs_stitching_incl = 1
-    xs_inclusive = 1
-    df = df.Define("stitching_weight", f'GetStitchingWeight(static_cast<SampleType>(sample_type), LHE_Vpt, LHE_Njets )')
-
-    if sampleType == 'DY' or sampleType=='W':
+    xs_stitching = 1.
+    xs_stitching_incl = 1.
+    xs_inclusive = 1.
+    stitch_str = '1.'
+    if sampleType in [ 'DY', 'W']:
         xs_stitching_name = config[sample]['crossSectionStitch']
-        inclusive_sample_name = 'DYJetsToLL_M-50' if sampleType=='DY' else 'WJetsToLNu'
+        inclusive_sample_name = findRefSample(config, sampleType)
+        xs_name = config[inclusive_sample_name]['crossSection']
         xs_stitching = xs_dict[xs_stitching_name]['crossSec']
         xs_stitching_incl = xs_dict[config[inclusive_sample_name]['crossSectionStitch']]['crossSec']
-        xs_inclusive = xs_dict[config[inclusive_sample_name]['crossSection']]['crossSec']
+        if sampleType == 'DY':
+            stitch_str = 'if(LHE_Vpt==0.) return 1/2.; return 1/3.;'
+        elif sampleType == 'W':
+            stitch_str= "if(LHE_Njets==0.) return 1.; return 1/2.;"
     else:
         xs_name = config[sample]['crossSection']
-        xs_inclusive = xs_dict[xs_name]['crossSec']
 
+    df = df.Define("stitching_weight", stitch_str)
+    xs_inclusive = xs_dict[xs_name]['crossSec']
     stitching_weight_string = f' {xs_stitching} * stitching_weight * ({xs_inclusive}/{xs_stitching_incl})'
     df = pu.getWeight(df)
     df = df.Define('genWeightD', 'std::copysign<double>(1., genWeight)')

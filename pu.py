@@ -18,7 +18,9 @@ class puWeightProducer:
             puWeightProducer.initialized = True
 
     def getWeight(self, df):
-        for scale in ['Central', 'Up', 'Down']:
+        for scale in getScales():
             df = df.Define(f'puWeight_{scale}', f'''::correction::puCorrProvider::getGlobal().getWeight(
                             ::correction::UncScale::{scale}, Pileup_nTrueInt)''')
         return df
+
+

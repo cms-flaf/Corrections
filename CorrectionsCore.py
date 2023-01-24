@@ -5,7 +5,9 @@ up = 'Up'
 down = 'Down'
 nano = 'nano'
 
-def getScales(source):
+def getScales(source=None):
+    if source is None:
+        return [ central, up, down ]
     if source == central:
         return [ central ]
     return [ up, down ]
@@ -25,7 +27,3 @@ def updateSourceDict(source_dict, source, obj):
     if obj in source_dict[source]:
         raise RuntimeError(f"addUncSource: dupblicated {source} definition for {obj}")
     source_dict[source].append(obj)
-
-def updateWeightDict(weight_list, source):
-    if source not in weight_list:
-        weight_list.append('w_'+source)

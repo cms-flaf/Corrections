@@ -19,18 +19,30 @@ enum class UncScale : int {
     Up = +1,
 };
 
-}
 
-float GetStitchingWeight(const SampleType& sampleType, const float LHE_Vpt, const int LHE_Njets ){
-    if(sampleType==SampleType::DY)
+
+template <typename CorrectionClass>
+class CorrectionsBase {
+public:
+    template<typename ...Args>
+    static void Initialize(Args&&... args)
     {
-        if(LHE_Vpt==0.) return 1/2.;
-        else return 1/3.;
+        _getGlobal() = std::make_unique<CorrectionClass>(args...);
     }
-    else if(sampleType==SampleType::W)
+
+    static const CorrectionClass& getGlobal()
     {
-        if(LHE_Njets>0) return 1/2.;
-        else return 1.;
+        const auto& corr = _getGlobal();
+        if(!corr)
+            throw std::runtime_error("Class not initialized.");
+        return *corr;
     }
-    return 1.;
-}
+
+private:
+    static std::unique_ptr<CorrectionClass>& _getGlobal()
+    {
+        static std::unique_ptr<CorrectionClass> corr;
+        return corr;
+    }
+};
+} // end of namespace correction
