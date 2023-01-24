@@ -1,15 +1,18 @@
 import os
 import ROOT
+import yaml
 from RunKit.sh_tools import sh_call
 
 from .tau import TauCorrProducer
 from .met import METCorrProducer
+from .pu import puWeightProducer
 from .CorrectionsCore import *
 
 
 initialized = False
 tau = None
 met = None
+pu = None
 
 period_names = {
     'Run2_2016_HIPM': '2016preVFP_UL',
@@ -21,6 +24,7 @@ period_names = {
 def Initialize(period):
     global initialized
     global tau
+    global pu
     global met
     if initialized:
         raise RuntimeError('Corrections are already initialized')
@@ -39,6 +43,7 @@ def Initialize(period):
         print(f'correction config output: {output}')
         raise RuntimeError("Correction library is not found.")
     ROOT.gSystem.Load(corr_lib)
+    pu = puWeightProducer(period=period_names[period])
     tau = TauCorrProducer(period=period_names[period])
     met = METCorrProducer()
     initialized = True
@@ -60,3 +65,61 @@ def applyScaleUncertainties(df):
                     suffix = 'Central' if obj in [ "Tau", "MET" ] else 'nano'
                     df = df.Define(f'{obj}_p4_{syst_name}', f'{obj}_p4_{suffix}')
     return df, syst_dict
+
+def findRefSample(config, sample_type):
+    refSample = []
+    for sample, sampleDef in config.items:
+        if sampleDef.get('sampleType', None) == sample_type and sampleDef.get('isReference', False):
+            refSample.append(sample)
+    if len(refSample) != 1:
+        raise RuntimeError(f'multiple refSamples for {sample_type}: {refSample}')
+    return refSample[0]
+
+def getNormalisationCorrections(df, config, sample):
+    if not initialized:
+        raise RuntimeError('Corrections are not initialized')
+    lumi = config['GLOBAL']['luminosity']
+    sampleType = config[sample]['sampleType']
+    xsFile = config['GLOBAL']['crossSectionsFile']
+    xsFilePath = os.path.join(os.environ['ANALYSIS_PATH'], xsFile)
+    with open(xsFilePath, 'r') as xs_file:
+        xs_dict = yaml.safe_load(xs_file)
+    xs_stitching = 1.
+    xs_stitching_incl = 1.
+    xs_inclusive = 1.
+    stitch_str = '1.'
+    if sampleType in [ 'DY', 'W']:
+        xs_stitching_name = config[sample]['crossSectionStitch']
+        inclusive_sample_name = findRefSample(config, sampleType)
+        xs_name = config[inclusive_sample_name]['crossSection']
+        xs_stitching = xs_dict[xs_stitching_name]['crossSec']
+        xs_stitching_incl = xs_dict[config[inclusive_sample_name]['crossSectionStitch']]['crossSec']
+        if sampleType == 'DY':
+            stitch_str = 'if(LHE_Vpt==0.) return 1/2.; return 1/3.;'
+        elif sampleType == 'W':
+            stitch_str= "if(LHE_Njets==0.) return 1.; return 1/2.;"
+    else:
+        xs_name = config[sample]['crossSection']
+
+    df = df.Define("stitching_weight", stitch_str)
+    xs_inclusive = xs_dict[xs_name]['crossSec']
+    stitching_weight_string = f' {xs_stitching} * stitching_weight * ({xs_inclusive}/{xs_stitching_incl})'
+    df = pu.getWeight(df)
+    df = df.Define('genWeightD', 'std::copysign<double>(1., genWeight)')
+    scale = 'Central'
+    df = df.Define('weight', f'genWeightD * {lumi} * {stitching_weight_string} * puWeight_{scale}')
+    return df, [ scale ]
+
+def getDenumerator(df, sources):
+    if not initialized:
+        raise RuntimeError('Corrections are not initialized')
+    df = pu.getWeight(df)
+    df = df.Define('genWeightD', 'std::copysign<double>(1., genWeight)')
+    syst_names =[]
+    for source in sources:
+        for scale in getScales(source):
+            syst_name = getSystName(source, scale)
+            pu_scale = scale if source == pu.uncSource else central
+            df = df.Define(f'weight_denum_{syst_name}', f'genWeightD * puWeight_{pu_scale}')
+            syst_names.append(syst_name)
+    return df,syst_names

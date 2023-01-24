@@ -5,7 +5,7 @@
 
 namespace correction {
 
-class TauCorrProvider {
+class TauCorrProvider : public CorrectionsBase<TauCorrProvider> {
 public:
     enum class GenLeptonMatch : int {
         Electron = 1,
@@ -25,19 +25,6 @@ public:
         EleFakingTauES_DM1 = 4,
         MuFakingTauES = 5
     };
-
-    static void Initialize(const std::string& fileName, const std::string& deepTauVersion)
-    {
-        _getGlobal() = std::make_unique<TauCorrProvider>(fileName, deepTauVersion);
-    }
-
-    static const TauCorrProvider& getGlobal()
-    {
-        const auto& corr = _getGlobal();
-        if(!corr)
-            throw std::runtime_error("TauCorrProvider: not initialized.");
-        return *corr;
-    }
 
     static bool isTwoProngDM(int dm)
     {
@@ -99,12 +86,6 @@ public:
     }
 
 private:
-    static std::unique_ptr<TauCorrProvider>& _getGlobal()
-    {
-        static std::unique_ptr<TauCorrProvider> corr;
-        return corr;
-    }
-
     std::unique_ptr<CorrectionSet> corrections_;
     Correction::Ref tau_es_, tau_vs_e_, tau_vs_mu_, tau_vs_jet_;
     std::string deepTauVersion_;

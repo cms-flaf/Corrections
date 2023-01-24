@@ -5,7 +5,9 @@ up = 'Up'
 down = 'Down'
 nano = 'nano'
 
-def getScales(source):
+def getScales(source=None):
+    if source is None:
+        return [ central, up, down ]
     if source == central:
         return [ central ]
     return [ up, down ]

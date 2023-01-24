@@ -19,4 +19,30 @@ enum class UncScale : int {
     Up = +1,
 };
 
-}
+
+
+template <typename CorrectionClass>
+class CorrectionsBase {
+public:
+    template<typename ...Args>
+    static void Initialize(Args&&... args)
+    {
+        _getGlobal() = std::make_unique<CorrectionClass>(args...);
+    }
+
+    static const CorrectionClass& getGlobal()
+    {
+        const auto& corr = _getGlobal();
+        if(!corr)
+            throw std::runtime_error("Class not initialized.");
+        return *corr;
+    }
+
+private:
+    static std::unique_ptr<CorrectionClass>& _getGlobal()
+    {
+        static std::unique_ptr<CorrectionClass> corr;
+        return corr;
+    }
+};
+} // end of namespace correction
