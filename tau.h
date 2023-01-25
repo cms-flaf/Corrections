@@ -23,7 +23,22 @@ public:
         TauES_3prong = 2,
         EleFakingTauES_DM0 = 3,
         EleFakingTauES_DM1 = 4,
-        MuFakingTauES = 5
+        MuFakingTauES = 5,
+        TauID_genuineTau_DM0 = 6,
+        TauID_genuineTau_DM1 = 7,
+        TauID_genuineTau_3Prong = 8,
+        TauID_genuineTau_Pt20_25 = 9,
+        TauID_genuineTau_Pt25_30 = 10,
+        TauID_genuineTau_Pt30_35 = 11,
+        TauID_genuineTau_Pt35_40 = 12,
+        TauID_genuineTau_Ptgt40 = 13,
+        TauID_genuineElectron_barrel = 14,
+        TauID_genuineElectron_endcaps = 15,
+        TauID_genuineMuon_etaLt0p4 = 16,
+        TauID_genuineMuon_eta0p4to0p8 = 17,
+        TauID_genuineMuon_eta0p8to1p2 = 18,
+        TauID_genuineMuon_eta1p2to1p7 = 19,
+        TauID_genuineMuon_etaGt1p7 = 20,
     };
 
     static bool isTwoProngDM(int dm)
@@ -48,11 +63,26 @@ public:
             if(source == UncSource::TauES_DM0 && decayMode == 0) return true;
             if(source == UncSource::TauES_DM1 && ( decayMode == 1 || decayMode == 2 )) return true;
             if(source == UncSource::TauES_3prong && ( decayMode == 10 || decayMode == 11 )) return true;
+            if(source == UncSource::TauID_genuineTau_DM0 && decayMode==0 && p4.pt()>40) return true;
+            if(source == UncSource::TauID_genuineTau_DM1 && ( decayMode == 1 || decayMode == 2 ) && p4.pt()>40) return true;
+            if(source == UncSource::TauID_genuineTau_3Prong && ( decayMode == 10 || decayMode == 11 ) && p4.pt()>40) return true;
+            if(source == UncSource::TauID_genuineTau_Pt20_25 && p4.pt()>20 && p4.pt()<=25 ) return true;
+            if(source == UncSource::TauID_genuineTau_Pt25_30 && p4.pt()>25 && p4.pt()<=30 ) return true;
+            if(source == UncSource::TauID_genuineTau_Pt30_35 && p4.pt()>30 && p4.pt()<=35 ) return true;
+            if(source == UncSource::TauID_genuineTau_Pt35_40 && p4.pt()>35 && p4.pt()<=40 ) return true;
+            if(source == UncSource::TauID_genuineTau_Ptgt40 && p4.pt()>40 ) return true;
         } else if(genMatch == GenLeptonMatch::Electron || genMatch == GenLeptonMatch::TauElectron) {
             if(source == UncSource::EleFakingTauES_DM0 && decayMode == 0) return true;
             if(source == UncSource::EleFakingTauES_DM1 && ( decayMode == 1 || decayMode == 2 )) return true;
+            if(source == UncSource::TauID_genuineElectron_barrel && std::abs(p4.eta())<1.46) return true;
+            if(source == UncSource::TauID_genuineElectron_endcaps && std::abs(p4.eta())>1.558) return true;
         } else if(genMatch == GenLeptonMatch::Muon || genMatch == GenLeptonMatch::TauMuon) {
             if(source == UncSource::MuFakingTauES) return true;
+            if(source == UncSource::TauID_genuineMuon_etaLt0p4 && std::abs(p4.eta())>0 && std::abs(p4.eta())<=0.4) return true;
+            if(source == UncSource::TauID_genuineMuon_eta0p4to0p8 && std::abs(p4.eta())>0.4 && std::abs(p4.eta())<=0.8) return true;
+            if(source == UncSource::TauID_genuineMuon_eta0p8to1p2 && std::abs(p4.eta())>0.8 && std::abs(p4.eta())<=1.2) return true;
+            if(source == UncSource::TauID_genuineMuon_eta1p2to1p7 && std::abs(p4.eta())>1.2 && std::abs(p4.eta())<=1.7) return true;
+            if(source == UncSource::TauID_genuineMuon_etaGt1p7 && std::abs(p4.eta())>1.7 ) return true;
         }
         return false;
     }
@@ -85,6 +115,34 @@ public:
         return final_p4;
     }
 
+    float getSF(const LorentzVectorM& Tau_p4, int Tau_decayMode, int Tau_genMatch, const std::string& wpVSe, const std::string& wpVSmu, const std::string& wpVSjet, UncSource source, UncScale scale, const std::string& genuineTau_SFtype) const
+    {
+        if(isTwoProngDM(Tau_decayMode)) throw std::runtime_error("no SF for two prong tau decay modes");
+        const GenLeptonMatch genMatch = static_cast<GenLeptonMatch>(Tau_genMatch);
+        if(genMatch == GenLeptonMatch::Tau) {
+            const UncScale tau_had_scale = sourceApplies(source, Tau_p4, Tau_decayMode, genMatch)
+                                           ? scale : UncScale::Central;
+            const std::string& scale_str = getScaleStr(tau_had_scale);
+            if(wpVSe < 3 || wpVSmu < 4){
+                auto sf_central = tau_vs_jet_->evaluate({Tau_p4.eta(), Tau_genMatch, Tau_decayMode, wpVSjet, getScaleStr(UncScale::Central), genuineTau_SFtype});
+                return sf_central * ( ( tau_vs_jet_->evaluate({Tau_p4.eta(), Tau_genMatch, Tau_decayMode, wpVSjet, scale_str, genuineTau_SFtype}) / sf_central )+ 0.05 );
+            }
+            return tau_vs_jet_->evaluate({Tau_p4.eta(), Tau_decayMode, Tau_genMatch, wpVSjet, scale_str, genuineTau_SFtype});
+        }
+        if(genMatch==GenLeptonMatch::Electron || genMatch == GenLeptonMatch::TauElectron){
+            const UncScale tau_ele_scale = sourceApplies(source, Tau_p4, Tau_decayMode, genMatch)
+                                           ? scale : UncScale::Central;
+            const std::string& scale_str = getScaleStr(tau_ele_scale);
+            return tau_vs_e_->evaluate({Tau_p4.eta(), Tau_genMatch, wpVSe, scale_str});
+        }
+         if(genMatch == GenLeptonMatch::Muon || genMatch == GenLeptonMatch::TauMuon){
+            const UncScale tau_mu_scale = sourceApplies(source, Tau_p4, Tau_decayMode, genMatch)
+                                           ? scale : UncScale::Central;
+            const std::string& scale_str = getScaleStr(tau_mu_scale);
+            return tau_vs_mu_->evaluate({Tau_p4.eta(), Tau_genMatch, wpVSmu, scale_str});
+        }
+        return 1.;
+    }
 private:
     std::unique_ptr<CorrectionSet> corrections_;
     Correction::Ref tau_es_, tau_vs_e_, tau_vs_mu_, tau_vs_jet_;
