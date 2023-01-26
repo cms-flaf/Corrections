@@ -40,6 +40,34 @@ public:
         TauID_genuineMuon_eta1p2to1p7 = 19,
         TauID_genuineMuon_etaGt1p7 = 20,
     };
+    enum class WorkingPointsTauVSmu : int {
+        VLoose = 1,
+        Loose = 2,
+        Medium = 3,
+        Tight = 4
+    };
+
+    enum class WorkingPointsTauVSjet : int {
+        VVVLoose = 1,
+        VVLoose = 2,
+        VLoose = 3,
+        Loose = 4,
+        Medium = 5,
+        Tight = 6,
+        VTight = 7,
+        VVTight = 8
+    };
+
+    enum class WorkingPointsTauVSe : int {
+        VVVLoose = 1,
+        VVLoose = 2,
+        VLoose = 3,
+        Loose = 4,
+        Medium = 5,
+        Tight = 6,
+        VTight = 7,
+        VVTight = 8
+    };
 
     static bool isTwoProngDM(int dm)
     {
@@ -123,11 +151,15 @@ public:
             const UncScale tau_had_scale = sourceApplies(source, Tau_p4, Tau_decayMode, genMatch)
                                            ? scale : UncScale::Central;
             const std::string& scale_str = getScaleStr(tau_had_scale);
-            if(wpVSe < 3 || wpVSmu < 4){
-                auto sf_central = tau_vs_jet_->evaluate({Tau_p4.eta(), Tau_genMatch, Tau_decayMode, wpVSjet, getScaleStr(UncScale::Central), genuineTau_SFtype});
-                return sf_central * ( ( tau_vs_jet_->evaluate({Tau_p4.eta(), Tau_genMatch, Tau_decayMode, wpVSjet, scale_str, genuineTau_SFtype}) / sf_central )+ 0.05 );
+            const auto sf = tau_vs_jet_->evaluate({Tau_p4.eta(), Tau_genMatch, Tau_decayMode, wpVSjet, scale_str, genuineTau_SFtype});
+
+            if(tau_had_scale != UncScale::Central && (wpVSe < static_cast<int>(WorkingPointsTauVSe::VLoose) || wpVSmu < static_cast<int>(WorkingPointsTauVSmu::Tight))){
+                const auto sf_central = tau_vs_jet_->evaluate({Tau_p4.eta(), Tau_genMatch, Tau_decayMode, wpVSjet, getScaleStr(UncScale::Central), genuineTau_SFtype});
+                float additional_unc = Tau_p4.pt()<100 ? 0.05 : 0.15;
+                return sf_central * ( ( sf / sf_central )+ additional_unc );
             }
-            return tau_vs_jet_->evaluate({Tau_p4.eta(), Tau_decayMode, Tau_genMatch, wpVSjet, scale_str, genuineTau_SFtype});
+
+            return sf;
         }
         if(genMatch==GenLeptonMatch::Electron || genMatch == GenLeptonMatch::TauElectron){
             const UncScale tau_ele_scale = sourceApplies(source, Tau_p4, Tau_decayMode, genMatch)
