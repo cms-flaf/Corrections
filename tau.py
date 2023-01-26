@@ -45,7 +45,7 @@ class TauCorrProducer:
                 for leg_idx in [0,1]:
                     df = Define(f"tau{leg_idx+1}_p4_{syst_name}",
                                 f'''httCand.leg_type[{leg_idx}] == Leg::tau ? ::correction::TauCorrProvider::getGlobal().getSF(
-                               tau{leg_idx+1}_p4, tau{leg_idx+1}_{decayMode}, tau{leg_idx+1}_genMatchIdx", {TauCorrProducer.deepTauVersion}VSe,
+                               httCand.leg_p4[{leg_idx}]", tau{leg_idx+1}_{decayMode}, tau{leg_idx+1}_genMatchIdx", {TauCorrProducer.deepTauVersion}VSe,
                                {TauCorrProducer.deepTauVersion}VSmu, {TauCorrProducer.deepTauVersion}VSjet,
                                ::correction::TauCorrProvider::UncSource::{source}, ::correction::UncScale::{scale},
                                {genuineTau_SFtype}) : 1.;''')
