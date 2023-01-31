@@ -7,14 +7,6 @@ namespace correction {
 
 class TauCorrProvider : public CorrectionsBase<TauCorrProvider> {
 public:
-    enum class GenLeptonMatch : int {
-        Electron = 1,
-        Muon = 2,
-        TauElectron = 3,
-        TauMuon = 4,
-        Tau = 5,
-        NoMatch = 6
-    };
 
     enum class UncSource : int {
         Central = -1,
@@ -40,34 +32,9 @@ public:
         TauID_genuineMuon_eta1p2to1p7 = 19,
         TauID_genuineMuon_etaGt1p7 = 20,
     };
-    enum class WorkingPointsTauVSmu : int {
-        VLoose = 1,
-        Loose = 2,
-        Medium = 3,
-        Tight = 4
-    };
 
-    enum class WorkingPointsTauVSjet : int {
-        VVVLoose = 1,
-        VVLoose = 2,
-        VLoose = 3,
-        Loose = 4,
-        Medium = 5,
-        Tight = 6,
-        VTight = 7,
-        VVTight = 8
-    };
+    using wpsMapType = std::map<Channel, std::vector<std::pair<std::string, int> > >;
 
-    enum class WorkingPointsTauVSe : int {
-        VVVLoose = 1,
-        VVLoose = 2,
-        VLoose = 3,
-        Loose = 4,
-        Medium = 5,
-        Tight = 6,
-        VTight = 7,
-        VVTight = 8
-    };
 
     static bool isTwoProngDM(int dm)
     {
@@ -115,13 +82,15 @@ public:
         return false;
     }
 
-    TauCorrProvider(const std::string& fileName, const std::string& deepTauVersion) :
+    TauCorrProvider(const std::string& fileName, const std::string& deepTauVersion, const wpsMapType& wps_map, const std::map<Channel, std::string>& tauType_map) :
         corrections_(CorrectionSet::from_file(fileName)),
         tau_es_(corrections_->at("tau_energy_scale")),
         tau_vs_e_(corrections_->at(deepTauVersion + "VSe")),
         tau_vs_mu_(corrections_->at(deepTauVersion + "VSmu")),
         tau_vs_jet_(corrections_->at(deepTauVersion + "VSjet")),
-        deepTauVersion_(deepTauVersion)
+        deepTauVersion_(deepTauVersion),
+        wps_map_(wps_map),
+        tauType_map_(tauType_map)
     {
     }
 
@@ -143,18 +112,21 @@ public:
         return final_p4;
     }
 
-    float getSF(const LorentzVectorM& Tau_p4, int Tau_decayMode, int Tau_genMatch, const std::string& wpVSe, const std::string& wpVSmu, const std::string& wpVSjet, UncSource source, UncScale scale, const std::string& genuineTau_SFtype) const
+    float getSF(const LorentzVectorM& Tau_p4, int Tau_decayMode, int Tau_genMatch, Channel ch, UncSource source, UncScale scale) const
     {
         if(isTwoProngDM(Tau_decayMode)) throw std::runtime_error("no SF for two prong tau decay modes");
+        const auto & wpVSe = wps_map_.at(ch).at(0);
+        const auto & wpVSmu = wps_map_.at(ch).at(1);
+        const auto & wpVSjet = wps_map_.at(ch).at(2);
+        const auto & genuineTau_SFtype = tauType_map_.at(ch);
         const GenLeptonMatch genMatch = static_cast<GenLeptonMatch>(Tau_genMatch);
         if(genMatch == GenLeptonMatch::Tau) {
             const UncScale tau_had_scale = sourceApplies(source, Tau_p4, Tau_decayMode, genMatch)
                                            ? scale : UncScale::Central;
             const std::string& scale_str = getScaleStr(tau_had_scale);
-            const auto sf = tau_vs_jet_->evaluate({Tau_p4.eta(), Tau_genMatch, Tau_decayMode, wpVSjet, scale_str, genuineTau_SFtype});
-
-            if(tau_had_scale != UncScale::Central && (wpVSe < static_cast<int>(WorkingPointsTauVSe::VLoose) || wpVSmu < static_cast<int>(WorkingPointsTauVSmu::Tight))){
-                const auto sf_central = tau_vs_jet_->evaluate({Tau_p4.eta(), Tau_genMatch, Tau_decayMode, wpVSjet, getScaleStr(UncScale::Central), genuineTau_SFtype});
+            const auto sf = tau_vs_jet_->evaluate({Tau_p4.pt(),Tau_decayMode, Tau_genMatch, wpVSjet.first, scale_str, genuineTau_SFtype});
+            if(tau_had_scale != UncScale::Central && (wpVSe.second < static_cast<int>(WorkingPointsTauVSe::VLoose) || wpVSmu.second < static_cast<int>(WorkingPointsTauVSmu::Tight))){
+                const auto sf_central = tau_vs_jet_->evaluate({Tau_p4.pt(), Tau_decayMode, Tau_genMatch,  wpVSjet.first, getScaleStr(UncScale::Central), genuineTau_SFtype});
                 float additional_unc = Tau_p4.pt()<100 ? 0.05 : 0.15;
                 return sf_central * ( ( sf / sf_central )+ additional_unc );
             }
@@ -165,13 +137,13 @@ public:
             const UncScale tau_ele_scale = sourceApplies(source, Tau_p4, Tau_decayMode, genMatch)
                                            ? scale : UncScale::Central;
             const std::string& scale_str = getScaleStr(tau_ele_scale);
-            return tau_vs_e_->evaluate({Tau_p4.eta(), Tau_genMatch, wpVSe, scale_str});
+            return tau_vs_e_->evaluate({Tau_p4.eta(), Tau_genMatch, wpVSe.first, scale_str});
         }
          if(genMatch == GenLeptonMatch::Muon || genMatch == GenLeptonMatch::TauMuon){
             const UncScale tau_mu_scale = sourceApplies(source, Tau_p4, Tau_decayMode, genMatch)
                                            ? scale : UncScale::Central;
             const std::string& scale_str = getScaleStr(tau_mu_scale);
-            return tau_vs_mu_->evaluate({Tau_p4.eta(), Tau_genMatch, wpVSmu, scale_str});
+            return tau_vs_mu_->evaluate({Tau_p4.eta(), Tau_genMatch, wpVSmu.first, scale_str});
         }
         return 1.;
     }
@@ -179,6 +151,9 @@ private:
     std::unique_ptr<CorrectionSet> corrections_;
     Correction::Ref tau_es_, tau_vs_e_, tau_vs_mu_, tau_vs_jet_;
     std::string deepTauVersion_;
+    const wpsMapType wps_map_;
+    const std::map<Channel, std::string> tauType_map_;
+
 };
 
 } // namespace correction

@@ -25,9 +25,14 @@ class puWeightProducer:
             puWeightProducer.initialized = True
 
     def getWeight(self, df):
-        for scale in getScales():
-            df = df.Define(f'puWeight_{scale}', f'''::correction::puCorrProvider::getGlobal().getWeight(
-                            ::correction::UncScale::{scale}, Pileup_nTrueInt)''')
-        return df
+        weights = {}
+        for source in [ central, puWeightProducer.uncSource]:
+            for scale in getScales(source):
+                syst_name = getSystName(source, scale)
+                weights[syst_name] = []
+                df = df.Define(f'puWeight_{scale}', f'''::correction::puCorrProvider::getGlobal().getWeight(
+                                ::correction::UncScale::{scale}, Pileup_nTrueInt)''')
+                weights[syst_name].append(f'puWeight_{scale}')
+        return df,weights
 
 
