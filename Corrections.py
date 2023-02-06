@@ -1,13 +1,17 @@
 import os
 import ROOT
 import yaml
+import itertools
 from RunKit.sh_tools import sh_call
+from Common.Utilities import *
 
 from .tau import TauCorrProducer
 from .met import METCorrProducer
 from .pu import puWeightProducer
 from .CorrectionsCore import *
 
+for wpcl in [WorkingPointsTauVSe,WorkingPointsTauVSmu,WorkingPointsTauVSjet]:
+    ROOT.gInterpreter.Declare(f'{generate_enum_class(wpcl)}')
 
 initialized = False
 tau = None
@@ -48,11 +52,6 @@ def Initialize(config):
     tau = TauCorrProducer(period_names[period], config)
     met = METCorrProducer()
     initialized = True
-    syst_dict = { }
-    source_dict = { }
-
-def createSourceDict(sources, obj):
-    updateSourceDict(self.source_dict, sources, obj)
 
 def applyScaleUncertainties(df):
     if not initialized:
@@ -72,10 +71,6 @@ def applyScaleUncertainties(df):
                     df = df.Define(f'{obj}_p4_{syst_name}', f'{obj}_p4_{suffix}')
     return df,syst_dict
 
-def applySFUncertainties(df):
-    if not initialized:
-        raise RuntimeError('Corrections are not initialized')
-    return tau.getSF(df)
 
 def findRefSample(config, sample_type):
     refSample = []
@@ -125,24 +120,20 @@ def getNormalisationCorrections(df, config, sample, return_variations=True):
     df, pu_SF_branches = pu.getWeight(df)
     df = df.Define('genWeightD', 'std::copysign<double>(1., genWeight)')
     scale = 'Central'
-    all_sources = set()
-    all_branches = []
-    df,tau_SF_branches = tau.getSF(df, config)
-    all_sources.update(tau_SF_branches.keys())
-    all_branches.append(tau_SF_branches)
-    all_sources.update(pu_SF_branches.keys())
-    all_branches.append(pu_SF_branches)
-    all_weights = []
+    df, tau_SF_branches = tau.getSF(df, config)
+    all_branches = [ pu_SF_branches, tau_SF_branches ]
+    all_sources = set(itertools.chain.from_iterable(all_branches))
     all_sources.remove(central)
+    all_weights = []
     for syst_name in [central] + list(all_sources):
         branches = getBranches(syst_name, all_branches)
         product = ' * '.join(branches)
         weight_name = f'weight_{syst_name}'
-        if syst_name != central:
-            weight_name+='_rel'
-        df = df.Define(f'weight_{syst_name}', f'static_cast<float>(genWeightD * {lumi} * {stitching_weight_string} * {product})')
-        df = df.Define(f'weight_{syst_name}_rel', f'static_cast<float>(weight_{syst_name}/weight_{central})')
-        all_weights.append(weight_name)
+        weight_rel_name = weight_name + '_rel'
+        weight_out_name = weight_name if syst_name == central else weight_rel_name
+        df = df.Define(weight_name, f'static_cast<float>(genWeightD * {lumi} * {stitching_weight_string} * {product})')
+        df = df.Define(weight_rel_name, f'static_cast<float>(weight_{syst_name}/weight_{central})')
+        all_weights.append(weight_out_name)
     return df, all_weights
 
 def getDenumerator(df, sources):

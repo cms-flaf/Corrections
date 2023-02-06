@@ -8,7 +8,7 @@ class puWeightProducer:
     jsonPath = "/cvmfs/cms.cern.ch/rsync/cms-nanoAOD/jsonpog-integration/POG/LUM/{}/puWeights.json.gz"
     initialized = False
 
-    uncSource = 'pu'
+    uncSource = ['pu']
     golden_json_dict = {
         "2018_UL":"Collisions18_UltraLegacy_goldenJSON",
         "2017_UL": "Collisions17_UltraLegacy_goldenJSON",
@@ -24,9 +24,10 @@ class puWeightProducer:
             ROOT.gInterpreter.ProcessLine(f'::correction::puCorrProvider::Initialize("{jsonFile}", "{self.golden_json_dict[period]}")')
             puWeightProducer.initialized = True
 
-    def getWeight(self, df):
+    def getWeight(self, df,return_variations=True):
+        sf_sources =puWeightProducer.uncSource if return_variations else []
         weights = {}
-        for source in [ central, puWeightProducer.uncSource]:
+        for source in [ central ] + sf_sources:
             for scale in getScales(source):
                 syst_name = getSystName(source, scale)
                 weights[syst_name] = []
