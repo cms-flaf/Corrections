@@ -3,15 +3,12 @@ import ROOT
 import yaml
 import itertools
 from RunKit.sh_tools import sh_call
-from Common.Utilities import *
 
 from .tau import TauCorrProducer
 from .met import METCorrProducer
 from .pu import puWeightProducer
 from .CorrectionsCore import *
 
-for wpcl in [WorkingPointsTauVSe,WorkingPointsTauVSmu,WorkingPointsTauVSjet]:
-    ROOT.gInterpreter.Declare(f'{generate_enum_class(wpcl)}')
 
 initialized = False
 tau = None

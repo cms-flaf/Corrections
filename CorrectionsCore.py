@@ -23,7 +23,6 @@ def updateSourceDict(source_dict, source, obj):
     if source not in source_dict:
         source_dict[source] = []
     if obj in source_dict[source]:
-        #pass
         raise RuntimeError(f"addUncSource: dupblicated {source} definition for {obj}")
     source_dict[source].append(obj)
 

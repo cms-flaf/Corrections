@@ -83,24 +83,3 @@ class TauCorrProducer:
                     SF_branches[syst_name].append(f"tau{leg_idx+1}_idSF_{syst_name}")
         return df,SF_branches
 
-    # config['GLOBAL']['triggerFile']
-    #with open(triggerFile, "r") as stream:
-    #        self.trigger_dict= yaml.safe_load(stream)
-
-    #def getTrgSF(self, df, trgFile, return_variations=True):
-    #    with open(trgFile, "r") as stream:
-    #        trigger_dict= yaml.safe_load(stream)
-    #    sf_sources =TauCorrProducer.SFSources_genuineTau_dm+ TauCorrProducer.SFSources_genuineTau_pt+ TauCorrProducer.SFSources_genuineLep if return_variations else []
-    #    SF_branches = {}
-    #    for source in [ central ] + sf_sources:
-    #        for scale in getScales(source):
-    #                syst_name = getSystName(source, scale)
-    #                SF_branches[syst_name]= []
-    #                for leg_idx in [0,1]:
-    #                    df = df.Define(f"tau_{leg_idx+1}_DM", f'''httCand.leg_type[{leg_idx}] == Leg::tau ? Tau_decayMode.at(httCand.leg_index[{leg_idx}]) : -1.f;''')
-    #                    df = df.Define(f"tau{leg_idx+1}_TrgSF_{syst_name}",
-    #                                f'''::correction::TauCorrProvider::getGlobal().getTrgSF(
-    #                               httCand.leg_p4[{leg_idx}].Pt(), tau_{leg_idx+1}_DM, trg_type, httCand.channel(), \"sf\"
-    #                               ::correction::TauCorrProvider::UncSource::{source}, ::correction::UncScale::{scale}) ''')
-    #                    SF_branches[syst_name].append(f"tau{leg_idx+1}_idSF_{syst_name}")
-    #        return df,SF_branches

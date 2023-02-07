@@ -127,9 +127,8 @@ public:
             const auto sf = tau_vs_jet_->evaluate({Tau_p4.pt(),Tau_decayMode, Tau_genMatch, wpVSjet.first, scale_str, genuineTau_SFtype});
             if(tau_had_scale != UncScale::Central && (wpVSe.second < static_cast<int>(WorkingPointsTauVSe::VLoose) || wpVSmu.second < static_cast<int>(WorkingPointsTauVSmu::Tight))){
                 const auto sf_central = tau_vs_jet_->evaluate({Tau_p4.pt(), Tau_decayMode, Tau_genMatch,  wpVSjet.first, getScaleStr(UncScale::Central), genuineTau_SFtype});
-                float additional_unc = Tau_p4.pt()<100 ? 0.05 : 0.15;
-                float final_sf = sf > sf_central ? sf_central * ( ( sf / sf_central )+ additional_unc ) : sf_central * ( ( sf / sf_central )- additional_unc );
-                return final_sf;
+                const float additional_unc = Tau_p4.pt() > 100 ? 0.15 : 0.05;
+                return sf_central * ( sf / sf_central + std::copysign(additional_unc, sf - sf_central));
             }
 
             return sf;
