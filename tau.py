@@ -20,7 +20,9 @@ class TauCorrProducer:
 
     def createWPChannelMap(map_wp_python):
         ch_list = []
+        channels = ['eTau', 'muTau', 'tauTau']
         for ch,ch_data in map_wp_python.items():
+            if ch not in channels: continue
             wp_list = []
             for k in ['e', 'mu', 'jet']:
                 wp_class = globals()[f'WorkingPointsTauVS{k}']
