@@ -1,5 +1,3 @@
-
-
 central = 'Central'
 up = 'Up'
 down = 'Down'
@@ -27,3 +25,4 @@ def updateSourceDict(source_dict, source, obj):
     if obj in source_dict[source]:
         raise RuntimeError(f"addUncSource: dupblicated {source} definition for {obj}")
     source_dict[source].append(obj)
+
