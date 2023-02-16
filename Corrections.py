@@ -8,11 +8,13 @@ from .tau import TauCorrProducer
 from .met import METCorrProducer
 from .pu import puWeightProducer
 from .CorrectionsCore import *
+from .triggers import TrigCorrProducer
 
 
 initialized = False
 tau = None
 met = None
+trg = None
 pu = None
 
 period_names = {
@@ -27,6 +29,7 @@ def Initialize(config):
     global tau
     global pu
     global met
+    global trg
     if initialized:
         raise RuntimeError('Corrections are already initialized')
     returncode, output, err= sh_call(['correction', 'config', '--cflags', '--ldflags'],
@@ -47,6 +50,7 @@ def Initialize(config):
     period = config['era']
     pu = puWeightProducer(period=period_names[period])
     tau = TauCorrProducer(period_names[period], config)
+    trg = TrigCorrProducer(period_names[period], config)
     met = METCorrProducer()
     initialized = True
 
