@@ -1,7 +1,6 @@
 import os
 import ROOT
 from .CorrectionsCore import *
-from Common.Utilities import *
 import yaml
 
 class TauCorrProducer:
@@ -17,43 +16,14 @@ class TauCorrProducer:
     SFSources_genuineLep=["TauID_genuineElectron_barrel", "TauID_genuineElectron_endcaps", "TauID_genuineMuon_etaLt0p4",
         "TauID_genuineMuon_eta0p4to0p8", "TauID_genuineMuon_eta0p8to1p2", "TauID_genuineMuon_eta1p2to1p7", "TauID_genuineMuon_etaGt1p7" ]
 
-
-    def createWPChannelMap(map_wp_python):
-        ch_list = []
-        channels = ['eTau', 'muTau', 'tauTau']
-        for ch,ch_data in map_wp_python.items():
-            if ch not in channels: continue
-            wp_list = []
-            for k in ['e', 'mu', 'jet']:
-                wp_class = globals()[f'WorkingPointsTauVS{k}']
-                wp_name = ch_data[f'VS{k}']
-                wp_value = getattr(wp_class, wp_name)
-                wp_entry = f'{{ "{wp_name}", {wp_value} }} '
-                wp_list.append(wp_entry)
-            wp_str = ', '.join(wp_list)
-            ch_str = f'{{ Channel::{ch}, {{ {wp_str} }} }}'
-            ch_list.append(ch_str)
-        map_str = '::correction::TauCorrProvider::wpsMapType({' + ', '.join(ch_list) + '})'
-        return map_str
-
-    def createTauSFTypeMap(map_sf_python):
-        ch_list = []
-        map_sf_cpp = 'std::map<Channel, std::string>({'
-        for ch, ch_data in map_sf_python.items():
-            map_sf_cpp += f'{{ Channel::{ch}, "{ch_data}" }}, '
-        map_sf_cpp += '})'
-        return map_sf_cpp
-
-
-
     def __init__(self, period, config):
         jsonFile = TauCorrProducer.jsonPath.format(period)
         if not TauCorrProducer.initialized:
             headers_dir = os.path.dirname(os.path.abspath(__file__))
             header_path = os.path.join(headers_dir, "tau.h")
             ROOT.gInterpreter.Declare(f'#include "{header_path}"')
-            wp_map_cpp = TauCorrProducer.createWPChannelMap(config["deepTauWPs"])
-            tauType_map = TauCorrProducer.createTauSFTypeMap(config["genuineTau_SFtype"])
+            wp_map_cpp = createWPChannelMap(config["deepTauWPs"])
+            tauType_map = createTauSFTypeMap(config["genuineTau_SFtype"])
             ROOT.gInterpreter.ProcessLine(f'::correction::TauCorrProvider::Initialize("{jsonFile}", "{self.deepTauVersion}", {wp_map_cpp}, {tauType_map})')
             TauCorrProducer.initialized = True
 
