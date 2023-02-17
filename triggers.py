@@ -16,8 +16,8 @@ class TrigCorrProducer:
     muon_trg_dict = {
         "2018_UL": "NUM_IsoMu24_DEN_CutBasedIdTight_and_PFIsoTight",
         "2017_UL": "NUM_IsoMu27_DEN_CutBasedIdTight_and_PFIsoTight",
-        "2016PreVFP_UL":"NUM_IsoMu24_or_IsoTkMu24_DEN_CutBasedIdTight_and_PFIsoTight",
-        "2016PostVFP_UL":"NUM_IsoMu24_or_IsoTkMu24_DEN_CutBasedIdTight_and_PFIsoTight"
+        "2016preVFP_UL":"NUM_IsoMu24_or_IsoTkMu24_DEN_CutBasedIdTight_and_PFIsoTight",
+        "2016postVFP_UL":"NUM_IsoMu24_or_IsoTkMu24_DEN_CutBasedIdTight_and_PFIsoTight"
     }
 
     def __init__(self, period, config):
