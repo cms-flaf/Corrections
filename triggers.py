@@ -13,6 +13,13 @@ class TrigCorrProducer:
     deepTauVersion = 'DeepTau2017v2p1'
     SFSources = { 'ditau': [ "tautrg_ditau_DM0","tautrg_ditau_DM1", "tautrg_ditau_3Prong"], 'singleMu':['mutrg_singleMu'], 'singleEle':['eletrg_singleEle']}
 
+    muon_trg_dict = {
+        "2018_UL": "NUM_IsoMu24_DEN_CutBasedIdTight_and_PFIsoTight",
+        "2017_UL": "NUM_IsoMu27_DEN_CutBasedIdTight_and_PFIsoTight",
+        "2016PreVFP_UL":"NUM_IsoMu24_or_IsoTkMu24_DEN_CutBasedIdTight_and_PFIsoTight",
+        "2016PostVFP_UL":"NUM_IsoMu24_or_IsoTkMu24_DEN_CutBasedIdTight_and_PFIsoTight"
+    }
+
     def __init__(self, period, config):
         jsonFile_Tau = TrigCorrProducer.TauTRG_jsonPath.format(period)
         jsonFile_Mu = TrigCorrProducer.MuTRG_jsonPath.format(period)
@@ -22,7 +29,8 @@ class TrigCorrProducer:
             header_path = os.path.join(headers_dir, "triggers.h")
             ROOT.gInterpreter.Declare(f'#include "{header_path}"')
             wp_map_cpp = createWPChannelMap(config["deepTauWPs"])
-            ROOT.gInterpreter.ProcessLine(f'::correction::TrigCorrProvider::Initialize("{jsonFile_Tau}", "{self.deepTauVersion}", {wp_map_cpp}, "{jsonFile_Mu}", "{period}", "{jsonFile_e}")')
+            ROOT.gInterpreter.ProcessLine(f"""::correction::TrigCorrProvider::Initialize("{jsonFile_Tau}", "{self.deepTauVersion}", {wp_map_cpp}, "{jsonFile_Mu}", "{period}",
+                                          "{self.muon_trg_dict[period]}","{jsonFile_e}")""")
             TrigCorrProducer.initialized = True
 
     def getTrgSF(self, df, trigger_names, return_variations=True):

@@ -49,13 +49,15 @@ public:
         return false;
     }
 
-    TrigCorrProvider(const std::string& tauFileName, const std::string& deepTauVersion, const wpsMapType& wps_map, const std::string& muFileName, const std::string& period,  const std::string& eleFileName) :
+    TrigCorrProvider(const std::string& tauFileName, const std::string& deepTauVersion, const wpsMapType& wps_map,
+                    const std::string& muFileName, const std::string& period, const std::string& mu_trigger,
+                    const std::string& eleFileName) :
         tau_corrections_(CorrectionSet::from_file(tauFileName)),
         tau_trg_(tau_corrections_->at("tau_trigger")),
         deepTauVersion_(deepTauVersion),
         wps_map_(wps_map),
         mu_corrections_(CorrectionSet::from_file(muFileName)),
-        mu_trg_(mu_corrections_->at("NUM_IsoMu24_DEN_CutBasedIdTight_and_PFIsoTight")),
+        mu_trg_(mu_corrections_->at(mu_trigger)),
         period_(period)
     {
 
