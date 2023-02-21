@@ -9,12 +9,14 @@ from .met import METCorrProducer
 from .pu import puWeightProducer
 from .CorrectionsCore import *
 from .triggers import TrigCorrProducer
+from .btag import bTagCorrProducer
 
 
 initialized = False
 tau = None
 met = None
 trg = None
+btag = None
 pu = None
 
 period_names = {
@@ -24,12 +26,13 @@ period_names = {
     'Run2_2018': '2018_UL',
 }
 
-def Initialize(config):
+def Initialize(config, loadBTagEff=True):
     global initialized
     global tau
     global pu
     global met
     global trg
+    global btag
     if initialized:
         raise RuntimeError('Corrections are already initialized')
     returncode, output, err= sh_call(['correction', 'config', '--cflags', '--ldflags'],
@@ -51,6 +54,7 @@ def Initialize(config):
     pu = puWeightProducer(period=period_names[period])
     tau = TauCorrProducer(period_names[period], config)
     trg = TrigCorrProducer(period_names[period], config)
+    btag = bTagCorrProducer(period_names[period],loadBTagEff)
     met = METCorrProducer()
     initialized = True
 

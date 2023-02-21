@@ -39,7 +39,7 @@ def createWPChannelMap(map_wp_python):
         for k in ['e', 'mu', 'jet']:
             wp_class = globals()[f'WorkingPointsTauVS{k}']
             wp_name = ch_data[f'VS{k}']
-            wp_value = getattr(wp_class, wp_name)
+            wp_value = getattr(wp_class, wp_name).value
             wp_entry = f'{{ "{wp_name}", {wp_value} }} '
             wp_list.append(wp_entry)
         wp_str = ', '.join(wp_list)
