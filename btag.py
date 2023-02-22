@@ -10,7 +10,8 @@ class bTagCorrProducer:
     jsonPath = "/cvmfs/cms.cern.ch/rsync/cms-nanoAOD/jsonpog-integration/POG/BTV/{}/btagging.json.gz"
     bTagEff_JsonPath = "Corrections/data/BTV/{}/btagEff_TT.root"
     initialized = False
-    SFSources = []
+    SFSources = ["btagSFbc", "btagSFlight"]
+    correlation = ["nocorr","correlated", "uncorrelated"]
 
     def __init__(self, period, loadEfficiency=True):
         jsonFile = bTagCorrProducer.jsonPath.format(period)
@@ -37,12 +38,18 @@ class bTagCorrProducer:
         for source in [ central ] + sf_sources:
             for scale in getScales(source):
                 syst_name = getSystName(source, scale)
-                for wp in WorkingPointsbTag:
-                    df = df.Define(f"bTagSF_{wp.name}_{syst_name}",
-                                f''' ::correction::bTagCorrProvider::getGlobal().getSF(
-                                Jet_p4, Jet_bCand, Jet_hadronFlavour, WorkingPointsbTag::{wp.name},Jet_btagDeepFlavB,
-                               ::correction::bTagCorrProvider::UncSource::{source}, ::correction::UncScale::{scale}) ''')
-                    SF_branches.append(f"bTagSF_{wp.name}_{syst_name}")
+                for corr in self.correlation:
+                    if source==central and corr!="nocorr" or source!=central and corr=="nocorr":
+                        continue
+                    syst_name2 = f"{syst_name}_{corr}" if corr!="nocorr" else syst_name
+                    for wp in WorkingPointsbTag:
+                        df = df.Define(f"bTagSF_{wp.name}_{syst_name2}",
+                                    f''' ::correction::bTagCorrProvider::getGlobal().getSF(
+                                    Jet_p4, Jet_bCand, Jet_hadronFlavour, Jet_btagDeepFlavB,WorkingPointsbTag::{wp.name},
+                                ::correction::bTagCorrProvider::UncSource::{source}, ::correction::UncScale::{scale},
+                                ::correction::bTagCorrProvider::Correlation::{corr}) ''')
+                        SF_branches.append(f"bTagSF_{wp.name}_{syst_name2}")
+                        #print(SF_branches)
         return df,SF_branches
 
 

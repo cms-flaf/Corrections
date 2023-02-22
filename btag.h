@@ -8,6 +8,14 @@ class bTagCorrProvider : public CorrectionsBase<bTagCorrProvider> {
 public:
     enum class UncSource : int {
         Central = -1,
+        btagSFbc = 0,
+        btagSFlight = 1,
+
+    };
+    enum class Correlation : int {
+        nocorr = -1,
+        uncorrelated = 0,
+        correlated = 1,
     };
 
     static const std::string& getWPStr(WorkingPointsbTag wp)
@@ -28,6 +36,29 @@ public:
         };
         return wps.at(wp_string);
     }
+    static const std::string& getScaleStr(UncScale scale, Correlation corr)
+    {
+        static const std::map<std::pair<UncScale, Correlation>, std::string> names = {
+            { {UncScale::Down, Correlation::nocorr}, "down" },
+            { {UncScale::Down, Correlation::uncorrelated}, "down_uncorrelated" },
+            { {UncScale::Down, Correlation::correlated}, "down_correlated" },
+            { {UncScale::Central, Correlation::nocorr}, "central"},
+            { {UncScale::Central, Correlation::uncorrelated}, "central"},
+            { {UncScale::Central, Correlation::correlated}, "central"},
+            { {UncScale::Up, Correlation::nocorr}, "up" },
+            { {UncScale::Up, Correlation::uncorrelated}, "up_uncorrelated" },
+            { {UncScale::Up, Correlation::correlated}, "up_correlated" },
+        };
+        return names.at(std::make_pair(scale, corr));
+    }
+
+    static bool sourceApplies(UncSource source, int Jet_Flavour)
+    {
+        if(source == UncSource::btagSFbc && (Jet_Flavour == 4 || Jet_Flavour==5) ) return true;
+        if(source == UncSource::btagSFlight && Jet_Flavour == 0 ) return true;
+        return false;
+    }
+
     using histEffmap= std::map<std::pair<WorkingPointsbTag, int>, std::shared_ptr<TH2>> ;
     bTagCorrProvider(const std::string& fileName, const std::string& efficiencyFileName) :
         corrections_(CorrectionSet::from_file(fileName)),
@@ -54,16 +85,18 @@ public:
         return deepJet_wp_values_->evaluate({getWPStr(wp)});
     }
 
-    float getSF(const RVecLV& Jet_p4, const RVecB& pre_sel, const RVecI& Jet_Flavour,const RVecF& Jet_bTag_score, WorkingPointsbTag btag_wp, UncSource source, UncScale scale) const
+    float getSF(const RVecLV& Jet_p4, const RVecB& pre_sel, const RVecI& Jet_Flavour,const RVecF& Jet_bTag_score, WorkingPointsbTag btag_wp, UncSource source, UncScale scale, Correlation corr) const
     {
         float eff_MC_tot = 1.;
         float eff_data_tot = 1.;
         for(size_t jet_idx = 0; jet_idx < Jet_p4.size(); jet_idx++){
             if(!pre_sel[jet_idx]) continue;
-
+            const UncScale jet_tag_scale = sourceApplies(source, Jet_Flavour[jet_idx])
+                                           ? scale : UncScale::Central;
+            const std::string& scale_str = getScaleStr(jet_tag_scale, corr);
             float eff_MC = GetNormalisedEfficiency(GetBtagEfficiency(Jet_p4[jet_idx].pt(), std::abs(Jet_p4[jet_idx].eta()), Jet_Flavour[jet_idx], btag_wp));
             auto sf_source = Jet_Flavour[jet_idx] == 0 ? &deepJet_incl_ : &deepJet_comb_;
-            float SF = (*sf_source)->evaluate({"central",getWPStr(btag_wp),  Jet_Flavour[jet_idx], std::abs(Jet_p4[jet_idx].eta()),Jet_p4[jet_idx].pt() });
+            float SF = (*sf_source)->evaluate({scale_str, getWPStr(btag_wp),  Jet_Flavour[jet_idx], std::abs(Jet_p4[jet_idx].eta()),Jet_p4[jet_idx].pt() });
             float eff_data = GetNormalisedEfficiency(eff_MC*SF);
             if(Jet_bTag_score[jet_idx] > getWPvalue(btag_wp)) {
                 eff_MC_tot*= eff_MC;
