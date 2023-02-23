@@ -14,30 +14,31 @@ public:
         btagSFlight_correlated = 3,
     };
 
+    static const std::map<WorkingPointsbTag, std::pair<std::string, std::string>>& getWPNames()
+    {
+        static const std::map<WorkingPointsbTag, std::pair<std::string, std::string>> names = {
+            { WorkingPointsbTag::Tight, { "T", "Tight" } },
+            { WorkingPointsbTag::Medium, { "M", "Medium" } },
+            { WorkingPointsbTag::Loose, { "L", "Loose" } },
+        };
+        return names;
+    };
 
-    static WorkingPointsbTag getWPFromString(const std::string wp_string)
+    static std::string getScaleStr(UncScale scale, UncSource source)
     {
-        static const std::map< std::string,WorkingPointsbTag> wps = {
-            { "Tight", WorkingPointsbTag::Tight },
-            { "Medium", WorkingPointsbTag::Medium },
-            { "Loose", WorkingPointsbTag::Loose },
+        static const std::map<UncScale, std::string> scale_names = {
+            { UncScale::Down, "down_" },
+            { UncScale::Up, "up_" },
         };
-        return wps.at(wp_string);
-    }
-    static const std::string& getScaleStr(UncScale scale, UncSource source)
-    {
-        static const std::map<std::pair<UncScale, UncSource>, std::string> names = {
-            { {UncScale::Down, UncSource::btagSFbc_uncorrelated}, "down_uncorrelated" },
-            { {UncScale::Down, UncSource::btagSFlight_uncorrelated}, "down_uncorrelated" },
-            { {UncScale::Down, UncSource::btagSFbc_correlated}, "down_correlated" },
-            { {UncScale::Down, UncSource::btagSFlight_correlated}, "down_correlated" },
-            { {UncScale::Central, UncSource::Central}, "central"},
-            { {UncScale::Up, UncSource::btagSFbc_uncorrelated}, "up_uncorrelated" },
-            { {UncScale::Up, UncSource::btagSFlight_uncorrelated}, "up_uncorrelated" },
-            { {UncScale::Up, UncSource::btagSFbc_correlated}, "up_correlated" },
-            { {UncScale::Up, UncSource::btagSFlight_correlated}, "up_correlated" },
+        static const std::map<UncSource, std::string> unc_names = {
+            { UncSource::btagSFbc_uncorrelated, "uncorrelated" },
+            {  UncSource::btagSFlight_uncorrelated, "uncorrelated" },
+            {  UncSource::btagSFbc_correlated, "correlated" },
+            {  UncSource::btagSFlight_correlated, "correlated" },
         };
-        return names.at(std::make_pair(scale, source));
+        if(scale == UncScale::Central)
+            return "central";
+        return scale_names.at(scale) + unc_names.at(source);
     }
 
     static bool sourceApplies(UncSource source, int Jet_Flavour)
@@ -62,23 +63,19 @@ public:
             static const std::vector<int> Flavours = {0, 4, 5};
             for(const auto & flav : Flavours){
                 auto denum = root_ext::ReadCloneObject<TH2>(*efficiencyFile, "jet_pt_eta_"+std::to_string(flav), "", true);
-                for (const auto & WPName : WpNames){
-                    auto num = root_ext::ReadCloneObject<TH2>(*efficiencyFile,  "jet_pt_eta_"+std::to_string(flav)+"_"+WPName,"", true);
+                for (const auto &wp_entry : getWPNames()){
+                    auto num = root_ext::ReadCloneObject<TH2>(*efficiencyFile,  "jet_pt_eta_"+std::to_string(flav)+"_"+wp_entry.second.second,"", true);
                     num->Divide(denum);
-                    histMapEfficiency[std::make_pair(getWPFromString(WPName),flav)] = std::shared_ptr<TH2>(num);
+                    histMapEfficiency[std::make_pair(wp_entry.first, flav)] = std::shared_ptr<TH2>(num);
                 }
             }
         }
-        wp_names = {
-            { WorkingPointsbTag::Tight, "T" },
-            { WorkingPointsbTag::Medium, "M" },
-            { WorkingPointsbTag::Loose, "L" },
-        };
+        for (const auto &wp_entry : getWPNames()) {
+            wp_thrs[wp_entry.first] = deepJet_wp_values_->evaluate({wp_entry.second.first});
+        }
     }
 
-    float getWPvalue(WorkingPointsbTag wp) const {
-        return deepJet_wp_values_->evaluate({wp_names.at(wp)});
-    }
+    float getWPvalue(WorkingPointsbTag wp) const { return wp_thrs.at(wp); }
 
     float getSF(const RVecLV& Jet_p4, const RVecB& pre_sel, const RVecI& Jet_Flavour,const RVecF& Jet_bTag_score, WorkingPointsbTag btag_wp, UncSource source, UncScale scale) const
     {
@@ -91,7 +88,7 @@ public:
             const std::string& scale_str = getScaleStr(jet_tag_scale, source);
             float eff_MC = GetNormalisedEfficiency(GetBtagEfficiency(Jet_p4[jet_idx].pt(), std::abs(Jet_p4[jet_idx].eta()), Jet_Flavour[jet_idx], btag_wp));
             auto sf_source = Jet_Flavour[jet_idx] == 0 ? &deepJet_incl_ : &deepJet_comb_;
-            float SF = (*sf_source)->evaluate({scale_str, wp_names.at(btag_wp),  Jet_Flavour[jet_idx], std::abs(Jet_p4[jet_idx].eta()),Jet_p4[jet_idx].pt() });
+            float SF = (*sf_source)->evaluate({scale_str, getWPNames().at(btag_wp).first,  Jet_Flavour[jet_idx], std::abs(Jet_p4[jet_idx].eta()),Jet_p4[jet_idx].pt() });
             float eff_data = GetNormalisedEfficiency(eff_MC*SF);
             if(Jet_bTag_score[jet_idx] > getWPvalue(btag_wp)) {
                 eff_MC_tot*= eff_MC;
@@ -110,7 +107,7 @@ private:
         auto iter = histMapEfficiency.find(key);
         if(iter == histMapEfficiency.end())
             throw analysis::exception("ERROR: bTagEfficiency not found in the map! Flavour= %1% VS WP = %2%")
-            % flavour % wp_names.at(wp);
+            % flavour % getWPNames().at(wp).second;
         const auto& hist = iter->second;
         const auto x_axis = hist->GetXaxis();
         int x_bin = x_axis->FindFixBin(pt);
@@ -138,7 +135,7 @@ private:
     std::unique_ptr<CorrectionSet> corrections_;
     Correction::Ref deepJet_incl_, deepJet_comb_,deepJet_wp_values_;
     histEffmap histMapEfficiency;
-    std::map<WorkingPointsbTag,std::string> wp_names;
+    std::map<WorkingPointsbTag, float> wp_thrs;
 
 };
 
