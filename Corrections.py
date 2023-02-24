@@ -4,13 +4,7 @@ import yaml
 import itertools
 from RunKit.sh_tools import sh_call
 
-from .tau import TauCorrProducer
-from .met import METCorrProducer
-from .pu import puWeightProducer
 from .CorrectionsCore import *
-from .triggers import TrigCorrProducer
-from .btag import bTagCorrProducer
-
 
 initialized = False
 tau = None
@@ -26,7 +20,8 @@ period_names = {
     'Run2_2018': '2018_UL',
 }
 
-def Initialize(config, loadBTagEff=True):
+def Initialize(config, load_corr_lib=True, load_pu=True, load_tau=True, load_trg=True, load_btag=True,
+               loadBTagEff=True, load_met=True):
     global initialized
     global tau
     global pu
@@ -35,27 +30,38 @@ def Initialize(config, loadBTagEff=True):
     global btag
     if initialized:
         raise RuntimeError('Corrections are already initialized')
-    returncode, output, err= sh_call(['correction', 'config', '--cflags', '--ldflags'],
-                                     catch_stdout=True, decode=True, verbose=0)
-    params = output.split(' ')
-    for param in params:
-        if param.startswith('-I'):
-            ROOT.gInterpreter.AddIncludePath(param[2:].strip())
-        elif param.startswith('-L'):
-            lib_path = param[2:].strip()
-        elif param.startswith('-l'):
-            lib_name = param[2:].strip()
-    corr_lib = f"{lib_path}/lib{lib_name}.so"
-    if not os.path.exists(corr_lib):
-        print(f'correction config output: {output}')
-        raise RuntimeError("Correction library is not found.")
-    ROOT.gSystem.Load(corr_lib)
+    if load_corr_lib:
+        returncode, output, err= sh_call(['correction', 'config', '--cflags', '--ldflags'],
+                                        catch_stdout=True, decode=True, verbose=0)
+        params = output.split(' ')
+        for param in params:
+            if param.startswith('-I'):
+                ROOT.gInterpreter.AddIncludePath(param[2:].strip())
+            elif param.startswith('-L'):
+                lib_path = param[2:].strip()
+            elif param.startswith('-l'):
+                lib_name = param[2:].strip()
+        corr_lib = f"{lib_path}/lib{lib_name}.so"
+        if not os.path.exists(corr_lib):
+            print(f'correction config output: {output}')
+            raise RuntimeError("Correction library is not found.")
+        ROOT.gSystem.Load(corr_lib)
     period = config['era']
-    pu = puWeightProducer(period=period_names[period])
-    tau = TauCorrProducer(period_names[period], config)
-    trg = TrigCorrProducer(period_names[period], config)
-    btag = bTagCorrProducer(period_names[period],loadBTagEff)
-    met = METCorrProducer()
+    if load_pu:
+        from .pu import puWeightProducer
+        pu = puWeightProducer(period=period_names[period])
+    if load_tau:
+        from .tau import TauCorrProducer
+        tau = TauCorrProducer(period_names[period], config)
+    if load_trg:
+        from .triggers import TrigCorrProducer
+        trg = TrigCorrProducer(period_names[period], config)
+    if load_btag:
+        from .btag import bTagCorrProducer
+        btag = bTagCorrProducer(period_names[period], loadBTagEff)
+    if load_met:
+        from .met import METCorrProducer
+        met = METCorrProducer()
     initialized = True
 
 def applyScaleUncertainties(df):
@@ -144,13 +150,12 @@ def getNormalisationCorrections(df, config, sample, return_variations=True):
 def getDenumerator(df, sources):
     if not initialized:
         raise RuntimeError('Corrections are not initialized')
-    df = pu.getWeight(df)
+    df, pu_SF_branches = pu.getWeight(df)
     df = df.Define('genWeightD', 'std::copysign<double>(1., genWeight)')
     syst_names =[]
     for source in sources:
         for scale in getScales(source):
             syst_name = getSystName(source, scale)
-            pu_scale = scale if source == pu.uncSource else central
-            df = df.Define(f'weight_denum_{syst_name}', f'genWeightD * puWeight_{pu_scale}')
+            df = df.Define(f'weight_denum_{syst_name}', f'genWeightD * puWeight_{scale}')
             syst_names.append(syst_name)
     return df,syst_names
