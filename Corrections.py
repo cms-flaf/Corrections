@@ -99,7 +99,7 @@ def getBranches(syst_name, all_branches):
         final_branches.extend(branches[name])
     return final_branches
 
-def getNormalisationCorrections(df, config, sample, return_variations=True):
+def getNormalisationCorrections(df, config, sample, ana_cache=None, return_variations=True):
     if not initialized:
         raise RuntimeError('Corrections are not initialized')
     lumi = config['GLOBAL']['luminosity']
@@ -136,18 +136,21 @@ def getNormalisationCorrections(df, config, sample, return_variations=True):
     all_sources = set(itertools.chain.from_iterable(all_branches))
     all_sources.remove(central)
     all_weights = []
+    denom = f'/{ana_cache["denominator"][central][central]}' if ana_cache is not None else ''
+
     for syst_name in [central] + list(all_sources):
         branches = getBranches(syst_name, all_branches)
         product = ' * '.join(branches)
         weight_name = f'weight_{syst_name}'
         weight_rel_name = weight_name + '_rel'
         weight_out_name = weight_name if syst_name == central else weight_rel_name
-        df = df.Define(weight_name, f'static_cast<float>(genWeightD * {lumi} * {stitching_weight_string} * {product})')
+        weight_formula = f'genWeightD * {lumi} * {stitching_weight_string} * {product}{denom}'
+        df = df.Define(weight_name, f'static_cast<float>({weight_formula})')
         df = df.Define(weight_rel_name, f'static_cast<float>(weight_{syst_name}/weight_{central})')
         all_weights.append(weight_out_name)
     return df, all_weights
 
-def getDenumerator(df, sources):
+def getDenomerator(df, sources):
     if not initialized:
         raise RuntimeError('Corrections are not initialized')
     df, pu_SF_branches = pu.getWeight(df)
@@ -156,6 +159,6 @@ def getDenumerator(df, sources):
     for source in sources:
         for scale in getScales(source):
             syst_name = getSystName(source, scale)
-            df = df.Define(f'weight_denum_{syst_name}', f'genWeightD * puWeight_{scale}')
+            df = df.Define(f'weight_denom_{syst_name}', f'genWeightD * puWeight_{scale}')
             syst_names.append(syst_name)
     return df,syst_names
