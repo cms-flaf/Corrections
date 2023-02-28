@@ -26,6 +26,7 @@ class TauCorrProducer:
             tauType_map = createTauSFTypeMap(config["genuineTau_SFtype"])
             ROOT.gInterpreter.ProcessLine(f'::correction::TauCorrProvider::Initialize("{jsonFile}", "{self.deepTauVersion}", {wp_map_cpp}, {tauType_map})')
             TauCorrProducer.initialized = True
+            deepTauVersion = f"DeepTau2017{config["deepTauVersion"]}"
 
     def getES(self, df, source_dict):
         for source in [ central ] + TauCorrProducer.energyScaleSources_tau + TauCorrProducer.energyScaleSources_lep:

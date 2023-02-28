@@ -33,6 +33,7 @@ def Initialize(config, loadBTagEff=True):
     global met
     global trg
     global btag
+    global sf_to_apply
     if initialized:
         raise RuntimeError('Corrections are already initialized')
     returncode, output, err= sh_call(['correction', 'config', '--cflags', '--ldflags'],
@@ -55,6 +56,7 @@ def Initialize(config, loadBTagEff=True):
     tau = TauCorrProducer(period_names[period], config)
     trg = TrigCorrProducer(period_names[period], config)
     btag = bTagCorrProducer(period_names[period],loadBTagEff)
+    sf_to_apply = config["corrections"]
     met = METCorrProducer()
     initialized = True
 
@@ -62,8 +64,9 @@ def applyScaleUncertainties(df):
     if not initialized:
         raise RuntimeError('Corrections are not initialized')
     source_dict = {}
-    df, source_dict = tau.getES(df, source_dict)
-    df, source_dict = met.getPFMET(df, source_dict)
+    if 'tauES' in sf_to_apply:
+        df, source_dict = tau.getES(df, source_dict)
+        df, source_dict = met.getPFMET(df, source_dict)
     syst_dict = { }
     for source, source_objs in source_dict.items():
         for scale in getScales(source):
