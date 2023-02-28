@@ -85,7 +85,7 @@ def applyScaleUncertainties(df):
 
 def findRefSample(config, sample_type):
     refSample = []
-    for sample, sampleDef in config.items:
+    for sample, sampleDef in config.items():
         if sampleDef.get('sampleType', None) == sample_type and sampleDef.get('isReference', False):
             refSample.append(sample)
     if len(refSample) != 1:
@@ -111,7 +111,7 @@ def getNormalisationCorrections(df, config, sample, ana_cache=None, return_varia
     xs_stitching = 1.
     xs_stitching_incl = 1.
     xs_inclusive = 1.
-    stitch_str = '1.'
+    stitch_str = '1.f'
     if sampleType in [ 'DY', 'W']:
         xs_stitching_name = config[sample]['crossSectionStitch']
         inclusive_sample_name = findRefSample(config, sampleType)
@@ -119,9 +119,9 @@ def getNormalisationCorrections(df, config, sample, ana_cache=None, return_varia
         xs_stitching = xs_dict[xs_stitching_name]['crossSec']
         xs_stitching_incl = xs_dict[config[inclusive_sample_name]['crossSectionStitch']]['crossSec']
         if sampleType == 'DY':
-            stitch_str = 'if(LHE_Vpt==0.) return 1/2.; return 1/3.f;'
+            stitch_str = 'if(LHE_Vpt==0.) return 1/2.f; return 1/3.f;'
         elif sampleType == 'W':
-            stitch_str= "if(LHE_Njets==0.) return 1.; return 1/2.f;"
+            stitch_str= "if(LHE_Njets==0.) return 1.f; return 1/2.f;"
     else:
         xs_name = config[sample]['crossSection']
 
