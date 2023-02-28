@@ -150,7 +150,7 @@ def getNormalisationCorrections(df, config, sample, ana_cache=None, return_varia
         all_weights.append(weight_out_name)
     return df, all_weights
 
-def getDenomerator(df, sources):
+def getDenominator(df, sources):
     if not initialized:
         raise RuntimeError('Corrections are not initialized')
     df, pu_SF_branches = pu.getWeight(df)
