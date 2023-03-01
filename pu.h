@@ -21,11 +21,10 @@ public:
     {
     }
 
-    float getWeight(UncScale scale, const float& Pileup_nTrueInt) const{
+    float getWeight(UncScale scale, float Pileup_nTrueInt) const
+    {
         const std::string& scale_str = getScaleStr(scale);
-        const double w = puweight->evaluate({Pileup_nTrueInt, scale_str});
-
-        return w;
+        return puweight->evaluate({Pileup_nTrueInt, scale_str});
     }
 private:
     std::unique_ptr<CorrectionSet> corrections_;

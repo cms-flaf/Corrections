@@ -4,13 +4,7 @@ import yaml
 import itertools
 from RunKit.sh_tools import sh_call
 
-from .tau import TauCorrProducer
-from .met import METCorrProducer
-from .pu import puWeightProducer
 from .CorrectionsCore import *
-from .triggers import TrigCorrProducer
-from .btag import bTagCorrProducer
-
 
 initialized = False
 tau = None
@@ -26,7 +20,8 @@ period_names = {
     'Run2_2018': '2018_UL',
 }
 
-def Initialize(config, loadBTagEff=True):
+def Initialize(config, load_corr_lib=True, load_pu=True, load_tau=True, load_trg=True, load_btag=True,
+               loadBTagEff=True, load_met=True):
     global initialized
     global tau
     global pu
@@ -36,28 +31,38 @@ def Initialize(config, loadBTagEff=True):
     global sf_to_apply
     if initialized:
         raise RuntimeError('Corrections are already initialized')
-    returncode, output, err= sh_call(['correction', 'config', '--cflags', '--ldflags'],
-                                     catch_stdout=True, decode=True, verbose=0)
-    params = output.split(' ')
-    for param in params:
-        if param.startswith('-I'):
-            ROOT.gInterpreter.AddIncludePath(param[2:].strip())
-        elif param.startswith('-L'):
-            lib_path = param[2:].strip()
-        elif param.startswith('-l'):
-            lib_name = param[2:].strip()
-    corr_lib = f"{lib_path}/lib{lib_name}.so"
-    if not os.path.exists(corr_lib):
-        print(f'correction config output: {output}')
-        raise RuntimeError("Correction library is not found.")
-    ROOT.gSystem.Load(corr_lib)
+    if load_corr_lib:
+        returncode, output, err= sh_call(['correction', 'config', '--cflags', '--ldflags'],
+                                        catch_stdout=True, decode=True, verbose=0)
+        params = output.split(' ')
+        for param in params:
+            if param.startswith('-I'):
+                ROOT.gInterpreter.AddIncludePath(param[2:].strip())
+            elif param.startswith('-L'):
+                lib_path = param[2:].strip()
+            elif param.startswith('-l'):
+                lib_name = param[2:].strip()
+        corr_lib = f"{lib_path}/lib{lib_name}.so"
+        if not os.path.exists(corr_lib):
+            print(f'correction config output: {output}')
+            raise RuntimeError("Correction library is not found.")
+        ROOT.gSystem.Load(corr_lib)
     period = config['era']
-    pu = puWeightProducer(period=period_names[period])
-    tau = TauCorrProducer(period_names[period], config)
-    trg = TrigCorrProducer(period_names[period], config)
-    btag = bTagCorrProducer(period_names[period],loadBTagEff)
-    sf_to_apply = config["corrections"]
-    met = METCorrProducer()
+    if load_pu:
+        from .pu import puWeightProducer
+        pu = puWeightProducer(period=period_names[period])
+    if load_tau:
+        from .tau import TauCorrProducer
+        tau = TauCorrProducer(period_names[period], config)
+    if load_trg:
+        from .triggers import TrigCorrProducer
+        trg = TrigCorrProducer(period_names[period], config)
+    if load_btag:
+        from .btag import bTagCorrProducer
+        btag = bTagCorrProducer(period_names[period], loadBTagEff)
+    if load_met:
+        from .met import METCorrProducer
+        met = METCorrProducer()
     initialized = True
 
 def applyScaleUncertainties(df):
@@ -82,7 +87,7 @@ def applyScaleUncertainties(df):
 
 def findRefSample(config, sample_type):
     refSample = []
-    for sample, sampleDef in config.items:
+    for sample, sampleDef in config.items():
         if sampleDef.get('sampleType', None) == sample_type and sampleDef.get('isReference', False):
             refSample.append(sample)
     if len(refSample) != 1:
@@ -96,7 +101,7 @@ def getBranches(syst_name, all_branches):
         final_branches.extend(branches[name])
     return final_branches
 
-def getNormalisationCorrections(df, config, sample, return_variations=True):
+def getNormalisationCorrections(df, config, sample, ana_cache=None, return_variations=True):
     if not initialized:
         raise RuntimeError('Corrections are not initialized')
     lumi = config['GLOBAL']['luminosity']
@@ -108,7 +113,7 @@ def getNormalisationCorrections(df, config, sample, return_variations=True):
     xs_stitching = 1.
     xs_stitching_incl = 1.
     xs_inclusive = 1.
-    stitch_str = '1.'
+    stitch_str = '1.f'
     if sampleType in [ 'DY', 'W']:
         xs_stitching_name = config[sample]['crossSectionStitch']
         inclusive_sample_name = findRefSample(config, sampleType)
@@ -116,9 +121,9 @@ def getNormalisationCorrections(df, config, sample, return_variations=True):
         xs_stitching = xs_dict[xs_stitching_name]['crossSec']
         xs_stitching_incl = xs_dict[config[inclusive_sample_name]['crossSectionStitch']]['crossSec']
         if sampleType == 'DY':
-            stitch_str = 'if(LHE_Vpt==0.) return 1/2.; return 1/3.f;'
+            stitch_str = 'if(LHE_Vpt==0.) return 1/2.f; return 1/3.f;'
         elif sampleType == 'W':
-            stitch_str= "if(LHE_Njets==0.) return 1.; return 1/2.f;"
+            stitch_str= "if(LHE_Njets==0.) return 1.f; return 1/2.f;"
     else:
         xs_name = config[sample]['crossSection']
 
@@ -133,27 +138,29 @@ def getNormalisationCorrections(df, config, sample, return_variations=True):
     all_sources = set(itertools.chain.from_iterable(all_branches))
     all_sources.remove(central)
     all_weights = []
+    denom = f'/{ana_cache["denominator"][central][central]}' if ana_cache is not None else ''
+
     for syst_name in [central] + list(all_sources):
         branches = getBranches(syst_name, all_branches)
         product = ' * '.join(branches)
         weight_name = f'weight_{syst_name}'
         weight_rel_name = weight_name + '_rel'
         weight_out_name = weight_name if syst_name == central else weight_rel_name
-        df = df.Define(weight_name, f'static_cast<float>(genWeightD * {lumi} * {stitching_weight_string} * {product})')
+        weight_formula = f'genWeightD * {lumi} * {stitching_weight_string} * {product}{denom}'
+        df = df.Define(weight_name, f'static_cast<float>({weight_formula})')
         df = df.Define(weight_rel_name, f'static_cast<float>(weight_{syst_name}/weight_{central})')
         all_weights.append(weight_out_name)
     return df, all_weights
 
-def getDenumerator(df, sources):
+def getDenominator(df, sources):
     if not initialized:
         raise RuntimeError('Corrections are not initialized')
-    df = pu.getWeight(df)
+    df, pu_SF_branches = pu.getWeight(df)
     df = df.Define('genWeightD', 'std::copysign<double>(1., genWeight)')
     syst_names =[]
     for source in sources:
         for scale in getScales(source):
             syst_name = getSystName(source, scale)
-            pu_scale = scale if source == pu.uncSource else central
-            df = df.Define(f'weight_denum_{syst_name}', f'genWeightD * puWeight_{pu_scale}')
+            df = df.Define(f'weight_denom_{syst_name}', f'genWeightD * puWeight_{scale}')
             syst_names.append(syst_name)
     return df,syst_names
