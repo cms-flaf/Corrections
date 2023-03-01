@@ -12,6 +12,7 @@ met = None
 trg = None
 btag = None
 pu = None
+sf_to_apply = None
 
 period_names = {
     'Run2_2016_HIPM': '2016preVFP_UL',
@@ -48,6 +49,7 @@ def Initialize(config, load_corr_lib=True, load_pu=True, load_tau=True, load_trg
             raise RuntimeError("Correction library is not found.")
         ROOT.gSystem.Load(corr_lib)
     period = config['era']
+    sf_to_apply = config['corrections']
     if load_pu:
         from .pu import puWeightProducer
         pu = puWeightProducer(period=period_names[period])

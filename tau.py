@@ -40,11 +40,13 @@ class TauCorrProducer:
 
         return df, source_dict
 
-    def getSF(self, df, return_variations=True):
+    def getSF(self, df, get_total_weight=True,return_variations=True):
         sf_sources =TauCorrProducer.SFSources_genuineTau_dm+ TauCorrProducer.SFSources_genuineTau_pt+ TauCorrProducer.SFSources_genuineLep if return_variations else []
         SF_branches = {}
         for source in [ central ] + sf_sources:
             for scale in getScales(source):
+                for leg_idx in [0,1]:
+                    total_branch_string[scale][leg_idx] =[]
                 syst_name = getSystName(source, scale)
                 SF_branches[syst_name]= []
                 for leg_idx in [0,1]:
