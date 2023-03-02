@@ -140,19 +140,28 @@ def getNormalisationCorrections(df, config, sample, ana_cache=None, return_varia
     all_sources = set(itertools.chain.from_iterable(all_branches))
     all_sources.remove(central)
     all_weights = []
-    tauID_weights = []
     denom = f'/{ana_cache["denominator"][central][central]}' if ana_cache is not None else ''
-    for scale in ["Up", "Down"]:
-        tau1_uncs = []
-        tau2_uncs = []
-        for key,item in tau_SF_branches.items():
-            if key.endswith(scale):
-                tau1_uncs.append(item[0])
-                tau2_uncs.append(item[1])
-        df = df.Define(f"tau1_totalID_weight_{scale}"," * ".join(tau_unc for tau_unc in tau1_uncs))
-        all_weights.append(f"tau1_totalID_weight_{scale}")
-        df = df.Define(f"tau2_totalID_weight_{scale}"," * ".join(tau_unc for tau_unc in tau2_uncs))
-        all_weights.append(f"tau2_totalID_weight_{scale}")
+    '''
+    for tau_SF_name,tau_SF_branch in tau_SF_branches.items():
+        product_t = " * ".join(tau_SF_branch)
+        weight_name = f'weight_tauID_{tau_SF_name}'
+        print(product_t)
+    '''
+
+    tau_branches = [ tau_SF_branches ]
+    tau_sources = set(itertools.chain.from_iterable(tau_branches))
+    tau_sources.remove(central)
+    for syst_name in [central] + list(tau_sources):
+        branches = getBranches(syst_name, tau_branches)
+        product = ' * '.join(branches)
+        weight_name = f'weight_tauID_{syst_name}'
+        weight_rel_name = weight_name + '_rel'
+        weight_out_name = weight_name if syst_name == central else weight_rel_name
+        weight_formula = f'{product}'
+        df = df.Define(weight_name, f'static_cast<float>({weight_formula})')
+        df = df.Define(weight_rel_name, f'static_cast<float>({weight_name}/weight_tauID_{central})')
+        all_weights.append(weight_out_name)
+
 
     for syst_name in [central] + list(all_sources):
         branches = getBranches(syst_name, all_branches)
