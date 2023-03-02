@@ -3,6 +3,8 @@ import ROOT
 from .CorrectionsCore import *
 import yaml
 
+deepTauVersions = {"2p1":"2017", "2p5":"2018"}
+
 class TauCorrProducer:
     jsonPath = "/cvmfs/cms.cern.ch/rsync/cms-nanoAOD/jsonpog-integration/POG/TAU/{}/tau.json.gz"
     initialized = False
@@ -26,7 +28,7 @@ class TauCorrProducer:
             tauType_map = createTauSFTypeMap(config["genuineTau_SFtype"])
             ROOT.gInterpreter.ProcessLine(f'::correction::TauCorrProvider::Initialize("{jsonFile}", "{self.deepTauVersion}", {wp_map_cpp}, {tauType_map})')
             TauCorrProducer.initialized = True
-            deepTauVersion = f"""DeepTau2017{config["deepTauVersion"]}"""
+            deepTauVersion = f"""DeepTau{deepTauVersions[config["deepTauVersion"]]}{config["deepTauVersion"]}"""
 
     def getES(self, df, source_dict):
         for source in [ central ] + TauCorrProducer.energyScaleSources_tau + TauCorrProducer.energyScaleSources_lep:
@@ -40,13 +42,11 @@ class TauCorrProducer:
 
         return df, source_dict
 
-    def getSF(self, df, get_total_weight=True,return_variations=True):
+    def getSF(self, df, return_variations=True):
         sf_sources =TauCorrProducer.SFSources_genuineTau_dm+ TauCorrProducer.SFSources_genuineTau_pt+ TauCorrProducer.SFSources_genuineLep if return_variations else []
         SF_branches = {}
         for source in [ central ] + sf_sources:
             for scale in getScales(source):
-                for leg_idx in [0,1]:
-                    total_branch_string[scale][leg_idx] =[]
                 syst_name = getSystName(source, scale)
                 SF_branches[syst_name]= []
                 for leg_idx in [0,1]:
