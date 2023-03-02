@@ -136,7 +136,7 @@ def getNormalisationCorrections(df, config, sample, ana_cache=None, return_varia
     df = df.Define('genWeightD', 'std::copysign<double>(1., genWeight)')
     scale = 'Central'
     df, tau_SF_branches = tau.getSF(df, config)
-    all_branches = [ pu_SF_branches, tau_SF_branches ]
+    all_branches = [ pu_SF_branches ]
     all_sources = set(itertools.chain.from_iterable(all_branches))
     all_sources.remove(central)
     all_weights = []
