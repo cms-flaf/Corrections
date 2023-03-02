@@ -140,7 +140,19 @@ def getNormalisationCorrections(df, config, sample, ana_cache=None, return_varia
     all_sources = set(itertools.chain.from_iterable(all_branches))
     all_sources.remove(central)
     all_weights = []
+    tauID_weights = []
     denom = f'/{ana_cache["denominator"][central][central]}' if ana_cache is not None else ''
+    for scale in ["Up", "Down"]:
+        tau1_uncs = []
+        tau2_uncs = []
+        for key,item in tau_SF_branches.items():
+            if key.endswith(scale):
+                tau1_uncs.append(item[0])
+                tau2_uncs.append(item[1])
+        df = df.Define(f"tau1_totalID_weight_{scale}"," * ".join(tau_unc for tau_unc in tau1_uncs))
+        all_weights.append(f"tau1_totalID_weight_{scale}")
+        df = df.Define(f"tau2_totalID_weight_{scale}"," * ".join(tau_unc for tau_unc in tau2_uncs))
+        all_weights.append(f"tau2_totalID_weight_{scale}")
 
     for syst_name in [central] + list(all_sources):
         branches = getBranches(syst_name, all_branches)
