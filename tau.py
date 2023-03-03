@@ -3,6 +3,8 @@ import ROOT
 from .CorrectionsCore import *
 import yaml
 
+deepTauVersions = {"2p1":"2017", "2p5":"2018"}
+
 class TauCorrProducer:
     jsonPath = "/cvmfs/cms.cern.ch/rsync/cms-nanoAOD/jsonpog-integration/POG/TAU/{}/tau.json.gz"
     initialized = False
@@ -26,6 +28,7 @@ class TauCorrProducer:
             tauType_map = createTauSFTypeMap(config["genuineTau_SFtype"])
             ROOT.gInterpreter.ProcessLine(f'::correction::TauCorrProvider::Initialize("{jsonFile}", "{self.deepTauVersion}", {wp_map_cpp}, {tauType_map})')
             TauCorrProducer.initialized = True
+            deepTauVersion = f"""DeepTau{deepTauVersions[config["deepTauVersion"]]}{config["deepTauVersion"]}"""
 
     def getES(self, df, source_dict):
         for source in [ central ] + TauCorrProducer.energyScaleSources_tau + TauCorrProducer.energyScaleSources_lep:

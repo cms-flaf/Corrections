@@ -8,7 +8,7 @@ import yaml
 
 class bTagCorrProducer:
     jsonPath = "/cvmfs/cms.cern.ch/rsync/cms-nanoAOD/jsonpog-integration/POG/BTV/{}/btagging.json.gz"
-    bTagEff_JsonPath = "Corrections/data/BTV/{}/btagEff_TT.root"
+    bTagEff_JsonPath = "Corrections/data/BTV/{}/btagEff.root"
     initialized = False
     SFSources = ["btagSFbc_uncorrelated", "btagSFlight_uncorrelated","btagSFbc_correlated", "btagSFlight_correlated"]
 
