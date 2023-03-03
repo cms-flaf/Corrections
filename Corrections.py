@@ -128,40 +128,18 @@ def getNormalisationCorrections(df, config, sample, ana_cache=None, return_varia
             stitch_str= "if(LHE_Njets==0.) return 1.f; return 1/2.f;"
     else:
         xs_name = config[sample]['crossSection']
-
     df = df.Define("stitching_weight", stitch_str)
     xs_inclusive = xs_dict[xs_name]['crossSec']
+
     stitching_weight_string = f' {xs_stitching} * stitching_weight * ({xs_inclusive}/{xs_stitching_incl})'
     df, pu_SF_branches = pu.getWeight(df)
     df = df.Define('genWeightD', 'std::copysign<double>(1., genWeight)')
     scale = 'Central'
-    df, tau_SF_branches = tau.getSF(df, config)
     all_branches = [ pu_SF_branches ]
     all_sources = set(itertools.chain.from_iterable(all_branches))
     all_sources.remove(central)
     all_weights = []
     denom = f'/{ana_cache["denominator"][central][central]}' if ana_cache is not None else ''
-    '''
-    for tau_SF_name,tau_SF_branch in tau_SF_branches.items():
-        product_t = " * ".join(tau_SF_branch)
-        weight_name = f'weight_tauID_{tau_SF_name}'
-        print(product_t)
-    '''
-
-    tau_branches = [ tau_SF_branches ]
-    tau_sources = set(itertools.chain.from_iterable(tau_branches))
-    tau_sources.remove(central)
-    for syst_name in [central] + list(tau_sources):
-        branches = getBranches(syst_name, tau_branches)
-        product = ' * '.join(branches)
-        weight_name = f'weight_tauID_{syst_name}'
-        weight_rel_name = weight_name + '_rel'
-        weight_out_name = weight_name if syst_name == central else weight_rel_name
-        weight_formula = f'{product}'
-        df = df.Define(weight_name, f'static_cast<float>({weight_formula})')
-        df = df.Define(weight_rel_name, f'static_cast<float>({weight_name}/weight_tauID_{central})')
-        all_weights.append(weight_out_name)
-
 
     for syst_name in [central] + list(all_sources):
         branches = getBranches(syst_name, all_branches)
@@ -173,6 +151,22 @@ def getNormalisationCorrections(df, config, sample, ana_cache=None, return_varia
         df = df.Define(weight_name, f'static_cast<float>({weight_formula})')
         df = df.Define(weight_rel_name, f'static_cast<float>(weight_{syst_name}/weight_{central})')
         all_weights.append(weight_out_name)
+
+    if('tauID' in sf_to_apply):
+        df, tau_SF_branches = tau.getSF(df, config)
+        tau_branches = [ tau_SF_branches ]
+        tau_sources = set(itertools.chain.from_iterable(tau_branches))
+        tau_sources.remove(central)
+        for syst_name in [central] + list(tau_sources):
+            branches = getBranches(syst_name, tau_branches)
+            product = ' * '.join(branches)
+            weight_name = f'weight_tauID_{syst_name}'
+            weight_rel_name = weight_name + '_rel'
+            weight_out_name = weight_name if syst_name == central else weight_rel_name
+            weight_formula = f'{product}'
+            df = df.Define(weight_name, f'static_cast<float>({weight_formula})')
+            df = df.Define(weight_rel_name, f'static_cast<float>({weight_name}/weight_tauID_{central})')
+            all_weights.append(weight_out_name)
     return df, all_weights
 
 def getDenominator(df, sources):
