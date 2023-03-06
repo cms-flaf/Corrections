@@ -50,11 +50,11 @@ class TauCorrProducer:
                 syst_name = getSystName(source, scale)
                 SF_branches[syst_name]= []
                 for leg_idx in [0,1]:
-                    df = df.Define(f"tau{leg_idx+1}_idSF_{syst_name}",
+                    df = df.Define(f"weight_tau{leg_idx+1}_idSF_{syst_name}",
                                 f'''httCand.leg_type[{leg_idx}] == Leg::tau ? ::correction::TauCorrProvider::getGlobal().getSF(
                                httCand.leg_p4[{leg_idx}], Tau_decayMode.at(httCand.leg_index[{leg_idx}]),
                                Tau_genMatch.at(httCand.leg_index[{leg_idx}]), httCand.channel(),
                                ::correction::TauCorrProvider::UncSource::{source}, ::correction::UncScale::{scale}) : 1.;''')
-                    SF_branches[syst_name].append(f"tau{leg_idx+1}_idSF_{syst_name}")
+                    SF_branches[syst_name].append(f"weight_tau{leg_idx+1}_idSF_{syst_name}")
         return df,SF_branches
 

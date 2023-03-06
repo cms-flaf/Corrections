@@ -44,7 +44,7 @@ class TrigCorrProducer:
                 for source in [ central ] + sf_sources:
                     for scale in getScales(source):
                         syst_name = getSystName(source, scale)
-                        branch_name = f"tau{leg_idx+1}_TrgSF_{trg_name}_{syst_name}"
+                        branch_name = f"weight_tau{leg_idx+1}_TrgSF_{trg_name}_{syst_name}"
                         df = df.Define(branch_name,
                                     f'''{applyTrgBranch_name} ? ::correction::TrigCorrProvider::getGlobal().getTauSF_fromCorrLib(
                                  httCand.leg_p4[{leg_idx}], Tau_decayMode.at(httCand.leg_index[{leg_idx}]), "{trg_name}", httCand.channel(),
@@ -60,7 +60,7 @@ class TrigCorrProducer:
                 for source in [ central ] + sf_sources:
                     for scale in getScales(source):
                         syst_name = getSystName(source, scale)
-                        branch_name = f"tau{leg_idx+1}_TrgSF_{trg_name}_{syst_name}"
+                        branch_name = f"weight_tau{leg_idx+1}_TrgSF_{trg_name}_{syst_name}"
                         df = df.Define(branch_name,
                                     f'''{applyTrgBranch_name} ? ::correction::TrigCorrProvider::getGlobal().getMuSF_fromCorrLib(
                                  httCand.leg_p4[{leg_idx}],::correction::TrigCorrProvider::UncSource::{source}, ::correction::UncScale::{scale} ) : 1.f''')
@@ -75,7 +75,7 @@ class TrigCorrProducer:
                 for source in [ central ] + sf_sources:
                     for scale in getScales(source):
                         syst_name = getSystName(source, scale)
-                        branch_name = f"tau{leg_idx+1}_TrgSF_{trg_name}_{syst_name}"
+                        branch_name = f"weight_tau{leg_idx+1}_TrgSF_{trg_name}_{syst_name}"
                         df = df.Define(branch_name,
                                     f'''{applyTrgBranch_name} ? ::correction::TrigCorrProvider::getGlobal().getEleSF_fromRootFile(
                                  httCand.leg_p4[{leg_idx}],::correction::TrigCorrProvider::UncSource::{source}, ::correction::UncScale::{scale} ) : 1.f''')

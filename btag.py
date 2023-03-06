@@ -39,12 +39,12 @@ class bTagCorrProducer:
             for scale in getScales(source):
                 syst_name = getSystName(source, scale)
                 for wp in WorkingPointsbTag:
-                    df = df.Define(f"bTagSF_{wp.name}_{syst_name}",
+                    branch_name = f"weight_bTagSF_{wp.name}_{syst_name}"
+                    df = df.Define(branch_name,
                                 f''' ::correction::bTagCorrProvider::getGlobal().getSF(
                                 Jet_p4, Jet_bCand, Jet_hadronFlavour, Jet_btagDeepFlavB,WorkingPointsbTag::{wp.name},
                             ::correction::bTagCorrProvider::UncSource::{source}, ::correction::UncScale::{scale}) ''')
-                    SF_branches.append(f"bTagSF_{wp.name}_{syst_name}")
-                    #print(SF_branches)
+                    SF_branches.append(branch_name)
         return df,SF_branches
 
 
