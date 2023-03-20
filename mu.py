@@ -12,6 +12,7 @@ class MuCorrProducer:
 
     def __init__(self, period):
         jsonFile_eff = os.path.join(os.environ['ANALYSIS_PATH'],MuCorrProducer.muIDEff_JsonPath.format(period))
+        period = period
         if not MuCorrProducer.initialized:
             headers_dir = os.path.dirname(os.path.abspath(__file__))
             header_path = os.path.join(headers_dir, "mu.h")
@@ -37,6 +38,6 @@ class MuCorrProducer:
                     df = df.Define(f"weight_tau{leg_idx+1}_{syst_name}",
                                     f'''httCand.leg_type[{leg_idx}] == Leg::mu ? ::correction::MuCorrProvider::getGlobal().getRecoSF(
                                         httCand.leg_p4[{leg_idx}], Muon_pfRelIso04_all.at(httCand.leg_index[{leg_idx}]), Muon_TightId.at(httCand.leg_index[{leg_idx}])
-                                        ::correction::MuCorrProvider::UncSource::{source}, ::correction::UncScale::{scale}, {year_dict[period]}) : 1.;''')
+                                        ::correction::MuCorrProvider::UncSource::{source}, ::correction::UncScale::{scale}, {year_dict[MuCorrProducer.period]}) : 1.;''')
                     muID_SF_branches.append(f"weight_tau{leg_idx+1}_{syst_name}")
         return df,muID_SF_branches
