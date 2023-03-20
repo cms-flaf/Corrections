@@ -30,7 +30,7 @@ class MuCorrProducer:
 
     def getMuonIDSF(self, df):
         muID_SF_branches = []
-        for source in [ central ] + muID_SF_Sources:
+        for source in [ central ] + MuCorrProducer.muID_SF_Sources:
             for scale in getScales(source):
                 syst_name = getSystName(source, scale)
                 for leg_idx in [0,1]:
