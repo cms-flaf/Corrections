@@ -173,7 +173,9 @@ def getNormalisationCorrections(df, config, sample, ana_cache=None, return_varia
             df = df.Define(weight_rel_name, f'static_cast<float>({weight_name}/weight_tauID_{central})')
             all_weights.append(weight_out_name)
     df, recoMu_SF_branches = mu.getRecoSF(df)
+    df, muID_SF_branches = mu.getMuonIDSF(df)
     all_weights.extend(recoMu_SF_branches)
+    all_weights.extend(muID_SF_branches)
     return df, all_weights
 
 def getDenominator(df, sources):
