@@ -3,7 +3,6 @@ import ROOT
 from .CorrectionsCore import *
 import yaml
 
-year_dict = {'2018_UL':2018, '2017_UL':2017}
 class MuCorrProducer:
     muIDEff_JsonPath = "/cvmfs/cms.cern.ch/rsync/cms-nanoAOD/jsonpog-integration/POG/MUO/{}/muon_Z.json.gz"
     initialized = False
@@ -17,8 +16,7 @@ class MuCorrProducer:
             header_path = os.path.join(headers_dir, "mu.h")
             ROOT.gInterpreter.Declare(f'#include "{header_path}"')
             ROOT.gInterpreter.ProcessLine(f'::correction::MuCorrProvider::Initialize("{jsonFile_eff}")')
-            #ROOT.gInterpreter.Declare(f'::correction::MuCorrProvider muCorrClass = ::correction::MuCorrProvider::getGlobal();')
-            MuCorrProducer.period = period #year_dict[period]
+            MuCorrProducer.period = period
             MuCorrProducer.initialized = True
 
     def getRecoSF(self, df):
