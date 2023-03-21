@@ -95,7 +95,7 @@ public:
             }
             return 1.;
         }
-    float getMuonIDSF(const LorentzVectorM & muon_p4, const float Muon_pfRelIso04_all, const bool Muon_TightId, UncSource source, UncScale scale, int year) const {
+    float getMuonIDSF(const LorentzVectorM & muon_p4, const float Muon_pfRelIso04_all, const bool Muon_TightId, UncSource source, UncScale scale, std::string year) const {
         const UncScale muID_scale = sourceApplies(source, Muon_pfRelIso04_all, Muon_TightId)
                                            ? scale : UncScale::Central;
         const std::string& scale_str = getScaleStr(muID_scale);
