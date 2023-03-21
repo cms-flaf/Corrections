@@ -154,7 +154,7 @@ private:
     }
 private:
     std::unique_ptr<CorrectionSet> corrections_;
-    std::map<std::string, Correction::Ref> muIDCorrections;// muTightID_, mu_TightRelIsoAndTightID_, mu_TrgAndTightIDAndTightRelIso;
+    std::map<std::string, Correction::Ref> muIDCorrections;
 
 };
 
