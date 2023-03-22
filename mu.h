@@ -72,7 +72,7 @@ public:
     {
         //if(UncSource == NUM_MediumPromptID_DEN_genTracks && Muon_mediumId) return true;
         if(source == UncSource::NUM_TightID_DEN_genTracks && Muon_TightId) return true;
-        if(source == UncSource::NUM_IsoMu24_DEN_CutBasedIdTight_and_PFIsoTight && (Muon_TightId && Muon_pfRelIso04_all<0.15) && muon_Pt > 25) return true;
+        if(source == UncSource::NUM_IsoMu24_DEN_CutBasedIdTight_and_PFIsoTight && (Muon_TightId && Muon_pfRelIso04_all<0.15) && muon_Pt > 26) return true;
         if(source == UncSource::NUM_TightRelIso_DEN_TightIDandIPCut &&  Muon_pfRelIso04_all < 0.15 && Muon_TightId) return true;
         return false;
     }
