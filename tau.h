@@ -123,13 +123,14 @@ public:
         if(genMatch == GenLeptonMatch::Tau) {
             const UncScale tau_had_scale = sourceApplies(source, Tau_p4, Tau_decayMode, genMatch)
                                            ? scale : UncScale::Central;
-            const std::string& scale_str = getScaleStr(tau_had_scale);
-            const auto sf = tau_vs_jet_->evaluate({Tau_p4.pt(),Tau_decayMode, Tau_genMatch, wpVSjet.first, scale_str, genuineTau_SFtype});
+            const std::string& scale_str = scale != UncScale::Central  ? getScaleStr(tau_had_scale) : "default" ;
+            const auto sf = tau_vs_jet_->evaluate({Tau_p4.pt(),Tau_decayMode, Tau_genMatch, wpVSjet.first, wpVSe.first, scale_str, genuineTau_SFtype});
             if(tau_had_scale != UncScale::Central && (wpVSe.second < static_cast<int>(WorkingPointsTauVSe::VLoose) || wpVSmu.second < static_cast<int>(WorkingPointsTauVSmu::Tight))){
-                const auto sf_central = tau_vs_jet_->evaluate({Tau_p4.pt(), Tau_decayMode, Tau_genMatch,  wpVSjet.first, getScaleStr(UncScale::Central), genuineTau_SFtype});
+                const auto sf_central = tau_vs_jet_->evaluate({Tau_p4.pt(), Tau_decayMode, Tau_genMatch,  wpVSjet.first, wpVSe.first, "default", genuineTau_SFtype});
                 const float additional_unc = Tau_p4.pt() > 100 ? 0.15 : 0.05;
                 return sf_central * ( sf / sf_central + std::copysign(additional_unc, sf - sf_central));
             }
+
 
             return sf;
         }

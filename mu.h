@@ -67,13 +67,13 @@ public:
         return names.at(scale);
     }
 
-     static bool sourceApplies(UncSource source, const float Muon_pfRelIso04_all, const bool Muon_TightId)
+     static bool sourceApplies(UncSource source, const float Muon_pfRelIso04_all, const bool Muon_TightId, const float muon_Pt)
                                 // const bool Muon_mediumId, const float tkRelIso, const bool highPtID, const bool Muon_TightId )
     {
         //if(UncSource == NUM_MediumPromptID_DEN_genTracks && Muon_mediumId) return true;
         if(source == UncSource::NUM_TightID_DEN_genTracks && Muon_TightId) return true;
-        if(source == UncSource::NUM_IsoMu24_DEN_CutBasedIdTight_and_PFIsoTight && (Muon_TightId && Muon_pfRelIso04_all<0.15)) return true;
-        if(source == UncSource::NUM_TightRelIso_DEN_MediumPromptID &&  Muon_pfRelIso04_all < 0.15) return true;
+        if(source == UncSource::NUM_IsoMu24_DEN_CutBasedIdTight_and_PFIsoTight && (Muon_TightId && Muon_pfRelIso04_all<0.15) && muon_Pt > 25) return true;
+        if(source == UncSource::NUM_TightRelIso_DEN_TightIDandIPCut &&  Muon_pfRelIso04_all < 0.15 && Muon_TightId) return true;
         return false;
     }
 
@@ -96,11 +96,12 @@ public:
             return 1.;
         }
     float getMuonIDSF(const LorentzVectorM & muon_p4, const float Muon_pfRelIso04_all, const bool Muon_TightId, UncSource source, UncScale scale, std::string year) const {
-        const UncScale muID_scale = sourceApplies(source, Muon_pfRelIso04_all, Muon_TightId)
+        const UncScale muID_scale = sourceApplies(source, Muon_pfRelIso04_all, Muon_TightId, muon_p4.Pt())
                                            ? scale : UncScale::Central;
         const std::string& scale_str = getScaleStr(muID_scale);
-        if(!sourceApplies(source, Muon_pfRelIso04_all, Muon_TightId)) return 1.;
-        return muIDCorrections.at(getUncSourceName(source))->evaluate({year, muon_p4.Eta(), muon_p4.Pt(), scale_str});
+        if(!sourceApplies(source, Muon_pfRelIso04_all, Muon_TightId, muon_p4.Pt())) return 1.;
+        return muIDCorrections.at(getUncSourceName(source))->evaluate({year, abs(muon_p4.Eta()), muon_p4.Pt(), scale_str}) ;
+
     }
 
 private:
@@ -118,39 +119,39 @@ private:
             };
             return RecoSFMap;
         }
-        std::string getUncSourceName(UncSource source) const {
-        static const std::map<UncSource,std::string> uncSourceNames = {
-            {UncSource::NUM_GlobalMuons_DEN_genTracks, "NUM_GlobalMuons_DEN_genTracks"},
-            {UncSource::NUM_HighPtID_DEN_genTracks, "NUM_HighPtID_DEN_genTracks"},
-            {UncSource::NUM_HighPtID_DEN_TrackerMuons, "NUM_HighPtID_DEN_TrackerMuons"},
-            {UncSource::NUM_IsoMu24_DEN_CutBasedIdTight_and_PFIsoTight, "NUM_IsoMu24_DEN_CutBasedIdTight_and_PFIsoTight"},
-            {UncSource::NUM_LooseID_DEN_genTracks, "NUM_LooseID_DEN_genTracks"},
-            {UncSource::NUM_LooseID_DEN_TrackerMuons, "NUM_LooseID_DEN_TrackerMuons"},
-            {UncSource::NUM_LooseRelIso_DEN_LooseID, "NUM_LooseRelIso_DEN_LooseID"},
-            {UncSource::NUM_LooseRelIso_DEN_MediumID, "NUM_LooseRelIso_DEN_MediumID"},
-            {UncSource::NUM_LooseRelIso_DEN_MediumPromptID, "NUM_LooseRelIso_DEN_MediumPromptID"},
-            {UncSource::NUM_LooseRelIso_DEN_TightIDandIPCut, "NUM_LooseRelIso_DEN_TightIDandIPCut"},
-            {UncSource::NUM_LooseRelTkIso_DEN_HighPtIDandIPCut, "NUM_LooseRelTkIso_DEN_HighPtIDandIPCut"},
-            {UncSource::NUM_LooseRelTkIso_DEN_TrkHighPtIDandIPCut, "NUM_LooseRelTkIso_DEN_TrkHighPtIDandIPCut"},
-            {UncSource::NUM_MediumID_DEN_genTracks, "NUM_MediumID_DEN_genTracks"},
-            {UncSource::NUM_MediumID_DEN_TrackerMuons, "NUM_MediumID_DEN_TrackerMuons"},
-            {UncSource::NUM_MediumPromptID_DEN_genTracks, "NUM_MediumPromptID_DEN_genTracks"},
-            {UncSource::NUM_MediumPromptID_DEN_TrackerMuons, "NUM_MediumPromptID_DEN_TrackerMuons"},
-            {UncSource::NUM_Mu50_or_OldMu100_or_TkMu100_DEN_CutBasedIdGlobalHighPt_and_TkIsoLoose, "NUM_Mu50_or_OldMu100_or_TkMu100_DEN_CutBasedIdGlobalHighPt_and_TkIsoLoose"},
-            {UncSource::NUM_SoftID_DEN_genTracks, "NUM_SoftID_DEN_genTracks"},
-            {UncSource::NUM_SoftID_DEN_TrackerMuons, "NUM_SoftID_DEN_TrackerMuons"},
-            {UncSource::NUM_TightID_DEN_genTracks, "NUM_TightID_DEN_genTracks"},
-            {UncSource::NUM_TightID_DEN_TrackerMuons, "NUM_TightID_DEN_TrackerMuons"},
-            {UncSource::NUM_TightRelIso_DEN_MediumID, "NUM_TightRelIso_DEN_MediumID"},
-            {UncSource::NUM_TightRelIso_DEN_MediumPromptID, "NUM_TightRelIso_DEN_MediumPromptID"},
-            {UncSource::NUM_TightRelIso_DEN_TightIDandIPCut, "NUM_TightRelIso_DEN_TightIDandIPCut"},
-            {UncSource::NUM_TightRelTkIso_DEN_HighPtIDandIPCut, "NUM_TightRelTkIso_DEN_HighPtIDandIPCut"},
-            {UncSource::NUM_TightRelTkIso_DEN_TrkHighPtIDandIPCut, "NUM_TightRelTkIso_DEN_TrkHighPtIDandIPCut"},
-            {UncSource::NUM_TrackerMuons_DEN_genTracks, "NUM_TrackerMuons_DEN_genTracks"},
-            {UncSource::NUM_TrkHighPtID_DEN_genTracks, "NUM_TrkHighPtID_DEN_genTracks"},
-            {UncSource::NUM_TrkHighPtID_DEN_TrackerMuons, "NUM_TrkHighPtID_DEN_TrackerMuons"},
-        };
-        return uncSourceNames.at(source);
+        static std::string& getUncSourceName(UncSource source) {
+            static std::string k = "";
+            if (source == UncSource::NUM_GlobalMuons_DEN_genTracks) k="NUM_GlobalMuons_DEN_genTracks";
+            if (source == UncSource::NUM_HighPtID_DEN_genTracks) k="NUM_HighPtID_DEN_genTracks";
+            if (source == UncSource::NUM_HighPtID_DEN_TrackerMuons) k="NUM_HighPtID_DEN_TrackerMuons";
+            if (source == UncSource::NUM_IsoMu24_DEN_CutBasedIdTight_and_PFIsoTight) k="NUM_IsoMu24_DEN_CutBasedIdTight_and_PFIsoTight";
+            if (source == UncSource::NUM_LooseID_DEN_genTracks) k="NUM_LooseID_DEN_genTracks";
+            if (source == UncSource::NUM_LooseID_DEN_TrackerMuons) k="NUM_LooseID_DEN_TrackerMuons";
+            if (source == UncSource::NUM_LooseRelIso_DEN_LooseID) k="NUM_LooseRelIso_DEN_LooseID";
+            if (source == UncSource::NUM_LooseRelIso_DEN_MediumID) k="NUM_LooseRelIso_DEN_MediumID";
+            if (source == UncSource::NUM_LooseRelIso_DEN_MediumPromptID) k="NUM_LooseRelIso_DEN_MediumPromptID";
+            if (source == UncSource::NUM_LooseRelIso_DEN_TightIDandIPCut) k="NUM_LooseRelIso_DEN_TightIDandIPCut";
+            if (source == UncSource::NUM_LooseRelTkIso_DEN_HighPtIDandIPCut) k="NUM_LooseRelTkIso_DEN_HighPtIDandIPCut";
+            if (source == UncSource::NUM_LooseRelTkIso_DEN_TrkHighPtIDandIPCut) k="NUM_LooseRelTkIso_DEN_TrkHighPtIDandIPCut";
+            if (source == UncSource::NUM_MediumID_DEN_genTracks) k="NUM_MediumID_DEN_genTracks";
+            if (source == UncSource::NUM_MediumID_DEN_TrackerMuons) k="NUM_MediumID_DEN_TrackerMuons";
+            if (source == UncSource::NUM_MediumPromptID_DEN_genTracks) k="NUM_MediumPromptID_DEN_genTracks";
+            if (source == UncSource::NUM_MediumPromptID_DEN_TrackerMuons) k="NUM_MediumPromptID_DEN_TrackerMuons";
+            if (source == UncSource::NUM_Mu50_or_OldMu100_or_TkMu100_DEN_CutBasedIdGlobalHighPt_and_TkIsoLoose) k="NUM_Mu50_or_OldMu100_or_TkMu100_DEN_CutBasedIdGlobalHighPt_and_TkIsoLoose";
+            if (source == UncSource::NUM_SoftID_DEN_genTracks) k="NUM_SoftID_DEN_genTracks";
+            if (source == UncSource::NUM_SoftID_DEN_TrackerMuons) k="NUM_SoftID_DEN_TrackerMuons";
+            if (source == UncSource::NUM_TightID_DEN_genTracks) k="NUM_TightID_DEN_genTracks";
+            if (source == UncSource::NUM_TightID_DEN_TrackerMuons) k="NUM_TightID_DEN_TrackerMuons";
+            if (source == UncSource::NUM_TightRelIso_DEN_MediumID) k="NUM_TightRelIso_DEN_MediumID";
+            if (source == UncSource::NUM_TightRelIso_DEN_MediumPromptID) k="NUM_TightRelIso_DEN_MediumPromptID";
+            if (source == UncSource::NUM_TightRelIso_DEN_TightIDandIPCut) k="NUM_TightRelIso_DEN_TightIDandIPCut";
+            if (source == UncSource::NUM_TightRelTkIso_DEN_HighPtIDandIPCut) k="NUM_TightRelTkIso_DEN_HighPtIDandIPCut";
+            if (source == UncSource::NUM_TightRelTkIso_DEN_TrkHighPtIDandIPCut) k="NUM_TightRelTkIso_DEN_TrkHighPtIDandIPCut";
+            if (source == UncSource::NUM_TrackerMuons_DEN_genTracks) k="NUM_TrackerMuons_DEN_genTracks";
+            if (source == UncSource::NUM_TrkHighPtID_DEN_genTracks) k="NUM_TrkHighPtID_DEN_genTracks";
+            if (source == UncSource::NUM_TrkHighPtID_DEN_TrackerMuons) k="NUM_TrkHighPtID_DEN_TrackerMuons";
+
+        return k;
     }
 private:
     std::unique_ptr<CorrectionSet> corrections_;

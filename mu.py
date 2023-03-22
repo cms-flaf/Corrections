@@ -6,7 +6,9 @@ import yaml
 class MuCorrProducer:
     muIDEff_JsonPath = "/cvmfs/cms.cern.ch/rsync/cms-nanoAOD/jsonpog-integration/POG/MUO/{}/muon_Z.json.gz"
     initialized = False
-    muID_SF_Sources = ["NUM_TightID_DEN_genTracks","NUM_IsoMu24_DEN_CutBasedIdTight_and_PFIsoTight","NUM_TightRelIso_DEN_MediumPromptID"]
+    #muID_SF_Sources = ["NUM_TightID_DEN_genTracks","NUM_IsoMu24_DEN_CutBasedIdTight_and_PFIsoTight","NUM_TightRelIso_DEN_TightIDandIPCut"]
+    muID_SF_Sources = ["NUM_TightID_DEN_genTracks","NUM_IsoMu24_DEN_CutBasedIdTight_and_PFIsoTight","NUM_TightRelIso_DEN_TightIDandIPCut"]
+    #muID_SF_Sources = []
     period = None
 
     def __init__(self, period):
