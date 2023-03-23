@@ -126,9 +126,10 @@ public:
             const std::string& scale_str = scale != UncScale::Central  ? getScaleStr(tau_had_scale) : "default" ;
             const auto sf = tau_vs_jet_->evaluate({Tau_p4.pt(),Tau_decayMode, Tau_genMatch, wpVSjet.first, wpVSe.first, scale_str, genuineTau_SFtype});
             if(tau_had_scale != UncScale::Central && (wpVSe.second < static_cast<int>(WorkingPointsTauVSe::VLoose) || wpVSmu.second < static_cast<int>(WorkingPointsTauVSmu::Tight))){
-                const auto sf_central = tau_vs_jet_->evaluate({Tau_p4.pt(), Tau_decayMode, Tau_genMatch,  wpVSjet.first, wpVSe.first, "default", genuineTau_SFtype});
-                const float additional_unc = Tau_p4.pt() > 100 ? 0.15 : 0.05;
-                return sf_central * ( sf / sf_central + std::copysign(additional_unc, sf - sf_central));
+                //const auto sf_central = tau_vs_jet_->evaluate({Tau_p4.pt(), Tau_decayMode, Tau_genMatch,  wpVSjet.first, wpVSe.first, "default", genuineTau_SFtype});
+                //const float additional_unc = Tau_p4.pt() > 100 ? 0.15 : 0.05;
+                //return sf_central * ( sf / sf_central + std::copysign(additional_unc, sf - sf_central));
+                throw std::runtime_error("working points not supported");
             }
 
 
