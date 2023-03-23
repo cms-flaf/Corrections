@@ -38,7 +38,7 @@ public:
                                            ? scale : UncScale::Central;
         const std::string& scale_str = getScaleStr(PUJetID_scale);
         if(PUJetID_scale == UncScale::Central){
-            return 1.
+            return 1.;
         }
         return puJetEff_->evaluate({jet_p4.Eta(), jet_p4.Pt(), scale_str, working_point}) ;
 
