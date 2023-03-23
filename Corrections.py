@@ -13,6 +13,7 @@ trg = None
 btag = None
 pu = None
 mu = None
+puJetID = None
 sf_to_apply = None
 
 period_names = {
@@ -23,7 +24,7 @@ period_names = {
 }
 
 def Initialize(config, load_corr_lib=True, load_pu=True, load_tau=True, load_trg=True, load_btag=True,
-               loadBTagEff=True, load_met=True, load_mu = True):
+               loadBTagEff=True, load_met=True, load_mu = True, load_puJetID=True):
     global initialized
     global tau
     global pu
@@ -32,6 +33,7 @@ def Initialize(config, load_corr_lib=True, load_pu=True, load_tau=True, load_trg
     global btag
     global sf_to_apply
     global mu
+    global puJetID
     if initialized:
         raise RuntimeError('Corrections are already initialized')
     if load_corr_lib:
@@ -70,6 +72,9 @@ def Initialize(config, load_corr_lib=True, load_pu=True, load_tau=True, load_trg
     if load_mu:
         from .mu import MuCorrProducer
         mu = MuCorrProducer(period_names[period])
+    if load_puJetID:
+        from .puJetID import puJetIDCorrProducer
+        puJetID = puJetIDCorrProducer(period_names[period])
     initialized = True
 
 def applyScaleUncertainties(df):
@@ -176,6 +181,10 @@ def getNormalisationCorrections(df, config, sample, ana_cache=None, return_varia
     if mu!= None:
         df, muID_SF_branches = mu.getMuonIDSF(df)
         all_weights.extend(muID_SF_branches)
+    if puJetID!=None:
+        df, puJetID_SF_branches = puJetID.getPUJetIDEff(df)
+        all_weights.extend(puJetID_SF_branches)
+
     return df, all_weights
 
 def getDenominator(df, sources):
