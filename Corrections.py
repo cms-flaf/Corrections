@@ -12,6 +12,7 @@ met = None
 trg = None
 btag = None
 pu = None
+mu = None
 sf_to_apply = None
 
 period_names = {
@@ -22,7 +23,7 @@ period_names = {
 }
 
 def Initialize(config, load_corr_lib=True, load_pu=True, load_tau=True, load_trg=True, load_btag=True,
-               loadBTagEff=True, load_met=True):
+               loadBTagEff=True, load_met=True, load_mu = True):
     global initialized
     global tau
     global pu
@@ -30,6 +31,7 @@ def Initialize(config, load_corr_lib=True, load_pu=True, load_tau=True, load_trg
     global trg
     global btag
     global sf_to_apply
+    global mu
     if initialized:
         raise RuntimeError('Corrections are already initialized')
     if load_corr_lib:
@@ -65,6 +67,9 @@ def Initialize(config, load_corr_lib=True, load_pu=True, load_tau=True, load_trg
     if load_met:
         from .met import METCorrProducer
         met = METCorrProducer()
+    if load_mu:
+        from .mu import MuCorrProducer
+        mu = MuCorrProducer(period_names[period])
     initialized = True
 
 def applyScaleUncertainties(df):
@@ -73,7 +78,8 @@ def applyScaleUncertainties(df):
     source_dict = {}
     if 'tauES' in sf_to_apply:
         df, source_dict = tau.getES(df, source_dict)
-        df, source_dict = met.getPFMET(df, source_dict)
+        if met!=None:
+            df, source_dict = met.getPFMET(df, source_dict)
     syst_dict = { }
     for source, source_objs in source_dict.items():
         for scale in getScales(source):
@@ -167,6 +173,9 @@ def getNormalisationCorrections(df, config, sample, ana_cache=None, return_varia
             df = df.Define(weight_name, f'static_cast<float>({weight_formula})')
             df = df.Define(weight_rel_name, f'static_cast<float>({weight_name}/weight_tauID_{central})')
             all_weights.append(weight_out_name)
+    if mu!= None:
+        df, muID_SF_branches = mu.getMuonIDSF(df)
+        all_weights.extend(muID_SF_branches)
     return df, all_weights
 
 def getDenominator(df, sources):
