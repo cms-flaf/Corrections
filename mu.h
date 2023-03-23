@@ -84,17 +84,6 @@ public:
         muIDCorrections["NUM_TightRelIso_DEN_TightIDandIPCut"] = corrections_->at("NUM_TightRelIso_DEN_TightIDandIPCut");
         muIDCorrections["NUM_IsoMu24_DEN_CutBasedIdTight_and_PFIsoTight"] = corrections_->at("NUM_IsoMu24_DEN_CutBasedIdTight_and_PFIsoTight");
     }
-
-    float getRecoSF(const LorentzVectorM& muon_p4) const {
-        for (const auto & map_element : getRecoSFMap()){
-                if(muon_p4.mag() > map_element.first) continue;
-                for (const auto & set_element : map_element.second){
-                    if(abs(muon_p4.Eta()) > set_element.first) continue;
-                    return set_element.second;
-                }
-            }
-            return 1.;
-        }
     float getMuonIDSF(const LorentzVectorM & muon_p4, const float Muon_pfRelIso04_all, const bool Muon_TightId, UncSource source, UncScale scale, std::string year) const {
         const UncScale muID_scale = sourceApplies(source, Muon_pfRelIso04_all, Muon_TightId, muon_p4.Pt())
                                            ? scale : UncScale::Central;

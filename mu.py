@@ -21,14 +21,6 @@ class MuCorrProducer:
             MuCorrProducer.period = period
             MuCorrProducer.initialized = True
 
-    def getRecoSF(self, df):
-        recoMu_SF_branches = []
-        for leg_idx in [0,1]:
-            df = df.Define(f"weight_tau{leg_idx+1}_RecoMuSF",
-                            f'''httCand.leg_type[{leg_idx}] == Leg::mu ? ::correction::MuCorrProvider::getGlobal().getRecoSF(httCand.leg_p4[{leg_idx}]) : 1.;''')
-            recoMu_SF_branches.append(f"weight_tau{leg_idx+1}_RecoMuSF")
-        return df,recoMu_SF_branches
-
     def getMuonIDSF(self, df):
         muID_SF_branches = []
         for source in [ central ] + MuCorrProducer.muID_SF_Sources:
