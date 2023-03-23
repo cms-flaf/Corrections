@@ -33,7 +33,7 @@ public:
     puJetEff_(corrections_->at("PUJetID_eff"))
     {
     }
-    float getPUJetID_eff(const LorentzVectorM & jet_p4, const std::string working_point, UncSource source, UncScale scale,) const {
+    float getPUJetID_eff(const LorentzVectorM & jet_p4, const std::string working_point, UncSource source, UncScale scale) const {
         const UncScale PUJetID_scale = sourceApplies(source,jet_p4.Pt())
                                            ? scale : UncScale::Central;
         const std::string& scale_str = getScaleStr(PUJetID_scale);
