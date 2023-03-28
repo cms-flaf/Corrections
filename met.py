@@ -24,6 +24,7 @@ class METCorrProducer:
                     syst_name = getSystName(source, scale)
                     p4_delta_list = [ f'{obj}_p4_{syst_name}_delta' for obj in source_objs ]
                     p4_delta_str = ', '.join(p4_delta_list)
+                    print(syst_name, p4_delta_str)
                     df = df.Define(f'MET_p4_{syst_name}',
                                    f'::correction::ShiftMet(MET_p4_{nano}, {{ {p4_delta_str} }})')
                     df = df.Define(f'MET_p4_{syst_name}_delta', f'MET_p4_{syst_name} - MET_p4_{nano}')

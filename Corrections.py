@@ -14,6 +14,7 @@ btag = None
 pu = None
 mu = None
 puJetID = None
+jet = None
 sf_to_apply = None
 
 period_names = {
@@ -24,7 +25,7 @@ period_names = {
 }
 
 def Initialize(config, load_corr_lib=True, load_pu=True, load_tau=True, load_trg=True, load_btag=True,
-               loadBTagEff=True, load_met=True, load_mu = True, load_puJetID=True):
+               loadBTagEff=True, load_met=True, load_mu = True, load_puJetID=True, load_jet=True):
     global initialized
     global tau
     global pu
@@ -34,6 +35,7 @@ def Initialize(config, load_corr_lib=True, load_pu=True, load_tau=True, load_trg
     global sf_to_apply
     global mu
     global puJetID
+    global jet
     if initialized:
         raise RuntimeError('Corrections are already initialized')
     if load_corr_lib:
@@ -60,6 +62,9 @@ def Initialize(config, load_corr_lib=True, load_pu=True, load_tau=True, load_trg
     if load_tau:
         from .tau import TauCorrProducer
         tau = TauCorrProducer(period_names[period], config)
+    if load_jet:
+        from .jet import JetCorrProducer
+        jet = JetCorrProducer(period_names[period])
     if load_trg:
         from .triggers import TrigCorrProducer
         trg = TrigCorrProducer(period_names[period], config)
@@ -83,8 +88,10 @@ def applyScaleUncertainties(df):
     source_dict = {}
     if 'tauES' in sf_to_apply:
         df, source_dict = tau.getES(df, source_dict)
-        if met!=None:
-            df, source_dict = met.getPFMET(df, source_dict)
+    if 'JEC_JER' in sf_to_apply:
+        df, source_dict = jet.getP4Smearing(df, source_dict)
+    if met!=None and ('tauES' in sf_to_apply or 'JEC_JER' in sf_to_apply):
+        df, source_dict = met.getPFMET(df, source_dict)
     syst_dict = { }
     for source, source_objs in source_dict.items():
         for scale in getScales(source):
