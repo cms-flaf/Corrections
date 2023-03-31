@@ -13,6 +13,7 @@ trg = None
 btag = None
 pu = None
 mu = None
+ele = None
 puJetID = None
 jet = None
 sf_to_apply = None
@@ -25,7 +26,7 @@ period_names = {
 }
 
 def Initialize(config, load_corr_lib=True, load_pu=True, load_tau=True, load_trg=True, load_btag=True,
-               loadBTagEff=True, load_met=True, load_mu = True, load_puJetID=True, load_jet=True):
+               loadBTagEff=True, load_met=True, load_mu = True, load_ele=False, load_puJetID=True, load_jet=True):
     global initialized
     global tau
     global pu
@@ -34,6 +35,7 @@ def Initialize(config, load_corr_lib=True, load_pu=True, load_tau=True, load_trg
     global btag
     global sf_to_apply
     global mu
+    global ele
     global puJetID
     global jet
     if initialized:
@@ -77,6 +79,9 @@ def Initialize(config, load_corr_lib=True, load_pu=True, load_tau=True, load_trg
     if load_mu:
         from .mu import MuCorrProducer
         mu = MuCorrProducer(period_names[period])
+    if load_ele:
+        from .electron import EleCorrProducer
+        ele = EleCorrProducer(period_names[period])
     if load_puJetID:
         from .puJetID import puJetIDCorrProducer
         puJetID = puJetIDCorrProducer(period_names[period])
@@ -188,6 +193,9 @@ def getNormalisationCorrections(df, config, sample, ana_cache=None, return_varia
     if mu!= None:
         df, muID_SF_branches = mu.getMuonIDSF(df)
         all_weights.extend(muID_SF_branches)
+    if ele!= None:
+        df, eleID_SF_branches = ele.getIDSF(df)
+        all_weights.extend(eleID_SF_branches)
     if puJetID!=None:
         df, puJetID_SF_branches = puJetID.getPUJetIDEff(df)
         all_weights.extend(puJetID_SF_branches)
