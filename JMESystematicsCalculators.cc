@@ -31,8 +31,8 @@ namespace {
     size_t seed = event + size_t(jet_pt * 100) + size_t(std::abs(jet_eta) * 100) * 100 + size_t(std::abs(jet_phi) * 100) * 10000;
     std::mt19937_64 random_generator_(seed);
     double randomNumber = d(random_generator_);
-    std::cout << "seed = " << seed << std::endl;
-    std::cout << "random number = " << randomNumber << std::endl;
+    //std::cout << "seed = " << seed << std::endl;
+    //std::cout << "random number = " << randomNumber << std::endl;
     return randomNumber;
   }
 
@@ -47,7 +47,7 @@ namespace {
     if ( smear*eOrig < 1.e-2 ) {
       smear = 1.e-2/eOrig;
     }
-    std::cout << " pt " << pt << " eOrig " << eOrig << " genPt " << genPt << " ptRes " << ptRes << " sfUncert "<< sfUncert << " rand " << rand << std::endl;
+    //std::cout << " pt " << pt << " eOrig " << eOrig << " genPt " << genPt << " ptRes " << ptRes << " sfUncert "<< sfUncert << " rand " << rand << std::endl;
     return smear;
   }
 
@@ -277,15 +277,15 @@ JetVariationsCalculator::result_t JetVariationsCalculator::produce(
             LogDebug_JME << "genPt=" << genPt << " ";
           }
         }
-        std::cout<<std::endl;
-        std::cout << "pt nom " << i << " = " << pt_nom[i] << std::endl;
+        //std::cout<<std::endl;
+        //std::cout << "pt nom " << i << " = " << pt_nom[i] << std::endl;
         //const auto rand = ( genPt < 0. ) ? rg.Gaus(0, ptRes) : -1.;
         const auto rand = ( genPt < 0. ) ? GetRandomNumber(event, pt_nom[i], jet_eta[i], jet_phi[i], ptRes) : -1.;
         LogDebug_JME << "jet_pt_resolution: " << ptRes << ", rand: " << rand << std::endl;
-        std::cout << " nominal " << std::endl;
+        //std::cout << " nominal " << std::endl;
         smearFactor_nom  = jetESmearFactor(pt_nom[i], eOrig, genPt, ptRes, m_jetEResSF.getScaleFactor(jPar, Variation::NOMINAL), rand);
-        std::cout << " nominal ended " << std::endl;
-        std::cout << std::endl;
+        //std::cout << " nominal ended " << std::endl;
+        //std::cout << std::endl;
         smearFactor_down = jetESmearFactor(pt_nom[i], eOrig, genPt, ptRes, m_jetEResSF.getScaleFactor(jPar, Variation::DOWN   ), rand);
         smearFactor_up   = jetESmearFactor(pt_nom[i], eOrig, genPt, ptRes, m_jetEResSF.getScaleFactor(jPar, Variation::UP     ), rand);
         // LogDebug_JME << "  scalefactors are NOMINAL=" << m_jetEResSF.getScaleFactor(jPar, Variation::NOMINAL) << ", DOWN=" << m_jetEResSF.getScaleFactor(jPar, Variation::DOWN) << ", UP=" << m_jetEResSF.getScaleFactor(jPar, Variation::UP) << std::endl;
@@ -296,7 +296,7 @@ JetVariationsCalculator::result_t JetVariationsCalculator::produce(
       pt_jerUp[i]     = pt_nom[i]*smearFactor_up;
       mass_jerUp[i]   = mass_nom[i]*smearFactor_up;
       pt_nom[i]       *= smearFactor_nom;
-      std::cout << "pt smeared " << i << " = " << pt_nom[i] << std::endl;
+      //std::cout << "pt smeared " << i << " = " << pt_nom[i] << std::endl;
 
       mass_nom[i]     *= smearFactor_nom;
     }
