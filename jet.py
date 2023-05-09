@@ -38,5 +38,9 @@ class JetCorrProducer:
                                 GenJet_phi, GenJet_mass, event,
                                ::correction::JetCorrProvider::UncSource::{source}, ::correction::UncScale::{scale})''')
                 df = df.Define(f'Jet_p4_{syst_name}_delta', f'Jet_p4_{syst_name} - Jet_p4_{nano}')
-
         return df, source_dict
+
+    def getEnergyResolution(self, df):
+        df= df.Define(f"Jet_ptRes", f""" ::correction::JetCorrProvider::getGlobal().getResolution(
+            Jet_pt, Jet_eta, Rho_fixedGridRhoFastjetAll ) """)
+        return df

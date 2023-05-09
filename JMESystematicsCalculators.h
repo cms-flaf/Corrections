@@ -165,6 +165,12 @@ public:
 
   std::vector<std::string> available(const std::string& attr = {}) const;
   // interface for NanoAOD
+
+  ROOT::VecOps::RVec<float> getResolution (
+      const p4compv_t& jet_pt, const p4compv_t& jet_eta,
+      const float rho
+      ) const;
+
   result_t produce(
       const p4compv_t& jet_pt, const p4compv_t& jet_eta, const p4compv_t& jet_phi, const p4compv_t& jet_mass,
       const p4compv_t& jet_rawcorr, const p4compv_t& jet_area, const ROOT::VecOps::RVec<int>& jet_jetId,
