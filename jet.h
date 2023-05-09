@@ -47,6 +47,9 @@ public:
         }
         return shifted_p4;
     }
+    RVecF getResolution(const RVecF& Jet_pt, const RVecF& Jet_eta, const float rho) const {
+        return jetVarCalc.getResolution(Jet_pt, Jet_eta, rho);
+    }
 
 private:
     JetVariationsCalculator jetVarCalc ;

@@ -380,6 +380,20 @@ JetVariationsCalculator::result_t JetVariationsCalculator::produce(
   return out;
 }
 
+ROOT::VecOps::RVec<float> JetVariationsCalculator::getResolution(const p4compv_t& jet_pt, const p4compv_t& jet_eta, const float rho) const {
+  const auto nJets = jet_pt.size();
+  ROOT::VecOps::RVec<float> res(nJets,0.);
+  for ( std::size_t i{0}; i != nJets; ++i ) {
+    if ( jet_pt[i] > 0. ) {
+    JME::JetParameters jPar{
+    {JME::Binning::JetPt , jet_pt[i]},
+      {JME::Binning::JetEta, jet_eta[i]},
+        {JME::Binning::Rho   , rho} };
+      res.at(i)=m_jetPtRes.getResolution(jPar);
+      }
+  }
+  return res;
+}
 std::vector<std::string> JetVariationsCalculator::available(const std::string&) const
 {
   std::vector<std::string> products = { "nominal" };
