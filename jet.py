@@ -42,17 +42,17 @@ class JetCorrProducer:
         return df, source_dict
 
     def getJes(self, df, source_dict):
-        for source in ["FlavorQCD","RelativeBal" "HF" "BBEC1" "EC2" "Absolute" "Total" "BBEC1_2018" "Absolute_2018" "EC2_2018" "HF_2018" "RelativeSample_2018"] :
+        for source in ["FlavorQCD","RelativeBal", "HF", "BBEC1", "EC2", "Absolute", "Total", "BBEC1_2018", "Absolute_2018", "EC2_2018", "HF_2018", "RelativeSample_2018"] :
             updateSourceDict(source_dict, source, 'Jet')
             for scale in getScales(source):
                 syst_name = getSystName(source, scale)
-                print(f"Jet_p4_{syst_name}")
                 df = df.Define(f'Jet_p4_{syst_name}', f'''::correction::JetCorrProvider::getGlobal().getJesJet(
                                 Jet_pt, Jet_eta, Jet_phi, Jet_mass, Jet_rawFactor, Jet_area,
                                 Jet_jetId, Rho_fixedGridRhoFastjetAll, Jet_partonFlavour, 0, GenJet_pt, GenJet_eta,
                                 GenJet_phi, GenJet_mass, event,
                                ::correction::JetCorrProvider::UncSource::{source}, ::correction::UncScale::{scale})''')
                 df = df.Define(f'Jet_p4_{syst_name}_delta', f'Jet_p4_{syst_name} - Jet_p4_{nano}')
+                #df.Display({f'Jet_p4_{syst_name}',f'Jet_p4_{syst_name}_delta'}).Print()
         return df, source_dict
 
     def getEnergyResolution(self, df):

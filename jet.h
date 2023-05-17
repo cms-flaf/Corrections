@@ -8,13 +8,13 @@ class JetCorrProvider : public CorrectionsBase<JetCorrProvider> {
 public:
      enum class UncSource : int {
         Central = -1,
-        FlavorQCD = 0,
+        Total = 0,
         RelativeBal = 1,
         HF = 2,
         BBEC1 = 3,
         EC2 = 4,
         Absolute = 5,
-        Total = 6,
+        FlavorQCD = 6,
         BBEC1_2018 = 7,
         Absolute_2018 = 8,
         EC2_2018 = 9,
@@ -33,7 +33,7 @@ public:
     };
 
     static const std::string getJesName(UncSource source ){
-        static const std::map<UncSource, const std::string> JesNames{
+        static const std::map<UncSource, std::string> JesNames{
         {UncSource::FlavorQCD,"FlavorQCD"},
         {UncSource::RelativeBal,"RelativeBal"},
         {UncSource::HF,"HF"},
@@ -76,32 +76,7 @@ public:
         };
         return scale_indexes.at(scale);
     }
-    static bool sourceApplies(UncSource source)
-    {
-         if(source == UncSource::FlavorQCD) return true;
-         if(source == UncSource::RelativeBal) return true;
-         if(source == UncSource::HF) return true;
-         if(source == UncSource::BBEC1) return true;
-         if(source == UncSource::EC2) return true;
-         if(source == UncSource::Absolute) return true;
-         if(source == UncSource::Total) return true;
-         if(source == UncSource::BBEC1_2018) return true;
-         if(source == UncSource::Absolute_2018) return true;
-         if(source == UncSource::EC2_2018) return true;
-         if(source == UncSource::HF_2018) return true;
-         if(source == UncSource::RelativeSample_2018) return true;
-         if(source == UncSource::BBEC1_2017) return true;
-         if(source == UncSource::Absolute_2017) return true;
-         if(source == UncSource::EC2_2017) return true;
-         if(source == UncSource::HF_2017) return true;
-         if(source == UncSource::RelativeSample_2017) return true;
-         if(source == UncSource::BBEC1_2016) return true;
-         if(source == UncSource::Absolute_2016) return true;
-         if(source == UncSource::EC2_2016) return true;
-         if(source == UncSource::HF_2016) return true;
-         if(source == UncSource::RelativeSample_2016) return true;
-        return false;
-    }
+
     JetCorrProvider(const std::string& ptResolution,const std::string& ptResolutionSF, const std::string& JesTxtFile)
     {
         jetVarCalc.setSmearing(ptResolution, ptResolutionSF, false, true, 0.2, 3);
@@ -115,8 +90,7 @@ public:
                     const RVecF& GenJet_phi, const RVecF& GenJet_mass, int event,
                     UncSource source, UncScale scale) const
     {
-        const UncScale jet_scale = sourceApplies(source)
-                                           ? scale : UncScale::Central;
+        const UncScale jet_scale = source == UncSource::Central ? UncScale::Central : scale;
         const std::string& scale_str = getScaleStr(jet_scale);
         auto result = jetVarCalc.produce(Jet_pt, Jet_eta, Jet_phi, Jet_mass, Jet_rawFactor,
                                     Jet_area, Jet_jetId, rho, Jet_partonFlavour, seed,
@@ -138,14 +112,11 @@ public:
                     const RVecI& Jet_jetId, const float rho, const RVecI& Jet_partonFlavour,
                     std::uint32_t seed, const RVecF& GenJet_pt, const RVecF& GenJet_eta,
                     const RVecF& GenJet_phi, const RVecF& GenJet_mass, int event,
-                    UncSource source, UncScale scale){
-        std::unique_ptr<JetVariationsCalculator> jvc ;
-        const UncScale jet_scale = sourceApplies(source)
-                                           ? scale : UncScale::Central;
-        const std::string& scale_str = getScaleStr(jet_scale);
+                    UncSource source, UncScale scale) const {
+        JetVariationsCalculator jvc ;
         JetCorrectorParameters jetParams(JesTxtFile_,getJesName(source));
-        jvc->addJESUncertainty(getJesName(source), jetParams);
-        auto result = jvc->produce(Jet_pt, Jet_eta, Jet_phi, Jet_mass, Jet_rawFactor,
+        jvc.addJESUncertainty(getJesName(source),JetCorrectorParameters{JesTxtFile_,getJesName(source)});
+        auto result = jvc.produce(Jet_pt, Jet_eta, Jet_phi, Jet_mass, Jet_rawFactor,
                                     Jet_area, Jet_jetId, rho, Jet_partonFlavour, seed,
                                     GenJet_pt, GenJet_eta, GenJet_phi, GenJet_mass, event);
         RVecLV shifted_p4(Jet_pt.size());
