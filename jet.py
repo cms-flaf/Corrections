@@ -8,7 +8,7 @@ class JetCorrProducer:
     JEC_PtRes_txtPath = "Corrections/data/JME/{}/Summer19UL18_JRV2_MC/Summer19UL18_JRV2_MC_PtResolution_AK4PFchs.txt"
     JEC_PhiRes_txtPath = "Corrections/data/JME/{}/Summer19UL18_JRV2_MC/Summer19UL18_JRV2_MC_PhiResolution_AK4PFchs.txt"
     JEC_EtaRes_txtPath = "Corrections/data/JME/{}/Summer19UL18_JRV2_MC/Summer19UL18_JRV2_MC_EtaResolution_AK4PFchs.txt"
-    JES_Regouped_txtPath = "Corrections/data/JME/{}/Summer19UL18_JRV2_MC/Regrouped_Summer19UL18_V5_MC_UncertaintySources_AK4PFchs.txt"
+    JES_Regouped_txtPath = "Corrections/data/JME/{}/Summer19UL18_JRV2_MC/RegroupedV2_Summer19UL18_V5_MC_UncertaintySources_AK4PFchs.txt"
     initialized = False
     #Sources = []
     period = None
