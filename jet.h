@@ -49,26 +49,33 @@ public:
         if (source == UncSource::Central) return 0;
         return(static_cast<int>(source)*2+GetScaleIdx(scale));
     }
+    static const std::map<UncSource,std::tuple<std::string,bool,bool>> getUncMap (){
+        static const std::map<UncSource,std::tuple<std::string,bool,bool>> UncMap = {
+            {UncSource::Central, {"Central", false,false}},
+            {UncSource::JER, {"JER", false,false}},
+            {UncSource::FlavorQCD,{"FlavorQCD",true,false}},
+            {UncSource::RelativeBal,{"RelativeBal",true,false}},
+            {UncSource::HF,{"HF",true,false}},
+            {UncSource::BBEC1,{"BBEC1",true,false}},
+            {UncSource::EC2,{"EC2",true,false}},
+            {UncSource::Absolute,{"Absolute",true,false}},
+            {UncSource::Total,{"Total",true,false}},
+            {UncSource::BBEC1_year,{"BBEC1_",true,true}},
+            {UncSource::Absolute_year,{"Absolute_",true,true}},
+            {UncSource::EC2_year,{"EC2_",true,true}},
+            {UncSource::HF_year,{"HF_",true,true}},
+            {UncSource::RelativeSample_year,{"RelativeSample_",true,true}},
+        };
+        return UncMap;
+    }
 
     JetCorrProvider(const std::string& ptResolution,const std::string& ptResolutionSF, const std::string& JesTxtFile, const std::string& year)
     {
         jvc_total.setSmearing(ptResolution, ptResolutionSF, false, true, 0.2, 3);
-        JesMap = {
-        {UncSource::FlavorQCD,{"FlavorQCD",false}},
-        {UncSource::RelativeBal,{"RelativeBal",false}},
-        {UncSource::HF,{"HF",false}},
-        {UncSource::BBEC1,{"BBEC1",false}},
-        {UncSource::EC2,{"EC2",false}},
-        {UncSource::Absolute,{"Absolute",false}},
-        {UncSource::Total,{"Total",false}},
-        {UncSource::BBEC1_year,{"BBEC1_",true}},
-        {UncSource::Absolute_year,{"Absolute_",true}},
-        {UncSource::EC2_year,{"EC2_",true}},
-        {UncSource::HF_year,{"HF_",true}},
-        {UncSource::RelativeSample_year,{"RelativeSample_",true}},
-    };
-        for (auto& [unc_source ,unc_name] : JesMap){
-            std::string jes_name = getFullNameUnc(unc_name.first, year, unc_name.second);
+
+        for (auto& [unc_source ,unc_features] : getUncMap()){
+            if(! std::get<1>(unc_features) ) continue;
+            std::string jes_name = getFullNameUnc(std::get<0>(unc_features), year, std::get<2>(unc_features));
             jvc_total.addJESUncertainty(jes_name,JetCorrectorParameters{JesTxtFile,jes_name});
         }
     }
@@ -83,36 +90,18 @@ public:
         auto result = jvc_total.produce(Jet_pt, Jet_eta, Jet_phi, Jet_mass, Jet_rawFactor,
                                     Jet_area, Jet_jetId, rho, Jet_partonFlavour, seed,
                                     GenJet_pt, GenJet_eta, GenJet_phi, GenJet_mass, event);
-        size_t nVariations = 1 + 2 + 2*JesMap.size();
-        std::vector<RVecLV> shifted_p4s(nVariations);
-        int scale_idx =  GetJesIdx(UncSource::Central, UncScale::Central);
-        RVecLV shifted_p4_Central(Jet_pt.size());
-        /* fill for central */
-        for (int jet_idx= 0 ; jet_idx < Jet_pt.size(); ++jet_idx){
-            shifted_p4_Central[jet_idx] = LorentzVectorM(result.pt(scale_idx)[jet_idx], Jet_eta[jet_idx],
-            Jet_phi[jet_idx], result.mass(scale_idx)[jet_idx]);
-        }
-        all_shifted_p4.insert({{UncSource::Central, UncScale::Central}, shifted_p4_Central});
-
-        std::vector<UncScale> uncScales={UncScale::Up, UncScale::Down};
+        std::vector<UncScale> uncScales={UncScale::Central, UncScale::Up, UncScale::Down};
         for (auto& uncScale : uncScales){
-            /* fill for JER */
-            RVecLV shifted_p4_JER(Jet_pt.size());
-            int JER_scale_idx =  GetJesIdx(UncSource::JER, uncScale);
-            for (int jet_idx= 0 ; jet_idx < Jet_pt.size(); ++jet_idx){
-                shifted_p4_JER[jet_idx] = LorentzVectorM(result.pt(JER_scale_idx)[jet_idx], Jet_eta[jet_idx],
-                Jet_phi[jet_idx], result.mass(JER_scale_idx)[jet_idx]);
-            }
-            all_shifted_p4.insert({{UncSource::JER, uncScale}, shifted_p4_JER});
-            /* fill for JES */
-            for (auto & [unc_source ,unc_name] : JesMap){
-                RVecLV shifted_p4_JES(Jet_pt.size());
-                int JES_scale_idx =  GetJesIdx(unc_source, uncScale);
+            for (auto & [unc_source ,unc_features] : getUncMap()){
+                RVecLV shifted_p4(Jet_pt.size());
+                if(unc_source != UncSource::Central && uncScale == UncScale::Central) continue;
+                if(unc_source == UncSource::Central && uncScale != UncScale::Central) continue;
+                int scale_idx = GetJesIdx(unc_source, uncScale);
                 for (int jet_idx= 0 ; jet_idx < Jet_pt.size(); ++jet_idx){
-                    shifted_p4_JES[jet_idx] = LorentzVectorM(result.pt(JES_scale_idx)[jet_idx], Jet_eta[jet_idx],
-                    Jet_phi[jet_idx], result.mass(JES_scale_idx)[jet_idx]);
+                    shifted_p4[jet_idx] = LorentzVectorM(result.pt(scale_idx)[jet_idx], Jet_eta[jet_idx],
+                    Jet_phi[jet_idx], result.mass(scale_idx)[jet_idx]);
                 }
-            all_shifted_p4.insert({{unc_source, uncScale}, shifted_p4_JER});
+            all_shifted_p4.insert({{unc_source, uncScale}, shifted_p4});
             }
         }
         return all_shifted_p4;
@@ -124,6 +113,5 @@ public:
 private:
 
     JetVariationsCalculator jvc_total ;
-    std::map<UncSource, std::pair<std::string,bool>> JesMap;
 };
 } // namespace correction
