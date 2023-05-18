@@ -37,11 +37,11 @@ class JetCorrProducer:
         for source in [ central] + ["JER", "FlavorQCD","RelativeBal", "HF", "BBEC1", "EC2", "Absolute", "Total", "BBEC1_", "Absolute_", "EC2_", "HF_", "RelativeSample_" ]:
             source_eff = source
             if source.endswith("_") :
+                source+="year"
                 source_eff = source+ JetCorrProducer.period.split("_")[0]
             updateSourceDict(source_dict, source_eff, 'Jet')
             for scale in getScales(source):
                 syst_name = getSystName(source_eff, scale)
-                print(syst_name)
                 df = df.Define(f'Jet_p4_{syst_name}', f'''Jet_p4_shifted_map.at({{::correction::JetCorrProvider::UncSource::{source}, ::correction::UncScale::{scale}}})''')
                 df = df.Define(f'Jet_p4_{syst_name}_delta', f'Jet_p4_{syst_name} - Jet_p4_{nano}')
                 #df.Display({f'Jet_p4_{syst_name}',f'Jet_p4_{syst_name}_delta'}).Print()
