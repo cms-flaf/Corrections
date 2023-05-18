@@ -25,14 +25,17 @@ class JetCorrProducer:
             JME_calc_path = os.path.join(headers_dir, "JMESystematicsCalculators.cc")
             ROOT.gInterpreter.Declare(f'#include "{JME_calc_path}"')
             ROOT.gInterpreter.Declare(f'#include "{header_path}"')
-            ROOT.gInterpreter.ProcessLine(f'::correction::JetCorrProvider::Initialize("{ptResolution}", "{ptResolutionSF}","{JEC_Regrouped}")')
+            ROOT.gInterpreter.ProcessLine(f"""::correction::JetCorrProvider::Initialize("{ptResolution}", "{ptResolutionSF}","{JEC_Regrouped}", "{period.split("_")[0]}")""")
             JetCorrProducer.period = period
             JetCorrProducer.initialized = True
+
+
     def getP4Smearing(self, df, source_dict):
-        for source in [ central ] :
+        for source in [ central ] + ['JER']:
             updateSourceDict(source_dict, source, 'Jet')
             for scale in getScales(source):
                 syst_name = getSystName(source, scale)
+                print(syst_name)
                 df = df.Define(f'Jet_p4_{syst_name}', f'''::correction::JetCorrProvider::getGlobal().getSmearing(
                                 Jet_pt, Jet_eta, Jet_phi, Jet_mass, Jet_rawFactor, Jet_area,
                                 Jet_jetId, Rho_fixedGridRhoFastjetAll, Jet_partonFlavour, 0, GenJet_pt, GenJet_eta,
@@ -42,10 +45,13 @@ class JetCorrProducer:
         return df, source_dict
 
     def getJes(self, df, source_dict):
-        for source in ["FlavorQCD","RelativeBal", "HF", "BBEC1", "EC2", "Absolute", "Total", "BBEC1_2018", "Absolute_2018", "EC2_2018", "HF_2018", "RelativeSample_2018"] :
-            updateSourceDict(source_dict, source, 'Jet')
+        for source in ["FlavorQCD","RelativeBal", "HF", "BBEC1", "EC2", "Absolute", "Total", "BBEC1_", "Absolute_", "EC2_", "HF_", "RelativeSample_"] :
+            source_eff = source
+            if source.endswith("_") :
+                source_eff = source+ JetCorrProducer.period.split("_")[0]
+            updateSourceDict(source_dict, source_eff, 'Jet')
             for scale in getScales(source):
-                syst_name = getSystName(source, scale)
+                syst_name = getSystName(source_eff, scale)
                 df = df.Define(f'Jet_p4_{syst_name}', f'''::correction::JetCorrProvider::getGlobal().getJesJet(
                                 Jet_pt, Jet_eta, Jet_phi, Jet_mass, Jet_rawFactor, Jet_area,
                                 Jet_jetId, Rho_fixedGridRhoFastjetAll, Jet_partonFlavour, 0, GenJet_pt, GenJet_eta,
