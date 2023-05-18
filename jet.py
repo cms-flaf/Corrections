@@ -29,37 +29,23 @@ class JetCorrProducer:
             JetCorrProducer.period = period
             JetCorrProducer.initialized = True
 
-
-    def getP4Smearing(self, df, source_dict):
-        for source in [ central ] + ['JER']:
-            updateSourceDict(source_dict, source, 'Jet')
-            for scale in getScales(source):
-                syst_name = getSystName(source, scale)
-                print(syst_name)
-                df = df.Define(f'Jet_p4_{syst_name}', f'''::correction::JetCorrProvider::getGlobal().getSmearing(
+    def getP4Variations(self, df, source_dict):
+        df = df.Define(f'Jet_p4_shifted_map', f'''::correction::JetCorrProvider::getGlobal().getShiftedP4(
                                 Jet_pt, Jet_eta, Jet_phi, Jet_mass, Jet_rawFactor, Jet_area,
                                 Jet_jetId, Rho_fixedGridRhoFastjetAll, Jet_partonFlavour, 0, GenJet_pt, GenJet_eta,
-                                GenJet_phi, GenJet_mass, event,
-                               ::correction::JetCorrProvider::UncSource::{source}, ::correction::UncScale::{scale})''')
-                df = df.Define(f'Jet_p4_{syst_name}_delta', f'Jet_p4_{syst_name} - Jet_p4_{nano}')
-        return df, source_dict
-
-    def getJes(self, df, source_dict):
-        for source in ["FlavorQCD","RelativeBal", "HF", "BBEC1", "EC2", "Absolute", "Total", "BBEC1_", "Absolute_", "EC2_", "HF_", "RelativeSample_"] :
+                                GenJet_phi, GenJet_mass, event)''')
+        for source in [ central] + ["JER", "FlavorQCD","RelativeBal", "HF", "BBEC1", "EC2", "Absolute", "Total", "BBEC1_", "Absolute_", "EC2_", "HF_", "RelativeSample_" ]:
             source_eff = source
             if source.endswith("_") :
                 source_eff = source+ JetCorrProducer.period.split("_")[0]
             updateSourceDict(source_dict, source_eff, 'Jet')
             for scale in getScales(source):
                 syst_name = getSystName(source_eff, scale)
-                df = df.Define(f'Jet_p4_{syst_name}', f'''::correction::JetCorrProvider::getGlobal().getJesJet(
-                                Jet_pt, Jet_eta, Jet_phi, Jet_mass, Jet_rawFactor, Jet_area,
-                                Jet_jetId, Rho_fixedGridRhoFastjetAll, Jet_partonFlavour, 0, GenJet_pt, GenJet_eta,
-                                GenJet_phi, GenJet_mass, event,
-                               ::correction::JetCorrProvider::UncSource::{source}, ::correction::UncScale::{scale})''')
+                print(syst_name)
+                df = df.Define(f'Jet_p4_{syst_name}', f'''Jet_p4_shifted_map.at({{::correction::JetCorrProvider::UncSource::{source}, ::correction::UncScale::{scale}}})''')
                 df = df.Define(f'Jet_p4_{syst_name}_delta', f'Jet_p4_{syst_name} - Jet_p4_{nano}')
                 #df.Display({f'Jet_p4_{syst_name}',f'Jet_p4_{syst_name}_delta'}).Print()
-        return df, source_dict
+        return df,source_dict
 
     def getEnergyResolution(self, df):
         df= df.Define(f"Jet_ptRes", f""" ::correction::JetCorrProvider::getGlobal().getResolution(
