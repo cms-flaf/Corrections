@@ -44,7 +44,6 @@ class JetCorrProducer:
                 syst_name = getSystName(source_eff, scale)
                 df = df.Define(f'Jet_p4_{syst_name}', f'''Jet_p4_shifted_map.at({{::correction::JetCorrProvider::UncSource::{source}, ::correction::UncScale::{scale}}})''')
                 df = df.Define(f'Jet_p4_{syst_name}_delta', f'Jet_p4_{syst_name} - Jet_p4_{nano}')
-                #df.Display({f'Jet_p4_{syst_name}',f'Jet_p4_{syst_name}_delta'}).Print()
         return df,source_dict
 
     def getEnergyResolution(self, df):

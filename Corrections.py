@@ -95,7 +95,6 @@ def applyScaleUncertainties(df):
         df, source_dict = tau.getES(df, source_dict)
     if 'JEC_JER' in sf_to_apply:
         df, source_dict = jet.getP4Variations(df, source_dict)
-        #df, source_dict = jet.getJes(df, source_dict)
     if met!=None and ('tauES' in sf_to_apply or 'JEC_JER' in sf_to_apply):
         df, source_dict = met.getPFMET(df, source_dict)
     syst_dict = { }

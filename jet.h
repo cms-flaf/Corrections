@@ -24,9 +24,7 @@ public:
     };
 
     static const std::string getFullNameUnc(const std::string source_name, const std::string year, bool need_year){
-        if(need_year)
-            return source_name+year ;
-        return source_name;
+        return need_year ? source_name+year : source_name;
     }
     static const std::string& getScaleStr(UncScale scale)
     {
@@ -46,8 +44,8 @@ public:
         return scale_indexes.at(scale);
     }
     static const int GetJesIdx(UncSource source, UncScale scale){
-        if (source == UncSource::Central) return 0;
-        return(static_cast<int>(source)*2+GetScaleIdx(scale));
+        int index = static_cast<int>(source) * 2 + GetScaleIdx(scale);
+        return std::max(index, 0);
     }
     static const std::map<UncSource,std::tuple<std::string,bool,bool>> getUncMap (){
         static const std::map<UncSource,std::tuple<std::string,bool,bool>> UncMap = {
