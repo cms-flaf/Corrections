@@ -16,7 +16,6 @@ class JetCorrProducer:
     initialized = False
     #Sources = []
     period = None
-    isData = False
     def __init__(self, period,isData):
         JetCorrProducer.isData = isData
         ptResolution = os.path.join(os.environ['ANALYSIS_PATH'],JetCorrProducer.JEC_PtRes_txtPath_MC.format(period))
