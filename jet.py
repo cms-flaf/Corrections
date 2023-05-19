@@ -4,18 +4,26 @@ from .CorrectionsCore import *
 import yaml
 
 class JetCorrProducer:
-    JEC_SF_txtPath = "Corrections/data/JME/{}/Summer19UL18_JRV2_MC/Summer19UL18_JRV2_MC_SF_AK4PFchs.txt"
-    JEC_PtRes_txtPath = "Corrections/data/JME/{}/Summer19UL18_JRV2_MC/Summer19UL18_JRV2_MC_PtResolution_AK4PFchs.txt"
-    JEC_PhiRes_txtPath = "Corrections/data/JME/{}/Summer19UL18_JRV2_MC/Summer19UL18_JRV2_MC_PhiResolution_AK4PFchs.txt"
-    JEC_EtaRes_txtPath = "Corrections/data/JME/{}/Summer19UL18_JRV2_MC/Summer19UL18_JRV2_MC_EtaResolution_AK4PFchs.txt"
-    JES_Regouped_txtPath = "Corrections/data/JME/{}/Summer19UL18_JRV2_MC/RegroupedV2_Summer19UL18_V5_MC_UncertaintySources_AK4PFchs.txt"
+    JEC_SF_txtPath_MC = "Corrections/data/JME/{}/Summer19UL18_JRV2_MC/Summer19UL18_JRV2_MC_SF_AK4PFchs.txt"
+    JEC_PtRes_txtPath_MC = "Corrections/data/JME/{}/Summer19UL18_JRV2_MC/Summer19UL18_JRV2_MC_PtResolution_AK4PFchs.txt"
+    JEC_PhiRes_txtPath_MC = "Corrections/data/JME/{}/Summer19UL18_JRV2_MC/Summer19UL18_JRV2_MC_PhiResolution_AK4PFchs.txt"
+    JEC_EtaRes_txtPath_MC = "Corrections/data/JME/{}/Summer19UL18_JRV2_MC/Summer19UL18_JRV2_MC_EtaResolution_AK4PFchs.txt"
+    JES_Regouped_txtPath_MC = "Corrections/data/JME/{}/Summer19UL18_JRV2_MC/RegroupedV2_Summer19UL18_V5_MC_UncertaintySources_AK4PFchs.txt"
+    JEC_SF_txtPath_data = "Corrections/data/JME/{}/Summer19UL18_JRV2_DATA/Summer19UL18_JRV2_DATA_SF_AK4PFchs.txt"
+    JEC_PtRes_txtPath_data = "Corrections/data/JME/{}/Summer19UL18_JRV2_DATA/Summer19UL18_JRV2_DATA_PtResolution_AK4PFchs.txt"
+    JEC_PhiRes_txtPath_data = "Corrections/data/JME/{}/Summer19UL18_JRV2_DATA/Summer19UL18_JRV2_DATA_PhiResolution_AK4PFchs.txt"
+    JEC_EtaRes_txtPath_data = "Corrections/data/JME/{}/Summer19UL18_JRV2_DATA/Summer19UL18_JRV2_DATA_EtaResolution_AK4PFchs.txt"
     initialized = False
     #Sources = []
     period = None
-    def __init__(self, period):
-        ptResolution = os.path.join(os.environ['ANALYSIS_PATH'],JetCorrProducer.JEC_PtRes_txtPath.format(period))
-        ptResolutionSF = os.path.join(os.environ['ANALYSIS_PATH'],JetCorrProducer.JEC_SF_txtPath.format(period))
-        JEC_Regrouped = os.path.join(os.environ['ANALYSIS_PATH'], JetCorrProducer.JES_Regouped_txtPath.format(period))
+    def __init__(self, period,isData):
+        JetCorrProducer.isData = isData
+        ptResolution = os.path.join(os.environ['ANALYSIS_PATH'],JetCorrProducer.JEC_PtRes_txtPath_MC.format(period))
+        ptResolutionSF = os.path.join(os.environ['ANALYSIS_PATH'],JetCorrProducer.JEC_SF_txtPath_MC.format(period))
+        JEC_Regrouped = os.path.join(os.environ['ANALYSIS_PATH'], JetCorrProducer.JES_Regouped_txtPath_MC.format(period))
+        if JetCorrProducer.isData:
+            ptResolution = os.path.join(os.environ['ANALYSIS_PATH'],JetCorrProducer.JEC_PtRes_txtPath_data.format(period))
+            ptResolutionSF = os.path.join(os.environ['ANALYSIS_PATH'],JetCorrProducer.JEC_SF_txtPath_data.format(period))
         if not JetCorrProducer.initialized:
             ROOT.gSystem.Load("libJetMETCorrectionsModules.so")
             ROOT.gSystem.Load("libCondFormatsJetMETObjects.so")
