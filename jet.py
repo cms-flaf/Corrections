@@ -45,8 +45,8 @@ class JetCorrProducer:
         for source in [ central] + ["JER", "FlavorQCD","RelativeBal", "HF", "BBEC1", "EC2", "Absolute", "Total", "BBEC1_", "Absolute_", "EC2_", "HF_", "RelativeSample_" ]:
             source_eff = source
             if source.endswith("_") :
-                source+="year"
                 source_eff = source+ JetCorrProducer.period.split("_")[0]
+                source+="year"
             updateSourceDict(source_dict, source_eff, 'Jet')
             for scale in getScales(source):
                 syst_name = getSystName(source_eff, scale)
