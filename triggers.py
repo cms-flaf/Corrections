@@ -33,7 +33,7 @@ class TrigCorrProducer:
                                           "{self.muon_trg_dict[period]}","{jsonFile_e}")""")
             TrigCorrProducer.initialized = True
 
-    def getTrgSF(self, df, trigger_names, return_variations=True):
+    def getTrgSF(self, df, trigger_names, return_variations=True, isCentral=True):
         SF_branches = []
         trg_name = 'ditau'
         if trg_name in trigger_names:
@@ -43,6 +43,7 @@ class TrigCorrProducer:
                 df = df.Define(applyTrgBranch_name, f"""httCand.leg_type[{leg_idx}] == Leg::tau && HLT_{trg_name} && tau{leg_idx+1}_HasMatching_{trg_name}""")
                 for source in [ central ] + sf_sources:
                     for scale in getScales(source):
+                        if not isCentral and scale!= central: continue
                         syst_name = getSystName(source, scale)
                         branch_name = f"weight_tau{leg_idx+1}_TrgSF_{trg_name}_{syst_name}"
                         df = df.Define(branch_name,
