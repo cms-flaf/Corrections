@@ -24,11 +24,12 @@ class puWeightProducer:
             ROOT.gInterpreter.ProcessLine(f'::correction::puCorrProvider::Initialize("{jsonFile}", "{self.golden_json_dict[period]}")')
             puWeightProducer.initialized = True
 
-    def getWeight(self, df,return_variations=True):
+    def getWeight(self, df,return_variations=True, isCentral=True):
         sf_sources =puWeightProducer.uncSource if return_variations else []
         weights = {}
         for source in [ central ] + sf_sources:
             for scale in getScales(source):
+                if not isCentral and scale!= central: continue
                 syst_name = getSystName(source, scale)
                 weights[syst_name] = []
                 df = df.Define(f'puWeight_{scale}', f'''::correction::puCorrProvider::getGlobal().getWeight(

@@ -126,7 +126,7 @@ def getBranches(syst_name, all_branches):
         final_branches.extend(branches[name])
     return final_branches
 
-def getNormalisationCorrections(df, config, sample, ana_cache=None, return_variations=True):
+def getNormalisationCorrections(df, config, sample, ana_cache=None, return_variations=True, isCentral=True):
     if not initialized:
         raise RuntimeError('Corrections are not initialized')
     lumi = config['GLOBAL']['luminosity']
@@ -157,7 +157,6 @@ def getNormalisationCorrections(df, config, sample, ana_cache=None, return_varia
     stitching_weight_string = f' {xs_stitching} * stitching_weight * ({xs_inclusive}/{xs_stitching_incl})'
     df, pu_SF_branches = pu.getWeight(df)
     df = df.Define('genWeightD', 'std::copysign<double>(1., genWeight)')
-    scale = 'Central'
     all_branches = [ pu_SF_branches ]
     all_sources = set(itertools.chain.from_iterable(all_branches))
     all_sources.remove(central)
@@ -165,6 +164,7 @@ def getNormalisationCorrections(df, config, sample, ana_cache=None, return_varia
     denom = f'/{ana_cache["denominator"][central][central]}' if ana_cache is not None else ''
 
     for syst_name in [central] + list(all_sources):
+        if not isCentral : continue
         branches = getBranches(syst_name, all_branches)
         product = ' * '.join(branches)
         weight_name = f'weight_{syst_name}'
@@ -176,7 +176,7 @@ def getNormalisationCorrections(df, config, sample, ana_cache=None, return_varia
         all_weights.append(weight_out_name)
 
     if('tauID' in sf_to_apply):
-        df, tau_SF_branches = tau.getSF(df, config)
+        df, tau_SF_branches = tau.getSF(df, return_variations, isCentral)
         tau_branches = [ tau_SF_branches ]
         tau_sources = set(itertools.chain.from_iterable(tau_branches))
         tau_sources.remove(central)
@@ -191,13 +191,13 @@ def getNormalisationCorrections(df, config, sample, ana_cache=None, return_varia
             df = df.Define(weight_rel_name, f'static_cast<float>({weight_name}/weight_tauID_{central})')
             all_weights.append(weight_out_name)
     if mu!= None:
-        df, muID_SF_branches = mu.getMuonIDSF(df)
+        df, muID_SF_branches = mu.getMuonIDSF(df,isCentral)
         all_weights.extend(muID_SF_branches)
     if ele!= None:
-        df, eleID_SF_branches = ele.getIDSF(df)
+        df, eleID_SF_branches = ele.getIDSF(df, isCentral)
         all_weights.extend(eleID_SF_branches)
     if puJetID!=None:
-        df, puJetID_SF_branches = puJetID.getPUJetIDEff(df)
+        df, puJetID_SF_branches = puJetID.getPUJetIDEff(df,isCentral)
         all_weights.extend(puJetID_SF_branches)
 
     return df, all_weights

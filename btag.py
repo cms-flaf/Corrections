@@ -32,12 +32,13 @@ class bTagCorrProducer:
             wp_values[wp] = ROOT.correction.bTagCorrProvider.getGlobal().getWPvalue(root_wp)
         return wp_values
 
-    def getSF(self, df, return_variations=True):
+    def getSF(self, df, return_variations=True, isCentral=True):
         sf_sources = bTagCorrProducer.SFSources if return_variations else []
         SF_branches = []
         for source in [ central ] + sf_sources:
             for scale in getScales(source):
                 syst_name = getSystName(source, scale)
+                if not isCentral and scale!= central: continue
                 for wp in WorkingPointsbTag:
                     branch_name = f"weight_bTagSF_{wp.name}_{syst_name}"
                     df = df.Define(branch_name,

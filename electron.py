@@ -27,11 +27,12 @@ class EleCorrProducer:
 
 
 
-    def getIDSF(self, df, return_variations=True):
+    def getIDSF(self, df, return_variations=True,isCentral=True):
         sf_sources =EleCorrProducer.ID_sources
         SF_branches = []
         for source in [ central ] + sf_sources:
             for scale in getScales(source):
+                if not isCentral and scale!= central: continue
                 syst_name = getSystName(source, scale)
                 for leg_idx in [0,1]:
                     branch_name = f"weight_tau{leg_idx+1}_EleidSF_{scale}"

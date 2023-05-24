@@ -20,10 +20,11 @@ class puJetIDCorrProducer:
             puJetIDCorrProducer.period = period
             puJetIDCorrProducer.initialized = True
 
-    def getPUJetIDEff(self, df):
+    def getPUJetIDEff(self, df,isCentral=True):
         puJetID_SF_branches = []
         for source in [ central ] + puJetIDCorrProducer.puJetID_SF_Sources:
             for scale in getScales(source):
+                if not isCentral and scale!= central: continue
                 syst_name = getSystName(source, scale)
                 if source == central :
                     syst_name = "PUJetID_Central"
