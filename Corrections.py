@@ -157,7 +157,6 @@ def getNormalisationCorrections(df, config, sample, ana_cache=None, return_varia
     stitching_weight_string = f' {xs_stitching} * stitching_weight * ({xs_inclusive}/{xs_stitching_incl})'
     df, pu_SF_branches = pu.getWeight(df)
     df = df.Define('genWeightD', 'std::copysign<double>(1., genWeight)')
-    scale = 'Central'
     all_branches = [ pu_SF_branches ]
     all_sources = set(itertools.chain.from_iterable(all_branches))
     all_sources.remove(central)
@@ -165,6 +164,7 @@ def getNormalisationCorrections(df, config, sample, ana_cache=None, return_varia
     denom = f'/{ana_cache["denominator"][central][central]}' if ana_cache is not None else ''
 
     for syst_name in [central] + list(all_sources):
+        if not isCentral : continue
         branches = getBranches(syst_name, all_branches)
         product = ' * '.join(branches)
         weight_name = f'weight_{syst_name}'
