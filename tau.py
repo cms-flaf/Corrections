@@ -42,12 +42,13 @@ class TauCorrProducer:
 
         return df, source_dict
 
-    def getSF(self, df, return_variations=True):
+    def getSF(self, df, return_variations=True, isCentral=True):
         sf_sources =TauCorrProducer.SFSources_genuineTau_dm+ TauCorrProducer.SFSources_genuineTau_pt+ TauCorrProducer.SFSources_genuineLep if return_variations else []
         SF_branches = {}
         for source in [ central ] + sf_sources:
             for scale in getScales(source):
                 syst_name = getSystName(source, scale)
+                if not isCentral and scale!= central: continue
                 SF_branches[syst_name]= []
                 for leg_idx in [0,1]:
                     df = df.Define(f"weight_tau{leg_idx+1}_idSF_{syst_name}",

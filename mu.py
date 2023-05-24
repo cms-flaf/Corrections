@@ -21,10 +21,11 @@ class MuCorrProducer:
             MuCorrProducer.period = period
             MuCorrProducer.initialized = True
 
-    def getMuonIDSF(self, df):
+    def getMuonIDSF(self, df, isCentral=True):
         muID_SF_branches = []
         for source in [ central ] + MuCorrProducer.muID_SF_Sources:
             for scale in getScales(source):
+                if not isCentral and scale!= central: continue
                 syst_name = getSystName(source, scale)
                 for leg_idx in [0,1]:
                     df = df.Define(f"weight_tau{leg_idx+1}_{syst_name}",
