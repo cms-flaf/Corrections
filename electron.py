@@ -36,9 +36,13 @@ class EleCorrProducer:
                 syst_name = getSystName(source, scale)
                 for leg_idx in [0,1]:
                     branch_name = f"weight_tau{leg_idx+1}_EleidSF_{scale}"
+                    branch_central = f"""weight_tau{leg_idx+1}_EleidSF_{getSystName(central, central)}"""
                     df = df.Define(branch_name,
                                 f'''httCand.leg_type[{leg_idx}] == Leg::e ? ::correction::EleCorrProvider::getGlobal().getID_SF(
                                httCand.leg_p4[{leg_idx}], Electron_genMatch.at(httCand.leg_index[{leg_idx}]), "{EleCorrProducer.working_point}",
                                "{EleCorrProducer.year}",::correction::EleCorrProvider::UncSource::{source}, ::correction::UncScale::{scale}) : 1.;''')
-                    SF_branches.append(branch_name)
+                    if scale != central:
+                        df = df.Define(f"{branch_name}_rel", f"{branch_name}/{branch_central}")
+                        branch_name += '_rel'
+                    SF_branches.append(f"{branch_name}")
         return df,SF_branches
