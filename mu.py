@@ -28,9 +28,9 @@ class MuCorrProducer:
                 if not isCentral and scale!= central: continue
                 syst_name = getSystName(source, scale)
                 for leg_idx in [0,1]:
-                    df = df.Define(f"weight_tau{leg_idx+1}_{syst_name}",
+                    df = df.Define(f"weight_tau{leg_idx+1}_MuidSF_{syst_name}",
                                     f'''httCand.leg_type[{leg_idx}] == Leg::mu ? ::correction::MuCorrProvider::getGlobal().getMuonIDSF(
                                         httCand.leg_p4[{leg_idx}], Muon_pfRelIso04_all.at(httCand.leg_index[{leg_idx}]), Muon_tightId.at(httCand.leg_index[{leg_idx}]),
                                         ::correction::MuCorrProvider::UncSource::{source}, ::correction::UncScale::{scale}, "{MuCorrProducer.period}") : 1.''')
-                    muID_SF_branches.append(f"weight_tau{leg_idx+1}_{syst_name}")
+                    muID_SF_branches.append(f"weight_tau{leg_idx+1}_MuidSF_{syst_name}")
         return df,muID_SF_branches
