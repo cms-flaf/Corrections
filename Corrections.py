@@ -185,12 +185,12 @@ def getNormalisationCorrections(df, config, sample, ana_cache=None, return_varia
             product = ' * '.join(branches)
             weight_name = f'weight_{syst_name}'
             if(syst_name == central):
-                weight_name = f'weight_tauID_{syst_name}'
+                weight_name = f'weight_TauID_{syst_name}'
             weight_rel_name = weight_name + '_rel'
             weight_out_name = weight_name if syst_name == central else weight_rel_name
             weight_formula = f'{product}'
             df = df.Define(weight_name, f'static_cast<float>({weight_formula})')
-            df = df.Define(weight_rel_name, f'static_cast<float>({weight_name}/weight_tauID_{central})')
+            df = df.Define(weight_rel_name, f'static_cast<float>({weight_name}/weight_TauID_{central})')
             all_weights.append(weight_out_name)
     if mu!= None:
         df, muID_SF_branches = mu.getMuonIDSF(df,isCentral)

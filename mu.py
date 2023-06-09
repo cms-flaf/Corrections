@@ -7,10 +7,9 @@ class MuCorrProducer:
     muIDEff_JsonPath = "/cvmfs/cms.cern.ch/rsync/cms-nanoAOD/jsonpog-integration/POG/MUO/{}/muon_Z.json.gz"
     initialized = False
     #muID_SF_Sources = ["NUM_TightID_DEN_genTracks","NUM_IsoMu24_DEN_CutBasedIdTight_and_PFIsoTight","NUM_TightRelIso_DEN_TightIDandIPCut"]
-    muID_SF_Sources = ["NUM_TightID_DEN_genTracks","NUM_IsoMu24_DEN_CutBasedIdTight_and_PFIsoTight","NUM_TightRelIso_DEN_TightIDandIPCut"]
-    muID_SF_Sources_dict = {"NUM_TightID_DEN_genTracks":"TightID_genTracks", #num-den
-                       "NUM_IsoMu24_DEN_CutBasedIdTight_and_PFIsoTight":"IsoMu24_CutBasedIdAndPFIsoTight",
-                       "NUM_TightRelIso_DEN_TightIDandIPCut":"TightRelIso_TightIDAndIPCut"}
+    muID_SF_Sources = ["NUM_TightID_DEN_genTracks","NUM_TightRelIso_DEN_TightIDandIPCut"]
+    muID_SF_Sources_dict = {"NUM_TightID_DEN_genTracks":"TightID", #num-den
+                       "NUM_TightRelIso_DEN_TightIDandIPCut":"TightRelIso"}
     #muID_SF_Sources = []
     period = None
 
@@ -35,12 +34,14 @@ class MuCorrProducer:
                 for leg_idx in [0,1]:
                     branch_name = f"weight_tau{leg_idx+1}_MuidSF_{syst_name}"
                     branch_central = f"""weight_tau{leg_idx+1}_MuidSF_{getSystName(central, central)}"""
-                    df = df.Define(branch_name,
+                    df = df.Define(f"{branch_name}_double",
                                     f'''httCand.leg_type[{leg_idx}] == Leg::mu ? ::correction::MuCorrProvider::getGlobal().getMuonIDSF(
                                         httCand.leg_p4[{leg_idx}], Muon_pfRelIso04_all.at(httCand.leg_index[{leg_idx}]), Muon_tightId.at(httCand.leg_index[{leg_idx}]),
                                         ::correction::MuCorrProvider::UncSource::{source}, ::correction::UncScale::{scale}, "{MuCorrProducer.period}") : 1.''')
                     if scale != central:
-                        df = df.Define(f"{branch_name}_rel", f"{branch_name}/{branch_central}")
+                        df = df.Define(f"{branch_name}_rel", f"static_cast<float>({branch_name}_double/{branch_central})")
                         branch_name += '_rel'
+                    else:
+                        df = df.Define(f"{branch_name}", f"static_cast<float>({branch_name}_double)")
                     muID_SF_branches.append(f"{branch_name}")
         return df,muID_SF_branches

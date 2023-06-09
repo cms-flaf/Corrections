@@ -42,14 +42,15 @@ class bTagCorrProducer:
                 for wp in WorkingPointsbTag:
                     branch_name = f"weight_bTagSF_{wp.name}_{syst_name}"
                     branch_central = f"""weight_bTagSF_{wp.name}_{getSystName(central, central)}"""
-                    df = df.Define(branch_name,
+                    df = df.Define(f"{branch_name}_double",
                                 f''' ::correction::bTagCorrProvider::getGlobal().getSF(
                                 Jet_p4, Jet_bCand, Jet_hadronFlavour, Jet_btagDeepFlavB,WorkingPointsbTag::{wp.name},
                             ::correction::bTagCorrProvider::UncSource::{source}, ::correction::UncScale::{scale}) ''')
-                    SF_branches.append(branch_name)
                     if scale != central:
-                        df = df.Define(f"{branch_name}_rel", f"{branch_name}/{branch_central}")
+                        df = df.Define(f"{branch_name}_rel", f"static_cast<float>({branch_name}_double/{branch_central})")
                         branch_name += '_rel'
+                    else:
+                        df = df.Define(f"{branch_name}", f"static_cast<float>({branch_name}_double)")
                     SF_branches.append(f"{branch_name}")
         return df,SF_branches
 

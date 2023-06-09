@@ -31,12 +31,14 @@ class puJetIDCorrProducer:
                 for leg_idx in [0,1]:
                     branch_name = f"weight_b{leg_idx+1}_{syst_name}"
                     branch_central = f"""weight_b{leg_idx+1}_PUJetID_Central"""
-                    df = df.Define(branch_name,
+                    df = df.Define(f"{branch_name}_double",
                                     f'''::correction::PUJetIDCorrProvider::getGlobal().getPUJetID_eff(
                                         HbbCandidate.leg_p4[{leg_idx}], "{puJetIDCorrProducer.puJetID}",
                                         ::correction::PUJetIDCorrProvider::UncSource::{source}, ::correction::UncScale::{scale})''')
                     if scale != central:
-                        df = df.Define(f"{branch_name}_rel", f"{branch_name}/{branch_central}")
+                        df = df.Define(f"{branch_name}_rel", f"static_cast<float>({branch_name}_double/{branch_central})")
                         branch_name += '_rel'
+                    else:
+                        df = df.Define(f"{branch_name}", f"static_cast<float>({branch_name}_double)")
                     puJetID_SF_branches.append(f"{branch_name}")
         return df,puJetID_SF_branches
