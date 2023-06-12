@@ -9,11 +9,11 @@ class TrigCorrProvider : public CorrectionsBase<TrigCorrProvider> {
 public:
     enum class UncSource : int {
         Central = -1,
-        tautrg_ditau_DM0 = 0,
-        tautrg_ditau_DM1 = 1,
-        tautrg_ditau_3Prong = 2,
-        mutrg_singleMu = 3,
-        eletrg_singleEle = 4,
+        ditau_DM0 = 0,
+        ditau_DM1 = 1,
+        ditau_3Prong = 2,
+        singleMu = 3,
+        singleEle = 4,
     };
     using wpsMapType = std::map<Channel, std::vector<std::pair<std::string, int> > >;
     static bool isTwoProngDM(int dm)
@@ -42,9 +42,9 @@ public:
     static bool sourceApplies_tau_fromCorrLib(UncSource source, int decayMode, const std::string& trg_type)
     {
         if(trg_type=="ditau"){
-            if(source == UncSource::tautrg_ditau_DM0 && decayMode == 0) return true;
-            if(source == UncSource::tautrg_ditau_DM1 && ( decayMode == 1 || decayMode == 2 )) return true;
-            if(source == UncSource::tautrg_ditau_3Prong && ( decayMode == 10 || decayMode == 11 )) return true;
+            if(source == UncSource::ditau_DM0 && decayMode == 0) return true;
+            if(source == UncSource::ditau_DM1 && ( decayMode == 1 || decayMode == 2 )) return true;
+            if(source == UncSource::ditau_3Prong && ( decayMode == 10 || decayMode == 11 )) return true;
         }
         return false;
     }
@@ -78,14 +78,14 @@ public:
 
     float getMuSF_fromCorrLib(const LorentzVectorM& Mu_p4, UncSource source, UncScale scale) const
     {
-        const UncScale mu_scale = source== UncSource::mutrg_singleMu ? scale : UncScale::Central;
+        const UncScale mu_scale = source== UncSource::singleMu ? scale : UncScale::Central;
         const std::string& scale_str = getMuScaleStr(mu_scale);
         return mu_trg_->evaluate({period_, std::abs(Mu_p4.Eta()), Mu_p4.Pt(), scale_str});
     }
 
     float getEleSF_fromRootFile(const LorentzVectorM& Ele_p4, UncSource source, UncScale scale) const
     {
-        const UncScale ele_scale = source== UncSource::eletrg_singleEle ? scale : UncScale::Central;
+        const UncScale ele_scale = source== UncSource::singleEle ? scale : UncScale::Central;
         const auto x_axis = histo_ele_SF->GetXaxis();
         int x_bin = x_axis->FindFixBin(Ele_p4.Eta());
         if(x_bin < 1)

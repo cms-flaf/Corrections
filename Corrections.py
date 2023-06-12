@@ -26,7 +26,7 @@ period_names = {
 }
 
 def Initialize(config, isData, load_corr_lib=True, load_pu=True, load_tau=True, load_trg=True, load_btag=True,
-               loadBTagEff=True, load_met=True, load_mu = True, load_ele=False, load_puJetID=True, load_jet=True):
+               loadBTagEff=True, load_met=True, load_mu = True, load_ele=True, load_puJetID=True, load_jet=True):
     global initialized
     global tau
     global pu
@@ -156,7 +156,7 @@ def getNormalisationCorrections(df, config, sample, ana_cache=None, return_varia
 
     stitching_weight_string = f' {xs_stitching} * stitching_weight * ({xs_inclusive}/{xs_stitching_incl})'
     df, pu_SF_branches = pu.getWeight(df)
-    df = df.Define('genWeightD', 'std::copysign<double>(1., genWeight)')
+    df = df.Define('genWeightD', 'std::copysign<float>(1., genWeight)')
     all_branches = [ pu_SF_branches ]
     all_sources = set(itertools.chain.from_iterable(all_branches))
     all_sources.remove(central)
@@ -183,12 +183,14 @@ def getNormalisationCorrections(df, config, sample, ana_cache=None, return_varia
         for syst_name in [central] + list(tau_sources):
             branches = getBranches(syst_name, tau_branches)
             product = ' * '.join(branches)
-            weight_name = f'weight_tauID_{syst_name}'
+            weight_name = f'weight_{syst_name}'
+            if(syst_name == central):
+                weight_name = f'weight_TauID_{syst_name}'
             weight_rel_name = weight_name + '_rel'
             weight_out_name = weight_name if syst_name == central else weight_rel_name
             weight_formula = f'{product}'
             df = df.Define(weight_name, f'static_cast<float>({weight_formula})')
-            df = df.Define(weight_rel_name, f'static_cast<float>({weight_name}/weight_tauID_{central})')
+            df = df.Define(weight_rel_name, f'static_cast<float>({weight_name}/weight_TauID_{central})')
             all_weights.append(weight_out_name)
     if mu!= None:
         df, muID_SF_branches = mu.getMuonIDSF(df,isCentral)
