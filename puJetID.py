@@ -29,9 +29,16 @@ class puJetIDCorrProducer:
                 if source == central :
                     syst_name = "PUJetID_Central"
                 for leg_idx in [0,1]:
-                    df = df.Define(f"weight_tau{leg_idx+1}_{syst_name}",
-                                    f'''httCand.leg_type[{leg_idx}] == Leg::tau ? ::correction::PUJetIDCorrProvider::getGlobal().getPUJetID_eff(
-                                        httCand.leg_p4[{leg_idx}], "{puJetIDCorrProducer.puJetID}",
-                                        ::correction::PUJetIDCorrProvider::UncSource::{source}, ::correction::UncScale::{scale}) : 1.''')
-                    puJetID_SF_branches.append(f"weight_tau{leg_idx+1}_{syst_name}")
+                    branch_name = f"weight_b{leg_idx+1}_{syst_name}"
+                    branch_central = f"""weight_b{leg_idx+1}_PUJetID_Central"""
+                    df = df.Define(f"{branch_name}_double",
+                                    f'''::correction::PUJetIDCorrProvider::getGlobal().getPUJetID_eff(
+                                        HbbCandidate.leg_p4[{leg_idx}], "{puJetIDCorrProducer.puJetID}",
+                                        ::correction::PUJetIDCorrProvider::UncSource::{source}, ::correction::UncScale::{scale})''')
+                    if scale != central:
+                        df = df.Define(f"{branch_name}_rel", f"static_cast<float>({branch_name}_double/{branch_central})")
+                        branch_name += '_rel'
+                    else:
+                        df = df.Define(f"{branch_name}", f"static_cast<float>({branch_name}_double)")
+                    puJetID_SF_branches.append(f"{branch_name}")
         return df,puJetID_SF_branches

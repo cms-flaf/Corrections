@@ -11,7 +11,7 @@ class TrigCorrProducer:
     eTRG_jsonPath = "Corrections/data/EGM/{}/trig.root"
     initialized = False
     deepTauVersion = 'DeepTau2017v2p1'
-    SFSources = { 'ditau': [ "tautrg_ditau_DM0","tautrg_ditau_DM1", "tautrg_ditau_3Prong"], 'singleMu':['mutrg_singleMu'], 'singleEle':['eletrg_singleEle']}
+    SFSources = { 'ditau': [ "ditau_DM0","ditau_DM1", "ditau_3Prong"], 'singleMu':['singleMu'], 'singleEle':['singleEle']}
 
     muon_trg_dict = {
         "2018_UL": "NUM_IsoMu24_DEN_CutBasedIdTight_and_PFIsoTight",
@@ -45,12 +45,21 @@ class TrigCorrProducer:
                     for scale in getScales(source):
                         if not isCentral and scale!= central: continue
                         syst_name = getSystName(source, scale)
-                        branch_name = f"weight_tau{leg_idx+1}_TrgSF_{trg_name}_{syst_name}"
-                        df = df.Define(branch_name,
+                        suffix = syst_name
+                        if scale == central:
+                            suffix = f"{trg_name}_{syst_name}"
+                        branch_name = f"weight_tau{leg_idx+1}_TrgSF_{suffix}"
+                        branch_central = f"weight_tau{leg_idx+1}_TrgSF_{trg_name}_{getSystName(central,central)}"
+                        df = df.Define(f"{branch_name}_double",
                                     f'''{applyTrgBranch_name} ? ::correction::TrigCorrProvider::getGlobal().getTauSF_fromCorrLib(
                                  httCand.leg_p4[{leg_idx}], Tau_decayMode.at(httCand.leg_index[{leg_idx}]), "{trg_name}", httCand.channel(),
                                 ::correction::TrigCorrProvider::UncSource::{source}, ::correction::UncScale::{scale} ) : 1.f''')
-                        SF_branches.append(branch_name)
+                        if scale != central:
+                            df = df.Define(f"{branch_name}_rel", f"static_cast<float>({branch_name}_double/{branch_central})")
+                            branch_name += '_rel'
+                        else:
+                            df = df.Define(f"{branch_name}", f"static_cast<float>({branch_name}_double)")
+                        SF_branches.append(f"{branch_name}")
 
         trg_name = 'singleMu'
         if trg_name in trigger_names:
@@ -62,11 +71,20 @@ class TrigCorrProducer:
                     for scale in getScales(source):
                         if not isCentral and scale!= central: continue
                         syst_name = getSystName(source, scale)
-                        branch_name = f"weight_tau{leg_idx+1}_TrgSF_{trg_name}_{syst_name}"
-                        df = df.Define(branch_name,
+                        suffix = syst_name
+                        if scale == central:
+                            suffix = f"{trg_name}_{syst_name}"
+                        branch_name = f"weight_tau{leg_idx+1}_TrgSF_{suffix}"
+                        branch_central = f"weight_tau{leg_idx+1}_TrgSF_{trg_name}_{getSystName(central,central)}"
+                        df = df.Define(f"{branch_name}_double",
                                     f'''{applyTrgBranch_name} ? ::correction::TrigCorrProvider::getGlobal().getMuSF_fromCorrLib(
                                  httCand.leg_p4[{leg_idx}],::correction::TrigCorrProvider::UncSource::{source}, ::correction::UncScale::{scale} ) : 1.f''')
-                        SF_branches.append(branch_name)
+                        if scale != central:
+                            df = df.Define(f"{branch_name}_rel", f"static_cast<float>({branch_name}_double/{branch_central})")
+                            branch_name += '_rel'
+                        else:
+                            df = df.Define(f"{branch_name}", f"static_cast<float>({branch_name}_double)")
+                        SF_branches.append(f"{branch_name}")
 
         trg_name = 'singleEle'
         if trg_name in trigger_names:
@@ -78,9 +96,18 @@ class TrigCorrProducer:
                     for scale in getScales(source):
                         if not isCentral and scale!= central: continue
                         syst_name = getSystName(source, scale)
-                        branch_name = f"weight_tau{leg_idx+1}_TrgSF_{trg_name}_{syst_name}"
-                        df = df.Define(branch_name,
+                        suffix = syst_name
+                        if scale == central:
+                            suffix = f"{trg_name}_{syst_name}"
+                        branch_name = f"weight_tau{leg_idx+1}_TrgSF_{suffix}"
+                        branch_central = f"weight_tau{leg_idx+1}_TrgSF_{trg_name}_{getSystName(central,central)}"
+                        df = df.Define(f"{branch_name}_double",
                                     f'''{applyTrgBranch_name} ? ::correction::TrigCorrProvider::getGlobal().getEleSF_fromRootFile(
                                  httCand.leg_p4[{leg_idx}],::correction::TrigCorrProvider::UncSource::{source}, ::correction::UncScale::{scale} ) : 1.f''')
-                        SF_branches.append(branch_name)
+                        if scale != central:
+                            df = df.Define(f"{branch_name}_rel", f"static_cast<float>({branch_name}_double/{branch_central})")
+                            branch_name += '_rel'
+                        else:
+                            df = df.Define(f"{branch_name}", f"static_cast<float>({branch_name}_double)")
+                        SF_branches.append(f"{branch_name}")
         return df,SF_branches
