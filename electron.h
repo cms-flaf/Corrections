@@ -83,7 +83,6 @@ public:
 private:
     std::unique_ptr<CorrectionSet> corrections_, correctionsES_;
     Correction::Ref EleIDSF_, EleES_;
-
 };
 
 } //namespace correction

@@ -1,9 +1,6 @@
 import os
 import ROOT
 from .CorrectionsCore import *
-import yaml
-
-
 
 class EleCorrProducer:
     EleID_JsonPath = "/cvmfs/cms.cern.ch/rsync/cms-nanoAOD/jsonpog-integration/POG/EGM/{}/electron.json.gz"
@@ -27,14 +24,14 @@ class EleCorrProducer:
 
 
 
-    def getIDSF(self, df, return_variations=True,isCentral=True):
+    def getIDSF(self, df, nLegs, isCentral):
         sf_sources =EleCorrProducer.ID_sources
         SF_branches = []
         for source in [ central ] + sf_sources:
             for scale in getScales(source):
                 if not isCentral and scale!= central: continue
                 syst_name = getSystName(source, scale)
-                for leg_idx in [0,1]:
+                for leg_idx in range(nLegs):
                     branch_name = f"weight_tau{leg_idx+1}_EleidSF_{scale}"
                     branch_central = f"""weight_tau{leg_idx+1}_EleidSF_{getSystName(central, central)}"""
                     df = df.Define(f"{branch_name}_double",

@@ -69,11 +69,11 @@ public:
     float getTauSF_fromCorrLib(const LorentzVectorM& Tau_p4, int Tau_decayMode, const std::string& trg_type, Channel ch, UncSource source, UncScale scale) const
     {
         if(isTwoProngDM(Tau_decayMode)) throw std::runtime_error("no SF for two prong tau decay modes");
-        const auto & wpVSjet = wps_map_.at(ch).at(2);
+        const auto & wpVSjet = wps_map_.count(ch) ? wps_map_.at(ch).at(2).first : "Loose";
         const UncScale tau_scale = sourceApplies_tau_fromCorrLib(source, Tau_decayMode, trg_type)
                                         ? scale : UncScale::Central;
         const std::string& scale_str = getTauScaleStr(tau_scale);
-        return tau_trg_->evaluate({Tau_p4.pt(), Tau_decayMode, trg_type, wpVSjet.first,"sf", scale_str});
+        return tau_trg_->evaluate({Tau_p4.pt(), Tau_decayMode, trg_type, wpVSjet,"sf", scale_str});
     }
 
     float getMuSF_fromCorrLib(const LorentzVectorM& Mu_p4, UncSource source, UncScale scale) const

@@ -109,7 +109,6 @@ public:
     }
 
 private:
-
     JetVariationsCalculator jvc_total ;
 };
 } // namespace correction

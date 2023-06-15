@@ -1,7 +1,6 @@
 import os
 import ROOT
 from .CorrectionsCore import *
-import yaml
 
 deepTauVersions = {"2p1":"2017", "2p5":"2018"}
 
@@ -28,7 +27,7 @@ class TauCorrProducer:
             tauType_map = createTauSFTypeMap(config["genuineTau_SFtype"])
             ROOT.gInterpreter.ProcessLine(f'::correction::TauCorrProvider::Initialize("{jsonFile}", "{self.deepTauVersion}", {wp_map_cpp}, {tauType_map})')
             TauCorrProducer.initialized = True
-            deepTauVersion = f"""DeepTau{deepTauVersions[config["deepTauVersion"]]}{config["deepTauVersion"]}"""
+            #deepTauVersion = f"""DeepTau{deepTauVersions[config["deepTauVersion"]]}{config["deepTauVersion"]}"""
 
     def getES(self, df, source_dict):
         for source in [ central ] + TauCorrProducer.energyScaleSources_tau + TauCorrProducer.energyScaleSources_lep:
@@ -42,7 +41,7 @@ class TauCorrProducer:
 
         return df, source_dict
 
-    def getSF(self, df, return_variations=True, isCentral=True):
+    def getSF(self, df, nLegs, isCentral, return_variations):
         sf_sources =TauCorrProducer.SFSources_genuineTau_dm+ TauCorrProducer.SFSources_genuineTau_pt+ TauCorrProducer.SFSources_genuineLep if return_variations else []
         SF_branches = {}
         for source in [ central ] + sf_sources:
@@ -50,7 +49,7 @@ class TauCorrProducer:
                 syst_name = getSystName(source, scale)
                 if not isCentral and scale!= central: continue
                 SF_branches[syst_name]= []
-                for leg_idx in [0,1]:
+                for leg_idx in range(nLegs):
                     df = df.Define(f"weight_tau{leg_idx+1}_idSF_{syst_name}",
                                 f'''httCand.leg_type[{leg_idx}] == Leg::tau ? ::correction::TauCorrProvider::getGlobal().getSF(
                                httCand.leg_p4[{leg_idx}], Tau_decayMode.at(httCand.leg_index[{leg_idx}]),

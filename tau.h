@@ -7,7 +7,6 @@ namespace correction {
 
 class TauCorrProvider : public CorrectionsBase<TauCorrProvider> {
 public:
-
     enum class UncSource : int {
         Central = -1,
         TauES_DM0 = 0,
@@ -34,7 +33,6 @@ public:
     };
 
     using wpsMapType = std::map<Channel, std::vector<std::pair<std::string, int> > >;
-
 
     static bool isTwoProngDM(int dm)
     {
