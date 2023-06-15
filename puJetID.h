@@ -41,7 +41,6 @@ public:
             return 1.;
         }
         return puJetEff_->evaluate({jet_p4.Eta(), jet_p4.Pt(), scale_str, working_point}) ;
-
     }
 
 private:

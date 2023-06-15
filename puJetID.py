@@ -41,4 +41,23 @@ class puJetIDCorrProducer:
                     else:
                         df = df.Define(f"{branch_name}", f"static_cast<float>({branch_name}_double)")
                     puJetID_SF_branches.append(f"{branch_name}")
+                branch_name_jets = f"weight_AdditionalJets_{syst_name}"
+                branch_central_jets = f"""weight_AdditionalJets_PUJetID_Central"""
+                df = df.Define(f"{branch_name_jets}", f"""RVecF weights(Additional_jet_p4.size(), 1); for(size_t jet_idx = 0 ; jet_idx < Additional_jet_p4.size(); jet_idx++)
+                               {{
+                                    weights[jet_idx] = ::correction::PUJetIDCorrProvider::getGlobal().getPUJetID_eff(
+                                        Additional_jet_p4[jet_idx], "{puJetIDCorrProducer.puJetID}",
+                                        ::correction::PUJetIDCorrProvider::UncSource::{source}, ::correction::UncScale::{scale});
+                                }}
+                                return weights;""")
+                if scale != central:
+                    branch_name_jet_rel = f"{branch_name_jets}_rel"
+                    df = df.Define(branch_name_jet_rel, f"""RVecF weights_rel({branch_name_jets}.size(),1); for(size_t weight_idx = 0; weight_idx<{branch_name_jets}.size(); weight_idx++)
+                                {{
+                                weights_rel[weight_idx] = {branch_name_jets}[weight_idx]/{branch_central_jets}[weight_idx];
+                                }}
+                                return weights_rel;""")
+                else:
+                    branch_name_jet_rel = branch_central_jets
+                puJetID_SF_branches.append(branch_name_jet_rel)
         return df,puJetID_SF_branches

@@ -16,6 +16,29 @@ public:
         EleFakingTauES_DM0 = 3,
         EleFakingTauES_DM1 = 4,
         MuFakingTauES = 5,
+        stat1_dm0=6,
+        stat2_dm0=7,
+        stat1_dm1=7,
+        stat2_dm1=8,
+        stat1_dm10=9,
+        stat2_dm10=10,
+        stat1_dm11=11,
+        stat2_dm11=12,
+        syst_alleras=13,
+        syst_year=14,
+        syst_year_dm0=15,
+        syst_year_dm1=16,
+        syst_year_dm10=17,
+        syst_year_dm11=18,
+        total = 19,
+        TauID_genuineElectron_barrel = 20,
+        TauID_genuineElectron_endcaps = 21,
+        TauID_genuineMuon_etaLt0p4 = 22,
+        TauID_genuineMuon_eta0p4to0p8 = 23,
+        TauID_genuineMuon_eta0p8to1p2 = 24,
+        TauID_genuineMuon_eta1p2to1p7 = 25,
+        TauID_genuineMuon_etaGt1p7 = 26
+        /*
         TauID_genuineTau_DM0 = 6,
         TauID_genuineTau_DM1 = 7,
         TauID_genuineTau_3Prong = 8,
@@ -23,18 +46,58 @@ public:
         TauID_genuineTau_Pt25_30 = 10,
         TauID_genuineTau_Pt30_35 = 11,
         TauID_genuineTau_Pt35_40 = 12,
-        TauID_genuineTau_Ptgt40 = 13,
-        TauID_genuineElectron_barrel = 14,
-        TauID_genuineElectron_endcaps = 15,
-        TauID_genuineMuon_etaLt0p4 = 16,
-        TauID_genuineMuon_eta0p4to0p8 = 17,
-        TauID_genuineMuon_eta0p8to1p2 = 18,
-        TauID_genuineMuon_eta1p2to1p7 = 19,
-        TauID_genuineMuon_etaGt1p7 = 20,
+        TauID_genuineTau_Ptgt40 = 13, */
     };
 
     using wpsMapType = std::map<Channel, std::vector<std::pair<std::string, int> > >;
-
+    // name, need year, need dm
+    static const std::map<UncSource,std::tuple<std::string,bool,bool>> getUncMap (){
+        static const std::map<UncSource,std::tuple<std::string,bool,bool>> UncMap = {
+            {UncSource::Central, {"Central", false,false}},
+            {UncSource::TauES_DM0, {"TauES_DM0", false,false}},
+            {UncSource::TauES_DM1, {"TauES_DM1", false,false}},
+            {UncSource::TauES_3prong,{"TauES_3prong",false,false}},
+            {UncSource::EleFakingTauES_DM0,{"EleFakingTauES_DM0",false, false}},
+            {UncSource::EleFakingTauES_DM1,{"EleFakingTauES_DM1",false, false}},
+            {UncSource::MuFakingTauES,{"MuFakingTauES",true,false}},
+            {UncSource::stat1_dm0,{"stat1",false,true}},
+            {UncSource::stat2_dm0,{"stat2",false,true}},
+            {UncSource::stat1_dm1,{"stat1",false,true}},
+            {UncSource::stat2_dm1,{"stat2",false,true}},
+            {UncSource::stat1_dm10,{"stat1",false,true}},
+            {UncSource::stat2_dm10,{"stat2",false,true}},
+            {UncSource::stat1_dm11,{"stat1",false,true}},
+            {UncSource::stat2_dm11,{"stat2",false,true}},
+            {UncSource::syst_alleras,{"syst_alleras_",true,false}},
+            {UncSource::syst_year,{"syst_",true,false}},
+            {UncSource::syst_year_dm0,{"syst_",true,true}},
+            {UncSource::syst_year_dm1,{"syst_",true,true}},
+            {UncSource::syst_year_dm10,{"syst_",true,true}},
+            {UncSource::syst_year_dm11,{"syst_",true,true}},
+            {UncSource::total,{"",false, false}},
+            {UncSource::TauID_genuineElectron_barrel, {"TauID_genuineElectron_barrel",false,false}},
+            {UncSource::TauID_genuineElectron_endcaps,{"TauID_genuineElectron_endcaps",false,false}},
+            {UncSource::TauID_genuineMuon_etaLt0p4, {"TauID_genuineMuon_etaLt0p4",false,false}},
+            {UncSource::TauID_genuineMuon_eta0p4to0p8, {"TauID_genuineMuon_eta0p4to0p8",false,false}},
+            {UncSource::TauID_genuineMuon_eta0p8to1p2, {"TauID_genuineMuon_eta0p8to1p2",false,false}},
+            {UncSource::TauID_genuineMuon_eta1p2to1p7, {"TauID_genuineMuon_eta1p2to1p7",false,false}},
+            {UncSource::TauID_genuineMuon_etaGt1p7, {"TauID_genuineMuon_etaGt1p7",false,false}},
+        };
+        return UncMap;
+    }
+    static const std::string getFullNameUnc(const std::string source_name, const std::string year, bool need_year, bool need_dm, const std::string dm){
+        if(need_year){
+            if(need_dm)
+                return source_name+year+"_dm"+dm+"_";
+            else
+                return source_name+year+"_";
+        }
+        else{
+            if(need_dm)
+                return source_name+"_dm"+dm+"_";
+        }
+        return source_name;
+    }
 
     static bool isTwoProngDM(int dm)
     {
@@ -55,17 +118,31 @@ public:
     static bool sourceApplies(UncSource source, const LorentzVectorM& p4, int decayMode, GenLeptonMatch genMatch)
     {
         if(genMatch == GenLeptonMatch::Tau) {
+            if(source == UncSource::total) return true;
             if(source == UncSource::TauES_DM0 && decayMode == 0) return true;
             if(source == UncSource::TauES_DM1 && ( decayMode == 1 || decayMode == 2 )) return true;
-            if(source == UncSource::TauES_3prong && ( decayMode == 10 || decayMode == 11 )) return true;
-            if(source == UncSource::TauID_genuineTau_DM0 && decayMode==0 && p4.pt()>40) return true;
+            if(source == UncSource::stat1_dm0 && ( decayMode == 0 )) return true;
+            if(source == UncSource::stat2_dm0 && ( decayMode == 0 )) return true;
+            if(source == UncSource::stat1_dm1 && ( decayMode == 1 || decayMode == 2 )) return true;
+            if(source == UncSource::stat2_dm1 && ( decayMode == 1 || decayMode == 2 )) return true;
+            if(source == UncSource::stat1_dm10 && ( decayMode == 10 )) return true;
+            if(source == UncSource::stat2_dm10 && ( decayMode == 10 )) return true;
+            if(source == UncSource::stat1_dm11 && ( decayMode == 11 )) return true;
+            if(source == UncSource::stat2_dm11 && ( decayMode == 11 )) return true;
+            if(source == UncSource::syst_alleras) return true;
+            if(source == UncSource::syst_year ) return true;
+            if(source == UncSource::syst_year_dm0 && ( decayMode == 0)) return true;
+            if(source == UncSource::syst_year_dm1 && ( decayMode == 1 || decayMode == 2 )) return true;
+            if(source == UncSource::syst_year_dm10 && ( decayMode == 10)) return true;
+            if(source == UncSource::syst_year_dm11 && ( decayMode == 11)) return true;
+            /*if(source == UncSource::TauID_genuineTau_DM0 && decayMode==0 && p4.pt()>40) return true;
             if(source == UncSource::TauID_genuineTau_DM1 && ( decayMode == 1 || decayMode == 2 ) && p4.pt()>40) return true;
             if(source == UncSource::TauID_genuineTau_3Prong && ( decayMode == 10 || decayMode == 11 ) && p4.pt()>40) return true;
             if(source == UncSource::TauID_genuineTau_Pt20_25 && p4.pt()>20 && p4.pt()<=25 ) return true;
             if(source == UncSource::TauID_genuineTau_Pt25_30 && p4.pt()>25 && p4.pt()<=30 ) return true;
             if(source == UncSource::TauID_genuineTau_Pt30_35 && p4.pt()>30 && p4.pt()<=35 ) return true;
             if(source == UncSource::TauID_genuineTau_Pt35_40 && p4.pt()>35 && p4.pt()<=40 ) return true;
-            if(source == UncSource::TauID_genuineTau_Ptgt40 && p4.pt()>40 ) return true;
+            if(source == UncSource::TauID_genuineTau_Ptgt40 && p4.pt()>40 ) return true;*/
         } else if(genMatch == GenLeptonMatch::Electron || genMatch == GenLeptonMatch::TauElectron) {
             if(source == UncSource::EleFakingTauES_DM0 && decayMode == 0) return true;
             if(source == UncSource::EleFakingTauES_DM1 && ( decayMode == 1 || decayMode == 2 )) return true;
@@ -82,7 +159,7 @@ public:
         return false;
     }
 
-    TauCorrProvider(const std::string& fileName, const std::string& deepTauVersion, const wpsMapType& wps_map, const std::map<Channel, std::string>& tauType_map) :
+    TauCorrProvider(const std::string& fileName, const std::string& deepTauVersion, const wpsMapType& wps_map,const std::map<Channel, std::string>& tauType_map, const std::string& year) :
         corrections_(CorrectionSet::from_file(fileName)),
         tau_es_(corrections_->at("tau_energy_scale")),
         tau_vs_e_(corrections_->at(deepTauVersion + "VSe")),
@@ -90,7 +167,8 @@ public:
         tau_vs_jet_(corrections_->at(deepTauVersion + "VSjet")),
         deepTauVersion_(deepTauVersion),
         wps_map_(wps_map),
-        tauType_map_(tauType_map)
+        tauType_map_(tauType_map),
+        year_(year)
     {
     }
 
@@ -103,7 +181,7 @@ public:
                 const GenLeptonMatch genMatch = static_cast<GenLeptonMatch>(Tau_genMatch.at(n));
                 const UncScale tau_scale = sourceApplies(source, Tau_p4[n], Tau_decayMode.at(n), genMatch)
                                            ? scale : UncScale::Central;
-                const std::string& scale_str = getScaleStr(tau_scale);
+                const std::string& scale_str =  getScaleStr(tau_scale);
                 const double sf = tau_es_->evaluate({Tau_p4[n].pt(), Tau_p4[n].eta(), Tau_decayMode.at(n),
                 static_cast<int>(genMatch), deepTauVersion_, scale_str});
                 final_p4[n] *= sf;
@@ -121,16 +199,17 @@ public:
         const auto & genuineTau_SFtype = tauType_map_.at(ch);
         const GenLeptonMatch genMatch = static_cast<GenLeptonMatch>(Tau_genMatch);
         if(genMatch == GenLeptonMatch::Tau) {
+            const auto & unc_features = getUncMap().at(source);
+            const auto & source_name = getFullNameUnc(std::get<0>(unc_features), year_,  std::get<1>(unc_features), std::get<2>(unc_features), std::to_string(Tau_decayMode));
+            //std::cout << "source applies? " << sourceApplies(source, Tau_p4, Tau_decayMode, genMatch)<<std::endl;
             const UncScale tau_had_scale = sourceApplies(source, Tau_p4, Tau_decayMode, genMatch)
                                            ? scale : UncScale::Central;
-            const std::string& scale_str = scale != UncScale::Central  ? getScaleStr(tau_had_scale) : "default" ;
+            const std::string& scale_str = tau_had_scale != UncScale::Central  ? source_name+getScaleStr(tau_had_scale) : "default" ;
+            //std::cout<<"tau had scale " << static_cast<int>(tau_had_scale)<<std::endl;
+            //std::cout<<"unc source name "<< source_name <<std::endl;
+            //std::cout<<" scale_str " << scale_str <<std::endl;
+            //std::cout << std::endl;
             const auto sf = tau_vs_jet_->evaluate({Tau_p4.pt(),Tau_decayMode, Tau_genMatch, wpVSjet.first, wpVSe.first, scale_str, genuineTau_SFtype});
-            //if(tau_had_scale != UncScale::Central && (wpVSe.second > static_cast<int>(WorkingPointsTauVSe::VVLoose) )){
-                //const auto sf_central = tau_vs_jet_->evaluate({Tau_p4.pt(), Tau_decayMode, Tau_genMatch,  wpVSjet.first, wpVSe.first, "default", genuineTau_SFtype});
-                //const float additional_unc = Tau_p4.pt() > 100 ? 0.15 : 0.05;
-                //return sf_central * ( sf / sf_central + std::copysign(additional_unc, sf - sf_central));
-                //throw std::runtime_error("working points not supported");
-            //}
             return sf;
         }
         if(genMatch==GenLeptonMatch::Electron || genMatch == GenLeptonMatch::TauElectron){
@@ -153,6 +232,8 @@ private:
     std::string deepTauVersion_;
     const wpsMapType wps_map_;
     const std::map<Channel, std::string> tauType_map_;
+    const std::string flag_;
+    const std::string year_;
 
 };
 
