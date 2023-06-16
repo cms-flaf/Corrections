@@ -31,17 +31,9 @@ class puJetIDCorrProducer:
                     syst_name = "PUJetID_Central"
                 branch_name_jets = f"weight_Jet_{syst_name}_"
                 branch_central_jets = f"""weight_Jet_PUJetID_Central_"""
-                df = df.Define(f"{branch_name_jets}", f"""RVecF weights(Jet_p4.size(), 1); for(size_t jet_idx = 0 ; jet_idx < Jet_p4.size(); jet_idx++)
-                               {{
-                                   if(!Jet_B0[jet_idx]){{
-                                       weights[jet_idx] = 1;
-                                       continue;
-                                   }}
-                                    weights[jet_idx] = ::correction::PUJetIDCorrProvider::getGlobal().getPUJetID_eff(
-                                        Jet_p4[jet_idx], "{puJetIDCorrProducer.puJetID}",
-                                        ::correction::PUJetIDCorrProvider::UncSource::{source}, ::correction::UncScale::{scale});
-                                }}
-                                return weights;""")
+                df = df.Define(f"{branch_name_jets}", f"""::correction::PUJetIDCorrProvider::getGlobal().getPUJetID_eff(
+                                        Jet_p4, "{puJetIDCorrProducer.puJetID}",
+                                        ::correction::PUJetIDCorrProvider::UncSource::{source}, ::correction::UncScale::{scale});""")
                 if scale != central:
                     branch_name_jet_rel = f"{branch_name_jets}rel_tmp"
                     df = df.Define(branch_name_jet_rel, f"""RVecF weights_rel({branch_name_jets}.size(),1); for(size_t weight_idx = 0; weight_idx<{branch_name_jets}.size(); weight_idx++)

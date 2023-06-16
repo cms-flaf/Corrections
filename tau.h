@@ -201,14 +201,9 @@ public:
         if(genMatch == GenLeptonMatch::Tau) {
             const auto & unc_features = getUncMap().at(source);
             const auto & source_name = getFullNameUnc(std::get<0>(unc_features), year_,  std::get<1>(unc_features), std::get<2>(unc_features), std::to_string(Tau_decayMode));
-            //std::cout << "source applies? " << sourceApplies(source, Tau_p4, Tau_decayMode, genMatch)<<std::endl;
             const UncScale tau_had_scale = sourceApplies(source, Tau_p4, Tau_decayMode, genMatch)
                                            ? scale : UncScale::Central;
             const std::string& scale_str = tau_had_scale != UncScale::Central  ? source_name+getScaleStr(tau_had_scale) : "default" ;
-            //std::cout<<"tau had scale " << static_cast<int>(tau_had_scale)<<std::endl;
-            //std::cout<<"unc source name "<< source_name <<std::endl;
-            //std::cout<<" scale_str " << scale_str <<std::endl;
-            //std::cout << std::endl;
             const auto sf = tau_vs_jet_->evaluate({Tau_p4.pt(),Tau_decayMode, Tau_genMatch, wpVSjet.first, wpVSe.first, scale_str, genuineTau_SFtype});
             return sf;
         }
@@ -232,7 +227,6 @@ private:
     std::string deepTauVersion_;
     const wpsMapType wps_map_;
     const std::map<Channel, std::string> tauType_map_;
-    const std::string flag_;
     const std::string year_;
 
 };
