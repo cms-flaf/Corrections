@@ -46,6 +46,5 @@ class puJetIDCorrProducer:
                                 return weights_rel;""")
                 else:
                     branch_name_jet_rel = f"{branch_central_jets}tmp"
-                print(branch_name_jet_rel)
                 puJetID_SF_branches.append(branch_name_jet_rel)
         return df,puJetID_SF_branches
