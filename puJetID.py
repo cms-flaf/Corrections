@@ -22,7 +22,6 @@ class puJetIDCorrProducer:
 
     def getPUJetIDEff(self, df,isCentral=True):
         puJetID_SF_branches = []
-        df = df.Define("Jet_B0", f"v_ops::pt(Jet_p4)>20 && abs(v_ops::eta(Jet_p4)) < 5 && ( Jet_jetId & 2 ) && (Jet_puId>0 || v_ops::pt(Jet_p4)>50)")
         for source in [ central ] + puJetIDCorrProducer.puJetID_SF_Sources:
             for scale in getScales(source):
                 if not isCentral and scale!= central: continue
