@@ -37,7 +37,7 @@ public:
         RVecF weights(Jet_p4.size(), 1);
         for(size_t jet_idx = 0 ; jet_idx < Jet_p4.size(); jet_idx++)
         {
-            if(Jet_p4[jet_idx].Pt()<20 || std::abs(Jet_p4[jet_idx].Eta())<5){
+            if(Jet_p4[jet_idx].Pt()<20 || std::abs(Jet_p4[jet_idx].Eta())>5){
                 weights[jet_idx] = 0.;
                 continue;
             }
