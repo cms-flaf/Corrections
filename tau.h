@@ -199,8 +199,8 @@ public:
         const auto & genuineTau_SFtype = tauType_map_.at(ch);
         const GenLeptonMatch genMatch = static_cast<GenLeptonMatch>(Tau_genMatch);
         if(genMatch == GenLeptonMatch::Tau) {
-            const auto & unc_features = getUncMap().at(source);
-            const auto & source_name = getFullNameUnc(std::get<0>(unc_features), year_,  std::get<1>(unc_features), std::get<2>(unc_features), std::to_string(Tau_decayMode));
+            const auto & [unc_name, need_year, need_dm] = getUncMap().at(source);
+            const auto & source_name = getFullNameUnc(unc_name, year_,  need_year, need_dm, std::to_string(Tau_decayMode));
             const UncScale tau_had_scale = sourceApplies(source, Tau_p4, Tau_decayMode, genMatch)
                                            ? scale : UncScale::Central;
             const std::string& scale_str = tau_had_scale != UncScale::Central  ? source_name+getScaleStr(tau_had_scale) : "default" ;
