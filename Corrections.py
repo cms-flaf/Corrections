@@ -164,15 +164,19 @@ def getNormalisationCorrections(df, config, sample, ana_cache=None, return_varia
     denom = f'/{ana_cache["denominator"][central][central]}' if ana_cache is not None else ''
 
     for syst_name in [central] + list(all_sources):
-        if not isCentral : continue
+        #if not isCentral : continue
         branches = getBranches(syst_name, all_branches)
         product = ' * '.join(branches)
-        weight_name = f'weight_{syst_name}'
+        weight_name = f'weight_{syst_name}' if syst_name!=central else 'weight'
         weight_rel_name = weight_name + '_rel'
         weight_out_name = weight_name if syst_name == central else weight_rel_name
         weight_formula = f'genWeightD * {lumi} * {stitching_weight_string} * {product}{denom}'
+        print(weight_name)
+        print(weight_formula)
+        print("")
         df = df.Define(weight_name, f'static_cast<float>({weight_formula})')
-        df = df.Define(weight_rel_name, f'static_cast<float>(weight_{syst_name}/weight_{central})')
+        if syst_name!=central:
+            df = df.Define(weight_out_name, f'static_cast<float>(weight_{syst_name}/weight)')
         all_weights.append(weight_out_name)
 
     if('tauID' in sf_to_apply):
@@ -183,9 +187,9 @@ def getNormalisationCorrections(df, config, sample, ana_cache=None, return_varia
         for syst_name in [central] + list(tau_sources):
             branches = getBranches(syst_name, tau_branches)
             product = ' * '.join(branches)
-            weight_name = f'weight_{syst_name}'
+            weight_name = f'weight_TauID_{syst_name}'
             if(syst_name == central):
-                weight_name = f'weight_TauID_{syst_name}'
+                weight_name = f'weight_TauID_{central}'
             weight_rel_name = weight_name + '_rel'
             weight_out_name = weight_name if syst_name == central else weight_rel_name
             weight_formula = f'{product}'

@@ -33,7 +33,7 @@ class puJetIDCorrProducer:
                 df = df.Define(f"{branch_name_jets}", f"""::correction::PUJetIDCorrProvider::getGlobal().getPUJetID_eff(
                                         Jet_p4, "{puJetIDCorrProducer.puJetID}",
                                         ::correction::PUJetIDCorrProvider::UncSource::{source}, ::correction::UncScale::{scale});""")
-                if scale != central:
+                if source != central:
                     branch_name_jet_rel = f"{branch_name_jets}rel_tmp"
                     df = df.Define(branch_name_jet_rel, f"""RVecF weights_rel({branch_name_jets}.size(),1); for(size_t weight_idx = 0; weight_idx<{branch_name_jets}.size(); weight_idx++)
                                 {{
@@ -42,5 +42,6 @@ class puJetIDCorrProducer:
                                 return weights_rel;""")
                 else:
                     branch_name_jet_rel = f"{branch_central_jets}tmp"
+                    df = df.Define(branch_name_jet_rel, branch_central_jets)
                 puJetID_SF_branches.append(branch_name_jet_rel)
         return df,puJetID_SF_branches
