@@ -32,9 +32,7 @@ def updateSourceDict(source_dict, source, obj):
 
 def createWPChannelMap(map_wp_python):
     ch_list = []
-    channels = ['eTau', 'muTau', 'tauTau']
     for ch,ch_data in map_wp_python.items():
-        if ch not in channels: continue
         wp_list = []
         for k in ['e', 'mu', 'jet']:
             wp_class = globals()[f'WorkingPointsTauVS{k}']
@@ -49,7 +47,6 @@ def createWPChannelMap(map_wp_python):
     return map_str
 
 def createTauSFTypeMap(map_sf_python):
-    ch_list = []
     map_sf_cpp = 'std::map<Channel, std::string>({'
     for ch, ch_data in map_sf_python.items():
         map_sf_cpp += f'{{ Channel::{ch}, "{ch_data}" }}, '

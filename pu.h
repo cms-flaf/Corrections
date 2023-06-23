@@ -29,7 +29,6 @@ public:
 private:
     std::unique_ptr<CorrectionSet> corrections_;
     Correction::Ref puweight;
-
 };
 
 } // namespace correction
