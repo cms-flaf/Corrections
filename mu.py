@@ -1,7 +1,6 @@
 import os
 import ROOT
 from .CorrectionsCore import *
-import yaml
 
 class MuCorrProducer:
     muIDEff_JsonPath = "/cvmfs/cms.cern.ch/rsync/cms-nanoAOD/jsonpog-integration/POG/MUO/{}/muon_Z.json.gz"
@@ -23,7 +22,7 @@ class MuCorrProducer:
             MuCorrProducer.period = period
             MuCorrProducer.initialized = True
 
-    def getMuonIDSF(self, df, isCentral=True):
+    def getMuonIDSF(self, df, nLegs, isCentral):
         muID_SF_branches = []
         for source in [ central ] + MuCorrProducer.muID_SF_Sources:
             for scale in getScales(source):
@@ -31,7 +30,7 @@ class MuCorrProducer:
                 syst_name = getSystName(source, scale)
                 if(scale!=central):
                     syst_name=getSystName(MuCorrProducer.muID_SF_Sources_dict[source],scale)
-                for leg_idx in [0,1]:
+                for leg_idx in range(nLegs):
                     branch_name = f"weight_tau{leg_idx+1}_MuidSF_{syst_name}"
                     branch_central = f"""weight_tau{leg_idx+1}_MuidSF_{getSystName(central, central)}"""
                     df = df.Define(f"{branch_name}_double",

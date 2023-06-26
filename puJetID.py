@@ -1,7 +1,6 @@
 import os
 import ROOT
 from .CorrectionsCore import *
-import yaml
 
 class puJetIDCorrProducer:
     PUJetID_JsonPath = "/cvmfs/cms.cern.ch/rsync/cms-nanoAOD/jsonpog-integration/POG/JME/{}/jmar.json.gz"

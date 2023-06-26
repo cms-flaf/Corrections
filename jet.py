@@ -1,7 +1,6 @@
 import os
 import ROOT
 from .CorrectionsCore import *
-import yaml
 
 class JetCorrProducer:
     JEC_SF_txtPath_MC = "Corrections/data/JME/{}/Summer19UL18_JRV2_MC/Summer19UL18_JRV2_MC_SF_AK4PFchs.txt"

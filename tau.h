@@ -7,7 +7,6 @@ namespace correction {
 
 class TauCorrProvider : public CorrectionsBase<TauCorrProvider> {
 public:
-
     enum class UncSource : int {
         Central = -1,
         TauES_DM0 = 0,
@@ -98,7 +97,6 @@ public:
         }
         return source_name;
     }
-
     static bool isTwoProngDM(int dm)
     {
         static const std::set<int> twoProngDMs = { 5, 6 };
@@ -193,31 +191,37 @@ public:
     float getSF(const LorentzVectorM& Tau_p4, int Tau_decayMode, int Tau_genMatch, Channel ch, UncSource source, UncScale scale) const
     {
         if(isTwoProngDM(Tau_decayMode)) throw std::runtime_error("no SF for two prong tau decay modes");
-        const auto & wpVSe = wps_map_.at(ch).at(0);
-        const auto & wpVSmu = wps_map_.at(ch).at(1);
-        const auto & wpVSjet = wps_map_.at(ch).at(2);
-        const auto & genuineTau_SFtype = tauType_map_.at(ch);
+        const auto wpVSe = wps_map_.count(ch) ? wps_map_.at(ch).at(0).first : "VVLoose";
+        const auto wpVSmu = wps_map_.count(ch) ? wps_map_.at(ch).at(1).first : "VLoose";
+        const auto wpVSjet = wps_map_.count(ch) ? wps_map_.at(ch).at(2).first : "Loose";
+        const auto & genuineTau_SFtype = tauType_map_.count(ch) ? tauType_map_.at(ch) : "dm";
         const GenLeptonMatch genMatch = static_cast<GenLeptonMatch>(Tau_genMatch);
         if(genMatch == GenLeptonMatch::Tau) {
             const auto & [unc_name, need_year, need_dm] = getUncMap().at(source);
             const auto & source_name = getFullNameUnc(unc_name, year_,  need_year, need_dm, std::to_string(Tau_decayMode));
             const UncScale tau_had_scale = sourceApplies(source, Tau_p4, Tau_decayMode, genMatch)
                                            ? scale : UncScale::Central;
-            const std::string& scale_str = tau_had_scale != UncScale::Central  ? source_name+getScaleStr(tau_had_scale) : "default" ;
-            const auto sf = tau_vs_jet_->evaluate({Tau_p4.pt(),Tau_decayMode, Tau_genMatch, wpVSjet.first, wpVSe.first, scale_str, genuineTau_SFtype});
+            const std::string& scale_str = scale != UncScale::Central  ? getScaleStr(tau_had_scale) : "default" ;
+            const auto sf = tau_vs_jet_->evaluate({Tau_p4.pt(),Tau_decayMode, Tau_genMatch, wpVSjet, wpVSe, scale_str, genuineTau_SFtype});
+            //if(tau_had_scale != UncScale::Central && (wpVSe.second > static_cast<int>(WorkingPointsTauVSe::VVLoose) )){
+                //const auto sf_central = tau_vs_jet_->evaluate({Tau_p4.pt(), Tau_decayMode, Tau_genMatch,  wpVSjet.first, wpVSe.first, "default", genuineTau_SFtype});
+                //const float additional_unc = Tau_p4.pt() > 100 ? 0.15 : 0.05;
+                //return sf_central * ( sf / sf_central + std::copysign(additional_unc, sf - sf_central));
+                //throw std::runtime_error("working points not supported");
+            //}
             return sf;
         }
         if(genMatch==GenLeptonMatch::Electron || genMatch == GenLeptonMatch::TauElectron){
             const UncScale tau_ele_scale = sourceApplies(source, Tau_p4, Tau_decayMode, genMatch)
                                            ? scale : UncScale::Central;
             const std::string& scale_str = getScaleStr(tau_ele_scale);
-            return tau_vs_e_->evaluate({Tau_p4.eta(), Tau_genMatch, wpVSe.first, scale_str});
+            return tau_vs_e_->evaluate({Tau_p4.eta(), Tau_genMatch, wpVSe, scale_str});
         }
          if(genMatch == GenLeptonMatch::Muon || genMatch == GenLeptonMatch::TauMuon){
             const UncScale tau_mu_scale = sourceApplies(source, Tau_p4, Tau_decayMode, genMatch)
                                            ? scale : UncScale::Central;
             const std::string& scale_str = getScaleStr(tau_mu_scale);
-            return tau_vs_mu_->evaluate({Tau_p4.eta(), Tau_genMatch, wpVSmu.first, scale_str});
+            return tau_vs_mu_->evaluate({Tau_p4.eta(), Tau_genMatch, wpVSmu, scale_str});
         }
         return 1.;
     }
