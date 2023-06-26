@@ -103,7 +103,7 @@ def applyScaleUncertainties(df):
             syst_name = getSystName(source, scale)
             syst_dict[syst_name] = source
             for obj in [ "Electron", "Muon", "Tau", "Jet", "FatJet", "boostedTau", "MET", "PuppiMET",
-                         "DeepMETResponseTune", "DeepMETResolutionTune" ]:
+                         "DeepMETResponseTune", "DeepMETResolutionTune", "SubJet"]:
                 if obj not in source_objs:
                     suffix = 'Central' if obj in [ "Tau", "MET" ] else 'nano'
                     df = df.Define(f'{obj}_p4_{syst_name}', f'{obj}_p4_{suffix}')
@@ -171,9 +171,6 @@ def getNormalisationCorrections(df, config, sample, ana_cache=None, return_varia
         weight_rel_name = weight_name + '_rel'
         weight_out_name = weight_name if syst_name == central else weight_rel_name
         weight_formula = f'genWeightD * {lumi} * {stitching_weight_string} * {product}{denom}'
-        print(weight_name)
-        print(weight_formula)
-        print("")
         df = df.Define(weight_name, f'static_cast<float>({weight_formula})')
         if syst_name!=central:
             df = df.Define(weight_out_name, f'static_cast<float>(weight_{syst_name}/weight)')
