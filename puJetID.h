@@ -22,7 +22,7 @@ public:
         return names.at(scale);
     }
 
-    static bool sourceApplies(UncSource source, const float jet_Pt)
+    static bool sourceApplies(UncSource source)
     {
         if(source == UncSource::PUJetID_eff) return true;
         return false;

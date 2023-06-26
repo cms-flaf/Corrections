@@ -41,7 +41,7 @@ class TauCorrProducer:
         return df, source_dict
 
     def getSF(self, df, nLegs, isCentral, return_variations):
-        sf_sources =TauCorrProducer.SFSources_genuineTau_dm+ TauCorrProducer.SFSources_genuineTau_pt+ TauCorrProducer.SFSources_genuineLep if return_variations else []
+        sf_sources =TauCorrProducer.SFSources_tau+TauCorrProducer.SFSources_genuineLep if return_variations else []
         SF_branches = {}
         for source in [ central ] + sf_sources:
             for scale in getScales(source):
