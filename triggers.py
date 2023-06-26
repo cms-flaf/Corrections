@@ -40,7 +40,7 @@ class TrigCorrProducer:
             sf_sources = TrigCorrProducer.SFSources[trg_name] if return_variations else []
             for leg_idx in range(nLegs):
                 applyTrgBranch_name = f"{trg_name}_tau{leg_idx+1}_ApplyTrgSF"
-                df = df.Define(applyTrgBranch_name, f"""httCand.leg_type[{leg_idx}] == Leg::tau && HLT_{trg_name} && tau{leg_idx+1}_HasMatching_{trg_name}""")
+                df = df.Define(applyTrgBranch_name, f"""HttCandidate.leg_type[{leg_idx}] == Leg::tau && HLT_{trg_name} && tau{leg_idx+1}_HasMatching_{trg_name}""")
                 for source in [ central ] + sf_sources:
                     for scale in getScales(source):
                         if not isCentral and scale!= central: continue
@@ -52,7 +52,7 @@ class TrigCorrProducer:
                         branch_central = f"weight_tau{leg_idx+1}_TrgSF_{trg_name}_{getSystName(central,central)}"
                         df = df.Define(f"{branch_name}_double",
                                     f'''{applyTrgBranch_name} ? ::correction::TrigCorrProvider::getGlobal().getTauSF_fromCorrLib(
-                                 httCand.leg_p4[{leg_idx}], Tau_decayMode.at(httCand.leg_index[{leg_idx}]), "{trg_name}", httCand.channel(),
+                                 HttCandidate.leg_p4[{leg_idx}], Tau_decayMode.at(HttCandidate.leg_index[{leg_idx}]), "{trg_name}", HttCandidate.channel(),
                                 ::correction::TrigCorrProvider::UncSource::{source}, ::correction::UncScale::{scale} ) : 1.f''')
                         if scale != central:
                             df = df.Define(f"{branch_name}_rel", f"static_cast<float>({branch_name}_double/{branch_central})")
@@ -66,7 +66,7 @@ class TrigCorrProducer:
             sf_sources = TrigCorrProducer.SFSources[trg_name] if return_variations else []
             for leg_idx in [0,1]:
                 applyTrgBranch_name = f"{trg_name}_tau{leg_idx+1}_ApplyTrgSF"
-                df = df.Define(applyTrgBranch_name, f"""httCand.leg_type[{leg_idx}] == Leg::mu && HLT_{trg_name} && tau{leg_idx+1}_HasMatching_{trg_name}""")
+                df = df.Define(applyTrgBranch_name, f"""HttCandidate.leg_type[{leg_idx}] == Leg::mu && HLT_{trg_name} && tau{leg_idx+1}_HasMatching_{trg_name}""")
                 for source in [ central ] + sf_sources:
                     for scale in getScales(source):
                         if not isCentral and scale!= central: continue
@@ -78,7 +78,7 @@ class TrigCorrProducer:
                         branch_central = f"weight_tau{leg_idx+1}_TrgSF_{trg_name}_{getSystName(central,central)}"
                         df = df.Define(f"{branch_name}_double",
                                     f'''{applyTrgBranch_name} ? ::correction::TrigCorrProvider::getGlobal().getMuSF_fromCorrLib(
-                                 httCand.leg_p4[{leg_idx}],::correction::TrigCorrProvider::UncSource::{source}, ::correction::UncScale::{scale} ) : 1.f''')
+                                 HttCandidate.leg_p4[{leg_idx}],::correction::TrigCorrProvider::UncSource::{source}, ::correction::UncScale::{scale} ) : 1.f''')
                         if scale != central:
                             df = df.Define(f"{branch_name}_rel", f"static_cast<float>({branch_name}_double/{branch_central})")
                             branch_name += '_rel'
@@ -91,7 +91,7 @@ class TrigCorrProducer:
             sf_sources = TrigCorrProducer.SFSources[trg_name] if return_variations else []
             for leg_idx in [0,1]:
                 applyTrgBranch_name = f"{trg_name}_tau{leg_idx+1}_ApplyTrgSF"
-                df = df.Define(applyTrgBranch_name, f"""httCand.leg_type[{leg_idx}] == Leg::e && HLT_{trg_name} && tau{leg_idx+1}_HasMatching_{trg_name}""")
+                df = df.Define(applyTrgBranch_name, f"""HttCandidate.leg_type[{leg_idx}] == Leg::e && HLT_{trg_name} && tau{leg_idx+1}_HasMatching_{trg_name}""")
                 for source in [ central ] + sf_sources:
                     for scale in getScales(source):
                         if not isCentral and scale!= central: continue
@@ -103,7 +103,7 @@ class TrigCorrProducer:
                         branch_central = f"weight_tau{leg_idx+1}_TrgSF_{trg_name}_{getSystName(central,central)}"
                         df = df.Define(f"{branch_name}_double",
                                     f'''{applyTrgBranch_name} ? ::correction::TrigCorrProvider::getGlobal().getEleSF_fromRootFile(
-                                 httCand.leg_p4[{leg_idx}],::correction::TrigCorrProvider::UncSource::{source}, ::correction::UncScale::{scale} ) : 1.f''')
+                                 HttCandidate.leg_p4[{leg_idx}],::correction::TrigCorrProvider::UncSource::{source}, ::correction::UncScale::{scale} ) : 1.f''')
                         if scale != central:
                             df = df.Define(f"{branch_name}_rel", f"static_cast<float>({branch_name}_double/{branch_central})")
                             branch_name += '_rel'
