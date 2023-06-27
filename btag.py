@@ -46,7 +46,7 @@ class bTagCorrProducer:
                                 f''' ::correction::bTagCorrProvider::getGlobal().getSF(
                                 Jet_p4, Jet_bCand, Jet_hadronFlavour, Jet_btagDeepFlavB, WorkingPointsbTag::{wp.name},
                             ::correction::bTagCorrProvider::UncSource::{source}, ::correction::UncScale::{scale}) ''')
-                    if scale != central:
+                    if source != central:
                         df = df.Define(f"{branch_name}_rel", f"static_cast<float>({branch_name}_double/{branch_central})")
                         branch_name += '_rel'
                     else:

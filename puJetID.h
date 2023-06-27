@@ -22,9 +22,9 @@ public:
         return names.at(scale);
     }
 
-    static bool sourceApplies(UncSource source, const float jet_Pt)
+    static bool sourceApplies(UncSource source)
     {
-        if(source == UncSource::PUJetID_eff && jet_Pt < 50) return true;
+        if(source == UncSource::PUJetID_eff) return true;
         return false;
     }
 
@@ -33,15 +33,17 @@ public:
     puJetEff_(corrections_->at("PUJetID_eff"))
     {
     }
-    float getPUJetID_eff(const LorentzVectorM & jet_p4, const std::string working_point, UncSource source, UncScale scale) const {
-        const UncScale PUJetID_scale = sourceApplies(source,jet_p4.Pt())
-                                           ? scale : UncScale::Central;
+    RVecF getPUJetID_eff(const RVecLV & Jet_p4, const std::string working_point, UncSource source, UncScale scale) const {
+        RVecF weights(Jet_p4.size(), 1.);
+        const UncScale PUJetID_scale = sourceApplies(source) ? scale : UncScale::Central;
         const std::string& scale_str = getScaleStr(PUJetID_scale);
-        if(PUJetID_scale == UncScale::Central){
-            return 1.;
+        for(size_t jet_idx = 0 ; jet_idx < Jet_p4.size(); jet_idx++)
+        {
+            if(Jet_p4[jet_idx].Pt() > 20 && Jet_p4[jet_idx].Pt() <= 50. && std::abs(Jet_p4[jet_idx].Eta()) < 5 ){
+                weights[jet_idx] = static_cast<float>(puJetEff_->evaluate({Jet_p4[jet_idx].Eta(), Jet_p4[jet_idx].Pt(), scale_str, working_point}));
+            }
         }
-        return puJetEff_->evaluate({jet_p4.Eta(), jet_p4.Pt(), scale_str, working_point}) ;
-
+        return weights;
     }
 
 private:

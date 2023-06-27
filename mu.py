@@ -34,8 +34,8 @@ class MuCorrProducer:
                     branch_name = f"weight_tau{leg_idx+1}_MuidSF_{syst_name}"
                     branch_central = f"""weight_tau{leg_idx+1}_MuidSF_{getSystName(central, central)}"""
                     df = df.Define(f"{branch_name}_double",
-                                    f'''httCand.leg_type[{leg_idx}] == Leg::mu ? ::correction::MuCorrProvider::getGlobal().getMuonIDSF(
-                                        httCand.leg_p4[{leg_idx}], Muon_pfRelIso04_all.at(httCand.leg_index[{leg_idx}]), Muon_tightId.at(httCand.leg_index[{leg_idx}]),
+                                    f'''HttCandidate.leg_type[{leg_idx}] == Leg::mu ? ::correction::MuCorrProvider::getGlobal().getMuonIDSF(
+                                        HttCandidate.leg_p4[{leg_idx}], Muon_pfRelIso04_all.at(HttCandidate.leg_index[{leg_idx}]), Muon_tightId.at(HttCandidate.leg_index[{leg_idx}]),
                                         ::correction::MuCorrProvider::UncSource::{source}, ::correction::UncScale::{scale}, "{MuCorrProducer.period}") : 1.''')
                     if scale != central:
                         df = df.Define(f"{branch_name}_rel", f"static_cast<float>({branch_name}_double/{branch_central})")

@@ -103,7 +103,7 @@ def applyScaleUncertainties(df):
             syst_name = getSystName(source, scale)
             syst_dict[syst_name] = source
             for obj in [ "Electron", "Muon", "Tau", "Jet", "FatJet", "boostedTau", "MET", "PuppiMET",
-                         "DeepMETResponseTune", "DeepMETResolutionTune" ]:
+                         "DeepMETResponseTune", "DeepMETResolutionTune", "SubJet"]:
                 if obj not in source_objs:
                     suffix = 'Central' if obj in [ "Tau", "MET" ] else 'nano'
                     df = df.Define(f'{obj}_p4_{syst_name}', f'{obj}_p4_{suffix}')
@@ -164,15 +164,16 @@ def getNormalisationCorrections(df, config, sample, nLegs, ana_cache=None, retur
     denom = f'/{ana_cache["denominator"][central][central]}' if ana_cache is not None else ''
 
     for syst_name in [central] + list(all_sources):
-        if not isCentral : continue
+        #if not isCentral : continue
         branches = getBranches(syst_name, all_branches)
         product = ' * '.join(branches)
-        weight_name = f'weight_{syst_name}'
+        weight_name = f'weight_{syst_name}' if syst_name!=central else 'weight'
         weight_rel_name = weight_name + '_rel'
         weight_out_name = weight_name if syst_name == central else weight_rel_name
         weight_formula = f'genWeightD * {lumi} * {stitching_weight_string} * {product}{denom}'
         df = df.Define(weight_name, f'static_cast<float>({weight_formula})')
-        df = df.Define(weight_rel_name, f'static_cast<float>(weight_{syst_name}/weight_{central})')
+        if syst_name!=central:
+            df = df.Define(weight_out_name, f'static_cast<float>(weight_{syst_name}/weight)')
         all_weights.append(weight_out_name)
 
     if 'tauID' in sf_to_apply:
@@ -183,9 +184,9 @@ def getNormalisationCorrections(df, config, sample, nLegs, ana_cache=None, retur
         for syst_name in [central] + list(tau_sources):
             branches = getBranches(syst_name, tau_branches)
             product = ' * '.join(branches)
-            weight_name = f'weight_{syst_name}'
+            weight_name = f'weight_TauID_{syst_name}'
             if(syst_name == central):
-                weight_name = f'weight_TauID_{syst_name}'
+                weight_name = f'weight_TauID_{central}'
             weight_rel_name = weight_name + '_rel'
             weight_out_name = weight_name if syst_name == central else weight_rel_name
             weight_formula = f'{product}'

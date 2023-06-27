@@ -27,17 +27,20 @@ class puJetIDCorrProducer:
                 syst_name = getSystName(source, scale)
                 if source == central :
                     syst_name = "PUJetID_Central"
-                for leg_idx in [0,1]:
-                    branch_name = f"weight_b{leg_idx+1}_{syst_name}"
-                    branch_central = f"""weight_b{leg_idx+1}_PUJetID_Central"""
-                    df = df.Define(f"{branch_name}_double",
-                                    f'''::correction::PUJetIDCorrProvider::getGlobal().getPUJetID_eff(
-                                        HbbCandidate.leg_p4[{leg_idx}], "{puJetIDCorrProducer.puJetID}",
-                                        ::correction::PUJetIDCorrProvider::UncSource::{source}, ::correction::UncScale::{scale})''')
-                    if scale != central:
-                        df = df.Define(f"{branch_name}_rel", f"static_cast<float>({branch_name}_double/{branch_central})")
-                        branch_name += '_rel'
-                    else:
-                        df = df.Define(f"{branch_name}", f"static_cast<float>({branch_name}_double)")
-                    puJetID_SF_branches.append(f"{branch_name}")
+                branch_name_jets = f"weight_Jet_{syst_name}_"
+                branch_central_jets = f"""weight_Jet_PUJetID_Central_"""
+                df = df.Define(f"{branch_name_jets}", f"""::correction::PUJetIDCorrProvider::getGlobal().getPUJetID_eff(
+                                        Jet_p4, "{puJetIDCorrProducer.puJetID}",
+                                        ::correction::PUJetIDCorrProvider::UncSource::{source}, ::correction::UncScale::{scale});""")
+                if source != central:
+                    branch_name_jet_rel = f"{branch_name_jets}rel_tmp"
+                    df = df.Define(branch_name_jet_rel, f"""RVecF weights_rel({branch_name_jets}.size(),1); for(size_t weight_idx = 0; weight_idx<{branch_name_jets}.size(); weight_idx++)
+                                {{
+                                weights_rel[weight_idx] = {branch_name_jets}[weight_idx]/{branch_central_jets}[weight_idx];
+                                }}
+                                return weights_rel;""")
+                else:
+                    branch_name_jet_rel = f"{branch_central_jets}tmp"
+                    df = df.Define(branch_name_jet_rel, branch_central_jets)
+                puJetID_SF_branches.append(branch_name_jet_rel)
         return df,puJetID_SF_branches
