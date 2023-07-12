@@ -167,13 +167,13 @@ def getNormalisationCorrections(df, config, sample, nLegs, ana_cache=None, retur
         #if not isCentral : continue
         branches = getBranches(syst_name, all_branches)
         product = ' * '.join(branches)
-        weight_name = f'weight_{syst_name}' if syst_name!=central else 'weight'
+        weight_name = f'weight_{syst_name}' if syst_name!=central else 'weight_total'
         weight_rel_name = weight_name + '_rel'
         weight_out_name = weight_name if syst_name == central else weight_rel_name
         weight_formula = f'genWeightD * {lumi} * {stitching_weight_string} * {product}{denom}'
         df = df.Define(weight_name, f'static_cast<float>({weight_formula})')
         if syst_name!=central:
-            df = df.Define(weight_out_name, f'static_cast<float>(weight_{syst_name}/weight)')
+            df = df.Define(weight_out_name, f'static_cast<float>(weight_{syst_name}/weight_total)')
         all_weights.append(weight_out_name)
 
     if 'tauID' in sf_to_apply:

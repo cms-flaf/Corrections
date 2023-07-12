@@ -43,8 +43,10 @@ class JetCorrProducer:
                                 GenJet_phi, GenJet_mass, event)''')
         for source in [ central] + ["JER", "FlavorQCD","RelativeBal", "HF", "BBEC1", "EC2", "Absolute", "Total", "BBEC1_", "Absolute_", "EC2_", "HF_", "RelativeSample_" ]:
             source_eff = source
+            if source!=central and source != "JER":
+                source_eff= "JES_" + source_eff
             if source.endswith("_") :
-                source_eff = source+ JetCorrProducer.period.split("_")[0]
+                source_eff = source_eff+ JetCorrProducer.period.split("_")[0]
                 source+="year"
             updateSourceDict(source_dict, source_eff, 'Jet')
             for scale in getScales(source):
