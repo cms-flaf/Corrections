@@ -80,7 +80,7 @@ public:
     RVecI getWPBranch(const RVecF & Jet_btagDeepFlavB) const {
         RVecI Jet_idbtagDeepFlavB(Jet_btagDeepFlavB.size(), 0);
         for(size_t jet_idx = 0; jet_idx < Jet_btagDeepFlavB.size(); jet_idx++){
-            Jet_idbtagDeepFlavB[jet_idx] =  Jet_btagDeepFlavB[jet_idx] > wp_thrs.at(WorkingPointsbTag::Loose) + Jet_btagDeepFlavB[jet_idx] > wp_thrs.at(WorkingPointsbTag::Medium) + Jet_btagDeepFlavB[jet_idx] > wp_thrs.at(WorkingPointsbTag::Tight);
+            Jet_idbtagDeepFlavB[jet_idx] =  int(Jet_btagDeepFlavB[jet_idx] > wp_thrs.at(WorkingPointsbTag::Loose)) + int(Jet_btagDeepFlavB[jet_idx] > wp_thrs.at(WorkingPointsbTag::Medium)) + int(Jet_btagDeepFlavB[jet_idx] > wp_thrs.at(WorkingPointsbTag::Tight));
         }
         return Jet_idbtagDeepFlavB;
     }
