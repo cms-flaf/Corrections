@@ -32,6 +32,11 @@ class bTagCorrProducer:
             wp_values[wp] = ROOT.correction.bTagCorrProvider.getGlobal().getWPvalue(root_wp)
         return wp_values
 
+    def getWPid(self, df):
+        wp_values = self.getWPValues()
+        df = df.Define("Jet_idbtagDeepFlavB", f"::correction::bTagCorrProvider::getGlobal().getWPBranch(Jet_btagDeepFlavB)")
+        return df
+
     def getSF(self, df, return_variations=True, isCentral=True):
         sf_sources = bTagCorrProducer.SFSources if return_variations else []
         SF_branches = []

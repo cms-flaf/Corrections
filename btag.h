@@ -77,6 +77,14 @@ public:
 
     float getWPvalue(WorkingPointsbTag wp) const { return wp_thrs.at(wp); }
 
+    RVecI getWPBranch(const RVecF & Jet_btagDeepFlavB) const {
+        RVecI Jet_idbtagDeepFlavB(Jet_btagDeepFlavB.size(), 0);
+        for(size_t jet_idx = 0; jet_idx < Jet_btagDeepFlavB.size(); jet_idx++){
+            Jet_idbtagDeepFlavB[jet_idx] =  int(Jet_btagDeepFlavB[jet_idx] > wp_thrs.at(WorkingPointsbTag::Loose)) + int(Jet_btagDeepFlavB[jet_idx] > wp_thrs.at(WorkingPointsbTag::Medium)) + int(Jet_btagDeepFlavB[jet_idx] > wp_thrs.at(WorkingPointsbTag::Tight));
+        }
+        return Jet_idbtagDeepFlavB;
+    }
+
     float getSF(const RVecLV& Jet_p4, const RVecB& pre_sel, const RVecI& Jet_Flavour,const RVecF& Jet_bTag_score, WorkingPointsbTag btag_wp, UncSource source, UncScale scale) const
     {
         float eff_MC_tot = 1.;
