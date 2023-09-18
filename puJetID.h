@@ -33,14 +33,14 @@ public:
     puJetEff_(corrections_->at("PUJetID_eff"))
     {
     }
-    RVecF getPUJetID_eff(const RVecLV & Jet_p4, const std::string working_point, UncSource source, UncScale scale) const {
-        RVecF weights(Jet_p4.size(), 1.);
+    RVecF getPUJetID_eff(const RVecF & Jet_pt, const RVecF & Jet_eta, const std::string working_point, UncSource source, UncScale scale) const {
+        RVecF weights(Jet_pt.size(), 1.);
         const UncScale PUJetID_scale = sourceApplies(source) ? scale : UncScale::Central;
         const std::string& scale_str = getScaleStr(PUJetID_scale);
-        for(size_t jet_idx = 0 ; jet_idx < Jet_p4.size(); jet_idx++)
+        for(size_t jet_idx = 0 ; jet_idx < Jet_pt.size(); jet_idx++)
         {
-            if(Jet_p4[jet_idx].Pt() > 20 && Jet_p4[jet_idx].Pt() <= 50. && std::abs(Jet_p4[jet_idx].Eta()) < 5 ){
-                weights[jet_idx] = static_cast<float>(puJetEff_->evaluate({Jet_p4[jet_idx].Eta(), Jet_p4[jet_idx].Pt(), scale_str, working_point}));
+            if(Jet_pt[jet_idx] > 20 && Jet_pt[jet_idx] <= 50. && std::abs(Jet_eta[jet_idx]) < 5 ){
+                weights[jet_idx] = static_cast<float>(puJetEff_->evaluate({Jet_eta[jet_idx], Jet_pt[jet_idx], scale_str, working_point}));
             }
         }
         return weights;
