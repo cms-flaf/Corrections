@@ -158,11 +158,13 @@ def getNormalisationCorrections(df, config, sample, nLegs, ana_cache=None, retur
     df, pu_SF_branches = pu.getWeight(df)
     df = df.Define('genWeightD', 'std::copysign<double>(1., genWeight)')
     all_branches = [ pu_SF_branches ]
+    #print(pu_SF_branches)
     all_sources = set(itertools.chain.from_iterable(all_branches))
     all_sources.remove(central)
     all_weights = []
     denom = f'/{ana_cache["denominator"][central][central]}' if ana_cache is not None else ''
-
+    #print(ana_cache['denominator'].keys())
+    #print(f"all_sources = {list(all_sources)}")
     for syst_name in [central] + list(all_sources):
         #if not isCentral : continue
         branches = getBranches(syst_name, all_branches)
@@ -170,6 +172,10 @@ def getNormalisationCorrections(df, config, sample, nLegs, ana_cache=None, retur
         weight_name = f'weight_{syst_name}' if syst_name!=central else 'weight_total'
         weight_rel_name = weight_name + '_rel'
         weight_out_name = weight_name if syst_name == central else weight_rel_name
+        for scale in ['Up', 'Down']:
+            if syst_name == f'pu{scale}':
+                #print(f"using anacache[denom][pu][{scale}]")
+                denom = f"""/{ana_cache["denominator"]["pu"][scale]}""" if ana_cache is not None else ''
         weight_formula = f'genWeightD * {lumi} * {stitching_weight_string} * {product}{denom}'
         df = df.Define(weight_name, f'static_cast<float>({weight_formula})')
         if syst_name!=central:
