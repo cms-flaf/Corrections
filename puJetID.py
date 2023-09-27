@@ -30,7 +30,7 @@ class puJetIDCorrProducer:
                 branch_name_jets = f"weight_Jet_{syst_name}_"
                 branch_central_jets = f"""weight_Jet_PUJetID_Central_"""
                 df = df.Define(f"{branch_name_jets}", f"""::correction::PUJetIDCorrProvider::getGlobal().getPUJetID_eff(
-                                        Jet_p4, "{puJetIDCorrProducer.puJetID}",
+                                        Jet_pt, Jet_eta, "{puJetIDCorrProducer.puJetID}",
                                         ::correction::PUJetIDCorrProvider::UncSource::{source}, ::correction::UncScale::{scale});""")
                 if source != central:
                     branch_name_jet_rel = f"{branch_name_jets}rel_tmp"
