@@ -59,27 +59,19 @@ public:
     static const std::string& getScaleStr(UncSource source, UncScale scale, const std::string year)
     {
         static const std::map<std::pair<UncSource, UncScale>, std::string> names = {
-            {{UncSource::Central, UncScale::Down}, "nom"},
-            {{UncSource::Central, UncScale::Up}, "nom"},
             {{UncSource::Central, UncScale::Central}, "nom"},
             {{UncSource::TauES_DM0, UncScale::Down}, "down" },
             {{UncSource::TauES_DM0, UncScale::Up}, "up"},
-            {{UncSource::TauES_DM0, UncScale::Central}, "nom"},
             {{UncSource::TauES_DM1, UncScale::Down}, "down" },
             {{UncSource::TauES_DM1, UncScale::Up}, "up"},
-            {{UncSource::TauES_DM1, UncScale::Central}, "nom"},
             {{UncSource::TauES_3prong, UncScale::Down}, "down" },
             {{UncSource::TauES_3prong, UncScale::Up}, "up"},
-            {{UncSource::TauES_3prong, UncScale::Central}, "nom"},
             {{UncSource::EleFakingTauES_DM0, UncScale::Down}, "down" },
             {{UncSource::EleFakingTauES_DM0, UncScale::Up}, "up"},
-            {{UncSource::EleFakingTauES_DM0, UncScale::Central}, "nom"},
             {{UncSource::EleFakingTauES_DM1, UncScale::Down}, "down" },
             {{UncSource::EleFakingTauES_DM1, UncScale::Up}, "up"},
-            {{UncSource::EleFakingTauES_DM1, UncScale::Central}, "nom"},
             {{UncSource::MuFakingTauES, UncScale::Down}, "down" },
             {{UncSource::MuFakingTauES, UncScale::Up}, "up"},
-            {{UncSource::MuFakingTauES, UncScale::Central}, "nom"},
             {{UncSource::stat1_dm0, UncScale::Down},"stat1_dm0_down"},
             {{UncSource::stat1_dm0, UncScale::Up},"stat1_dm0_up"},
             {{UncSource::stat2_dm0, UncScale::Down},"stat2_dm0_down"},
@@ -112,25 +104,18 @@ public:
             {{UncSource::total, UncScale::Up},"total_up"},
             {{UncSource::TauID_genuineElectron_barrel, UncScale::Down}, "down"},
             {{UncSource::TauID_genuineElectron_barrel, UncScale::Up}, "up"},
-            {{UncSource::TauID_genuineElectron_barrel, UncScale::Central}, "nom"},
             {{UncSource::TauID_genuineElectron_endcaps, UncScale::Down}, "down"},
             {{UncSource::TauID_genuineElectron_endcaps, UncScale::Up}, "up"},
-            {{UncSource::TauID_genuineElectron_endcaps, UncScale::Central}, "nom"},
             {{UncSource::TauID_genuineMuon_etaLt0p4, UncScale::Down}, "down"},
             {{UncSource::TauID_genuineMuon_etaLt0p4, UncScale::Up}, "up"},
-            {{UncSource::TauID_genuineMuon_etaLt0p4, UncScale::Central}, "nom"},
             {{UncSource::TauID_genuineMuon_eta0p4to0p8, UncScale::Down}, "down"},
             {{UncSource::TauID_genuineMuon_eta0p4to0p8, UncScale::Up}, "up"},
-            {{UncSource::TauID_genuineMuon_eta0p4to0p8, UncScale::Central}, "nom"},
             {{UncSource::TauID_genuineMuon_eta0p8to1p2, UncScale::Down}, "down"},
             {{UncSource::TauID_genuineMuon_eta0p8to1p2, UncScale::Up}, "up"},
-            {{UncSource::TauID_genuineMuon_eta0p8to1p2, UncScale::Central}, "nom"},
             {{UncSource::TauID_genuineMuon_eta1p2to1p7, UncScale::Down}, "down"},
             {{UncSource::TauID_genuineMuon_eta1p2to1p7, UncScale::Up}, "up"},
-            {{UncSource::TauID_genuineMuon_eta1p2to1p7, UncScale::Central}, "nom"},
             {{UncSource::TauID_genuineMuon_etaGt1p7, UncScale::Down}, "down"},
             {{UncSource::TauID_genuineMuon_etaGt1p7, UncScale::Up}, "up"},
-            {{UncSource::TauID_genuineMuon_etaGt1p7, UncScale::Central}, "nom"},
         };
         return names.at(std::make_pair(source,scale));
     }
@@ -201,7 +186,8 @@ public:
                 const GenLeptonMatch genMatch = static_cast<GenLeptonMatch>(Tau_genMatch.at(n));
                 const UncScale tau_scale = sourceApplies(source, Tau_p4[n], Tau_decayMode.at(n), genMatch)
                                            ? scale : UncScale::Central;
-                const std::string& scale_str =  getScaleStr(source, tau_scale, year_);
+                const UncSource tau_source = tau_scale == UncScale::Central ? UncSource::Central : source ;
+                const std::string& scale_str =  getScaleStr(tau_source, tau_scale, year_);
                 const double sf = tau_es_->evaluate({Tau_p4[n].pt(), Tau_p4[n].eta(), Tau_decayMode.at(n),
                 static_cast<int>(genMatch), deepTauVersion_, scale_str});
                 final_p4[n] *= sf;
@@ -221,20 +207,23 @@ public:
         if(genMatch == GenLeptonMatch::Tau) {
             const UncScale tau_had_scale = sourceApplies(source, Tau_p4, Tau_decayMode, genMatch)
                                            ? scale : UncScale::Central;
-            const std::string& scale_str = scale != UncScale::Central  ? getScaleStr(source, tau_had_scale, year_) : "default" ;
+            const UncSource tau_had_source = tau_had_scale == UncScale::Central ? UncSource::Central : source ;
+            const std::string& scale_str = scale != UncScale::Central  ? getScaleStr(tau_had_source, tau_had_scale, year_) : "default" ;
             const auto sf = tau_vs_jet_->evaluate({Tau_p4.pt(),Tau_decayMode, Tau_genMatch, wpVSjet, wpVSe, scale_str, genuineTau_SFtype});
             return sf;
         }
         if(genMatch==GenLeptonMatch::Electron || genMatch == GenLeptonMatch::TauElectron){
             const UncScale tau_ele_scale = sourceApplies(source, Tau_p4, Tau_decayMode, genMatch)
                                            ? scale : UncScale::Central;
-            const std::string& scale_str = getScaleStr(source, tau_ele_scale, year_);
+            const UncSource tau_ele_source = tau_ele_scale == UncScale::Central ? UncSource::Central : source ;
+            const std::string& scale_str = getScaleStr(tau_ele_source, tau_ele_scale, year_);
             return tau_vs_e_->evaluate({Tau_p4.eta(), Tau_genMatch, wpVSe, scale_str});
         }
          if(genMatch == GenLeptonMatch::Muon || genMatch == GenLeptonMatch::TauMuon){
             const UncScale tau_mu_scale = sourceApplies(source, Tau_p4, Tau_decayMode, genMatch)
                                            ? scale : UncScale::Central;
-            const std::string& scale_str = getScaleStr(source, tau_mu_scale, year_);
+            const UncSource tau_mu_source = tau_mu_scale == UncScale::Central ? UncSource::Central : source ;
+            const std::string& scale_str = getScaleStr(tau_mu_source, tau_mu_scale, year_);
             return tau_vs_mu_->evaluate({Tau_p4.eta(), Tau_genMatch, wpVSmu, scale_str});
         }
         return 1.;
