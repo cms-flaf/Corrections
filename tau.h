@@ -49,68 +49,75 @@ public:
     };
 
     using wpsMapType = std::map<Channel, std::vector<std::pair<std::string, int> > >;
-    // name, need year, need dm
-    static const std::map<UncSource,std::tuple<std::string,bool,bool>> getUncMap (){
-        static const std::map<UncSource,std::tuple<std::string,bool,bool>> UncMap = {
-            {UncSource::Central, {"Central", false,false}},
-            {UncSource::TauES_DM0, {"TauES_DM0", false,false}},
-            {UncSource::TauES_DM1, {"TauES_DM1", false,false}},
-            {UncSource::TauES_3prong,{"TauES_3prong",false,false}},
-            {UncSource::EleFakingTauES_DM0,{"EleFakingTauES_DM0",false, false}},
-            {UncSource::EleFakingTauES_DM1,{"EleFakingTauES_DM1",false, false}},
-            {UncSource::MuFakingTauES,{"MuFakingTauES",true,false}},
-            {UncSource::stat1_dm0,{"stat1",false,true}},
-            {UncSource::stat2_dm0,{"stat2",false,true}},
-            {UncSource::stat1_dm1,{"stat1",false,true}},
-            {UncSource::stat2_dm1,{"stat2",false,true}},
-            {UncSource::stat1_dm10,{"stat1",false,true}},
-            {UncSource::stat2_dm10,{"stat2",false,true}},
-            {UncSource::stat1_dm11,{"stat1",false,true}},
-            {UncSource::stat2_dm11,{"stat2",false,true}},
-            {UncSource::syst_alleras,{"syst_alleras_",true,false}},
-            {UncSource::syst_year,{"syst_",true,false}},
-            {UncSource::syst_year_dm0,{"syst_",true,true}},
-            {UncSource::syst_year_dm1,{"syst_",true,true}},
-            {UncSource::syst_year_dm10,{"syst_",true,true}},
-            {UncSource::syst_year_dm11,{"syst_",true,true}},
-            {UncSource::total,{"",false, false}},
-            {UncSource::TauID_genuineElectron_barrel, {"TauID_genuineElectron_barrel",false,false}},
-            {UncSource::TauID_genuineElectron_endcaps,{"TauID_genuineElectron_endcaps",false,false}},
-            {UncSource::TauID_genuineMuon_etaLt0p4, {"TauID_genuineMuon_etaLt0p4",false,false}},
-            {UncSource::TauID_genuineMuon_eta0p4to0p8, {"TauID_genuineMuon_eta0p4to0p8",false,false}},
-            {UncSource::TauID_genuineMuon_eta0p8to1p2, {"TauID_genuineMuon_eta0p8to1p2",false,false}},
-            {UncSource::TauID_genuineMuon_eta1p2to1p7, {"TauID_genuineMuon_eta1p2to1p7",false,false}},
-            {UncSource::TauID_genuineMuon_etaGt1p7, {"TauID_genuineMuon_etaGt1p7",false,false}},
-        };
-        return UncMap;
-    }
-    static const std::string getFullNameUnc(const std::string source_name, const std::string year, bool need_year, bool need_dm, const std::string dm){
-        if(need_year){
-            if(need_dm)
-                return source_name+year+"_dm"+dm+"_";
-            else
-                return source_name+year+"_";
-        }
-        else{
-            if(need_dm)
-                return source_name+"_dm"+dm+"_";
-        }
-        return source_name;
-    }
+
     static bool isTwoProngDM(int dm)
     {
         static const std::set<int> twoProngDMs = { 5, 6 };
         return twoProngDMs.count(dm);
     }
 
-    static const std::string& getScaleStr(UncScale scale)
+    static const std::string& getScaleStr(UncSource source, UncScale scale, const std::string year)
     {
-        static const std::map<UncScale, std::string> names = {
-            { UncScale::Down, "down" },
-            { UncScale::Central, "nom" },
-            { UncScale::Up, "up" },
+        static const std::map<std::pair<UncSource, UncScale>, std::string> names = {
+            {{UncSource::Central, UncScale::Central}, "nom"},
+            {{UncSource::TauES_DM0, UncScale::Down}, "down" },
+            {{UncSource::TauES_DM0, UncScale::Up}, "up"},
+            {{UncSource::TauES_DM1, UncScale::Down}, "down" },
+            {{UncSource::TauES_DM1, UncScale::Up}, "up"},
+            {{UncSource::TauES_3prong, UncScale::Down}, "down" },
+            {{UncSource::TauES_3prong, UncScale::Up}, "up"},
+            {{UncSource::EleFakingTauES_DM0, UncScale::Down}, "down" },
+            {{UncSource::EleFakingTauES_DM0, UncScale::Up}, "up"},
+            {{UncSource::EleFakingTauES_DM1, UncScale::Down}, "down" },
+            {{UncSource::EleFakingTauES_DM1, UncScale::Up}, "up"},
+            {{UncSource::MuFakingTauES, UncScale::Down}, "down" },
+            {{UncSource::MuFakingTauES, UncScale::Up}, "up"},
+            {{UncSource::stat1_dm0, UncScale::Down},"stat1_dm0_down"},
+            {{UncSource::stat1_dm0, UncScale::Up},"stat1_dm0_up"},
+            {{UncSource::stat2_dm0, UncScale::Down},"stat2_dm0_down"},
+            {{UncSource::stat2_dm0, UncScale::Up},"stat2_dm0_up"},
+            {{UncSource::stat1_dm1, UncScale::Down},"stat1_dm1_down"},
+            {{UncSource::stat1_dm1, UncScale::Up},"stat1_dm1_up"},
+            {{UncSource::stat2_dm1, UncScale::Down},"stat2_dm1_down"},
+            {{UncSource::stat2_dm1, UncScale::Up},"stat2_dm1_up"},
+            {{UncSource::stat1_dm10, UncScale::Down},"stat1_dm10_down"},
+            {{UncSource::stat1_dm10, UncScale::Up},"stat1_dm10_up"},
+            {{UncSource::stat2_dm10, UncScale::Down},"stat2_dm10_down"},
+            {{UncSource::stat2_dm10, UncScale::Up},"stat2_dm10_up"},
+            {{UncSource::stat1_dm11, UncScale::Down},"stat1_dm11_down"},
+            {{UncSource::stat1_dm11, UncScale::Up},"stat1_dm11_up"},
+            {{UncSource::stat2_dm11, UncScale::Down},"stat2_dm11_down"},
+            {{UncSource::stat2_dm11, UncScale::Up},"stat2_dm11_up"},
+            {{UncSource::syst_alleras, UncScale::Down},"syst_alleras_down"},
+            {{UncSource::syst_alleras, UncScale::Up},"syst_alleras_up"},
+            {{UncSource::syst_year, UncScale::Down},"syst_"+year+"_down"},
+            {{UncSource::syst_year, UncScale::Up},"syst_"+year+"_up"},
+            {{UncSource::syst_year_dm0, UncScale::Down},"syst_"+year+"_dm0_down"},
+            {{UncSource::syst_year_dm0, UncScale::Up},"syst_"+year+"_dm0_up"},
+            {{UncSource::syst_year_dm1, UncScale::Down},"syst_"+year+"_dm1_down"},
+            {{UncSource::syst_year_dm1, UncScale::Up},"syst_"+year+"_dm1_up"},
+            {{UncSource::syst_year_dm10, UncScale::Down},"syst_"+year+"_dm10_down"},
+            {{UncSource::syst_year_dm10, UncScale::Up},"syst_"+year+"_dm10_up"},
+            {{UncSource::syst_year_dm11, UncScale::Down},"syst_"+year+"_dm11_down"},
+            {{UncSource::syst_year_dm11, UncScale::Up},"syst_"+year+"_dm11_up"},
+            {{UncSource::total, UncScale::Down},"total_down"},
+            {{UncSource::total, UncScale::Up},"total_up"},
+            {{UncSource::TauID_genuineElectron_barrel, UncScale::Down}, "down"},
+            {{UncSource::TauID_genuineElectron_barrel, UncScale::Up}, "up"},
+            {{UncSource::TauID_genuineElectron_endcaps, UncScale::Down}, "down"},
+            {{UncSource::TauID_genuineElectron_endcaps, UncScale::Up}, "up"},
+            {{UncSource::TauID_genuineMuon_etaLt0p4, UncScale::Down}, "down"},
+            {{UncSource::TauID_genuineMuon_etaLt0p4, UncScale::Up}, "up"},
+            {{UncSource::TauID_genuineMuon_eta0p4to0p8, UncScale::Down}, "down"},
+            {{UncSource::TauID_genuineMuon_eta0p4to0p8, UncScale::Up}, "up"},
+            {{UncSource::TauID_genuineMuon_eta0p8to1p2, UncScale::Down}, "down"},
+            {{UncSource::TauID_genuineMuon_eta0p8to1p2, UncScale::Up}, "up"},
+            {{UncSource::TauID_genuineMuon_eta1p2to1p7, UncScale::Down}, "down"},
+            {{UncSource::TauID_genuineMuon_eta1p2to1p7, UncScale::Up}, "up"},
+            {{UncSource::TauID_genuineMuon_etaGt1p7, UncScale::Down}, "down"},
+            {{UncSource::TauID_genuineMuon_etaGt1p7, UncScale::Up}, "up"},
         };
-        return names.at(scale);
+        return names.at(std::make_pair(source,scale));
     }
 
     static bool sourceApplies(UncSource source, const LorentzVectorM& p4, int decayMode, GenLeptonMatch genMatch)
@@ -179,7 +186,8 @@ public:
                 const GenLeptonMatch genMatch = static_cast<GenLeptonMatch>(Tau_genMatch.at(n));
                 const UncScale tau_scale = sourceApplies(source, Tau_p4[n], Tau_decayMode.at(n), genMatch)
                                            ? scale : UncScale::Central;
-                const std::string& scale_str =  getScaleStr(tau_scale);
+                const UncSource tau_source = tau_scale == UncScale::Central ? UncSource::Central : source ;
+                const std::string& scale_str =  getScaleStr(tau_source, tau_scale, year_);
                 const double sf = tau_es_->evaluate({Tau_p4[n].pt(), Tau_p4[n].eta(), Tau_decayMode.at(n),
                 static_cast<int>(genMatch), deepTauVersion_, scale_str});
                 final_p4[n] *= sf;
@@ -197,30 +205,25 @@ public:
         const auto & genuineTau_SFtype = tauType_map_.count(ch) ? tauType_map_.at(ch) : "dm";
         const GenLeptonMatch genMatch = static_cast<GenLeptonMatch>(Tau_genMatch);
         if(genMatch == GenLeptonMatch::Tau) {
-            const auto & [unc_name, need_year, need_dm] = getUncMap().at(source);
-            const auto & source_name = getFullNameUnc(unc_name, year_,  need_year, need_dm, std::to_string(Tau_decayMode));
             const UncScale tau_had_scale = sourceApplies(source, Tau_p4, Tau_decayMode, genMatch)
                                            ? scale : UncScale::Central;
-            const std::string& scale_str = scale != UncScale::Central  ? getScaleStr(tau_had_scale) : "default" ;
+            const UncSource tau_had_source = tau_had_scale == UncScale::Central ? UncSource::Central : source ;
+            const std::string& scale_str = scale != UncScale::Central  ? getScaleStr(tau_had_source, tau_had_scale, year_) : "default" ;
             const auto sf = tau_vs_jet_->evaluate({Tau_p4.pt(),Tau_decayMode, Tau_genMatch, wpVSjet, wpVSe, scale_str, genuineTau_SFtype});
-            //if(tau_had_scale != UncScale::Central && (wpVSe.second > static_cast<int>(WorkingPointsTauVSe::VVLoose) )){
-                //const auto sf_central = tau_vs_jet_->evaluate({Tau_p4.pt(), Tau_decayMode, Tau_genMatch,  wpVSjet.first, wpVSe.first, "default", genuineTau_SFtype});
-                //const float additional_unc = Tau_p4.pt() > 100 ? 0.15 : 0.05;
-                //return sf_central * ( sf / sf_central + std::copysign(additional_unc, sf - sf_central));
-                //throw std::runtime_error("working points not supported");
-            //}
             return sf;
         }
         if(genMatch==GenLeptonMatch::Electron || genMatch == GenLeptonMatch::TauElectron){
             const UncScale tau_ele_scale = sourceApplies(source, Tau_p4, Tau_decayMode, genMatch)
                                            ? scale : UncScale::Central;
-            const std::string& scale_str = getScaleStr(tau_ele_scale);
+            const UncSource tau_ele_source = tau_ele_scale == UncScale::Central ? UncSource::Central : source ;
+            const std::string& scale_str = getScaleStr(tau_ele_source, tau_ele_scale, year_);
             return tau_vs_e_->evaluate({Tau_p4.eta(), Tau_genMatch, wpVSe, scale_str});
         }
          if(genMatch == GenLeptonMatch::Muon || genMatch == GenLeptonMatch::TauMuon){
             const UncScale tau_mu_scale = sourceApplies(source, Tau_p4, Tau_decayMode, genMatch)
                                            ? scale : UncScale::Central;
-            const std::string& scale_str = getScaleStr(tau_mu_scale);
+            const UncSource tau_mu_source = tau_mu_scale == UncScale::Central ? UncSource::Central : source ;
+            const std::string& scale_str = getScaleStr(tau_mu_source, tau_mu_scale, year_);
             return tau_vs_mu_->evaluate({Tau_p4.eta(), Tau_genMatch, wpVSmu, scale_str});
         }
         return 1.;
