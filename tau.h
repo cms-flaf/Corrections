@@ -49,41 +49,7 @@ public:
     };
 
     using wpsMapType = std::map<Channel, std::vector<std::pair<std::string, int> > >;
-    // name, need year, need dm
-    static const std::map<UncSource,std::tuple<std::string,bool,bool>> getUncMap (){
-        static const std::map<UncSource,std::tuple<std::string,bool,bool>> UncMap = {
-            {UncSource::Central, {"Central", false,false}},
-            {UncSource::TauES_DM0, {"TauES_DM0", false,false}},
-            {UncSource::TauES_DM1, {"TauES_DM1", false,false}},
-            {UncSource::TauES_3prong,{"TauES_3prong",false,false}},
-            {UncSource::EleFakingTauES_DM0,{"EleFakingTauES_DM0",false, false}},
-            {UncSource::EleFakingTauES_DM1,{"EleFakingTauES_DM1",false, false}},
-            {UncSource::MuFakingTauES,{"MuFakingTauES",true,false}},
-            {UncSource::stat1_dm0,{"stat1",false,true}},
-            {UncSource::stat2_dm0,{"stat2",false,true}},
-            {UncSource::stat1_dm1,{"stat1",false,true}},
-            {UncSource::stat2_dm1,{"stat2",false,true}},
-            {UncSource::stat1_dm10,{"stat1",false,true}},
-            {UncSource::stat2_dm10,{"stat2",false,true}},
-            {UncSource::stat1_dm11,{"stat1",false,true}},
-            {UncSource::stat2_dm11,{"stat2",false,true}},
-            {UncSource::syst_alleras,{"syst_alleras_",true,false}},
-            {UncSource::syst_year,{"syst_",true,false}},
-            {UncSource::syst_year_dm0,{"syst_",true,true}},
-            {UncSource::syst_year_dm1,{"syst_",true,true}},
-            {UncSource::syst_year_dm10,{"syst_",true,true}},
-            {UncSource::syst_year_dm11,{"syst_",true,true}},
-            {UncSource::total,{"",false, false}},
-            {UncSource::TauID_genuineElectron_barrel, {"TauID_genuineElectron_barrel",false,false}},
-            {UncSource::TauID_genuineElectron_endcaps,{"TauID_genuineElectron_endcaps",false,false}},
-            {UncSource::TauID_genuineMuon_etaLt0p4, {"TauID_genuineMuon_etaLt0p4",false,false}},
-            {UncSource::TauID_genuineMuon_eta0p4to0p8, {"TauID_genuineMuon_eta0p4to0p8",false,false}},
-            {UncSource::TauID_genuineMuon_eta0p8to1p2, {"TauID_genuineMuon_eta0p8to1p2",false,false}},
-            {UncSource::TauID_genuineMuon_eta1p2to1p7, {"TauID_genuineMuon_eta1p2to1p7",false,false}},
-            {UncSource::TauID_genuineMuon_etaGt1p7, {"TauID_genuineMuon_etaGt1p7",false,false}},
-        };
-        return UncMap;
-    }
+
     static bool isTwoProngDM(int dm)
     {
         static const std::set<int> twoProngDMs = { 5, 6 };
@@ -268,7 +234,6 @@ public:
         const auto & genuineTau_SFtype = tauType_map_.count(ch) ? tauType_map_.at(ch) : "dm";
         const GenLeptonMatch genMatch = static_cast<GenLeptonMatch>(Tau_genMatch);
         if(genMatch == GenLeptonMatch::Tau) {
-            const auto & [unc_name, need_year, need_dm] = getUncMap().at(source);
             const UncScale tau_had_scale = sourceApplies(source, Tau_p4, Tau_decayMode, genMatch)
                                            ? scale : UncScale::Central;
             const std::string& scale_str = scale != UncScale::Central  ? getScaleStr(source, tau_had_scale, year_) : "default" ;
