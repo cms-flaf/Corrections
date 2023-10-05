@@ -84,19 +84,6 @@ public:
         };
         return UncMap;
     }
-    static const std::string getFullNameUnc(const std::string source_name, const std::string year, bool need_year, bool need_dm, const std::string dm){
-        if(need_year){
-            if(need_dm)
-                return source_name+year+"_dm"+dm+"_";
-            else
-                return source_name+year+"_";
-        }
-        else{
-            if(need_dm)
-                return source_name+"_dm"+dm+"_";
-        }
-        return source_name;
-    }
     static bool isTwoProngDM(int dm)
     {
         static const std::set<int> twoProngDMs = { 5, 6 };
@@ -282,17 +269,10 @@ public:
         const GenLeptonMatch genMatch = static_cast<GenLeptonMatch>(Tau_genMatch);
         if(genMatch == GenLeptonMatch::Tau) {
             const auto & [unc_name, need_year, need_dm] = getUncMap().at(source);
-            const auto & source_name = getFullNameUnc(unc_name, year_,  need_year, need_dm, std::to_string(Tau_decayMode));
             const UncScale tau_had_scale = sourceApplies(source, Tau_p4, Tau_decayMode, genMatch)
                                            ? scale : UncScale::Central;
             const std::string& scale_str = scale != UncScale::Central  ? getScaleStr(source, tau_had_scale, year_) : "default" ;
             const auto sf = tau_vs_jet_->evaluate({Tau_p4.pt(),Tau_decayMode, Tau_genMatch, wpVSjet, wpVSe, scale_str, genuineTau_SFtype});
-            //if(tau_had_scale != UncScale::Central && (wpVSe.second > static_cast<int>(WorkingPointsTauVSe::VVLoose) )){
-                //const auto sf_central = tau_vs_jet_->evaluate({Tau_p4.pt(), Tau_decayMode, Tau_genMatch,  wpVSjet.first, wpVSe.first, "default", genuineTau_SFtype});
-                //const float additional_unc = Tau_p4.pt() > 100 ? 0.15 : 0.05;
-                //return sf_central * ( sf / sf_central + std::copysign(additional_unc, sf - sf_central));
-                //throw std::runtime_error("working points not supported");
-            //}
             return sf;
         }
         if(genMatch==GenLeptonMatch::Electron || genMatch == GenLeptonMatch::TauElectron){
