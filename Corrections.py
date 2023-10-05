@@ -206,9 +206,6 @@ def getNormalisationCorrections(df, config, sample, nLegs, ana_cache=None, retur
             weight_formula = f'{product}'
             df = df.Define(weight_name, f'static_cast<float>({weight_formula})')
             df = df.Define(weight_rel_name, f'static_cast<float>({weight_name}/weight_TauID_{central})')
-
-            if syst_name != central:
-                    df.Display({weight_name,f"weight_TauID_{central}",weight_rel_name }).Print()
             all_weights.append(weight_out_name)
     if mu!= None:
         df, muID_SF_branches = mu.getMuonIDSF(df, nLegs, isCentral)
