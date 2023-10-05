@@ -188,16 +188,27 @@ def getNormalisationCorrections(df, config, sample, nLegs, ana_cache=None, retur
         tau_sources = set(itertools.chain.from_iterable(tau_branches))
         tau_sources.remove(central)
         for syst_name in [central] + list(tau_sources):
+            #print(f"syst name is {syst_name}")
             branches = getBranches(syst_name, tau_branches)
+            #print(f"branches are {branches}")
             product = ' * '.join(branches)
+            #print(f"product is {product}")
             weight_name = f'weight_TauID_{syst_name}'
             if(syst_name == central):
                 weight_name = f'weight_TauID_{central}'
+            #print(f"weight_name is {weight_name}")
             weight_rel_name = weight_name + '_rel'
+            #print(f"weight_rel_name is {weight_rel_name}")
+
             weight_out_name = weight_name if syst_name == central else weight_rel_name
+            #print(f"weight_out_name is {weight_out_name}")
+
             weight_formula = f'{product}'
             df = df.Define(weight_name, f'static_cast<float>({weight_formula})')
             df = df.Define(weight_rel_name, f'static_cast<float>({weight_name}/weight_TauID_{central})')
+
+            if syst_name != central:
+                    df.Display({weight_name,f"weight_TauID_{central}",weight_rel_name }).Print()
             all_weights.append(weight_out_name)
     if mu!= None:
         df, muID_SF_branches = mu.getMuonIDSF(df, nLegs, isCentral)
