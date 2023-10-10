@@ -95,6 +95,7 @@ public:
         if(source == UncSource::hfstats2 && (Jet_Flavour == 5 || Jet_Flavour==0) && jet_source==::correction::JetCorrProvider::UncSource::Central) return true;
         if(source == UncSource::cferr1 && Jet_Flavour == 4 && jet_source==::correction::JetCorrProvider::UncSource::Central) return true;
         if(source == UncSource::cferr2 && Jet_Flavour == 4 && jet_source==::correction::JetCorrProvider::UncSource::Central)  return true;
+
         if (source==UncSource::jesRelativeBal && jet_source==::correction::JetCorrProvider::UncSource::RelativeBal ) return true;
         if (source==UncSource::jesHF && jet_source==::correction::JetCorrProvider::UncSource::HF ) return true;
         if (source==UncSource::jesBBEC1 && jet_source==::correction::JetCorrProvider::UncSource::BBEC1 ) return true;
@@ -105,7 +106,7 @@ public:
         if (source==UncSource::jesAbsolute_year && jet_source==::correction::JetCorrProvider::UncSource::Absolute_year ) return true;
         if (source==UncSource::jesEC2_year && jet_source==::correction::JetCorrProvider::UncSource::EC2_year ) return true;
         if (source==UncSource::jesHF_year && jet_source==::correction::JetCorrProvider::UncSource::HF_year ) return true;
-        if (source==UncSource::jesRelativeSample_year && jet_source==::correction::JetCorrProvider::UncSource::RelativeSample_year ) return true;
+        if (source==UncSource::jesRelativeSample_year && jet_source==::correction::JetCorrProvider::UncSource::RelativeSample_year) return true;
         return false;
     }
 
@@ -120,6 +121,7 @@ public:
     float getBTagShapeSF(const RVecLV& Jet_p4, const RVecB& pre_sel, const RVecI& Jet_Flavour,const RVecF& Jet_bTag_score, UncSource source, UncScale scale,
     ::correction::JetCorrProvider::UncSource jet_source) const
     {
+        double sf_product = 1.;
         for(size_t jet_idx = 0; jet_idx < Jet_p4.size(); jet_idx++){
             if(!pre_sel[jet_idx]) continue;
             const UncScale jet_tag_scale = sourceApplies(source, Jet_Flavour[jet_idx],jet_source)
@@ -130,10 +132,10 @@ public:
             std::string source_str = getUncName().at(source);
             const std::string& unc_name = getFullNameUnc(scale_str, source_str,_year, need_year, isCentral);
             const auto sf = deepJet_shape_->evaluate({unc_name, Jet_Flavour[jet_idx], std::abs(Jet_p4[jet_idx].eta()),Jet_p4[jet_idx].pt(),Jet_bTag_score[jet_idx]});
-            return sf;
+            sf_product*=sf;
         }
 
-        return 1.;
+        return sf_product;
     }
 
 private:

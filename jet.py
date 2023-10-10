@@ -16,6 +16,9 @@ class JetCorrProducer:
     jsonPath_btag = "/cvmfs/cms.cern.ch/rsync/cms-nanoAOD/jsonpog-integration/POG/BTV/{}/btagging.json.gz"
 
     initialized = False
+    uncSources_core = ["FlavorQCD","RelativeBal", "HF", "BBEC1", "EC2", "Absolute", "BBEC1_", "Absolute_", "EC2_", "HF_", "RelativeSample_" ]
+    uncSources_extended = uncSources_core+["JER", "Total"]
+
     #Sources = []
     period = None
     def __init__(self, period,isData):
@@ -53,11 +56,18 @@ class JetCorrProducer:
                     ::correction::UncScale::{scale},
                     ::correction::JetCorrProvider::UncSource::{source}) ''')
         if bTagShapeSource != central:
+            if bTagShape_branch_central not in df.GetColumnNames():
+                df = df.Define(f"{bTagShape_branch_central}",
+                    f''' ::correction::bTagShapeCorrProvider::getGlobal().getBTagShapeSF(
+                    Jet_p4, Jet_bCand, Jet_hadronFlavour, Jet_btagDeepFlavB,
+                    ::correction::bTagShapeCorrProvider::UncSource::Central,
+                    ::correction::UncScale::Central,
+                    ::correction::JetCorrProvider::UncSource::Central) ''')
             df = df.Define(f"{bTagShape_branch_name}_rel", f"static_cast<float>({bTagShape_branch_name}_double/{bTagShape_branch_central})")
             bTagShape_branch_name += '_rel'
         else:
             df = df.Define(f"{bTagShape_branch_name}", f"static_cast<float>({bTagShape_branch_name}_double)")
-        SF_branches.append(f"{bTagShape_branch_name}")
+        SF_branches.append(bTagShape_branch_name)
         return df, SF_branches
 
 
@@ -66,7 +76,7 @@ class JetCorrProducer:
                                 Jet_pt, Jet_eta, Jet_phi, Jet_mass, Jet_rawFactor, Jet_area,
                                 Jet_jetId, Rho_fixedGridRhoFastjetAll, Jet_partonFlavour, 0, GenJet_pt, GenJet_eta,
                                 GenJet_phi, GenJet_mass, event)''')
-        for source in [ central] + ["JER", "FlavorQCD","RelativeBal", "HF", "BBEC1", "EC2", "Absolute", "Total", "BBEC1_", "Absolute_", "EC2_", "HF_", "RelativeSample_" ]:
+        for source in [ central] + JetCorrProducer.uncSources_extended:
             source_eff = source
             if source!=central and source != "JER":
                 source_eff= "JES_" + source_eff
@@ -80,28 +90,26 @@ class JetCorrProducer:
                 df = df.Define(f'Jet_p4_{syst_name}_delta', f'Jet_p4_{syst_name} - Jet_p4_{nano}')
         return df,source_dict
 
-    def getBtagShapeSFs(self, df, return_variations=True, isCentral=True):
-        SF_branches=[]
-        for bTagShapeSource_jesCentral in [central]+["lf", "hf", "lfstats1", "lfstats2", "hfstats1", "hfstats2", "cferr1", "cferr2"]:
-            for scale in getScales(bTagShapeSource_jesCentral):
-                bTagShapeSource_jesCentral_syst_name = getSystName(bTagShapeSource_jesCentral, scale)
-                print(bTagShapeSource_jesCentral, scale, bTagShapeSource_jesCentral_syst_name)
-                df, SF_branches= JetCorrProducer.addtbTagShapeSFInDf(df, bTagShapeSource_jesCentral, SF_branches, central, scale, bTagShapeSource_jesCentral_syst_name)
-
-        sf_sources = ["FlavorQCD","RelativeBal", "HF", "BBEC1", "EC2", "Absolute", "BBEC1_", "Absolute_", "EC2_", "HF_", "RelativeSample_" ] if return_variations else []
-        for source in sf_sources:
-            bTagShapeSource = 'jes'+source if source != central else central
-            bTahShapeSource_eff = 'jes'+source if source != central else central
-            if source.endswith("_") :
-                bTahShapeSource_eff = bTahShapeSource_eff+ JetCorrProducer.period.split("_")[0]
-                source+="year"
-                bTagShapeSource+="year"
-            for scale in getScales(source):
-                if not isCentral and scale != central:
-                    continue
-                bTagShapeSource_syst_name = getSystName(bTahShapeSource_eff, scale)
-                df, SF_branches= JetCorrProducer.addtbTagShapeSFInDf(df, bTagShapeSource, SF_branches, source, scale,bTagShapeSource_syst_name)
-        return df,SF_branches
+    def getBtagShapeSFs(self, df, jes_syst_name, isCentral):
+        SF_branches_core = []
+        SF_branches_jes = []
+        if isCentral:
+            for bTagShapeSource_jesCentral in [central]+["lf", "hf", "lfstats1", "lfstats2", "hfstats1", "hfstats2", "cferr1", "cferr2"]:
+                for scale in getScales(bTagShapeSource_jesCentral):
+                    bTagShapeSource_jesCentral_syst_name = getSystName(bTagShapeSource_jesCentral, scale)
+                    df, SF_branches_core= JetCorrProducer.addtbTagShapeSFInDf(df, bTagShapeSource_jesCentral,SF_branches_core, central, scale, bTagShapeSource_jesCentral_syst_name)
+        else:
+            for jes_source in JetCorrProducer.uncSources_core:
+                jes_source_eff= "JES_" + jes_source
+                bTagShapeSource = 'jes'+jes_source if jes_source != central else central
+                if jes_source.endswith("_") :
+                    jes_source_eff = jes_source_eff+ JetCorrProducer.period.split("_")[0]
+                    jes_source+="year"
+                    bTagShapeSource+="year"
+                for scale in getScales(jes_source):
+                    if jes_syst_name != getSystName(jes_source_eff, scale): continue
+                    df, SF_branches_jes= JetCorrProducer.addtbTagShapeSFInDf(df, bTagShapeSource, SF_branches_jes,jes_source, scale,jes_syst_name)
+        return df,SF_branches_core,SF_branches_jes
 
     def getEnergyResolution(self, df):
         df= df.Define(f"Jet_ptRes", f""" ::correction::JetCorrProvider::getGlobal().getResolution(
