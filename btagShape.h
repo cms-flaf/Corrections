@@ -122,6 +122,7 @@ public:
     ::correction::JetCorrProvider::UncSource jet_source) const
     {
         double sf_product = 1.;
+        std::string source_str = getUncName().at(source);
         for(size_t jet_idx = 0; jet_idx < Jet_p4.size(); jet_idx++){
             if(!pre_sel[jet_idx]) continue;
             const UncScale jet_tag_scale = sourceApplies(source, Jet_Flavour[jet_idx],jet_source)
@@ -129,12 +130,10 @@ public:
             const std::string& scale_str = getScaleStr(jet_tag_scale);
             bool isCentral = jet_tag_scale == UncScale::Central;
             bool need_year = needYear(source);
-            std::string source_str = getUncName().at(source);
             const std::string& unc_name = getFullNameUnc(scale_str, source_str,_year, need_year, isCentral);
             const auto sf = deepJet_shape_->evaluate({unc_name, Jet_Flavour[jet_idx], std::abs(Jet_p4[jet_idx].eta()),Jet_p4[jet_idx].pt(),Jet_bTag_score[jet_idx]});
             sf_product*=sf;
         }
-
         return sf_product;
     }
 
