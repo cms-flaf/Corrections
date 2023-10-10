@@ -96,17 +96,17 @@ public:
         if(source == UncSource::cferr1 && Jet_Flavour == 4 && jet_source==::correction::JetCorrProvider::UncSource::Central) return true;
         if(source == UncSource::cferr2 && Jet_Flavour == 4 && jet_source==::correction::JetCorrProvider::UncSource::Central)  return true;
 
-        if (source==UncSource::jesRelativeBal && jet_source==::correction::JetCorrProvider::UncSource::RelativeBal ) return true;
-        if (source==UncSource::jesHF && jet_source==::correction::JetCorrProvider::UncSource::HF ) return true;
-        if (source==UncSource::jesBBEC1 && jet_source==::correction::JetCorrProvider::UncSource::BBEC1 ) return true;
-        if (source==UncSource::jesEC2 && jet_source==::correction::JetCorrProvider::UncSource::EC2 ) return true;
-        if (source==UncSource::jesAbsolute && jet_source==::correction::JetCorrProvider::UncSource::Absolute ) return true;
-        if (source==UncSource::jesFlavorQCD && jet_source==::correction::JetCorrProvider::UncSource::FlavorQCD ) return true;
-        if (source==UncSource::jesBBEC1_year && jet_source==::correction::JetCorrProvider::UncSource::BBEC1_year ) return true;
-        if (source==UncSource::jesAbsolute_year && jet_source==::correction::JetCorrProvider::UncSource::Absolute_year ) return true;
-        if (source==UncSource::jesEC2_year && jet_source==::correction::JetCorrProvider::UncSource::EC2_year ) return true;
-        if (source==UncSource::jesHF_year && jet_source==::correction::JetCorrProvider::UncSource::HF_year ) return true;
-        if (source==UncSource::jesRelativeSample_year && jet_source==::correction::JetCorrProvider::UncSource::RelativeSample_year) return true;
+        if (source==UncSource::jesRelativeBal && (Jet_Flavour == 5 || Jet_Flavour==0) && jet_source==::correction::JetCorrProvider::UncSource::RelativeBal ) return true;
+        if (source==UncSource::jesHF && (Jet_Flavour == 5 || Jet_Flavour==0) && jet_source==::correction::JetCorrProvider::UncSource::HF ) return true;
+        if (source==UncSource::jesBBEC1 && (Jet_Flavour == 5 || Jet_Flavour==0) && jet_source==::correction::JetCorrProvider::UncSource::BBEC1 ) return true;
+        if (source==UncSource::jesEC2 && (Jet_Flavour == 5 || Jet_Flavour==0) && jet_source==::correction::JetCorrProvider::UncSource::EC2 ) return true;
+        if (source==UncSource::jesAbsolute && (Jet_Flavour == 5 || Jet_Flavour==0) && jet_source==::correction::JetCorrProvider::UncSource::Absolute ) return true;
+        if (source==UncSource::jesFlavorQCD && (Jet_Flavour == 5 || Jet_Flavour==0) && jet_source==::correction::JetCorrProvider::UncSource::FlavorQCD ) return true;
+        if (source==UncSource::jesBBEC1_year && (Jet_Flavour == 5 || Jet_Flavour==0) && jet_source==::correction::JetCorrProvider::UncSource::BBEC1_year ) return true;
+        if (source==UncSource::jesAbsolute_year && (Jet_Flavour == 5 || Jet_Flavour==0) && jet_source==::correction::JetCorrProvider::UncSource::Absolute_year ) return true;
+        if (source==UncSource::jesEC2_year && (Jet_Flavour == 5 || Jet_Flavour==0) && jet_source==::correction::JetCorrProvider::UncSource::EC2_year ) return true;
+        if (source==UncSource::jesHF_year && (Jet_Flavour == 5 || Jet_Flavour==0) && jet_source==::correction::JetCorrProvider::UncSource::HF_year ) return true;
+        if (source==UncSource::jesRelativeSample_year && (Jet_Flavour == 5 || Jet_Flavour==0) && jet_source==::correction::JetCorrProvider::UncSource::RelativeSample_year) return true;
         return false;
     }
 
