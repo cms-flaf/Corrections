@@ -15,9 +15,9 @@ class TauCorrProducer:
     SFSources_genuineLep=["TauID_genuineElectron_barrel", "TauID_genuineElectron_endcaps", "TauID_genuineMuon_etaLt0p4",
         "TauID_genuineMuon_eta0p4to0p8", "TauID_genuineMuon_eta0p8to1p2", "TauID_genuineMuon_eta1p2to1p7", "TauID_genuineMuon_etaGt1p7" ]
 
-    def __init__(self, period, config,deepTauVersion):
+    def __init__(self, period, config):
         jsonFile = TauCorrProducer.jsonPath.format(period)
-        self.deepTauVersion = deepTauVersion
+        self.deepTauVersion = f"""DeepTau{deepTauVersions[config["deepTauVersion"]]}v{config["deepTauVersion"]}"""
         if self.deepTauVersion=='DeepTau2018v2p5':
             jsonFile = f"Corrections/data/TAU/{period}/tau_DeepTau2018v2p5_UL2018.json"
         if not TauCorrProducer.initialized:
@@ -26,8 +26,8 @@ class TauCorrProducer:
             ROOT.gInterpreter.Declare(f'#include "{header_path}"')
             wp_map_cpp = createWPChannelMap(config["deepTauWPs"])
             tauType_map = createTauSFTypeMap(config["genuineTau_SFtype"])
-            print(jsonFile)
-            print(self.deepTauVersion)
+            #print(jsonFile)
+            #print(self.deepTauVersion)
             ROOT.gInterpreter.ProcessLine(f'::correction::TauCorrProvider::Initialize("{jsonFile}", "{self.deepTauVersion}", {wp_map_cpp}, {tauType_map} , "{period.split("_")[0]}")')
             TauCorrProducer.initialized = True
             #deepTauVersion = f"""DeepTau{deepTauVersions[config["deepTauVersion"]]}{config["deepTauVersion"]}"""

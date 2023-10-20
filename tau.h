@@ -181,6 +181,10 @@ public:
                  UncSource source, UncScale scale) const
     {
         RVecLV final_p4 = Tau_p4;
+
+        const auto wpVSe = "VVLoose";
+        const auto wpVSmu = "Tight";
+        const auto wpVSjet = "Medium";
         for(size_t n = 0; n < Tau_p4.size(); ++n) {
             if(!isTwoProngDM(Tau_decayMode.at(n))) {
                 const GenLeptonMatch genMatch = static_cast<GenLeptonMatch>(Tau_genMatch.at(n));
@@ -188,8 +192,16 @@ public:
                                            ? scale : UncScale::Central;
                 const UncSource tau_source = tau_scale == UncScale::Central ? UncSource::Central : source ;
                 const std::string& scale_str =  getScaleStr(tau_source, tau_scale, year_);
-                const double sf = tau_es_->evaluate({Tau_p4[n].pt(), Tau_p4[n].eta(), Tau_decayMode.at(n),
-                static_cast<int>(genMatch), deepTauVersion_, scale_str});
+                double sf = 1;
+                if (deepTauVersion_ == "DeepTau2017v2p1"){
+                    sf = tau_es_->evaluate({Tau_p4[n].pt(), Tau_p4[n].eta(), Tau_decayMode.at(n),
+                    static_cast<int>(genMatch), deepTauVersion_, scale_str});
+                    }
+                else if (deepTauVersion_ == "DeepTau2018v2p5"){
+                    sf = tau_es_->evaluate({Tau_p4[n].pt(), Tau_p4[n].eta(), Tau_decayMode.at(n),
+                    static_cast<int>(genMatch), deepTauVersion_, wpVSjet, wpVSe,scale_str});
+                    }
+
                 final_p4[n] *= sf;
             }
         }
@@ -200,8 +212,8 @@ public:
     {
         if(isTwoProngDM(Tau_decayMode)) throw std::runtime_error("no SF for two prong tau decay modes");
         const auto wpVSe = wps_map_.count(ch) ? wps_map_.at(ch).at(0).first : "VVLoose";
-        const auto wpVSmu = wps_map_.count(ch) ? wps_map_.at(ch).at(1).first : "VLoose";
-        const auto wpVSjet = wps_map_.count(ch) ? wps_map_.at(ch).at(2).first : "Loose";
+        const auto wpVSmu = wps_map_.count(ch) ? wps_map_.at(ch).at(1).first : "Tight";
+        const auto wpVSjet = wps_map_.count(ch) ? wps_map_.at(ch).at(2).first : "Medium";
         const auto & genuineTau_SFtype = tauType_map_.count(ch) ? tauType_map_.at(ch) : "dm";
         const GenLeptonMatch genMatch = static_cast<GenLeptonMatch>(Tau_genMatch);
         if(genMatch == GenLeptonMatch::Tau) {

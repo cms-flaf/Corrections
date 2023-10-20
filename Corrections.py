@@ -25,7 +25,7 @@ period_names = {
     'Run2_2018': '2018_UL',
 }
 
-def Initialize(config, isData, deepTauVersion='2p1', load_corr_lib=True, load_pu=True, load_tau=True, load_trg=True, load_btag=True,
+def Initialize(config, isData, load_corr_lib=True, load_pu=True, load_tau=True, load_trg=True, load_btag=True,
                loadBTagEff=True, load_met=True, load_mu = True, load_ele=True, load_puJetID=True, load_jet=True):
     global initialized
     global tau
@@ -63,13 +63,13 @@ def Initialize(config, isData, deepTauVersion='2p1', load_corr_lib=True, load_pu
         pu = puWeightProducer(period=period_names[period])
     if load_tau:
         from .tau import TauCorrProducer
-        tau = TauCorrProducer(period_names[period], config, deepTauVersion)
+        tau = TauCorrProducer(period_names[period], config)
     if load_jet:
         from .jet import JetCorrProducer
         jet = JetCorrProducer(period_names[period],isData)
     if load_trg:
         from .triggers import TrigCorrProducer
-        trg = TrigCorrProducer(period_names[period], config, deepTauVersion)
+        trg = TrigCorrProducer(period_names[period], config)
     if load_btag:
         from .btag import bTagCorrProducer
         btag = bTagCorrProducer(period_names[period], loadBTagEff)
