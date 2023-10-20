@@ -20,12 +20,11 @@ class TrigCorrProducer:
         "2016postVFP_UL":"NUM_IsoMu24_or_IsoTkMu24_DEN_CutBasedIdTight_and_PFIsoTight"
     }
 
-    def __init__(self, period, config, deepTauVersion):
+    def __init__(self, period, config):
         jsonFile_Tau = TrigCorrProducer.TauTRG_jsonPath.format(period)
         jsonFile_Mu = TrigCorrProducer.MuTRG_jsonPath.format(period)
-        self.deepTauVersion = deepTauVersion
+        self.deepTauVersion = f"""DeepTau{deepTauVersions[config["deepTauVersion"]]}v{config["deepTauVersion"]}"""
         jsonFile_e = os.path.join(os.environ['ANALYSIS_PATH'],TrigCorrProducer.eTRG_jsonPath.format(period))
-
         if self.deepTauVersion=='DeepTau2018v2p5':
             jsonFile_Tau = f"Corrections/data/TAU/{period}/tau_DeepTau2018v2p5_UL2018.json"
         if not TrigCorrProducer.initialized:
@@ -33,8 +32,6 @@ class TrigCorrProducer:
             header_path = os.path.join(headers_dir, "triggers.h")
             ROOT.gInterpreter.Declare(f'#include "{header_path}"')
             wp_map_cpp = createWPChannelMap(config["deepTauWPs"])
-            print(jsonFile_Tau)
-            print(self.deepTauVersion)
             ROOT.gInterpreter.ProcessLine(f"""::correction::TrigCorrProvider::Initialize("{jsonFile_Tau}", "{self.deepTauVersion}", {wp_map_cpp}, "{jsonFile_Mu}", "{period}",
                                           "{self.muon_trg_dict[period]}","{jsonFile_e}")""")
             TrigCorrProducer.initialized = True
