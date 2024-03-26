@@ -8,9 +8,9 @@ class EleCorrProvider : public CorrectionsBase<EleCorrProvider> {
 public:
     enum class UncSource : int {
         Central = -1,
-        eleID_SF = 0,
-        eleES = 1,
-        ele_dEsigma = 2,
+        EleID = 0,
+        EleES = 1,
+        Ele_dEsigma = 2,
     };
 
     static std::string getESScaleStr(UncScale scale)
@@ -36,8 +36,8 @@ public:
 
     static bool sourceApplies(UncSource source)
     {
-        if ( source == UncSource::eleID_SF ) return true;
-        if ( source == UncSource::eleES ) return true;
+        if ( source == UncSource::EleID ) return true;
+        if ( source == UncSource::EleES ) return true;
         return false;
     }
 
@@ -54,8 +54,7 @@ public:
     {
         const GenLeptonMatch genMatch = static_cast<GenLeptonMatch>(TauEle_genMatch);
         if((genMatch != GenLeptonMatch::Electron && genMatch != GenLeptonMatch::TauElectron)) return 1.;
-        const UncScale jet_scale = sourceApplies(source)
-                                           ? scale : UncScale::Central;
+        const UncScale jet_scale = sourceApplies(source) ? scale : UncScale::Central;
         return EleIDSF_->evaluate({period, getIDScaleStr(jet_scale), working_point, Electron_p4.eta(), Electron_p4.pt()});
 
     }

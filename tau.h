@@ -30,13 +30,20 @@ public:
         syst_year_dm10=17,
         syst_year_dm11=18,
         total = 19,
-        TauID_genuineElectron_barrel = 20,
-        TauID_genuineElectron_endcaps = 21,
-        TauID_genuineMuon_etaLt0p4 = 22,
-        TauID_genuineMuon_eta0p4to0p8 = 23,
-        TauID_genuineMuon_eta0p8to1p2 = 24,
-        TauID_genuineMuon_eta1p2to1p7 = 25,
-        TauID_genuineMuon_etaGt1p7 = 26
+        genuineElectron_barrel = 20,
+        genuineElectron_endcaps = 21,
+        genuineMuon_etaLt0p4 = 22,
+        genuineMuon_eta0p4to0p8 = 23,
+        genuineMuon_eta0p8to1p2 = 24,
+        genuineMuon_eta1p2to1p7 = 25,
+        genuineMuon_etaGt1p7 = 26,
+        stat_highpT_bin1 = 27,
+        stat_highpT_bin2 = 28,
+        syst_highpT = 29,
+        syst_highpT_extrap = 30,
+        syst_highpT_bin1 = 31,
+        syst_highpT_bin2 = 32,
+
         /*
         TauID_genuineTau_DM0 = 6,
         TauID_genuineTau_DM1 = 7,
@@ -102,20 +109,32 @@ public:
             {{UncSource::syst_year_dm11, UncScale::Up},"syst_"+year+"_dm11_up"},
             {{UncSource::total, UncScale::Down},"total_down"},
             {{UncSource::total, UncScale::Up},"total_up"},
-            {{UncSource::TauID_genuineElectron_barrel, UncScale::Down}, "down"},
-            {{UncSource::TauID_genuineElectron_barrel, UncScale::Up}, "up"},
-            {{UncSource::TauID_genuineElectron_endcaps, UncScale::Down}, "down"},
-            {{UncSource::TauID_genuineElectron_endcaps, UncScale::Up}, "up"},
-            {{UncSource::TauID_genuineMuon_etaLt0p4, UncScale::Down}, "down"},
-            {{UncSource::TauID_genuineMuon_etaLt0p4, UncScale::Up}, "up"},
-            {{UncSource::TauID_genuineMuon_eta0p4to0p8, UncScale::Down}, "down"},
-            {{UncSource::TauID_genuineMuon_eta0p4to0p8, UncScale::Up}, "up"},
-            {{UncSource::TauID_genuineMuon_eta0p8to1p2, UncScale::Down}, "down"},
-            {{UncSource::TauID_genuineMuon_eta0p8to1p2, UncScale::Up}, "up"},
-            {{UncSource::TauID_genuineMuon_eta1p2to1p7, UncScale::Down}, "down"},
-            {{UncSource::TauID_genuineMuon_eta1p2to1p7, UncScale::Up}, "up"},
-            {{UncSource::TauID_genuineMuon_etaGt1p7, UncScale::Down}, "down"},
-            {{UncSource::TauID_genuineMuon_etaGt1p7, UncScale::Up}, "up"},
+            {{UncSource::genuineElectron_barrel, UncScale::Down}, "down"},
+            {{UncSource::genuineElectron_barrel, UncScale::Up}, "up"},
+            {{UncSource::genuineElectron_endcaps, UncScale::Down}, "down"},
+            {{UncSource::genuineElectron_endcaps, UncScale::Up}, "up"},
+            {{UncSource::genuineMuon_etaLt0p4, UncScale::Down}, "down"},
+            {{UncSource::genuineMuon_etaLt0p4, UncScale::Up}, "up"},
+            {{UncSource::genuineMuon_eta0p4to0p8, UncScale::Down}, "down"},
+            {{UncSource::genuineMuon_eta0p4to0p8, UncScale::Up}, "up"},
+            {{UncSource::genuineMuon_eta0p8to1p2, UncScale::Down}, "down"},
+            {{UncSource::genuineMuon_eta0p8to1p2, UncScale::Up}, "up"},
+            {{UncSource::genuineMuon_eta1p2to1p7, UncScale::Down}, "down"},
+            {{UncSource::genuineMuon_eta1p2to1p7, UncScale::Up}, "up"},
+            {{UncSource::genuineMuon_etaGt1p7, UncScale::Down}, "down"},
+            {{UncSource::genuineMuon_etaGt1p7, UncScale::Up}, "up"},
+            {{UncSource::syst_highpT_bin1, UncScale::Up},"up"},
+            {{UncSource::syst_highpT_bin1, UncScale::Down},"down"},
+            {{UncSource::syst_highpT_bin2, UncScale::Up},"up"},
+            {{UncSource::syst_highpT_bin2, UncScale::Down},"down"},
+            {{UncSource::stat_highpT_bin1, UncScale::Up},"stat_highpT_bin1_up"},
+            {{UncSource::stat_highpT_bin1, UncScale::Down},"stat_highpT_bin1_down"},
+            {{UncSource::stat_highpT_bin2, UncScale::Up},"stat_highpT_bin2_up"},
+            {{UncSource::stat_highpT_bin2, UncScale::Down},"stat_highpT_bin2_down"},
+            {{UncSource::syst_highpT, UncScale::Up},"syst_highpT_up"},
+            {{UncSource::syst_highpT, UncScale::Down},"syst_highpT_down"},
+            {{UncSource::syst_highpT_extrap, UncScale::Up},"syst_highpT_extrap_up"},
+            {{UncSource::syst_highpT_extrap, UncScale::Down},"syst_highpT_extrap_down"},
         };
         return names.at(std::make_pair(source,scale));
     }
@@ -140,26 +159,33 @@ public:
             if(source == UncSource::syst_year_dm1 && ( decayMode == 1 || decayMode == 2 )) return true;
             if(source == UncSource::syst_year_dm10 && ( decayMode == 10)) return true;
             if(source == UncSource::syst_year_dm11 && ( decayMode == 11)) return true;
-            /*if(source == UncSource::TauID_genuineTau_DM0 && decayMode==0 && p4.pt()>40) return true;
-            if(source == UncSource::TauID_genuineTau_DM1 && ( decayMode == 1 || decayMode == 2 ) && p4.pt()>40) return true;
-            if(source == UncSource::TauID_genuineTau_3Prong && ( decayMode == 10 || decayMode == 11 ) && p4.pt()>40) return true;
-            if(source == UncSource::TauID_genuineTau_Pt20_25 && p4.pt()>20 && p4.pt()<=25 ) return true;
-            if(source == UncSource::TauID_genuineTau_Pt25_30 && p4.pt()>25 && p4.pt()<=30 ) return true;
-            if(source == UncSource::TauID_genuineTau_Pt30_35 && p4.pt()>30 && p4.pt()<=35 ) return true;
-            if(source == UncSource::TauID_genuineTau_Pt35_40 && p4.pt()>35 && p4.pt()<=40 ) return true;
-            if(source == UncSource::TauID_genuineTau_Ptgt40 && p4.pt()>40 ) return true;*/
+            if(source == UncSource::stat_highpT_bin1 && ( p4.pt() > 140 && p4.pt()<=200)) return true;
+            if(source == UncSource::syst_highpT_bin1 && ( p4.pt() > 140 && p4.pt()<=200)) return true;
+            if(source == UncSource::stat_highpT_bin2 && ( p4.pt() > 200)) return true;
+            if(source == UncSource::syst_highpT_bin2 && ( p4.pt() > 200)) return true;
+
+            if(source == UncSource::syst_highpT && ( p4.pt() > 140)) return true;
+            if(source == UncSource::syst_highpT_extrap && ( p4.pt() > 140)) return true;
+            /*if(source == UncSource::genuineTau_DM0 && decayMode==0 && p4.pt()>40) return true;
+            if(source == UncSource::genuineTau_DM1 && ( decayMode == 1 || decayMode == 2 ) && p4.pt()>40) return true;
+            if(source == UncSource::genuineTau_3Prong && ( decayMode == 10 || decayMode == 11 ) && p4.pt()>40) return true;
+            if(source == UncSource::genuineTau_Pt20_25 && p4.pt()>20 && p4.pt()<=25 ) return true;
+            if(source == UncSource::genuineTau_Pt25_30 && p4.pt()>25 && p4.pt()<=30 ) return true;
+            if(source == UncSource::genuineTau_Pt30_35 && p4.pt()>30 && p4.pt()<=35 ) return true;
+            if(source == UncSource::genuineTau_Pt35_40 && p4.pt()>35 && p4.pt()<=40 ) return true;
+            if(source == UncSource::genuineTau_Ptgt40 && p4.pt()>40 ) return true;*/
         } else if(genMatch == GenLeptonMatch::Electron || genMatch == GenLeptonMatch::TauElectron) {
             if(source == UncSource::EleFakingTauES_DM0 && decayMode == 0) return true;
             if(source == UncSource::EleFakingTauES_DM1 && ( decayMode == 1 || decayMode == 2 )) return true;
-            if(source == UncSource::TauID_genuineElectron_barrel && std::abs(p4.eta())<1.46) return true;
-            if(source == UncSource::TauID_genuineElectron_endcaps && std::abs(p4.eta())>1.558) return true;
+            if(source == UncSource::genuineElectron_barrel && std::abs(p4.eta())<1.46) return true;
+            if(source == UncSource::genuineElectron_endcaps && std::abs(p4.eta())>1.558) return true;
         } else if(genMatch == GenLeptonMatch::Muon || genMatch == GenLeptonMatch::TauMuon) {
             if(source == UncSource::MuFakingTauES) return true;
-            if(source == UncSource::TauID_genuineMuon_etaLt0p4 && std::abs(p4.eta())>0 && std::abs(p4.eta())<=0.4) return true;
-            if(source == UncSource::TauID_genuineMuon_eta0p4to0p8 && std::abs(p4.eta())>0.4 && std::abs(p4.eta())<=0.8) return true;
-            if(source == UncSource::TauID_genuineMuon_eta0p8to1p2 && std::abs(p4.eta())>0.8 && std::abs(p4.eta())<=1.2) return true;
-            if(source == UncSource::TauID_genuineMuon_eta1p2to1p7 && std::abs(p4.eta())>1.2 && std::abs(p4.eta())<=1.7) return true;
-            if(source == UncSource::TauID_genuineMuon_etaGt1p7 && std::abs(p4.eta())>1.7 ) return true;
+            if(source == UncSource::genuineMuon_etaLt0p4 && std::abs(p4.eta())>0 && std::abs(p4.eta())<=0.4) return true;
+            if(source == UncSource::genuineMuon_eta0p4to0p8 && std::abs(p4.eta())>0.4 && std::abs(p4.eta())<=0.8) return true;
+            if(source == UncSource::genuineMuon_eta0p8to1p2 && std::abs(p4.eta())>0.8 && std::abs(p4.eta())<=1.2) return true;
+            if(source == UncSource::genuineMuon_eta1p2to1p7 && std::abs(p4.eta())>1.2 && std::abs(p4.eta())<=1.7) return true;
+            if(source == UncSource::genuineMuon_etaGt1p7 && std::abs(p4.eta())>1.7 ) return true;
         }
         return false;
     }
@@ -214,7 +240,9 @@ public:
         const auto wpVSe = wps_map_.count(ch) ? wps_map_.at(ch).at(0).first : "VVLoose";
         const auto wpVSmu = wps_map_.count(ch) ? wps_map_.at(ch).at(1).first : "Tight";
         const auto wpVSjet = wps_map_.count(ch) ? wps_map_.at(ch).at(2).first : "Medium";
-        const auto & genuineTau_SFtype = tauType_map_.count(ch) ? tauType_map_.at(ch) : "dm";
+        //const auto & genuineTau_SFtype = tauType_map_.count(ch) ? tauType_map_.at(ch) : "dm";
+        const auto & genuineTau_SFtype = Tau_p4.pt()>140 ? "pt": "dm";
+        //HttCandidate.leg_p4[{leg_idx}].pt() >= 120
         const GenLeptonMatch genMatch = static_cast<GenLeptonMatch>(Tau_genMatch);
         if(genMatch == GenLeptonMatch::Tau) {
             const UncScale tau_had_scale = sourceApplies(source, Tau_p4, Tau_decayMode, genMatch)
@@ -240,6 +268,39 @@ public:
         }
         return 1.;
     }
+
+    float getSF_WPStrings(const float tau_pt, const float tau_eta, int Tau_decayMode, int Tau_genMatch,std::string wpVSjet_string) const
+    {
+        const auto wpVSe = "VVLoose";
+        //const auto wpVSe = "Tight";
+        const auto wpVSmu = "Tight";
+        if(isTwoProngDM(Tau_decayMode)) throw std::runtime_error("no SF for two prong tau decay modes");
+        const GenLeptonMatch genMatch = static_cast<GenLeptonMatch>(Tau_genMatch);
+        if(genMatch == GenLeptonMatch::Tau) {
+            const UncScale tau_had_scale = UncScale::Central;
+            const UncSource tau_had_source = UncSource::Central  ;
+            const std::string& scale_str = "default" ;
+            const auto sf = tau_vs_jet_->evaluate({tau_pt,Tau_decayMode, Tau_genMatch, wpVSjet_string, wpVSe, scale_str, "dm"});
+            return sf;
+        }
+        if(genMatch==GenLeptonMatch::Electron || genMatch == GenLeptonMatch::TauElectron){
+            const UncScale tau_ele_scale =  UncScale::Central;
+            const UncSource tau_ele_source = UncSource::Central ;
+            const std::string& scale_str = getScaleStr(tau_ele_source, tau_ele_scale, year_);
+            return tau_vs_e_->evaluate({tau_eta, Tau_genMatch, wpVSe, scale_str});
+        }
+         if(genMatch == GenLeptonMatch::Muon || genMatch == GenLeptonMatch::TauMuon){
+            const UncScale tau_mu_scale = UncScale::Central;
+            const UncSource tau_mu_source = UncSource::Central ;
+            const std::string& scale_str = getScaleStr(tau_mu_source, tau_mu_scale, year_);
+            return tau_vs_mu_->evaluate({tau_eta, Tau_genMatch, wpVSmu, scale_str});
+        }
+        return 1.;
+    }
+
+
+
+
 private:
     std::unique_ptr<CorrectionSet> corrections_;
     Correction::Ref tau_es_, tau_vs_e_, tau_vs_mu_, tau_vs_jet_;

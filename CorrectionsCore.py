@@ -6,6 +6,13 @@ up = 'Up'
 down = 'Down'
 nano = 'nano'
 
+periods = {
+    "2018_UL": "2018",
+    "2017_UL": "2017",
+    "2016preVFP_UL":"2016",
+    "2016postVFP_UL":"2016",
+    }
+
 def getScales(source=None):
     if source is None:
         return [ central, up, down ]

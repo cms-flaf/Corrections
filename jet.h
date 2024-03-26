@@ -70,7 +70,7 @@ public:
     JetCorrProvider(const std::string& ptResolution,const std::string& ptResolutionSF, const std::string& JesTxtFile, const std::string& year)
     {
         jvc_total.setSmearing(ptResolution, ptResolutionSF, false, true, 0.2, 3);
-
+        jvc_total.setAddHEM2018Issue(year=="2018");
         for (auto& [unc_source ,unc_features] : getUncMap()){
             if(! std::get<1>(unc_features) ) continue;
             std::string jes_name = getFullNameUnc(std::get<0>(unc_features), year, std::get<2>(unc_features));
