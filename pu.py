@@ -1,8 +1,10 @@
 import os
 import ROOT
 from .CorrectionsCore import *
-
-
+# lumi POG: https://twiki.cern.ch/twiki/bin/view/CMS/TWikiLUM
+# PU scenarios https://twiki.cern.ch/twiki/bin/view/CMS/PileupScenariosRun2
+# https://bamboo-hep.readthedocs.io/en/latest/recipes.html#pileup-reweighting
+# https://twiki.cern.ch/twiki/bin/viewauth/CMS/PileupJSONFileforData
 
 class puWeightProducer:
     jsonPath = "/cvmfs/cms.cern.ch/rsync/cms-nanoAOD/jsonpog-integration/POG/LUM/{}/puWeights.json.gz"
