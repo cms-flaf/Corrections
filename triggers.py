@@ -101,7 +101,7 @@ class TrigCorrProducer:
         #self.trg_config = trg_config
         #print(jsonFile_e_XTrg)
         if self.deepTauVersion=='DeepTau2018v2p5':
-            jsonFile_Tau_rel = f"Corrections/data/TAU/{period}/tau_DeepTau2018v2p5_{period}.json"
+            jsonFile_Tau_rel = f"Corrections/data/TAU/{period}/tau_DeepTau2018v2p5_{period}_101123.json"
             jsonFile_Tau = os.path.join(os.environ['ANALYSIS_PATH'],jsonFile_Tau_rel)
         if not TrigCorrProducer.initialized:
             headers_dir = os.path.dirname(os.path.abspath(__file__))
