@@ -2,7 +2,7 @@ import os
 import ROOT
 import yaml
 import itertools
-from RunKit.sh_tools import sh_call
+from RunKit.run_tools import ps_call
 
 from .CorrectionsCore import *
 
@@ -43,7 +43,7 @@ def Initialize(config, isData, load_corr_lib=True, load_pu=True, load_tau=True, 
     if initialized:
         raise RuntimeError('Corrections are already initialized')
     if load_corr_lib:
-        returncode, output, err= sh_call(['correction', 'config', '--cflags', '--ldflags'],
+        returncode, output, err= ps_call(['correction', 'config', '--cflags', '--ldflags'],
                                         catch_stdout=True, decode=True, verbose=0)
         params = output.split(' ')
         for param in params:
@@ -123,10 +123,14 @@ def applyScaleUncertainties(df):
 
 def findRefSample(config, sample_type):
     refSample = []
+    #print(sample_type)
     for sample, sampleDef in config.items():
+        #if sampleDef.get('sampleType', None) == sample_type:
+        #    print(sample, sampleDef)
         if sampleDef.get('sampleType', None) == sample_type and sampleDef.get('isReference', False):
             refSample.append(sample)
     if len(refSample) != 1:
+        print(refSample)
         raise RuntimeError(f'multiple refSamples for {sample_type}: {refSample}')
     return refSample[0]
 
