@@ -259,7 +259,6 @@ public:
         //const auto wpVSjet = wps_map_.count(ch) ? "Medium" : "Medium";
         //const auto & genuineTau_SFtype = tauType_map_.count(ch) ? tauType_map_.at(ch) : "dm";
         const auto & genuineTau_SFtype = Tau_p4.pt()>140 ? "pt": "dm";
-        //HttCandidate.leg_p4[{leg_idx}].pt() >= 120
         const GenLeptonMatch genMatch = static_cast<GenLeptonMatch>(Tau_genMatch);
         if(genMatch == GenLeptonMatch::Tau) {
             const UncScale tau_had_scale = sourceApplies(source, Tau_p4, Tau_decayMode, genMatch)
@@ -267,9 +266,6 @@ public:
             const UncSource tau_had_source = tau_had_scale == UncScale::Central ? UncSource::Central : source ;
             const std::string& scale_str = scale != UncScale::Central  ? getScaleStr(tau_had_source, tau_had_scale, year_) : "default" ;
             const auto sf = tau_vs_jet_->evaluate({Tau_p4.pt(),Tau_decayMode, Tau_genMatch, wpVSjet, wpVSe, scale_str, genuineTau_SFtype});
-            //std::cout <<"tau_pt " << "\t" <<  Tau_p4.pt() << std::endl;
-            //std::cout <<"tau_dm " << "\t" << Tau_decayMode << std::endl;
-            //std::cout << scale_str << "\t"<< sf << std::endl;
             return sf;
         }
         if(genMatch==GenLeptonMatch::Electron || genMatch == GenLeptonMatch::TauElectron){
@@ -278,9 +274,6 @@ public:
             const UncSource tau_ele_source = tau_ele_scale == UncScale::Central ? UncSource::Central : source ;
             const std::string& scale_str = getScaleStr(tau_ele_source, tau_ele_scale, year_);
             const auto sf = tau_vs_e_->evaluate({Tau_p4.eta(), Tau_genMatch, wpVSe, scale_str});
-            //std::cout <<"tau_pt " << "\t" <<  Tau_p4.pt() << std::endl;
-            //std::cout <<"tau_dm " << "\t" << Tau_decayMode << std::endl;
-            //std::cout << scale_str << "\t"<< sf << std::endl;
             return sf;
         }
          if(genMatch == GenLeptonMatch::Muon || genMatch == GenLeptonMatch::TauMuon){
@@ -289,9 +282,6 @@ public:
             const UncSource tau_mu_source = tau_mu_scale == UncScale::Central ? UncSource::Central : source ;
             const std::string& scale_str = getScaleStr(tau_mu_source, tau_mu_scale, year_);
             const auto sf= tau_vs_mu_->evaluate({Tau_p4.eta(), Tau_genMatch, wpVSmu, scale_str});
-            //std::cout <<"tau_pt " << "\t" <<  Tau_p4.pt() << std::endl;
-            //std::cout <<"tau_dm " << "\t" << Tau_decayMode << std::endl;
-            //std::cout << scale_str << "\t"<< sf << std::endl;
             return sf;
         }
         return 1.;

@@ -1,5 +1,5 @@
 import os
-#import ROOT
+import ROOT
 from .CorrectionsCore import *
 # https://twiki.cern.ch/twiki/bin/viewauth/CMS/TauIDRecommendationForRun2
 # https://indico.cern.ch/event/1062355/contributions/4466122/attachments/2287465/3888179/Update2016ULsf.pdf
@@ -33,8 +33,6 @@ class TauCorrProducer:
             ROOT.gInterpreter.Declare(f'#include "{header_path}"')
             wp_map_cpp = createWPChannelMap(config["deepTauWPs"])
             tauType_map = createTauSFTypeMap(config["genuineTau_SFtype"])
-            #print(jsonFile)
-            #print(self.deepTauVersion)
             ROOT.gInterpreter.ProcessLine(f'::correction::TauCorrProvider::Initialize("{jsonFile}", "{self.deepTauVersion}", {wp_map_cpp}, {tauType_map} , "{period.split("_")[0]}")')
             TauCorrProducer.initialized = True
             #deepTauVersion = f"""DeepTau{deepTauVersions[config["deepTauVersion"]]}{config["deepTauVersion"]}"""
@@ -56,21 +54,15 @@ class TauCorrProducer:
         sf_scales = [up, down] if return_variations else []
         SF_branches = []
         for source in [ central ] + sf_sources:
-            #for scale in getScales(source):
             for scale in [ central ] + sf_scales:
                 if source == central and scale != central: continue
                 if not isCentral and scale!= central: continue
                 syst_name = source+scale# if source != central else 'Central'
-                #SF_branches[syst_name]= []
                 for leg_idx in range(nLegs):
                     branch_Loose_name = f"weight_tau{leg_idx+1}_TauID_SF_Loose_{syst_name}"
                     branch_Medium_name = f"weight_tau{leg_idx+1}_TauID_SF_Medium_{syst_name}"
-                    #print(branch_Loose_name)
-                    #print(branch_Medium_name)
                     branch_Loose_central = f"""weight_tau{leg_idx+1}_TauID_SF_Loose_{source+central}"""
                     branch_Medium_central = f"""weight_tau{leg_idx+1}_TauID_SF_Medium_{source+central}"""
-                    #print(branch_Loose_central)
-                    #print(branch_Medium_central)
                     df = df.Define(f"{branch_Medium_name}_double",
                                 f'''HttCandidate.leg_type[{leg_idx}] == Leg::tau ? ::correction::TauCorrProvider::getGlobal().getSF(
                                HttCandidate.leg_p4[{leg_idx}], Tau_decayMode.at(HttCandidate.leg_index[{leg_idx}]),
@@ -84,10 +76,6 @@ class TauCorrProducer:
                     if scale != central:
                         branch_name_Loose_final = branch_Loose_name + '_rel'
                         branch_name_Medium_final = branch_Medium_name + '_rel'
-                        #print(branch_name_Loose_final)
-                        #print(branch_name_Medium_final)
-                        #print(branch_Loose_central)
-                        #print(branch_Medium_central)
                         df = df.Define(branch_name_Loose_final, f"static_cast<float>({branch_Loose_name}_double/{branch_Loose_central})")
                         df = df.Define(branch_name_Medium_final, f"static_cast<float>({branch_Medium_name}_double/{branch_Medium_central})")
                     else:
@@ -98,16 +86,10 @@ class TauCorrProducer:
                             branch_name_Loose_final = branch_Loose_name
                             branch_name_Medium_final = branch_Medium_name
 
-                        #print(branch_name_Loose_final)
-                        #print(branch_name_Medium_final)
                         df = df.Define(branch_name_Loose_final, f"static_cast<float>({branch_Loose_name}_double)")
                         df = df.Define(branch_name_Medium_final, f"static_cast<float>({branch_Medium_name}_double)")
-                    #print(branch_name_Loose_final, source, scale)
-                    #print(branch_name_Medium_final, source, scale)
-                    #df.Display({f"{branch_name_Loose_final}", f"{branch_name_Medium_final}"}).Print()
                     SF_branches.append(branch_name_Loose_final)
                     SF_branches.append(branch_name_Medium_final)
-                    #SF_branches[syst_name].append(f"weight_tau{leg_idx+1}_TauID_SF_{syst_name}")
 
         return df,SF_branches
 
