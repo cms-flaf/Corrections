@@ -108,22 +108,18 @@ def applyScaleUncertainties(df):
         for scale in getScales(source):
             syst_name = getSystName(source, scale)
             syst_dict[syst_name] = source
-            #print(source, source_objs, syst_name)
             for obj in [ "Electron", "Muon", "Tau", "Jet", "FatJet",  "MET", "PuppiMET", "boostedTau",
                          "DeepMETResponseTune", "DeepMETResolutionTune", "SubJet"]:
                 if obj not in source_objs:
                     #suffix = 'Central' if f"{obj}_p4_Central" in df.GetColumnNames() else 'nano'
                     suffix = 'nano'
                     if obj=='boostedTau' and '{obj}_p4_{suffix}' not in df.GetColumnNames(): continue
-                    #print(f"{obj}_p4_{syst_name}, {obj}_p4_{suffix}")
-                    #print(df.Count().GetValue())
                     df = df.Define(f'{obj}_p4_{syst_name}', f'{obj}_p4_{suffix}')
     return df,syst_dict
 
 
 def findRefSample(config, sample_type):
     refSample = []
-    #print(sample_type)
     for sample, sampleDef in config.items():
         #if sampleDef.get('sampleType', None) == sample_type:
         #    print(sample, sampleDef)
@@ -155,8 +151,6 @@ def getNormalisationCorrections(df, config, sample, nLegs, ana_cache=None, retur
     xs_inclusive = 1.
     stitch_str = '1.f'
 
-    #print(sample)
-    #print(sampleType)
     if sampleType in [ 'DY', 'W']:
         xs_stitching_name = config[sample]['crossSectionStitch']
         inclusive_sample_name = findRefSample(config, sampleType)
@@ -166,7 +160,7 @@ def getNormalisationCorrections(df, config, sample, nLegs, ana_cache=None, retur
         if sampleType == 'DY':
             stitch_str = 'if(LHE_Vpt==0.) return 1/2.f; return 1/3.f;'
         elif sampleType == 'W':
-            stitch_str= "if(LHE_Njets==0.) return 1.f; return 1/2.f;"
+            stitch_str= "if(LHE_Njets==0) return 1.f; if(LHE_HT < 70) return 1/2.f; return 1/3.f;"
     else:
         xs_name = config[sample]['crossSection']
     df = df.Define("stitching_weight", stitch_str)
@@ -176,32 +170,22 @@ def getNormalisationCorrections(df, config, sample, nLegs, ana_cache=None, retur
     df, pu_SF_branches = pu.getWeight(df)
     df = df.Define('genWeightD', 'std::copysign<double>(1., genWeight)')
     all_branches = [ pu_SF_branches ]
-    #print(all_branches)
     all_sources = set(itertools.chain.from_iterable(all_branches))
     all_sources.remove(central)
     all_weights = []
-    #print(f"all_sources = {list(all_sources)}")
     for syst_name in [central] + list(all_sources):
-        #print(syst_name)
         denom = f'/{ana_cache["denominator"][central][central]}' if ana_cache is not None else ''
         for scale in ['Up', 'Down']:
             if syst_name == f'pu{scale}':
-                #print(f"using anacache[denom][pu][{scale}]")
                 denom = f"""/{ana_cache["denominator"]["pu"][scale]}""" if ana_cache is not None else ''
         #if not isCentral : continue
         branches = getBranches(syst_name, all_branches)
-        #print(syst_name)
         product = ' * '.join(branches)
-        #print(f"product is {product}")
         weight_name = f'weight_{syst_name}' if syst_name!=central else 'weight_MC_Lumi_pu'
         weight_rel_name = f'weight_MC_Lumi_{syst_name}_rel'
         weight_out_name = weight_name if syst_name == central else weight_rel_name
         weight_formula = f'genWeightD * {lumi} * {stitching_weight_string} * {product}{denom}'
         df = df.Define(weight_name, f'static_cast<float>({weight_formula})')
-        #print(f"weight_formula is {weight_formula}")
-        #print(f"weight_name is {weight_name}")
-        #print(f"weight_rel_name is {weight_rel_name}")
-        #print(f"weight_out_name is {weight_out_name}")
 
         if syst_name==central:
             all_weights.append(weight_out_name)
@@ -231,7 +215,6 @@ def getNormalisationCorrections(df, config, sample, nLegs, ana_cache=None, retur
             print(f"weight_rel_name is {weight_rel_name}")
 
             weight_out_name = weight_name if syst_name == central else weight_rel_name
-            #print(f"weight_out_name is {weight_out_name}")
 
             weight_formula = f'{product}'
             print(weight_formula)
