@@ -166,7 +166,7 @@ def getNormalisationCorrections(df, config, sample, nLegs, ana_cache=None, retur
         if sampleType == 'DY':
             stitch_str = 'if(LHE_Vpt==0.) return 1/2.f; return 1/3.f;'
         elif sampleType == 'W':
-            stitch_str= "if(LHE_Njets==0.) return 1.f; return 1/2.f;"
+            stitch_str= "if(LHE_Njets==0) return 1.f; if(LHE_HT < 70) return 1/2.f; return 1/3.f;"
     else:
         xs_name = config[sample]['crossSection']
     df = df.Define("stitching_weight", stitch_str)
