@@ -1,5 +1,5 @@
 import os
-#import ROOT
+import ROOT
 from .CorrectionsCore import *
 from Common.Utilities import WorkingPointsbTag
 import yaml
