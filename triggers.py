@@ -118,14 +118,14 @@ class TrigCorrProducer:
             ROOT.gInterpreter.ProcessLine(f"""::correction::TrigCorrProvider::Initialize("{jsonFile_Tau}", "{self.deepTauVersion}", {wp_map_cpp}, "{jsonFile_Mu}", "{year}", {trigNames_mu_vec},"{jsonFile_e}","{jsonFile_e_XTrg}","{jsonFile_mu_XTrg}")""")
             TrigCorrProducer.initialized = True
 
-    def getTrgSF(self, df, trigger_names, nLegs, return_variations, isCentral):
+    def getTrgSF(self, df, trigger_names, lepton_legs, return_variations, isCentral):
         SF_branches = []
         trg_name = 'ditau'
         if trg_name in trigger_names:
             sf_sources = TrigCorrProducer.SFSources[trg_name] if return_variations else []
-            for leg_idx in range(nLegs):
+            for leg_idx, leg_name in enumerate(lepton_legs):
                 applyTrgBranch_name = f"{trg_name}_tau{leg_idx+1}_ApplyTrgSF"
-                df = df.Define(applyTrgBranch_name, f"""HttCandidate.leg_type[{leg_idx}] == Leg::tau && HLT_{trg_name} && tau{leg_idx+1}_HasMatching_{trg_name}""")
+                df = df.Define(applyTrgBranch_name, f"""HttCandidate.leg_type[{leg_idx}] == Leg::tau && HLT_{trg_name} && {leg_name}_HasMatching_{trg_name}""")
                 for source in [ central ] + sf_sources:
                     for scale in getScales(source):
                         if not isCentral and scale!= central: continue
@@ -133,8 +133,8 @@ class TrigCorrProducer:
                         suffix = syst_name
                         if scale == central:
                             suffix = f"{trg_name}_{syst_name}"
-                        branch_name = f"weight_tau{leg_idx+1}_TrgSF_{suffix}"
-                        branch_central = f"weight_tau{leg_idx+1}_TrgSF_{trg_name}_{getSystName(central,central)}"
+                        branch_name = f"weight_{leg_name}_TrgSF_{suffix}"
+                        branch_central = f"weight_{leg_name}_TrgSF_{trg_name}_{getSystName(central,central)}"
                         df = df.Define(f"{branch_name}_double",
                                     f'''{applyTrgBranch_name} ? ::correction::TrigCorrProvider::getGlobal().getTauSF_fromCorrLib(
                                  HttCandidate.leg_p4[{leg_idx}], Tau_decayMode.at(HttCandidate.leg_index[{leg_idx}]), "{trg_name}", HttCandidate.channel(),
@@ -149,9 +149,9 @@ class TrigCorrProducer:
         trg_name = 'singleMu'
         if trg_name in trigger_names:
             sf_sources = TrigCorrProducer.SFSources[trg_name] if return_variations else []
-            for leg_idx in [0,1]:
-                applyTrgBranch_name = f"{trg_name}_tau{leg_idx+1}_ApplyTrgSF"
-                df = df.Define(applyTrgBranch_name, f"""HttCandidate.leg_type[{leg_idx}] == Leg::mu && HLT_{trg_name} && tau{leg_idx+1}_HasMatching_{trg_name}""")
+            for leg_idx, leg_name in enumerate(lepton_legs):
+                applyTrgBranch_name = f"{trg_name}_{leg_name}_ApplyTrgSF"
+                df = df.Define(applyTrgBranch_name, f"""HttCandidate.leg_type[{leg_idx}] == Leg::mu && HLT_{trg_name} && {leg_name}_HasMatching_{trg_name}""")
                 for source in [ central ] + sf_sources:
                     for scale in getScales(source):
                         if not isCentral and scale!= central: continue
@@ -159,8 +159,8 @@ class TrigCorrProducer:
                         suffix = syst_name
                         if scale == central:
                             suffix = f"{trg_name}_{syst_name}"
-                        branch_name = f"weight_tau{leg_idx+1}_TrgSF_{suffix}"
-                        branch_central = f"weight_tau{leg_idx+1}_TrgSF_{trg_name}_{getSystName(central,central)}"
+                        branch_name = f"weight_{leg_name}_TrgSF_{suffix}"
+                        branch_central = f"weight_{leg_name}_TrgSF_{trg_name}_{getSystName(central,central)}"
                         df = df.Define(f"{branch_name}_double",
                                     f'''{applyTrgBranch_name} ? ::correction::TrigCorrProvider::getGlobal().getSF_fromRootFile(
                                  HttCandidate.leg_p4[{leg_idx}],::correction::TrigCorrProvider::UncSource::{source}, ::correction::UncScale::{scale} ) : 1.f''')
@@ -174,9 +174,9 @@ class TrigCorrProducer:
         trg_name = 'singleMu50'
         if trg_name in trigger_names:
             sf_sources = TrigCorrProducer.SFSources[trg_name] if return_variations else []
-            for leg_idx in [0,1]:
-                applyTrgBranch_name = f"{trg_name}_tau{leg_idx+1}_ApplyTrgSF"
-                df = df.Define(applyTrgBranch_name, f"""HttCandidate.leg_type[{leg_idx}] == Leg::mu && HLT_{trg_name} && tau{leg_idx+1}_HasMatching_{trg_name}""")
+            for leg_idx, leg_name in enumerate(lepton_legs):
+                applyTrgBranch_name = f"{trg_name}_{leg_name}_ApplyTrgSF"
+                df = df.Define(applyTrgBranch_name, f"""HttCandidate.leg_type[{leg_idx}] == Leg::mu && HLT_{trg_name} && {leg_name}_HasMatching_{trg_name}""")
                 for source in [ central ] + sf_sources:
                     for scale in getScales(source):
                         if not isCentral and scale!= central: continue
@@ -184,8 +184,8 @@ class TrigCorrProducer:
                         suffix = syst_name
                         if scale == central:
                             suffix = f"{trg_name}_{syst_name}"
-                        branch_name = f"weight_tau{leg_idx+1}_TrgSF_{suffix}"
-                        branch_central = f"weight_tau{leg_idx+1}_TrgSF_{trg_name}_{getSystName(central,central)}"
+                        branch_name = f"weight_{leg_name}_TrgSF_{suffix}"
+                        branch_central = f"weight_{leg_name}_TrgSF_{trg_name}_{getSystName(central,central)}"
                         df = df.Define(f"{branch_name}_double",
                                     f'''{applyTrgBranch_name} ? ::correction::TrigCorrProvider::getGlobal().getSF_fromRootFile(
                                  HttCandidate.leg_p4[{leg_idx}],::correction::TrigCorrProvider::UncSource::{source}, ::correction::UncScale::{scale} ) : 1.f''')
@@ -198,9 +198,9 @@ class TrigCorrProducer:
         trg_name = 'singleEle'
         if trg_name in trigger_names:
             sf_sources = TrigCorrProducer.SFSources[trg_name] if return_variations else []
-            for leg_idx in [0,1]:
-                applyTrgBranch_name = f"{trg_name}_tau{leg_idx+1}_ApplyTrgSF"
-                df = df.Define(applyTrgBranch_name, f"""HttCandidate.leg_type[{leg_idx}] == Leg::e && HLT_{trg_name} && tau{leg_idx+1}_HasMatching_{trg_name}""")
+            for leg_idx, leg_name in enumerate(lepton_legs):
+                applyTrgBranch_name = f"{trg_name}_{leg_name}_ApplyTrgSF"
+                df = df.Define(applyTrgBranch_name, f"""HttCandidate.leg_type[{leg_idx}] == Leg::e && HLT_{trg_name} && {leg_name}_HasMatching_{trg_name}""")
                 for source in [ central ] + sf_sources:
                     for scale in getScales(source):
                         if not isCentral and scale!= central: continue
@@ -208,8 +208,8 @@ class TrigCorrProducer:
                         suffix = syst_name
                         if scale == central:
                             suffix = f"{trg_name}_{syst_name}"
-                        branch_name = f"weight_tau{leg_idx+1}_TrgSF_{suffix}"
-                        branch_central = f"weight_tau{leg_idx+1}_TrgSF_{trg_name}_{getSystName(central,central)}"
+                        branch_name = f"weight_{leg_name}_TrgSF_{suffix}"
+                        branch_central = f"weight_{leg_name}_TrgSF_{trg_name}_{getSystName(central,central)}"
                         df = df.Define(f"{branch_name}_double",
                                     f'''{applyTrgBranch_name} ? ::correction::TrigCorrProvider::getGlobal().getSF_fromRootFile(
                                  HttCandidate.leg_p4[{leg_idx}],::correction::TrigCorrProvider::UncSource::{source}, ::correction::UncScale::{scale} ) : 1.f''')
@@ -223,9 +223,9 @@ class TrigCorrProducer:
         trg_name = 'mutau'
         if trg_name in trigger_names:
             sf_sources = TrigCorrProducer.SFSources[trg_name] if return_variations else []
-            for leg_idx in [0,1]:
-                applyTrgBranch_name = f"{trg_name}_tau{leg_idx+1}_ApplyTrgSF"
-                df = df.Define(applyTrgBranch_name, f"""HLT_{trg_name} && tau{leg_idx+1}_HasMatching_{trg_name}""")
+            for leg_idx, leg_name in enumerate(lepton_legs):
+                applyTrgBranch_name = f"{trg_name}_{leg_name}_ApplyTrgSF"
+                df = df.Define(applyTrgBranch_name, f"""HLT_{trg_name} && {leg_name}_HasMatching_{trg_name}""")
                 for source in [ central ] + sf_sources:
                     for scale in getScales(source):
                         if not isCentral and scale!= central: continue
@@ -233,8 +233,8 @@ class TrigCorrProducer:
                         suffix = syst_name
                         if scale == central:
                             suffix = f"{trg_name}_{syst_name}"
-                        branch_name = f"weight_tau{leg_idx+1}_TrgSF_{suffix}"
-                        branch_central = f"weight_tau{leg_idx+1}_TrgSF_{trg_name}_{getSystName(central,central)}"
+                        branch_name = f"weight_{leg_name}_TrgSF_{suffix}"
+                        branch_central = f"weight_{leg_name}_TrgSF_{trg_name}_{getSystName(central,central)}"
                         if leg_idx == 0:
                             df = df.Define(f"{branch_name}_double",
                                     f'''
@@ -264,9 +264,9 @@ class TrigCorrProducer:
         trg_name = 'etau'
         if trg_name in trigger_names:
             sf_sources = TrigCorrProducer.SFSources[trg_name] if return_variations else []
-            for leg_idx in [0,1]:
-                applyTrgBranch_name = f"{trg_name}_tau{leg_idx+1}_ApplyTrgSF"
-                df = df.Define(applyTrgBranch_name, f"""HLT_{trg_name} && tau{leg_idx+1}_HasMatching_{trg_name}""")
+            for leg_idx, leg_name in enumerate(lepton_legs):
+                applyTrgBranch_name = f"{trg_name}_{leg_name}_ApplyTrgSF"
+                df = df.Define(applyTrgBranch_name, f"""HLT_{trg_name} && {leg_name}_HasMatching_{trg_name}""")
                 for source in [ central ] + sf_sources:
                     for scale in getScales(source):
                         if not isCentral and scale!= central: continue
@@ -274,8 +274,8 @@ class TrigCorrProducer:
                         suffix = syst_name
                         if scale == central:
                             suffix = f"{trg_name}_{syst_name}"
-                        branch_name = f"weight_tau{leg_idx+1}_TrgSF_{suffix}"
-                        branch_central = f"weight_tau{leg_idx+1}_TrgSF_{trg_name}_{getSystName(central,central)}"
+                        branch_name = f"weight_{leg_name}_TrgSF_{suffix}"
+                        branch_central = f"weight_{leg_name}_TrgSF_{trg_name}_{getSystName(central,central)}"
                         if leg_idx == 0:
                             df = df.Define(f"{branch_name}_double",
                                     f'''
@@ -305,9 +305,9 @@ class TrigCorrProducer:
         trg_name = 'singleTau'
         if trg_name in trigger_names:
             sf_sources = TrigCorrProducer.SFSources[trg_name] if return_variations else []
-            for leg_idx in [0,1]:
-                applyTrgBranch_name = f"{trg_name}_tau{leg_idx+1}_ApplyTrgSF"
-                df = df.Define(applyTrgBranch_name, f"""HLT_{trg_name} && tau{leg_idx+1}_HasMatching_{trg_name}""")
+            for leg_idx, leg_name in enumerate(lepton_legs):
+                applyTrgBranch_name = f"{trg_name}_{leg_name}_ApplyTrgSF"
+                df = df.Define(applyTrgBranch_name, f"""HLT_{trg_name} && {leg_name}_HasMatching_{trg_name}""")
                 for source in [ central ] + sf_sources:
                     for scale in getScales(source):
                         if not isCentral and scale!= central: continue
@@ -315,8 +315,8 @@ class TrigCorrProducer:
                         suffix = syst_name
                         if scale == central:
                             suffix = f"{trg_name}_{syst_name}"
-                        branch_name = f"weight_tau{leg_idx+1}_TrgSF_{suffix}"
-                        branch_central = f"weight_tau{leg_idx+1}_TrgSF_{trg_name}_{getSystName(central,central)}"
+                        branch_name = f"weight_{leg_name}_TrgSF_{suffix}"
+                        branch_central = f"weight_{leg_name}_TrgSF_{trg_name}_{getSystName(central,central)}"
                         value_shifted = self.singleTau_SF_dict[self.period][scale]
                         df = df.Define(f"{branch_name}_double",
                                 f"""

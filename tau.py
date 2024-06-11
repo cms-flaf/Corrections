@@ -49,7 +49,7 @@ class TauCorrProducer:
 
         return df, source_dict
 
-    def getSF(self, df, nLegs, isCentral, return_variations):
+    def getSF(self, df, lepton_legs, isCentral, return_variations):
         sf_sources =TauCorrProducer.SFSources_tau+TauCorrProducer.SFSources_genuineLep
         sf_scales = [up, down] if return_variations else []
         SF_branches = []
@@ -58,11 +58,11 @@ class TauCorrProducer:
                 if source == central and scale != central: continue
                 if not isCentral and scale!= central: continue
                 syst_name = source+scale# if source != central else 'Central'
-                for leg_idx in range(nLegs):
-                    branch_Loose_name = f"weight_tau{leg_idx+1}_TauID_SF_Loose_{syst_name}"
-                    branch_Medium_name = f"weight_tau{leg_idx+1}_TauID_SF_Medium_{syst_name}"
-                    branch_Loose_central = f"""weight_tau{leg_idx+1}_TauID_SF_Loose_{source+central}"""
-                    branch_Medium_central = f"""weight_tau{leg_idx+1}_TauID_SF_Medium_{source+central}"""
+                for leg_idx, leg_name in enumerate(lepton_legs):
+                    branch_Loose_name = f"weight_{leg_name}_TauID_SF_Loose_{syst_name}"
+                    branch_Medium_name = f"weight_{leg_name}_TauID_SF_Medium_{syst_name}"
+                    branch_Loose_central = f"""weight_{leg_name}_TauID_SF_Loose_{source+central}"""
+                    branch_Medium_central = f"""weight_{leg_name}_TauID_SF_Medium_{source+central}"""
                     df = df.Define(f"{branch_Medium_name}_double",
                                 f'''HttCandidate.leg_type[{leg_idx}] == Leg::tau ? ::correction::TauCorrProvider::getGlobal().getSF(
                                HttCandidate.leg_p4[{leg_idx}], Tau_decayMode.at(HttCandidate.leg_index[{leg_idx}]),
@@ -80,8 +80,8 @@ class TauCorrProducer:
                         df = df.Define(branch_name_Medium_final, f"static_cast<float>({branch_Medium_name}_double/{branch_Medium_central})")
                     else:
                         if source == central:
-                            branch_name_Loose_final = f"""weight_tau{leg_idx+1}_TauID_SF_Loose_{central}"""
-                            branch_name_Medium_final = f"""weight_tau{leg_idx+1}_TauID_SF_Medium_{central}"""
+                            branch_name_Loose_final = f"""weight_{leg_name}_TauID_SF_Loose_{central}"""
+                            branch_name_Medium_final = f"""weight_{leg_name}_TauID_SF_Medium_{central}"""
                         else:
                             branch_name_Loose_final = branch_Loose_name
                             branch_name_Medium_final = branch_Medium_name

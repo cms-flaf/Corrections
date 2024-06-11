@@ -33,7 +33,7 @@ class EleCorrProducer:
 
 
 
-    def getIDSF(self, df, nLegs, isCentral, return_variations):
+    def getIDSF(self, df, lepton_legs, isCentral, return_variations):
         sf_sources =EleCorrProducer.ID_sources
         SF_branches = []
         sf_scales = [up, down] if return_variations else []
@@ -41,9 +41,9 @@ class EleCorrProducer:
             for scale in [central]+sf_scales:
                 if not isCentral and scale!= central: continue
                 #syst_name = getSystName(source, scale)
-                for leg_idx in range(nLegs):
-                    branch_name = f"weight_tau{leg_idx+1}_EleSF_{source+scale}"
-                    branch_central = f"""weight_tau{leg_idx+1}_EleSF_{source+central}"""
+                for leg_idx, leg_name in enumerate(lepton_legs):
+                    branch_name = f"weight_{leg_name}_EleSF_{source+scale}"
+                    branch_central = f"""weight_{leg_name}_EleSF_{source+central}"""
                     #print(branch_name)
                     #print(branch_central)
                     df = df.Define(f"{branch_name}_double",
@@ -55,7 +55,7 @@ class EleCorrProducer:
                         df = df.Define(branch_name_final, f"static_cast<float>({branch_name}_double/{branch_central})")
                     else:
                         if source == central:
-                            branch_name_final = f"""weight_tau{leg_idx+1}_EleSF_{central}"""
+                            branch_name_final = f"""weight_{leg_name}_EleSF_{central}"""
                         else:
                             branch_name_final = branch_name
                         df = df.Define(branch_name_final, f"static_cast<float>({branch_name}_double)")
