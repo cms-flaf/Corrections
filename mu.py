@@ -77,7 +77,7 @@ class MuCorrProducer:
             MuCorrProducer.period = period
             MuCorrProducer.initialized = True
 
-    def getMuonIDSF(self, df, nLegs, isCentral, return_variations):
+    def getMuonIDSF(self, df, lepton_legs, isCentral, return_variations):
         SF_branches = []
         sf_sources = MuCorrProducer.muID_SF_Sources + MuCorrProducer.muReco_SF_sources + MuCorrProducer.muIso_SF_Sources
         sf_scales = [central, up, down] if return_variations else [central]
@@ -87,10 +87,10 @@ class MuCorrProducer:
                 if not isCentral and scale!= central: continue
                 source_name = MuCorrProducer.muID_SF_Sources_dict[source] if source != central else central
                 syst_name = source_name+scale if source != central else 'Central'
-                for leg_idx in range(nLegs):
-                    branch_name = f"weight_tau{leg_idx+1}_MuonID_SF_{syst_name}"
+                for leg_idx, leg_name in enumerate(lepton_legs):
+                    branch_name = f"weight_{leg_name}_MuonID_SF_{syst_name}"
                     #print(branch_name)
-                    branch_central = f"""weight_tau{leg_idx+1}_MuonID_SF_{source_name+central}"""
+                    branch_central = f"""weight_{leg_name}_MuonID_SF_{source_name+central}"""
                     if source in MuCorrProducer.muReco_SF_sources:
                         df = df.Define(f"{branch_name}_double",f'''HttCandidate.leg_type[{leg_idx}] == Leg::mu && HttCandidate.leg_p4[{leg_idx}].pt() >= 10 && HttCandidate.leg_p4[{leg_idx}].pt() < 200 ? ::correction::MuCorrProvider::getGlobal().getMuonSF( HttCandidate.leg_p4[{leg_idx}], Muon_pfRelIso04_all.at(HttCandidate.leg_index[{leg_idx}]), Muon_tightId.at(HttCandidate.leg_index[{leg_idx}]),Muon_tkRelIso.at(HttCandidate.leg_index[{leg_idx}]),Muon_highPtId.at(HttCandidate.leg_index[{leg_idx}]),::correction::MuCorrProvider::UncSource::{source}, ::correction::UncScale::{scale}, "{MuCorrProducer.period}") : 1.''')
                     else:
@@ -103,7 +103,7 @@ class MuCorrProducer:
                         df = df.Define(branch_name_final, f"static_cast<float>({branch_name}_double/{branch_central})")
                     else:
                         if source == central:
-                            branch_name_final = f"""weight_tau{leg_idx+1}_MuonID_SF_{central}"""
+                            branch_name_final = f"""weight_{leg_name}_MuonID_SF_{central}"""
                         else:
                             branch_name_final = branch_name
                         df = df.Define(branch_name_final, f"static_cast<float>({branch_name}_double)")
@@ -112,7 +112,7 @@ class MuCorrProducer:
 
 ########################################################################################################
 
-    def getHighPtMuonIDSF(self, df, nLegs, isCentral, return_variations):
+    def getHighPtMuonIDSF(self, df, lepton_legs, isCentral, return_variations):
         highPtMuSF_branches = []
         sf_sources =  MuCorrProducer.highPtmuReco_SF_sources + MuCorrProducer.highPtmuID_SF_Sources + MuCorrProducer.highPtmuIso_SF_Sources
         sf_scales = [up, down] if return_variations else []
@@ -122,10 +122,10 @@ class MuCorrProducer:
                 if not isCentral and scale!= central: continue
                 source_name = MuCorrProducer.highPtMu_SF_Sources_dict[source] if source != central else central
                 syst_name = source_name+scale if source != central else 'Central'
-                for leg_idx in range(nLegs):
-                    branch_name = f"weight_tau{leg_idx+1}_HighPt_MuonID_SF_{syst_name}"
+                for leg_idx, leg_name in enumerate(lepton_legs):
+                    branch_name = f"weight_{leg_name}_HighPt_MuonID_SF_{syst_name}"
                     #print(branch_name)
-                    branch_central = f"""weight_tau{leg_idx+1}_HighPt_MuonID_SF_{source_name+central}"""
+                    branch_central = f"""weight_{leg_name}_HighPt_MuonID_SF_{source_name+central}"""
                     df = df.Define(f"{branch_name}_double",f'''HttCandidate.leg_type[{leg_idx}] == Leg::mu && HttCandidate.leg_p4[{leg_idx}].pt() >= 120 ? ::correction::HighPtMuCorrProvider::getGlobal().getHighPtMuonSF( HttCandidate.leg_p4[{leg_idx}], Muon_pfRelIso04_all.at(HttCandidate.leg_index[{leg_idx}]), Muon_tightId.at(HttCandidate.leg_index[{leg_idx}]), Muon_highPtId.at(HttCandidate.leg_index[{leg_idx}]), Muon_tkRelIso.at(HttCandidate.leg_index[{leg_idx}]),::correction::HighPtMuCorrProvider::UncSource::{source}, ::correction::UncScale::{scale}) : 1.''')
                     #df.Display({f"""{branch_name}_double"""}).Print()
                     #if source in MuCorrProducer.muReco_SF_sources:
@@ -140,7 +140,7 @@ class MuCorrProducer:
                         df = df.Define(branch_name_final, f"static_cast<float>({branch_name}_double/{branch_central})")
                     else:
                         if source == central:
-                            branch_name_final = f"""weight_tau{leg_idx+1}_HighPt_MuonID_SF_{central}"""
+                            branch_name_final = f"""weight_{leg_name}_HighPt_MuonID_SF_{central}"""
                         else:
                             branch_name_final = branch_name
                         df = df.Define(branch_name_final, f"static_cast<float>({branch_name}_double)")
