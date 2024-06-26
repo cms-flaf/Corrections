@@ -261,7 +261,7 @@ class Corrections:
                 df = df.Define(weight_rel_name, f'static_cast<float>({weight_name}/weight_TauID_{central})')
                 all_weights.append(weight_out_name)
         '''
-        if 'tau' in self.to_apply:
+        if 'tauID' in self.to_apply:
             df, tau_SF_branches = self.tau.getSF(df, lepton_legs, isCentral, return_variations)
             all_weights.extend(tau_SF_branches)
         if 'mu' in self.to_apply:
