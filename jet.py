@@ -56,7 +56,6 @@ class JetCorrProducer:
 
     initialized = False
     uncSources_core = ["FlavorQCD","RelativeBal", "HF", "BBEC1", "EC2", "Absolute", "BBEC1_", "Absolute_", "EC2_", "HF_", "RelativeSample_" ]
-    uncSources_extended = uncSources_core+["JER", "Total"]
 
     #Sources = []
     period = None
@@ -124,12 +123,15 @@ class JetCorrProducer:
         return df, SF_branches
 
 
-    def getP4Variations(self, df, source_dict):
+    def getP4Variations(self, df, source_dict, apply_JER=True):
         df = df.Define(f'Jet_p4_shifted_map', f'''::correction::JetCorrProvider::getGlobal().getShiftedP4(
                                 Jet_pt, Jet_eta, Jet_phi, Jet_mass, Jet_rawFactor, Jet_area,
                                 Jet_jetId, Rho_fixedGridRhoFastjetAll, Jet_partonFlavour, 0, GenJet_pt, GenJet_eta,
                                 GenJet_phi, GenJet_mass, event)''')
-        for source in [ central] + JetCorrProducer.uncSources_extended:
+        apply_jer_list = []
+        if apply_JER:
+            apply_jer_list.append("JER")
+        for source in [ central] + JetCorrProducer.uncSources_core + apply_jer_list:
             source_eff = source
             if source!=central and source != "JER":
                 source_eff= "JES_" + source_eff
