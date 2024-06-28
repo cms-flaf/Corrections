@@ -70,7 +70,6 @@ class FatJetCorrProducer:
 
     initialized = False
     uncSources_core = ["FlavorQCD","RelativeBal", "HF", "BBEC1", "EC2", "Absolute", "BBEC1_", "Absolute_", "EC2_", "HF_", "RelativeSample_" ]
-    uncSources_extended = uncSources_core+["JER", "Total"]
 
     #Sources = []
     period = None
@@ -142,7 +141,7 @@ class FatJetCorrProducer:
 
 
 
-    def getP4Variations(self, df, source_dict):
+    def getP4Variations(self, df, source_dict, applyJER=True):
         df = df.Define(f'FatJet_p4_shifted_map', f'''::correction::FatJetCorrProvider::getGlobal().getShiftedP4(
                                 FatJet_pt, FatJet_eta, FatJet_phi, FatJet_mass, FatJet_rawFactor, FatJet_area,
                                 FatJet_msoftdrop, FatJet_subJetIdx1, FatJet_subJetIdx2, SubJet_pt,SubJet_eta, SubJet_phi, SubJet_mass, FatJet_jetId, Rho_fixedGridRhoFastjetAll, 0, GenJetAK8_pt, GenJetAK8_eta,
@@ -154,8 +153,8 @@ class FatJetCorrProducer:
         #df.Display({"map_size"}).Print()
         #df = df.Define("nano_size", f"FatJet_p4_{nano}.size()")
         #df.Display("nano_size").Print()
-
-        for source in [ central] + FatJetCorrProducer.uncSources_extended:
+        apply_jer_list = ["JER"] if applyJER else []
+        for source in [ central] + FatJetCorrProducer.uncSources_core + apply_jer_list :
             source_eff = source
             if source!=central and source != "JER":
                 source_eff= "JES_" + source_eff
