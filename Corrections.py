@@ -236,6 +236,9 @@ class Corrections:
         if 'tauID' in self.to_apply:
             df, tau_SF_branches = self.tau.getSF(df, lepton_legs, isCentral, return_variations)
             all_weights.extend(tau_SF_branches)
+        if 'btagShape' in self.to_apply:
+            df, bTagShape_SF_branches = self.btag.getBTagShapeSF(df, isCentral, return_variations)
+            all_weights.extend(bTagShape_SF_branches)
         if 'mu' in self.to_apply:
             df, muID_SF_branches = self.mu.getMuonIDSF(df, lepton_legs, isCentral, return_variations)
             all_weights.extend(muID_SF_branches)
@@ -248,8 +251,8 @@ class Corrections:
             df, puJetID_SF_branches = self.puJetID.getPUJetIDEff(df, isCentral, return_variations)
             all_weights.extend(puJetID_SF_branches)
         if 'btagWP' in self.to_apply:
-            df, bTag_SF_branches = self.btag.getSF(df, isCentral and return_variations, isCentral)
-            all_weights.extend(bTag_SF_branches)
+            df, bTagWP_SF_branches = self.btag.getBTagWPSF(df, isCentral and return_variations, isCentral)
+            all_weights.extend(bTagWP_SF_branches)
         if 'trg' in self.to_apply:
             df, trg_SF_branches = self.trg.getSF(df, trigger_names, lepton_legs, isCentral and return_variations, isCentral)
             all_weights.extend(trg_SF_branches)
