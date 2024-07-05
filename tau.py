@@ -62,8 +62,8 @@ class TauCorrProducer:
                 for leg_idx, leg_name in enumerate(lepton_legs):
                     branch_Loose_name = f"weight_{leg_name}_TauID_SF_Loose_{syst_name}"
                     branch_Medium_name = f"weight_{leg_name}_TauID_SF_Medium_{syst_name}"
-                    branch_Loose_central = f"""weight_{leg_name}_TauID_SF_Loose_{source+central}"""
-                    branch_Medium_central = f"""weight_{leg_name}_TauID_SF_Medium_{source+central}"""
+                    branch_Loose_central = f"""weight_{leg_name}_TauID_SF_Loose_{central}"""
+                    branch_Medium_central = f"""weight_{leg_name}_TauID_SF_Medium_{central}"""
                     df = df.Define(f"{branch_Medium_name}_double",
                                 f'''HttCandidate.leg_type[{leg_idx}] == Leg::tau ? ::correction::TauCorrProvider::getGlobal().getSF(
                                HttCandidate.leg_p4[{leg_idx}], Tau_decayMode.at(HttCandidate.leg_index[{leg_idx}]),
