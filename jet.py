@@ -100,7 +100,7 @@ class JetCorrProducer:
             JetCorrProducer.period = period
             JetCorrProducer.initialized = True
 
-    def getP4Variations(self, df, source_dict, apply_JER=True):
+    def getP4Variations(self, df, source_dict, apply_JER=True, apply_JES=True):
         df = df.Define(f'Jet_p4_shifted_map', f'''::correction::JetCorrProvider::getGlobal().getShiftedP4(
                                 Jet_pt, Jet_eta, Jet_phi, Jet_mass, Jet_rawFactor, Jet_area,
                                 Jet_jetId, Rho_fixedGridRhoFastjetAll, Jet_partonFlavour, 0, GenJet_pt, GenJet_eta,
@@ -108,9 +108,10 @@ class JetCorrProducer:
         apply_jer_list = []
         if apply_JER:
             apply_jer_list.append("JER")
-        for source in [ central] + JetCorrProducer.uncSources_core + apply_jer_list:
+        apply_jes_list = JetCorrProducer.uncSources_core if apply_JES else []
+        for source in [ central] + apply_jes_list + apply_jer_list:
             source_eff = source
-            if source!=central and source != "JER":
+            if source in apply_jes_list: # source!=central and source != "JER":
                 source_eff= "JES_" + source_eff
             if source.endswith("_") :
                 source_eff = source_eff+ JetCorrProducer.period.split("_")[0]

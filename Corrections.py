@@ -20,7 +20,7 @@ def findRefSample(config, sample_type):
         if sampleDef.get('sampleType', None) == sample_type and sampleDef.get('isReference', False):
             refSample.append(sample)
     if len(refSample) != 1:
-        print(refSample)
+        #print(refSample)
         raise RuntimeError(f'multiple refSamples for {sample_type}: {refSample}')
     return refSample[0]
 
@@ -153,10 +153,10 @@ class Corrections:
         source_dict = { central : [] }
         if 'tauES' in self.to_apply:
             df, source_dict = self.tau.getES(df, source_dict)
-        if 'JEC' in self.to_apply:
-            df, source_dict = self.jet.getP4Variations(df, source_dict, 'JER' in self.to_apply)
-            df, source_dict = self.fatjet.getP4Variations(df, source_dict, 'JER' in self.to_apply)
-        if 'tauES' in self.to_apply or 'JEC' in self.to_apply:
+        if 'JEC' in self.to_apply or 'JES' in self.to_apply:
+            df, source_dict = self.jet.getP4Variations(df, source_dict, 'JER' in self.to_apply, 'JES' in self.to_apply)
+            df, source_dict = self.fatjet.getP4Variations(df, source_dict, 'JER' in self.to_apply, 'JES' in self.to_apply)
+        if 'tauES' in self.to_apply or 'JEC' in self.to_apply or 'JES' in self.to_apply:
             df, source_dict = self.met.getPFMET(df, source_dict)
         syst_dict = { }
         for source, source_objs in source_dict.items():
@@ -187,6 +187,8 @@ class Corrections:
         if sampleType in [ 'DY', 'W' ] and global_params.get('use_stitching', True):
             xs_stitching_name = samples[sample]['crossSectionStitch']
             inclusive_sample_name = findRefSample(samples, sampleType)
+            #print(inclusive_sample_name)
+            #print(sample)
             xs_name = samples[inclusive_sample_name]['crossSection']
             xs_stitching = xs_dict[xs_stitching_name]['crossSec']
             xs_stitching_incl = xs_dict[samples[inclusive_sample_name]['crossSectionStitch']]['crossSec']
@@ -200,7 +202,13 @@ class Corrections:
         xs_inclusive = xs_dict[xs_name]['crossSec']
 
         stitching_weight_string = f' {xs_stitching} * stitching_weight * ({xs_inclusive}/{xs_stitching_incl})'
-        df = df.Define('genWeightD', 'std::copysign<double>(1., genWeight)')
+
+        generator_name = samples[sample]['generator'] if samples[sample]['sampleType'] != 'data' else ''
+        genWeight_def = 'double(genWeight)'
+        if generator_name in [ "madgraph", "amcatnlo" ]:
+            genWeight_def = 'std::copysign<double>(1., genWeight)'
+        df = df.Define('genWeightD', genWeight_def)
+
         all_branches = []
         if 'pu' in self.to_apply:
             df, pu_SF_branches = self.pu.getWeight(df)
@@ -258,11 +266,14 @@ class Corrections:
             all_weights.extend(trg_SF_branches)
         return df, all_weights
 
-    def getDenominator(self, df, sources):
+    def getDenominator(self, df, sources, generator):
         if 'pu' in self.to_apply:
             df, pu_SF_branches = self.pu.getWeight(df)
-        df = df.Define('genWeightD', 'std::copysign<double>(1., genWeight)')
         syst_names =[]
+        genWeight_def = 'double(genWeight)'
+        if generator in [ "madgraph", "amcatnlo" ]:
+            genWeight_def = 'std::copysign<double>(1., genWeight)'
+        df = df.Define('genWeightD', genWeight_def)
         for source in sources:
             for scale in getScales(source):
                 syst_name = getSystName(source, scale)
