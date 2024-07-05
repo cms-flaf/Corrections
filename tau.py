@@ -58,11 +58,12 @@ class TauCorrProducer:
                 if source == central and scale != central: continue
                 if not isCentral and scale!= central: continue
                 syst_name = source+scale# if source != central else 'Central'
+                print(source, scale)
                 for leg_idx, leg_name in enumerate(lepton_legs):
                     branch_Loose_name = f"weight_{leg_name}_TauID_SF_Loose_{syst_name}"
                     branch_Medium_name = f"weight_{leg_name}_TauID_SF_Medium_{syst_name}"
-                    branch_Loose_central = f"""weight_{leg_name}_TauID_SF_Loose_{source+central}"""
-                    branch_Medium_central = f"""weight_{leg_name}_TauID_SF_Medium_{source+central}"""
+                    branch_Loose_central = f"""weight_{leg_name}_TauID_SF_Loose_{central}"""
+                    branch_Medium_central = f"""weight_{leg_name}_TauID_SF_Medium_{central}"""
                     df = df.Define(f"{branch_Medium_name}_double",
                                 f'''HttCandidate.leg_type[{leg_idx}] == Leg::tau ? ::correction::TauCorrProvider::getGlobal().getSF(
                                HttCandidate.leg_p4[{leg_idx}], Tau_decayMode.at(HttCandidate.leg_index[{leg_idx}]),
@@ -83,8 +84,7 @@ class TauCorrProducer:
                             branch_name_Loose_final = f"""weight_{leg_name}_TauID_SF_Loose_{central}"""
                             branch_name_Medium_final = f"""weight_{leg_name}_TauID_SF_Medium_{central}"""
                         else:
-                            branch_name_Loose_final = branch_Loose_name
-                            branch_name_Medium_final = branch_Medium_name
+                            continue
 
                         df = df.Define(branch_name_Loose_final, f"static_cast<float>({branch_Loose_name}_double)")
                         df = df.Define(branch_name_Medium_final, f"static_cast<float>({branch_Medium_name}_double)")

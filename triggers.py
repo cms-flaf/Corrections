@@ -118,7 +118,7 @@ class TrigCorrProducer:
             ROOT.gInterpreter.ProcessLine(f"""::correction::TrigCorrProvider::Initialize("{jsonFile_Tau}", "{self.deepTauVersion}", {wp_map_cpp}, "{jsonFile_Mu}", "{year}", {trigNames_mu_vec},"{jsonFile_e}","{jsonFile_e_XTrg}","{jsonFile_mu_XTrg}")""")
             TrigCorrProducer.initialized = True
 
-    def getTrgSF(self, df, trigger_names, lepton_legs, return_variations, isCentral):
+    def getSF(self, df, trigger_names, lepton_legs, return_variations, isCentral):
         SF_branches = []
         trg_name = 'ditau'
         if trg_name in trigger_names:

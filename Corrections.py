@@ -20,7 +20,7 @@ def findRefSample(config, sample_type):
         if sampleDef.get('sampleType', None) == sample_type and sampleDef.get('isReference', False):
             refSample.append(sample)
     if len(refSample) != 1:
-        print(refSample)
+        #print(refSample)
         raise RuntimeError(f'multiple refSamples for {sample_type}: {refSample}')
     return refSample[0]
 
@@ -153,10 +153,10 @@ class Corrections:
         source_dict = { central : [] }
         if 'tauES' in self.to_apply:
             df, source_dict = self.tau.getES(df, source_dict)
-        if 'JEC_JER' in self.to_apply:
-            df, source_dict = self.jet.getP4Variations(df, source_dict)
-            df, source_dict = self.fatjet.getP4Variations(df, source_dict)
-        if 'tauES' in self.to_apply or 'JEC_JER' in self.to_apply:
+        if 'JEC' in self.to_apply or 'JER' in self.to_apply:
+            df, source_dict = self.jet.getP4Variations(df, source_dict, 'JER' in self.to_apply, 'JEC' in self.to_apply)
+            df, source_dict = self.fatjet.getP4Variations(df, source_dict, 'JER' in self.to_apply, 'JEC' in self.to_apply)
+        if 'tauES' in self.to_apply or 'JEC' in self.to_apply or 'JEC' in self.to_apply:
             df, source_dict = self.met.getPFMET(df, source_dict)
         syst_dict = { }
         for source, source_objs in source_dict.items():
@@ -171,7 +171,7 @@ class Corrections:
                         df = df.Define(f'{obj}_p4_{syst_name}', f'{obj}_p4_{suffix}')
         return df, syst_dict
 
-    def getNormalisationCorrections(self, df, global_params, samples, sample, lepton_legs, ana_cache=None,
+    def getNormalisationCorrections(self, df, global_params, samples, sample, lepton_legs, trigger_names, ana_cache=None,
                                     return_variations=True, isCentral=True):
         lumi = global_params['luminosity']
         sampleType = samples[sample]['sampleType']
@@ -187,6 +187,8 @@ class Corrections:
         if sampleType in [ 'DY', 'W' ] and global_params.get('use_stitching', True):
             xs_stitching_name = samples[sample]['crossSectionStitch']
             inclusive_sample_name = findRefSample(samples, sampleType)
+            #print(inclusive_sample_name)
+            #print(sample)
             xs_name = samples[inclusive_sample_name]['crossSection']
             xs_stitching = xs_dict[xs_stitching_name]['crossSec']
             xs_stitching_incl = xs_dict[samples[inclusive_sample_name]['crossSectionStitch']]['crossSec']
@@ -200,7 +202,13 @@ class Corrections:
         xs_inclusive = xs_dict[xs_name]['crossSec']
 
         stitching_weight_string = f' {xs_stitching} * stitching_weight * ({xs_inclusive}/{xs_stitching_incl})'
-        df = df.Define('genWeightD', 'std::copysign<double>(1., genWeight)')
+
+        generator_name = samples[sample]['generator'] if samples[sample]['sampleType'] != 'data' else ''
+        genWeight_def = 'double(genWeight)'
+        if generator_name in [ "madgraph", "amcatnlo" ]:
+            genWeight_def = 'std::copysign<double>(1., genWeight)'
+        df = df.Define('genWeightD', genWeight_def)
+
         all_branches = []
         if 'pu' in self.to_apply:
             df, pu_SF_branches = self.pu.getWeight(df)
@@ -233,37 +241,12 @@ class Corrections:
                 for scale in ['Up','Down']:
                     if syst_name == f'pu{scale}' and return_variations:
                         all_weights.append(weight_out_name)
-        '''
-        if 'tauID' in sf_to_apply:
-            df, tau_SF_branches = tau.getSF(df, lepton_legs, isCentral, return_variations)
-            tau_branches = [ tau_SF_branches ]
-            tau_sources = set(itertools.chain.from_iterable(tau_branches))
-            tau_sources.remove(central)
-            for syst_name in [central] + list(tau_sources):
-                print(f"syst name is {syst_name}")
-                branches = getBranches(syst_name, tau_branches)
-                print(f"branches are {branches}")
-
-                product = ' * '.join(branches)
-                print(f"product is {product}")
-                weight_name = f'weight_TauID_{syst_name}'
-                if(syst_name == central):
-                    weight_name = f'weight_TauID_{central}'
-                print(f"weight_name is {weight_name}")
-                weight_rel_name = weight_name + '_rel'
-                print(f"weight_rel_name is {weight_rel_name}")
-
-                weight_out_name = weight_name if syst_name == central else weight_rel_name
-
-                weight_formula = f'{product}'
-                print(weight_formula)
-                df = df.Define(weight_name, f'static_cast<float>({weight_formula})')
-                df = df.Define(weight_rel_name, f'static_cast<float>({weight_name}/weight_TauID_{central})')
-                all_weights.append(weight_out_name)
-        '''
-        if 'tau' in self.to_apply:
+        if 'tauID' in self.to_apply:
             df, tau_SF_branches = self.tau.getSF(df, lepton_legs, isCentral, return_variations)
             all_weights.extend(tau_SF_branches)
+        if 'btagShape' in self.to_apply:
+            df, bTagShape_SF_branches = self.btag.getBTagShapeSF(df, isCentral, return_variations)
+            all_weights.extend(bTagShape_SF_branches)
         if 'mu' in self.to_apply:
             df, muID_SF_branches = self.mu.getMuonIDSF(df, lepton_legs, isCentral, return_variations)
             all_weights.extend(muID_SF_branches)
@@ -275,16 +258,22 @@ class Corrections:
         if 'puJetID' in self.to_apply:
             df, puJetID_SF_branches = self.puJetID.getPUJetIDEff(df, isCentral, return_variations)
             all_weights.extend(puJetID_SF_branches)
-        if 'btag' in self.to_apply:
-            df, bTag_SF_branches = self.btag.getSF(df, isCentral and return_variations, isCentral)
-            all_weights.extend(bTag_SF_branches)
+        if 'btagWP' in self.to_apply:
+            df, bTagWP_SF_branches = self.btag.getBTagWPSF(df, isCentral and return_variations, isCentral)
+            all_weights.extend(bTagWP_SF_branches)
+        if 'trg' in self.to_apply:
+            df, trg_SF_branches = self.trg.getSF(df, trigger_names, lepton_legs, isCentral and return_variations, isCentral)
+            all_weights.extend(trg_SF_branches)
         return df, all_weights
 
-    def getDenominator(self, df, sources):
+    def getDenominator(self, df, sources, generator):
         if 'pu' in self.to_apply:
             df, pu_SF_branches = self.pu.getWeight(df)
-        df = df.Define('genWeightD', 'std::copysign<double>(1., genWeight)')
         syst_names =[]
+        genWeight_def = 'double(genWeight)'
+        if generator in [ "madgraph", "amcatnlo" ]:
+            genWeight_def = 'std::copysign<double>(1., genWeight)'
+        df = df.Define('genWeightD', genWeight_def)
         for source in sources:
             for scale in getScales(source):
                 syst_name = getSystName(source, scale)
