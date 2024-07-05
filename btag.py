@@ -112,21 +112,3 @@ class bTagCorrProducer:
                     df = df.Define(branch_name_final, f"static_cast<float>({branch_name}_double)")
                 SF_branches.append(branch_name_final)
         return df,SF_branches
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
