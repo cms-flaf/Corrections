@@ -85,28 +85,28 @@ public:
     // Note the flavor convention: hadronFlavor is b = 5, c = 4, f = 0
 
 
-    static bool sourceApplies(UncSource source, int Jet_Flavour, ::correction::JetCorrProvider::UncSource jet_source)
+    static bool sourceApplies(UncSource source, int Jet_Flavour)
     {
-        if(source == UncSource::lf && (Jet_Flavour == 5 || Jet_Flavour==0) && jet_source==::correction::JetCorrProvider::UncSource::Central) return true;
-        if(source == UncSource::hf && (Jet_Flavour == 5 || Jet_Flavour==0) && jet_source==::correction::JetCorrProvider::UncSource::Central) return true;
-        if(source == UncSource::lfstats1 && (Jet_Flavour == 5 || Jet_Flavour==0) && jet_source==::correction::JetCorrProvider::UncSource::Central) return true;
-        if(source == UncSource::lfstats2 && (Jet_Flavour == 5 || Jet_Flavour==0) && jet_source==::correction::JetCorrProvider::UncSource::Central) return true;
-        if(source == UncSource::hfstats1 && (Jet_Flavour == 5 || Jet_Flavour==0) && jet_source==::correction::JetCorrProvider::UncSource::Central) return true;
-        if(source == UncSource::hfstats2 && (Jet_Flavour == 5 || Jet_Flavour==0) && jet_source==::correction::JetCorrProvider::UncSource::Central) return true;
-        if(source == UncSource::cferr1 && Jet_Flavour == 4 && jet_source==::correction::JetCorrProvider::UncSource::Central) return true;
-        if(source == UncSource::cferr2 && Jet_Flavour == 4 && jet_source==::correction::JetCorrProvider::UncSource::Central)  return true;
+        if(source == UncSource::lf && (Jet_Flavour == 5 || Jet_Flavour==0) ) return true;
+        if(source == UncSource::hf && (Jet_Flavour == 5 || Jet_Flavour==0) ) return true;
+        if(source == UncSource::lfstats1 && (Jet_Flavour == 5 || Jet_Flavour==0) ) return true;
+        if(source == UncSource::lfstats2 && (Jet_Flavour == 5 || Jet_Flavour==0) ) return true;
+        if(source == UncSource::hfstats1 && (Jet_Flavour == 5 || Jet_Flavour==0) ) return true;
+        if(source == UncSource::hfstats2 && (Jet_Flavour == 5 || Jet_Flavour==0) ) return true;
+        if(source == UncSource::cferr1 && Jet_Flavour == 4 ) return true;
+        if(source == UncSource::cferr2 && Jet_Flavour == 4 )  return true;
 
-        if (source==UncSource::jesRelativeBal && (Jet_Flavour == 5 || Jet_Flavour==0) && jet_source==::correction::JetCorrProvider::UncSource::RelativeBal ) return true;
-        if (source==UncSource::jesHF && (Jet_Flavour == 5 || Jet_Flavour==0) && jet_source==::correction::JetCorrProvider::UncSource::HF ) return true;
-        if (source==UncSource::jesBBEC1 && (Jet_Flavour == 5 || Jet_Flavour==0) && jet_source==::correction::JetCorrProvider::UncSource::BBEC1 ) return true;
-        if (source==UncSource::jesEC2 && (Jet_Flavour == 5 || Jet_Flavour==0) && jet_source==::correction::JetCorrProvider::UncSource::EC2 ) return true;
-        if (source==UncSource::jesAbsolute && (Jet_Flavour == 5 || Jet_Flavour==0) && jet_source==::correction::JetCorrProvider::UncSource::Absolute ) return true;
-        if (source==UncSource::jesFlavorQCD && (Jet_Flavour == 5 || Jet_Flavour==0) && jet_source==::correction::JetCorrProvider::UncSource::FlavorQCD ) return true;
-        if (source==UncSource::jesBBEC1_year && (Jet_Flavour == 5 || Jet_Flavour==0) && jet_source==::correction::JetCorrProvider::UncSource::BBEC1_year ) return true;
-        if (source==UncSource::jesAbsolute_year && (Jet_Flavour == 5 || Jet_Flavour==0) && jet_source==::correction::JetCorrProvider::UncSource::Absolute_year ) return true;
-        if (source==UncSource::jesEC2_year && (Jet_Flavour == 5 || Jet_Flavour==0) && jet_source==::correction::JetCorrProvider::UncSource::EC2_year ) return true;
-        if (source==UncSource::jesHF_year && (Jet_Flavour == 5 || Jet_Flavour==0) && jet_source==::correction::JetCorrProvider::UncSource::HF_year ) return true;
-        if (source==UncSource::jesRelativeSample_year && (Jet_Flavour == 5 || Jet_Flavour==0) && jet_source==::correction::JetCorrProvider::UncSource::RelativeSample_year) return true;
+        if (source==UncSource::jesRelativeBal && (Jet_Flavour == 5 || Jet_Flavour==0)  ) return true;
+        if (source==UncSource::jesHF && (Jet_Flavour == 5 || Jet_Flavour==0)  ) return true;
+        if (source==UncSource::jesBBEC1 && (Jet_Flavour == 5 || Jet_Flavour==0)  ) return true;
+        if (source==UncSource::jesEC2 && (Jet_Flavour == 5 || Jet_Flavour==0)  ) return true;
+        if (source==UncSource::jesAbsolute && (Jet_Flavour == 5 || Jet_Flavour==0)  ) return true;
+        if (source==UncSource::jesFlavorQCD && (Jet_Flavour == 5 || Jet_Flavour==0)  ) return true;
+        if (source==UncSource::jesBBEC1_year && (Jet_Flavour == 5 || Jet_Flavour==0)  ) return true;
+        if (source==UncSource::jesAbsolute_year && (Jet_Flavour == 5 || Jet_Flavour==0)  ) return true;
+        if (source==UncSource::jesEC2_year && (Jet_Flavour == 5 || Jet_Flavour==0)  ) return true;
+        if (source==UncSource::jesHF_year && (Jet_Flavour == 5 || Jet_Flavour==0)  ) return true;
+        if (source==UncSource::jesRelativeSample_year && (Jet_Flavour == 5 || Jet_Flavour==0) ) return true;
         return false;
     }
 
@@ -118,14 +118,13 @@ public:
     }
 
 
-    float getBTagShapeSF(const RVecLV& Jet_p4, const RVecB& pre_sel, const RVecI& Jet_Flavour,const RVecF& Jet_bTag_score, UncSource source, UncScale scale,
-    ::correction::JetCorrProvider::UncSource jet_source) const
+    float getBTagShapeSF(const RVecLV& Jet_p4, const RVecB& pre_sel, const RVecI& Jet_Flavour,const RVecF& Jet_bTag_score, UncSource source, UncScale scale) const
     {
         double sf_product = 1.;
         std::string source_str = getUncName().at(source);
         for(size_t jet_idx = 0; jet_idx < Jet_p4.size(); jet_idx++){
             if(!pre_sel[jet_idx]) continue;
-            const UncScale jet_tag_scale = sourceApplies(source, Jet_Flavour[jet_idx],jet_source)
+            const UncScale jet_tag_scale = sourceApplies(source, Jet_Flavour[jet_idx])
                                            ? scale : UncScale::Central;
             const std::string& scale_str = getScaleStr(jet_tag_scale);
             bool isCentral = jet_tag_scale == UncScale::Central;
