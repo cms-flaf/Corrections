@@ -58,7 +58,6 @@ class TauCorrProducer:
                 if source == central and scale != central: continue
                 if not isCentral and scale!= central: continue
                 syst_name = source+scale# if source != central else 'Central'
-                print(source, scale)
                 for leg_idx, leg_name in enumerate(lepton_legs):
                     branch_Loose_name = f"weight_{leg_name}_TauID_SF_Loose_{syst_name}"
                     branch_Medium_name = f"weight_{leg_name}_TauID_SF_Medium_{syst_name}"
