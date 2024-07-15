@@ -141,7 +141,7 @@ class FatJetCorrProducer:
 
 
 
-    def getP4Variations(self, df, source_dict, apply_JER=True, apply_JES=True):
+    def getP4Variations(self, df, source_dict, applyJER=True, apply_JES=True):
         df = df.Define(f'FatJet_p4_shifted_map', f'''::correction::FatJetCorrProvider::getGlobal().getShiftedP4(
                                 FatJet_pt, FatJet_eta, FatJet_phi, FatJet_mass, FatJet_rawFactor, FatJet_area,
                                 FatJet_msoftdrop, FatJet_subJetIdx1, FatJet_subJetIdx2, SubJet_pt,SubJet_eta, SubJet_phi, SubJet_mass, FatJet_jetId, Rho_fixedGridRhoFastjetAll, 0, GenJetAK8_pt, GenJetAK8_eta,
