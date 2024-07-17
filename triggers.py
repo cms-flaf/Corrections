@@ -306,9 +306,9 @@ class TrigCorrProducer:
                         else:
                             df = df.Define(f"{branch_name}", f"static_cast<float>({branch_name}_double)")
                         SF_branches.append(f"{branch_name}")
-        trg_name = 'HLT_MET'
+        trg_name = 'MET'
         if trg_name in trigger_names:
-            jsonFile_MET = os.path.join(os.environ['ANALYSIS_PATH'],TrigCorrProducer.MET_jsonPath.format(period,year_METfile[period]))
+            jsonFile_MET = os.path.join(os.environ['ANALYSIS_PATH'],TrigCorrProducer.MET_jsonPath.format(self.period,year_METfile[self.period]))
             sf_sources = TrigCorrProducer.SFSources[trg_name] if return_variations else []
             applyTrgBranch_name = f"{trg_name}_ApplyTrgSF"
             df = df.Define(applyTrgBranch_name, f"""HLT_{trg_name}""")
