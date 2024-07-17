@@ -45,15 +45,23 @@ year_xTrg_muTaufile = {
     "2016postVFP_UL":"sf_mu_2016post_HLTMu20Tau27.root"
 }
 
+year_METfile = {
+    "2018_UL":"150_mumu_fit_2018.root",
+    "2017_UL":"150_mumu_fit_2017.root",
+    "2016preVFP_UL":"150_mumu_fit_2016APV.root",
+    "2016postVFP_UL":"150_mumu_fit_2016.root"
+}
+
 class TrigCorrProducer:
     TauTRG_jsonPath = "/cvmfs/cms.cern.ch/rsync/cms-nanoAOD/jsonpog-integration/POG/TAU/{}/tau.json.gz"
     MuTRG_jsonPath = "Corrections/data/TRG/{0}/{1}"
     eTRG_jsonPath = "Corrections/data/TRG/{0}/{1}"
     mu_XTrg_jsonPath = "Corrections/data/TRG/{0}/{1}"
     e_XTrg_jsonPath = "Corrections/data/TRG/{0}/{1}"
+    MET_jsonPath =  "Corrections/data/TRG/{0}/{1}"
     initialized = False
     deepTauVersion = 'DeepTau2017v2p1'
-    SFSources = { 'ditau': [ "ditau_DM0","ditau_DM1", "ditau_3Prong"], 'singleMu':['singleMu24'], 'singleMu50':['singleMu50or24','singleMu50'],'singleTau':['singleTau'], 'singleEle':['singleEle'],'etau':['etau_ele',"etau_DM0","etau_DM1", "etau_3Prong",],'mutau':['mutau_mu',"mutau_DM0","mutau_DM1", "mutau_3Prong"]}
+    SFSources = { 'ditau': [ "ditau_DM0","ditau_DM1", "ditau_3Prong"], 'singleMu':['singleMu24'], 'singleMu50':['singleMu50or24','singleMu50'],'singleTau':['singleTau'], 'singleEle':['singleEle'],'etau':['etau_ele',"etau_DM0","etau_DM1", "etau_3Prong",],'mutau':['mutau_mu',"mutau_DM0","mutau_DM1", "mutau_3Prong"], 'MET':['MET']}
 
     muon_trg_dict = {
         "2018_UL": ROOT.std.vector('std::string')({"NUM_IsoMu24_DEN_CutBasedIdTight_and_PFIsoTight","NUM_IsoMu24_or_Mu50_DEN_CutBasedIdTight_and_PFIsoTight", "NUM_Mu50_or_OldMu100_or_TkMu100_DEN_CutBasedIdGlobalHighPt_and_TkIsoLoose"}),
@@ -86,18 +94,15 @@ class TrigCorrProducer:
 
     def __init__(self, period, config):
         jsonFile_Tau = TrigCorrProducer.TauTRG_jsonPath.format(period)
-        #print(jsonFile_Tau)
-        #jsonFile_Mu = TrigCorrProducer.MuTRG_jsonPath.format(period)
         self.deepTauVersion = f"""DeepTau{deepTauVersions[config["deepTauVersion"]]}v{config["deepTauVersion"]}"""
-        #print(self.deepTauVersion)
         jsonFile_e = os.path.join(os.environ['ANALYSIS_PATH'],TrigCorrProducer.eTRG_jsonPath.format(period, year_singleElefile[period]))
-        #print(jsonFile_e)
         jsonFile_Mu = os.path.join(os.environ['ANALYSIS_PATH'],TrigCorrProducer.MuTRG_jsonPath.format(period, year_singleMufile[period]))
-        #print(jsonFile_Mu)
         jsonFile_mu_XTrg = os.path.join(os.environ['ANALYSIS_PATH'],TrigCorrProducer.mu_XTrg_jsonPath.format(period,year_xTrg_muTaufile[period]))
-        #print(jsonFile_mu_XTrg)
         jsonFile_e_XTrg = os.path.join(os.environ['ANALYSIS_PATH'],TrigCorrProducer.e_XTrg_jsonPath.format(period,year_xTrg_eTaufile[period]))
+
+        jsonFile_MET = os.path.join(os.environ['ANALYSIS_PATH'],TrigCorrProducer.MET_jsonPath.format(period,year_METfile[period]))
         self.period = period
+        self.year = period.split('_')[0]
         #self.trg_config = trg_config
         #print(jsonFile_e_XTrg)
         if self.deepTauVersion=='DeepTau2018v2p5':
@@ -301,7 +306,30 @@ class TrigCorrProducer:
                         else:
                             df = df.Define(f"{branch_name}", f"static_cast<float>({branch_name}_double)")
                         SF_branches.append(f"{branch_name}")
-
+        trg_name = 'HLT_MET'
+        if trg_name in trigger_names:
+            jsonFile_MET = os.path.join(os.environ['ANALYSIS_PATH'],TrigCorrProducer.MET_jsonPath.format(period,year_METfile[period]))
+            sf_sources = TrigCorrProducer.SFSources[trg_name] if return_variations else []
+            applyTrgBranch_name = f"{trg_name}_ApplyTrgSF"
+            df = df.Define(applyTrgBranch_name, f"""HLT_{trg_name}""")
+            for source in [ central ] + sf_sources:
+                for scale in getScales(source):
+                    if not isCentral and scale!= central: continue
+                    syst_name = getSystName(source, scale)
+                    suffix = syst_name
+                    if scale == central:
+                        suffix = f"{trg_name}_{syst_name}"
+                    branch_name = f"weight_TrgSF_{suffix}"
+                    branch_central = f"weight_TrgSF_{trg_name}_{getSystName(central,central)}"
+                    df = df.Define(f"{branch_name}_double",
+                                    f'''{applyTrgBranch_name} ? ::correction::TrigCorrProvider::getGlobal().getMETTrgSF(
+                                 {self.year},{jsonFile_MET},metnomu_pt, metnomu_phi, ::correction::UncScale::{scale} ) : 1.f''')
+                    if scale != central:
+                        df = df.Define(f"{branch_name}_rel", f"static_cast<float>({branch_name}_double/{branch_central})")
+                        branch_name += '_rel'
+                    else:
+                        df = df.Define(f"{branch_name}", f"static_cast<float>({branch_name}_double)")
+                    SF_branches.append(f"{branch_name}")
         trg_name = 'singleTau'
         if trg_name in trigger_names:
             sf_sources = TrigCorrProducer.SFSources[trg_name] if return_variations else []

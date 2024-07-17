@@ -2,6 +2,7 @@
 
 #include "correction.h"
 #include "corrections.h"
+#include "SF_Met.cc"
 
 namespace correction {
 
@@ -105,17 +106,28 @@ public:
         const std::string& scale_str = getTauScaleStr(tau_scale);
         return tau_trg_->evaluate({Tau_p4.pt(), Tau_decayMode, trg_type, wpVSjet,"sf", scale_str});
     }
-    /*
-    float getMuSF_fromCorrLib(const LorentzVectorM& Mu_p4, UncSource source, UncScale scale) const
-    {
-        const UncScale mu_scale = source== UncSource::singleMu ? scale : UncScale::Central;
-        const std::string& scale_str = getMuScaleStr(mu_scale);
-        return mu_trg_->evaluate({period_, std::abs(Mu_p4.Eta()), Mu_p4.Pt(), scale_str});
-    }
-    */
-    //float getEfficiencyFrom2DHist(std::unique_ptr<TH2> hist2d, float bin1center, float bin2center, UncScale scale ){
-    //}
 
+    float getMETTrgSF(const std::string year, const std::string inFile, const float& metnomu_pt, const float& metnomu_phi, UncScale scale) const
+    {
+        ScaleFactorMET metSF(year, inFile);
+        float tau_thresh;
+        float met_thresh = metSF.getMinThreshold();
+        LorentzVectorM vMETnoMu4(metnomu_pt, 0, metnomu_phi, 0);
+        TVector2 vMETnoMu2(vMETnoMu4.Px(), vMETnoMu4.Py());
+
+        /*
+        if (PERIOD=="2016preVFP" or PERIOD=="2016postVFP") {
+            tau_thresh = 130.;
+        }
+        else if (PERIOD=="2017") {
+            tau_thresh = 190.;
+        }
+        else { // 2018
+            tau_thresh = 190.;
+        }*/
+        if(scale == UncScale::Central){ return metSF.getSF(vMETnoMu2.Mod());}
+        return scale == UncScale::Up ? metSF.getSF(vMETnoMu2.Mod()) + metSF.getSFError(vMETnoMu2.Mod()) : metSF.getSF(vMETnoMu2.Mod()) - metSF.getSFError(vMETnoMu2.Mod()) ;
+    }
     float getSFsFromHisto(const std::unique_ptr<TH2>& histo, const LorentzVectorM& part_p4, UncScale scale, bool wantAbsEta) const
     {
         const auto x_axis = histo->GetXaxis();
