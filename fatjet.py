@@ -148,9 +148,7 @@ class FatJetCorrProducer:
                                 GenJetAK8_phi, GenJetAK8_mass, SubGenJetAK8_pt, SubGenJetAK8_eta,
                                 SubGenJetAK8_phi, SubGenJetAK8_mass, event)''')
 
-        apply_jer_list = []
-        if apply_JER:
-            apply_jer_list.append("JER")
+        apply_jer_list = ["JER"] if applyJER else []
         apply_jes_list = FatJetCorrProducer.uncSources_core if apply_JES else []
         for source in [ central] + apply_jes_list + apply_jer_list:
             source_eff = source
