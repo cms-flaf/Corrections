@@ -323,7 +323,7 @@ class TrigCorrProducer:
                     branch_central = f"weight_TrgSF_{trg_name}_{getSystName(central,central)}"
                     df = df.Define(f"{branch_name}_double",
                                     f'''{applyTrgBranch_name} ? ::correction::TrigCorrProvider::getGlobal().getMETTrgSF(
-                                 {self.year},{jsonFile_MET},metnomu_pt, metnomu_phi, ::correction::UncScale::{scale} ) : 1.f''')
+                                 "{self.year}","{jsonFile_MET}",metnomu_pt, metnomu_phi, ::correction::UncScale::{scale} ) : 1.f''')
                     if scale != central:
                         df = df.Define(f"{branch_name}_rel", f"static_cast<float>({branch_name}_double/{branch_central})")
                         branch_name += '_rel'
