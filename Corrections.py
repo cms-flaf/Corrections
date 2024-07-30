@@ -175,6 +175,7 @@ class Corrections:
                                     return_variations=True, isCentral=True):
         lumi = global_params['luminosity']
         sampleType = samples[sample]['sampleType']
+        generator = samples[sample]['generator']
         xsFile = global_params['crossSectionsFile']
         xsFilePath = os.path.join(os.environ['ANALYSIS_PATH'], xsFile)
         with open(xsFilePath, 'r') as xs_file:
@@ -193,9 +194,13 @@ class Corrections:
             xs_stitching = xs_dict[xs_stitching_name]['crossSec']
             xs_stitching_incl = xs_dict[samples[inclusive_sample_name]['crossSectionStitch']]['crossSec']
             if sampleType == 'DY':
-                stitch_str = 'if(LHE_Vpt==0.) return 1/2.f; return 1/3.f;'
+                if generator == 'amcatanlo':
+                    stitch_str = 'if(LHE_Vpt==0.) return 1/2.f; return 1/3.f;'
+                elif generator == 'madgraph':
+                    stitch_str = '1/2.f'
             elif sampleType == 'W':
-                stitch_str= "if(LHE_Njets==0) return 1.f; if(LHE_HT < 70) return 1/2.f; return 1/3.f;"
+                if generator == 'madgraph':
+                    stitch_str= "if(LHE_Njets==0) return 1.f; if(LHE_HT < 70) return 1/2.f; return 1/3.f;"
         else:
             xs_name = samples[sample]['crossSection']
         df = df.Define("stitching_weight", stitch_str)
