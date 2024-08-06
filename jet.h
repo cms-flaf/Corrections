@@ -108,6 +108,10 @@ public:
         return jvc_total.getResolution(Jet_pt, Jet_eta, rho);
     }
 
+    //RVecI getVetoMap(const RVecF& Jet_eta, const RVecF& Jet_phi) const{
+
+    //}
+
 private:
     JetVariationsCalculator jvc_total ;
 };
