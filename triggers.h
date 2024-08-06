@@ -90,16 +90,17 @@ public:
         histo_ele_SF.reset(root_ext::ReadCloneObject<TH2>(*eleFile, "SF2D", "SF2D", true));
         std::cout << "eleFile" << std::endl;
 
-        auto metFile = root_ext::OpenRootFile(metFileName);
-        funcSF.reset(root_ext::ReadCloneObject<TF1>(*metFile, "SigmoidFuncSF", "SigmoidFuncSF", 0));
-        funcData.reset(root_ext::ReadCloneObject<TF1>(*metFile, "SigmoidFuncData", "SigmoidFuncData", 0));
-        funcMC.reset(root_ext::ReadCloneObject<TF1>(*metFile, "SigmoidFuncMC", "SigmoidFuncMC", 0));
-        std::cout << "METFile" << std::endl;
         auto muFile = root_ext::OpenRootFile(muFileName);
         histo_mu_SF_24.reset(root_ext::ReadCloneObject<TH2>(*muFile, hist_mu_name[0].c_str(), hist_mu_name[0].c_str(), true));
         histo_mu_SF_50or24.reset(root_ext::ReadCloneObject<TH2>(*muFile, hist_mu_name[1].c_str(), hist_mu_name[1].c_str(), true));
         histo_mu_SF_50.reset(root_ext::ReadCloneObject<TH2>(*muFile, hist_mu_name[2].c_str(), hist_mu_name[2].c_str(), true));
         std::cout << "MuFile" << std::endl;
+
+        auto metFile = root_ext::OpenRootFile(metFileName);
+        funcSF.reset(root_ext::ReadCloneObject<TF1>(*metFile, "SigmoidFuncSF", "SigmoidFuncSF", false));
+        funcData.reset(root_ext::ReadCloneObject<TF1>(*metFile, "SigmoidFuncData", "SigmoidFuncData", false));
+        funcMC.reset(root_ext::ReadCloneObject<TF1>(*metFile, "SigmoidFuncMC", "SigmoidFuncMC", false));
+        std::cout << "METFile" << std::endl;
     }
 
     float getTauSF_fromCorrLib(const LorentzVectorM& Tau_p4, int Tau_decayMode, const std::string& trg_type, Channel ch, UncSource source, UncScale scale) const
