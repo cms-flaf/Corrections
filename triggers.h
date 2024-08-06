@@ -82,25 +82,20 @@ public:
     {
         auto eTauFile = root_ext::OpenRootFile(eTauFileName);
         histo_eTau_ele_SF.reset(root_ext::ReadCloneObject<TH2>(*eTauFile, "SF2D", "SF2D", true));
-        std::cout << "eleTauFile" << std::endl;
         auto muTauFile = root_ext::OpenRootFile(muTauFileName);
         histo_muTau_mu_SF.reset(root_ext::ReadCloneObject<TH2>(*muTauFile, "SF2D", "SF2D", true));
-        std::cout << "muTauFile" << std::endl;
         auto eleFile = root_ext::OpenRootFile(eleFileName);
         histo_ele_SF.reset(root_ext::ReadCloneObject<TH2>(*eleFile, "SF2D", "SF2D", true));
-        std::cout << "eleFile" << std::endl;
 
         auto muFile = root_ext::OpenRootFile(muFileName);
         histo_mu_SF_24.reset(root_ext::ReadCloneObject<TH2>(*muFile, hist_mu_name[0].c_str(), hist_mu_name[0].c_str(), true));
         histo_mu_SF_50or24.reset(root_ext::ReadCloneObject<TH2>(*muFile, hist_mu_name[1].c_str(), hist_mu_name[1].c_str(), true));
         histo_mu_SF_50.reset(root_ext::ReadCloneObject<TH2>(*muFile, hist_mu_name[2].c_str(), hist_mu_name[2].c_str(), true));
-        std::cout << "MuFile" << std::endl;
 
         auto metFile = root_ext::OpenRootFile(metFileName);
-        funcSF.reset(root_ext::ReadCloneObject<TF1>(*metFile, "SigmoidFuncSF", "SigmoidFuncSF", false));
-        funcData.reset(root_ext::ReadCloneObject<TF1>(*metFile, "SigmoidFuncData", "SigmoidFuncData", false));
-        funcMC.reset(root_ext::ReadCloneObject<TF1>(*metFile, "SigmoidFuncMC", "SigmoidFuncMC", false));
-        std::cout << "METFile" << std::endl;
+        funcSF.reset(ReadCloneObjectTF1<TF1>(*metFile, "SigmoidFuncSF", "SigmoidFuncSF"));
+        funcData.reset(ReadCloneObjectTF1<TF1>(*metFile, "SigmoidFuncData", "SigmoidFuncData"));
+        funcMC.reset(ReadCloneObjectTF1<TF1>(*metFile, "SigmoidFuncMC", "SigmoidFuncMC"));
     }
 
     float getTauSF_fromCorrLib(const LorentzVectorM& Tau_p4, int Tau_decayMode, const std::string& trg_type, Channel ch, UncSource source, UncScale scale) const
@@ -243,6 +238,40 @@ public:
             y_bin = y_axis->GetNbins();
 
         return hist_xTrg->GetBinContent(x_bin,y_bin) + static_cast<int>(xTrg_scale) * hist_xTrg->GetBinError(x_bin,y_bin);
+    }
+
+private:
+
+template<typename Object>
+    Object* ReadObjectTF1(TDirectory& file, const std::string& name)
+    {
+        if(!name.size())
+            throw analysis::exception("Can't read nameless object.");
+        TObject* root_object = file.Get(name.c_str());
+        if(!root_object)
+            throw analysis::exception("Object '%1%' not found in '%2%'.") % name % file.GetName();
+        Object* object = dynamic_cast<Object*>(root_object);
+        if(!object)
+            throw analysis::exception("Wrong object type '%1%' for object '%2%' in '%3%'.") % typeid(Object).name()
+                % name % file.GetName();
+        return object;
+    }
+
+    template<typename Object>
+    Object* CloneObjectTF1(const Object& original_object, const std::string& new_name = "")
+    {
+        const std::string new_object_name = new_name.size() ? new_name : original_object.GetName();
+        Object* new_object = dynamic_cast<Object*>(original_object.Clone(new_object_name.c_str()));
+        if(!new_object)
+            throw analysis::exception("Type error while cloning object '%1%'.") % original_object.GetName();
+        return new_object;
+    }
+
+    template<typename Object>
+    Object* ReadCloneObjectTF1(TDirectory& file, const std::string& original_name, const std::string& new_name = "")
+    {
+        Object* original_object = ReadObjectTF1<Object>(file, original_name);
+        return CloneObjectTF1(*original_object, new_name);
     }
 
 private:
