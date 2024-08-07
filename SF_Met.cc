@@ -2,35 +2,18 @@
 // Contact: bruno.alves@cern.ch
 #include "SF_Met.h"
 
-ScaleFactorMET::ScaleFactorMET(const std::string period, const std::string inFile_string): mPeriod(period)
+ScaleFactorMET::ScaleFactorMET(const std::string period, TF1* funcSF_, TF1* funcMC_,TF1* funcData_ ):  mPeriod(period), funcSF(funcSF_), funcMC(funcMC_),funcData(funcData_)
 {
   mCheckPeriod();
-  // open file
-  fileIn = std::unique_ptr<TFile>{TFile::Open(inFile_string.c_str(), "READ")};
-  mCheckFile(fileIn, inFile_string);
-
-  // view TF1's
-  funcSF   = fileIn->Get<TF1>("SigmoidFuncSF");
-  funcData = fileIn->Get<TF1>("SigmoidFuncData");
-  funcMC   = fileIn->Get<TF1>("SigmoidFuncMC");
-
   // sanity check
+  //funcMC = funcMC_.get();
+  //funcData = funcData_.get();
+  //funcSF = funcSF_.get();
   assert(funcSF->GetXmin() == mRange.at(mPeriod).first);
   assert(funcSF->GetXmax() == mRange.at(mPeriod).second);
 }
 
-ScaleFactorMET::~ScaleFactorMET() {
-  fileIn->Close();
-}
-
-void ScaleFactorMET::mCheckFile(std::unique_ptr<TFile>& f, std::string input)
-{
-  if (f->IsZombie()) {
-	std::cout << "ERROR in ScaleFactorMET::mCheckFile(string input)" << std::endl;
-	std::cout << "File " << input << " does not exist. Please check. " << std::endl;
-	std::exit(1);
-  }
-}
+ScaleFactorMET::~ScaleFactorMET() {}
 
 void ScaleFactorMET::mCheckPeriod()
 {
@@ -54,7 +37,7 @@ double ScaleFactorMET::mErrorQuadSumSquared(double x, std::string mode)
 	func = funcMC;
   }
   else {
-	std::cout << "ERROR in ScaleFactorMET::mErrorQuadSum(string inputRootFile)" << std::endl;
+	//std::cout << "ERROR in ScaleFactorMET::mErrorQuadSum(string inputRootFile)" << std::endl;
 	std::cout << "Mode " << mode << " is not supported. Please check. " << std::endl;
 	std::exit(1);
   }
