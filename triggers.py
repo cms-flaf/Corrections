@@ -101,6 +101,7 @@ class TrigCorrProducer:
         jsonFile_e_XTrg = os.path.join(os.environ['ANALYSIS_PATH'],TrigCorrProducer.e_XTrg_jsonPath.format(period,year_xTrg_eTaufile[period]))
 
         jsonFile_MET = os.path.join(os.environ['ANALYSIS_PATH'],TrigCorrProducer.MET_jsonPath.format(period,year_METfile[period]))
+        print(jsonFile_MET)
         self.period = period
         self.year = period.split('_')[0]
         #self.trg_config = trg_config
@@ -120,7 +121,8 @@ class TrigCorrProducer:
             trigNames_mu_vec += """\", \"""".join(path for path in self.muon_trgHistNames_dict[period])
             trigNames_mu_vec += """\" } """
             #print(trigNames_mu_vec)
-            ROOT.gInterpreter.ProcessLine(f"""::correction::TrigCorrProvider::Initialize("{jsonFile_Tau}", "{self.deepTauVersion}", {wp_map_cpp}, "{jsonFile_Mu}", "{year}", {trigNames_mu_vec},"{jsonFile_e}","{jsonFile_e_XTrg}","{jsonFile_mu_XTrg}")""")
+            print(f"going to initialize TrigCorrProvider")
+            ROOT.gInterpreter.ProcessLine(f"""::correction::TrigCorrProvider::Initialize("{jsonFile_Tau}", "{self.deepTauVersion}", {wp_map_cpp}, "{jsonFile_Mu}", "{year}", {trigNames_mu_vec},"{jsonFile_e}","{jsonFile_e_XTrg}","{jsonFile_mu_XTrg}", "{jsonFile_MET}")""")
             TrigCorrProducer.initialized = True
 
     def getSF(self, df, trigger_names, lepton_legs, return_variations, isCentral):
@@ -323,7 +325,7 @@ class TrigCorrProducer:
                     branch_central = f"weight_TrgSF_{trg_name}_{getSystName(central,central)}"
                     df = df.Define(f"{branch_name}_double",
                                     f'''{applyTrgBranch_name} ? ::correction::TrigCorrProvider::getGlobal().getMETTrgSF(
-                                 "{self.year}","{jsonFile_MET}",metnomu_pt, metnomu_phi, ::correction::UncScale::{scale} ) : 1.f''')
+                                 "{self.year}",metnomu_pt, metnomu_phi, ::correction::UncScale::{scale} ) : 1.f''')
                     if scale != central:
                         df = df.Define(f"{branch_name}_rel", f"static_cast<float>({branch_name}_double/{branch_central})")
                         branch_name += '_rel'
