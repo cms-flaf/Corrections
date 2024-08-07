@@ -128,3 +128,12 @@ class JetCorrProducer:
         df= df.Define(f"Jet_ptRes", f""" ::correction::JetCorrProvider::getGlobal().getResolution(
             Jet_pt, Jet_eta, Rho_fixedGridRhoFastjetAll ) """)
         return df
+
+    #def getVetoMap(self, df):
+    #    df = df.Define(f"vetoMapLooseRegion", "Jet_pt > 15 && ( Jet_jetId & 2 ) && (Jet_puId > 0 || Jet_pt >50) ")
+
+    # jet pT > 15 GeV
+    # tight jet ID
+    # PU jet ID for CHS jets with pT < 50 GeV
+    # jet EM fraction (charged + neutral) < 0.9
+    # jets that don’t overlap with PF muon (dR < 0.2) RemoveOverlaps(Jet_p4, vetoMapLooseRegion, Muon_p4, Muon_p4.size(), 0.2)

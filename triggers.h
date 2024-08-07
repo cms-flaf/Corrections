@@ -71,7 +71,7 @@ public:
     }
     /*const std::vector<std::string>& mu_trigger,*/
     TrigCorrProvider(const std::string& tauFileName, const std::string& deepTauVersion, const wpsMapType& wps_map,
-                    const std::string& muFileName, const std::string& period, const std::vector<std::string>& hist_mu_name, const std::string& eleFileName, const std::string& eTauFileName, const std::string& muTauFileName) :
+                    const std::string& muFileName, const std::string& period, const std::vector<std::string>& hist_mu_name, const std::string& eleFileName, const std::string& eTauFileName, const std::string& muTauFileName, const std::string& metFileName) :
         tau_corrections_(CorrectionSet::from_file(tauFileName)),
         tau_trg_(tau_corrections_->at("tau_trigger")),
         deepTauVersion_(deepTauVersion),
@@ -80,7 +80,6 @@ public:
         //mu_trg_(mu_corrections_->at(mu_trigger)),
         period_(period)
     {
-
         auto eTauFile = root_ext::OpenRootFile(eTauFileName);
         histo_eTau_ele_SF.reset(root_ext::ReadCloneObject<TH2>(*eTauFile, "SF2D", "SF2D", true));
 
@@ -90,10 +89,17 @@ public:
         auto eleFile = root_ext::OpenRootFile(eleFileName);
         histo_ele_SF.reset(root_ext::ReadCloneObject<TH2>(*eleFile, "SF2D", "SF2D", true));
 
+
         auto muFile = root_ext::OpenRootFile(muFileName);
         histo_mu_SF_24.reset(root_ext::ReadCloneObject<TH2>(*muFile, hist_mu_name[0].c_str(), hist_mu_name[0].c_str(), true));
         histo_mu_SF_50or24.reset(root_ext::ReadCloneObject<TH2>(*muFile, hist_mu_name[1].c_str(), hist_mu_name[1].c_str(), true));
         histo_mu_SF_50.reset(root_ext::ReadCloneObject<TH2>(*muFile, hist_mu_name[2].c_str(), hist_mu_name[2].c_str(), true));
+
+
+        auto metFile = root_ext::OpenRootFile(metFileName);
+        funcSF.reset(ReadCloneObjectTF1<TF1>(*metFile, "SigmoidFuncSF", "SigmoidFuncSF"));
+        funcData.reset(ReadCloneObjectTF1<TF1>(*metFile, "SigmoidFuncData", "SigmoidFuncData"));
+        funcMC.reset(ReadCloneObjectTF1<TF1>(*metFile, "SigmoidFuncMC", "SigmoidFuncMC"));
 
     }
 
@@ -107,9 +113,9 @@ public:
         return tau_trg_->evaluate({Tau_p4.pt(), Tau_decayMode, trg_type, wpVSjet,"sf", scale_str});
     }
 
-    float getMETTrgSF(const std::string year, const std::string inFile, const float& metnomu_pt, const float& metnomu_phi, UncScale scale) const
+    float getMETTrgSF(const std::string year, const float& metnomu_pt, const float& metnomu_phi, UncScale scale) const
     {
-        ScaleFactorMET metSF(year, inFile);
+        ScaleFactorMET metSF(year, funcSF.get(), funcMC.get(), funcData.get());
         float tau_thresh;
         float met_thresh = metSF.getMinThreshold();
         LorentzVectorM vMETnoMu4(metnomu_pt, 0, metnomu_phi, 0);
@@ -240,6 +246,40 @@ public:
     }
 
 private:
+
+template<typename Object>
+    Object* ReadObjectTF1(TDirectory& file, const std::string& name)
+    {
+        if(!name.size())
+            throw analysis::exception("Can't read nameless object.");
+        TObject* root_object = file.Get(name.c_str());
+        if(!root_object)
+            throw analysis::exception("Object '%1%' not found in '%2%'.") % name % file.GetName();
+        Object* object = dynamic_cast<Object*>(root_object);
+        if(!object)
+            throw analysis::exception("Wrong object type '%1%' for object '%2%' in '%3%'.") % typeid(Object).name()
+                % name % file.GetName();
+        return object;
+    }
+
+    template<typename Object>
+    Object* CloneObjectTF1(const Object& original_object, const std::string& new_name = "")
+    {
+        const std::string new_object_name = new_name.size() ? new_name : original_object.GetName();
+        Object* new_object = dynamic_cast<Object*>(original_object.Clone(new_object_name.c_str()));
+        if(!new_object)
+            throw analysis::exception("Type error while cloning object '%1%'.") % original_object.GetName();
+        return new_object;
+    }
+
+    template<typename Object>
+    Object* ReadCloneObjectTF1(TDirectory& file, const std::string& original_name, const std::string& new_name = "")
+    {
+        Object* original_object = ReadObjectTF1<Object>(file, original_name);
+        return CloneObjectTF1(*original_object, new_name);
+    }
+
+private:
     std::unique_ptr<CorrectionSet> tau_corrections_;
     Correction::Ref tau_trg_;
     const std::string deepTauVersion_;
@@ -254,6 +294,9 @@ private:
     std::unique_ptr<TH2> histo_mu_SF_50or24;
     std::unique_ptr<TH2> histo_mu_SF_50;
 
+    std::unique_ptr<TF1> funcSF;
+    std::unique_ptr<TF1> funcData;
+    std::unique_ptr<TF1> funcMC;
 } ;
 
 
