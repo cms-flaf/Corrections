@@ -15,21 +15,10 @@ class MuCorrProducer:
     muIDEff_JsonPath = "/cvmfs/cms.cern.ch/rsync/cms-nanoAOD/jsonpog-integration/POG/MUO/{}/muon_Z.json.gz"
     HighPtmuIDEff_JsonPath = "/cvmfs/cms.cern.ch/rsync/cms-nanoAOD/jsonpog-integration/POG/MUO/{}/muon_HighPt.json.gz"
     initialized = False
-    muReco_SF_sources = ["NUM_TrackerMuons_DEN_genTracks"]
-    muID_SF_Sources = ["NUM_TightID_DEN_TrackerMuons", "NUM_HighPtID_DEN_TrackerMuons"]
-    muIso_SF_Sources = ["NUM_TightRelIso_DEN_TightIDandIPCut", "NUM_TightRelTkIso_DEN_TrkHighPtIDandIPCut"]
 
-    highPtmuReco_SF_sources = ["NUM_GlobalMuons_DEN_TrackerMuonProbes"]
-    highPtmuID_SF_Sources = ["NUM_TightID_DEN_GlobalMuonProbes", "NUM_HighPtID_DEN_GlobalMuonProbes"]
-    highPtmuIso_SF_Sources = ["NUM_probe_TightRelTkIso_DEN_HighPtProbes"] # not find the tightID with tight PF iso
+    ##### dictionaries containing ALL uncertainties ######
 
-    year_unc_dict= {
-        "2018_UL": ["NUM_IsoMu24_DEN_CutBasedIdTight_and_PFIsoTight", "NUM_Mu50_or_OldMu100_or_TkMu100_DEN_CutBasedIdGlobalHighPt_and_TkIsoLoose"],
-        "2017_UL": ["NUM_IsoMu27_DEN_CutBasedIdTight_and_PFIsoTight", "NUM_Mu50_or_OldMu100_or_TkMu100_DEN_CutBasedIdGlobalHighPt_and_TkIsoLoose"],
-        "2016preVFP_UL": ["NUM_IsoMu24_or_IsoTkMu24_DEN_CutBasedIdTight_and_PFIsoTight","NUM_Mu50_or_TkMu50_DEN_CutBasedIdGlobalHighPt_and_TkIsoLoose"],
-        "2016postVFP_UL":["NUM_IsoMu24_or_IsoTkMu24_DEN_CutBasedIdTight_and_PFIsoTight","NUM_Mu50_or_TkMu50_DEN_CutBasedIdGlobalHighPt_and_TkIsoLoose"],
-    }
-
+    #### high pt ID (NO MORE NEEDED) ####
     highPtMu_SF_Sources_dict = {
         # reco SF
         "NUM_GlobalMuons_DEN_TrackerMuonProbes":"Reco", # --> This is the recommended one for RECO!!
@@ -39,21 +28,27 @@ class MuCorrProducer:
         # Iso SF
         "NUM_probe_TightRelTkIso_DEN_HighPtProbes": "HighPtIdRelTkIso",
     }
+
+    ##### ID + trigger ####
     muID_SF_Sources_dict = {
         # reco SF
         "NUM_TrackerMuons_DEN_genTracks":"Reco", # --> This is the recommended one for RECO!!
-        # ID SF - with genTracks - NOT RECOMMENDED
+
+        # ID SF - with genTracks - NOT RECOMMENDED --> WE DO NOT USE THIS
         "NUM_MediumPromptID_DEN_genTracks":"MediumID", # medium ID - NOT NEEDED NOW BECAUSE WE DON'T USE MEDIUM ID
         "NUM_TightID_DEN_genTracks":"TightID", # tight ID
         "NUM_HighPtID_DEN_genTracks": "HighPtID",# HighPtID
+
         # ID SF - with tracker muons - RECOMMENDED
         "NUM_MediumPromptID_DEN_TrackerMuons":"MediumID_Trk", # medium ID - NOT NEEDED NOW BECAUSE WE DON'T USE MEDIUM ID
         "NUM_TightID_DEN_TrackerMuons":"TightID_Trk", # tight ID
         "NUM_HighPtID_DEN_TrackerMuons": "HighPtID_Trk",# HighPtID ID
+
         # Iso SF
         "NUM_TightRelIso_DEN_MediumPromptID":"MediumRelIso", # medium ID, tight iso # NOT NEEDED NOW BECAUSE WE DON'T USE MEDIUM ID
         "NUM_TightRelIso_DEN_TightIDandIPCut":"TightRelIso", # tight ID, tight iso
         "NUM_TightRelTkIso_DEN_TrkHighPtIDandIPCut" :"HighPtIdRelTkIso",  # highPtID, tight tkRelIso
+
         # Trigger
         "NUM_IsoMu24_DEN_CutBasedIdTight_and_PFIsoTight":"TightIso24", # trg --> FOR ALL PT RANGE!!
         "NUM_IsoMu27_DEN_CutBasedIdTight_and_PFIsoTight":"TightIso27", # trg --> FOR ALL PT RANGE!!
@@ -61,7 +56,27 @@ class MuCorrProducer:
         "NUM_Mu50_or_TkMu50_DEN_CutBasedIdGlobalHighPt_and_TkIsoLoose":"Mu50_tkMu50", # trg --> FOR ALL PT RANGE!!
         "NUM_IsoMu24_or_IsoTkMu24_DEN_CutBasedIdTight_and_PFIsoTight": "TightIso24OrTightIsoTk24", # trg --> FOR ALL PT RANGE!!
     }
+
     #muID_SF_Sources = []
+    ####### in these lists there are the uncertainties we will consider #######
+
+    # for muon ID --> we consider only sources related to TightID
+    muReco_SF_sources = ["NUM_TrackerMuons_DEN_genTracks"]
+    muID_SF_Sources = ["NUM_TightID_DEN_TrackerMuons"]
+    muIso_SF_Sources = ["NUM_TightRelIso_DEN_TightIDandIPCut"]
+
+    # for high pt id
+    highPtmuReco_SF_sources = ["NUM_GlobalMuons_DEN_TrackerMuonProbes"]
+    highPtmuID_SF_Sources = ["NUM_TightID_DEN_GlobalMuonProbes", "NUM_HighPtID_DEN_GlobalMuonProbes"]
+    highPtmuIso_SF_Sources = ["NUM_probe_TightRelTkIso_DEN_HighPtProbes"] # not find the tightID with tight PF iso
+
+    # trigger
+    year_unc_dict= {
+        "2018_UL": ["NUM_IsoMu24_DEN_CutBasedIdTight_and_PFIsoTight"] #,"NUM_Mu50_or_OldMu100_or_TkMu100_DEN_CutBasedIdGlobalHighPt_and_TkIsoLoose"], # for HLT_mu50
+        "2017_UL": ["NUM_IsoMu27_DEN_CutBasedIdTight_and_PFIsoTight"] #, "NUM_Mu50_or_OldMu100_or_TkMu100_DEN_CutBasedIdGlobalHighPt_and_TkIsoLoose"], # for HLT_mu50
+        "2016preVFP_UL": ["NUM_IsoMu24_or_IsoTkMu24_DEN_CutBasedIdTight_and_PFIsoTight" ] #,"NUM_Mu50_or_TkMu50_DEN_CutBasedIdGlobalHighPt_and_TkIsoLoose"], # for HLT_mu50
+        "2016postVFP_UL":["NUM_IsoMu24_or_IsoTkMu24_DEN_CutBasedIdTight_and_PFIsoTight" ] #,"NUM_Mu50_or_TkMu50_DEN_CutBasedIdGlobalHighPt_and_TkIsoLoose"], # for HLT_mu50
+    }
     period = None
 
 
@@ -111,7 +126,7 @@ class MuCorrProducer:
         return df,SF_branches
 
 ########################################################################################################
-
+    #### NO MORE NEEDED (but keeping just in case :D ) ####
     def getHighPtMuonIDSF(self, df, lepton_legs, isCentral, return_variations):
         highPtMuSF_branches = []
         sf_sources =  MuCorrProducer.highPtmuReco_SF_sources + MuCorrProducer.highPtmuID_SF_Sources + MuCorrProducer.highPtmuIso_SF_Sources
