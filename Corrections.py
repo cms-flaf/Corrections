@@ -194,7 +194,7 @@ class Corrections:
             xs_stitching = xs_dict[xs_stitching_name]['crossSec']
             xs_stitching_incl = xs_dict[samples[inclusive_sample_name]['crossSectionStitch']]['crossSec']
             if sampleType == 'DY':
-                if generator == 'amcatanlo':
+                if generator == 'amcatnlo':
                     stitch_str = 'if(LHE_Vpt==0.) return 1/2.f; return 1/3.f;'
                 elif generator == 'madgraph':
                     stitch_str = '1/2.f'
@@ -255,7 +255,7 @@ class Corrections:
         if 'mu' in self.to_apply:
             df, muID_SF_branches = self.mu.getMuonIDSF(df, lepton_legs, isCentral, return_variations)
             all_weights.extend(muID_SF_branches)
-            df, highPtmuID_SF_branches = self.mu.getHighPtMuonIDSF(df, lepton_legs, isCentral, return_variations)
+            #df, highPtmuID_SF_branches = self.mu.getHighPtMuonIDSF(df, lepton_legs, isCentral, return_variations)
             all_weights.extend(highPtmuID_SF_branches)
         if 'ele' in self.to_apply:
             df, eleID_SF_branches = self.ele.getIDSF(df, lepton_legs, isCentral, return_variations)

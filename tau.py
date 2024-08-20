@@ -59,35 +59,35 @@ class TauCorrProducer:
                 if not isCentral and scale!= central: continue
                 syst_name = source+scale# if source != central else 'Central'
                 for leg_idx, leg_name in enumerate(lepton_legs):
-                    branch_Loose_name = f"weight_{leg_name}_TauID_SF_Loose_{syst_name}"
+                    #branch_Loose_name = f"weight_{leg_name}_TauID_SF_Loose_{syst_name}"
                     branch_Medium_name = f"weight_{leg_name}_TauID_SF_Medium_{syst_name}"
-                    branch_Loose_central = f"""weight_{leg_name}_TauID_SF_Loose_{central}"""
+                    #branch_Loose_central = f"""weight_{leg_name}_TauID_SF_Loose_{central}"""
                     branch_Medium_central = f"""weight_{leg_name}_TauID_SF_Medium_{central}"""
                     df = df.Define(f"{branch_Medium_name}_double",
                                 f'''HttCandidate.leg_type[{leg_idx}] == Leg::tau ? ::correction::TauCorrProvider::getGlobal().getSF(
                                HttCandidate.leg_p4[{leg_idx}], Tau_decayMode.at(HttCandidate.leg_index[{leg_idx}]),
                                Tau_genMatch.at(HttCandidate.leg_index[{leg_idx}]),"Medium", HttCandidate.channel(),
                                ::correction::TauCorrProvider::UncSource::{source}, ::correction::UncScale::{scale}) : 1.;''')
-                    df = df.Define(f"{branch_Loose_name}_double",
-                                f'''HttCandidate.leg_type[{leg_idx}] == Leg::tau ? ::correction::TauCorrProvider::getGlobal().getSF(
-                               HttCandidate.leg_p4[{leg_idx}], Tau_decayMode.at(HttCandidate.leg_index[{leg_idx}]),
-                               Tau_genMatch.at(HttCandidate.leg_index[{leg_idx}]), "Loose", HttCandidate.channel(),
-                               ::correction::TauCorrProvider::UncSource::{source}, ::correction::UncScale::{scale}) : 1.;''')
+                    #df = df.Define(f"{branch_Loose_name}_double",
+                               # f'''HttCandidate.leg_type[{leg_idx}] == Leg::tau ? ::correction::TauCorrProvider::getGlobal().getSF(
+                               #HttCandidate.leg_p4[{leg_idx}], Tau_decayMode.at(HttCandidate.leg_index[{leg_idx}]),
+                               #Tau_genMatch.at(HttCandidate.leg_index[{leg_idx}]), "Loose", HttCandidate.channel(),
+                               #::correction::TauCorrProvider::UncSource::{source}, ::correction::UncScale::{scale}) : 1.;''')
                     if scale != central:
-                        branch_name_Loose_final = branch_Loose_name + '_rel'
+                        #branch_name_Loose_final = branch_Loose_name + '_rel'
                         branch_name_Medium_final = branch_Medium_name + '_rel'
-                        df = df.Define(branch_name_Loose_final, f"static_cast<float>({branch_Loose_name}_double/{branch_Loose_central})")
+                        #df = df.Define(branch_name_Loose_final, f"static_cast<float>({branch_Loose_name}_double/#{branch_Loose_central})")
                         df = df.Define(branch_name_Medium_final, f"static_cast<float>({branch_Medium_name}_double/{branch_Medium_central})")
                     else:
                         if source == central:
-                            branch_name_Loose_final = f"""weight_{leg_name}_TauID_SF_Loose_{central}"""
+                            #branch_name_Loose_final = f"""weight_{leg_name}_TauID_SF_Loose_{central}"""
                             branch_name_Medium_final = f"""weight_{leg_name}_TauID_SF_Medium_{central}"""
                         else:
-                            continue
+                            branch_name_Medium_final = f"""weight_{leg_name}_TauID_SF_Medium_{syst_name}_abs""" #continue
 
-                        df = df.Define(branch_name_Loose_final, f"static_cast<float>({branch_Loose_name}_double)")
+                        #df = df.Define(branch_name_Loose_final, f"static_cast<float>({branch_Loose_name}_double)")
                         df = df.Define(branch_name_Medium_final, f"static_cast<float>({branch_Medium_name}_double)")
-                    SF_branches.append(branch_name_Loose_final)
+                    #SF_branches.append(branch_name_Loose_final)
                     SF_branches.append(branch_name_Medium_final)
 
         return df,SF_branches
