@@ -256,7 +256,7 @@ class Corrections:
             df, muID_SF_branches = self.mu.getMuonIDSF(df, lepton_legs, isCentral, return_variations)
             all_weights.extend(muID_SF_branches)
             #df, highPtmuID_SF_branches = self.mu.getHighPtMuonIDSF(df, lepton_legs, isCentral, return_variations)
-            all_weights.extend(highPtmuID_SF_branches)
+            #all_weights.extend(highPtmuID_SF_branches)
         if 'ele' in self.to_apply:
             df, eleID_SF_branches = self.ele.getIDSF(df, lepton_legs, isCentral, return_variations)
             all_weights.extend(eleID_SF_branches)
