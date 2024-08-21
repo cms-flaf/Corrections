@@ -101,7 +101,6 @@ class TrigCorrProducer:
         jsonFile_e_XTrg = os.path.join(os.environ['ANALYSIS_PATH'],TrigCorrProducer.e_XTrg_jsonPath.format(period,year_xTrg_eTaufile[period]))
 
         jsonFile_MET = os.path.join(os.environ['ANALYSIS_PATH'],TrigCorrProducer.MET_jsonPath.format(period,year_METfile[period]))
-        print(jsonFile_MET)
         self.period = period
         self.year = period.split('_')[0]
         #self.trg_config = trg_config
@@ -121,7 +120,6 @@ class TrigCorrProducer:
             trigNames_mu_vec += """\", \"""".join(path for path in self.muon_trgHistNames_dict[period])
             trigNames_mu_vec += """\" } """
             #print(trigNames_mu_vec)
-            print(f"going to initialize TrigCorrProvider")
             ROOT.gInterpreter.ProcessLine(f"""::correction::TrigCorrProvider::Initialize("{jsonFile_Tau}", "{self.deepTauVersion}", {wp_map_cpp}, "{jsonFile_Mu}", "{year}", {trigNames_mu_vec},"{jsonFile_e}","{jsonFile_e_XTrg}","{jsonFile_mu_XTrg}", "{jsonFile_MET}")""")
             TrigCorrProducer.initialized = True
 

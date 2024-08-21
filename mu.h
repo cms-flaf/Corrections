@@ -62,7 +62,7 @@ public:
     {
         static const std::map<UncScale, std::string> names = {
             { UncScale::Down, "systdown" },
-            { UncScale::Central, "sf" },
+            { UncScale::Central, "nominal" },
             { UncScale::Up, "systup" },
         };
         return names.at(scale);
@@ -119,19 +119,11 @@ public:
         const UncScale muID_scale = sourceApplies(source, Muon_pfRelIso04_all, Muon_TightId, muon_p4.Pt(), Muon_tkRelIso, Muon_highPtId)
                                            ? scale : UncScale::Central;
         const std::string& scale_str = getScaleStr(muID_scale);
-        //const UncSource mu_source = muID_scale == UncScale::Central ? UncSource::Central : source ;
-        //if (source != UncSource::Central) std::cout<<getUncSourceName(mu_source) << std::endl;
         if (source == UncSource::NUM_TrackerMuons_DEN_genTracks) {
-            const std::string& reco_scale_str = scale==UncScale::Central? "nominal" : scale_str;
-            /*if (scale==UncScale::Central){
-                std::cout << "Unc source reco" << std::endl;
-                std::cout << reco_scale_str << std::endl;
-                std::cout << abs(muon_p4.Eta())<< std::endl;
-                std::cout << muon_p4.Pt()<< std::endl;
-            }*/
-            return muIDCorrections.at(getUncSourceName(source))->evaluate({abs(muon_p4.Eta()), 50., reco_scale_str}) ;
+            //const std::string& reco_scale_str = scale==UncScale::Central ? "nominal" : scale_str;
+            return (muon_p4.Pt() >= 40)? muIDCorrections.at(getUncSourceName(source))->evaluate({abs(muon_p4.Eta()), muon_p4.Pt(), scale_str}) : 1.;
         }
-        return source == UncSource::Central ? 1. : muIDCorrections.at(getUncSourceName(source))->evaluate({year, abs(muon_p4.Eta()), muon_p4.Pt(), scale_str}) ;
+        return source == UncSource::Central ? 1. : muIDCorrections.at(getUncSourceName(source))->evaluate({ abs(muon_p4.Eta()), muon_p4.Pt(), scale_str}) ;
     }
 
 private:
