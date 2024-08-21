@@ -267,7 +267,6 @@ class Corrections:
             df, bTagWP_SF_branches = self.btag.getBTagWPSF(df, isCentral and return_variations, isCentral)
             all_weights.extend(bTagWP_SF_branches)
         if 'trg' in self.to_apply:
-            print(f"adding trg")
             df, trg_SF_branches = self.trg.getSF(df, trigger_names, lepton_legs, isCentral and return_variations, isCentral)
             all_weights.extend(trg_SF_branches)
         return df, all_weights
