@@ -121,7 +121,7 @@ public:
         const std::string& scale_str = getScaleStr(muID_scale);
         if (source == UncSource::NUM_TrackerMuons_DEN_genTracks) {
             //const std::string& reco_scale_str = scale==UncScale::Central ? "nominal" : scale_str;
-            return (muon_p4.Pt() >= 40)? muIDCorrections.at(getUncSourceName(source))->evaluate({abs(muon_p4.Eta()), muon_p4.Pt(), scale_str}) : 1.;
+            return (muon_p4.Pt() >= 10 && muon_p4.Pt() < 200)? muIDCorrections.at(getUncSourceName(source))->evaluate({abs(muon_p4.Eta()), 50., scale_str}) : 1.;
         }
         return source == UncSource::Central ? 1. : muIDCorrections.at(getUncSourceName(source))->evaluate({ abs(muon_p4.Eta()), muon_p4.Pt(), scale_str}) ;
     }
@@ -243,14 +243,9 @@ public:
     float getHighPtMuonSF(const LorentzVectorM & muon_p4, const float Muon_pfRelIso04_all, const bool Muon_TightId, const float Muon_tkRelIso, const bool Muon_highPtId, UncSource source, UncScale scale) const {
         const UncScale muID_scale = sourceApplies(source, Muon_pfRelIso04_all, Muon_TightId, muon_p4.Pt(), Muon_tkRelIso, Muon_highPtId) ? scale : UncScale::Central;
         const std::string& scale_str = getScaleStr(muID_scale);
-        const auto mu_p = std::sqrt(muon_p4.Pt()*muon_p4.Pt()+muon_p4.Eta()*muon_p4.Eta()+muon_p4.Phi()*muon_p4.Phi()+muon_p4.M()*muon_p4.M());
+        const auto mu_p = std::hypot(muon_p4.Px(),muon_p4.Py(),muon_p4.Pz());
         if (source == UncSource::NUM_GlobalMuons_DEN_TrackerMuonProbes) {
-            //std::cout << mu_p <<std::endl;
-            //std::cout << abs(muon_p4.Eta()) <<std::endl;
-            //std::cout << scale_str << std::endl;
-            //const std::string& reco_scale_str = scale==UncScale::Central? "nominal" : scale_str;
-            //std::cout << reco_scale_str << std::endl;
-            return highPtmuCorrections.at(getUncSourceName(source))->evaluate({abs(muon_p4.Eta()), mu_p, scale_str}) ;
+            return (muon_p4.Pt()>=200)? highPtmuCorrections.at(getUncSourceName(source))->evaluate({abs(muon_p4.Eta()), mu_p, scale_str}) : 1. ;
         }
         return source == UncSource::Central ? 1. : highPtmuCorrections.at(getUncSourceName(source))->evaluate({abs(muon_p4.Eta()),muon_p4.Pt(), scale_str}) ;
     }
