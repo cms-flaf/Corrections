@@ -243,7 +243,7 @@ public:
     float getHighPtMuonSF(const LorentzVectorM & muon_p4, const float Muon_pfRelIso04_all, const bool Muon_TightId, const float Muon_tkRelIso, const bool Muon_highPtId, UncSource source, UncScale scale) const {
         const UncScale muID_scale = sourceApplies(source, Muon_pfRelIso04_all, Muon_TightId, muon_p4.Pt(), Muon_tkRelIso, Muon_highPtId) ? scale : UncScale::Central;
         const std::string& scale_str = getScaleStr(muID_scale);
-        const auto mu_p = std::sqrt(muon_p4.Px()*muon_p4.Px()+muon_p4.Py()*muon_p4.Py()+muon_p4.Pz()*muon_p4.Pz());
+        const auto mu_p = std::hypot(muon_p4.Px(),muon_p4.Py(),muon_p4.Pz());
         if (source == UncSource::NUM_GlobalMuons_DEN_TrackerMuonProbes) {
             return (muon_p4.Pt()>=200)? highPtmuCorrections.at(getUncSourceName(source))->evaluate({abs(muon_p4.Eta()), mu_p, scale_str}) : 1. ;
         }
