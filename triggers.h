@@ -71,7 +71,7 @@ public:
     }
     /*const std::vector<std::string>& mu_trigger,*/
     TrigCorrProvider(const std::string& tauFileName, const std::string& deepTauVersion, const wpsMapType& wps_map,
-                    const std::string& muFileName, const std::string& period, const std::vector<std::string>& hist_mu_name, const std::string& eleFileName, const std::string& eTauFileName, const std::string& muTauFileName, const std::string& metFileName) :
+                    const std::string& muFileName, const std::string& period, const std::vector<std::string>& hist_mu_name, const std::vector<std::string>& hist_eff_mu_name, const std::string& eleFileName, const std::string& eTauFileName, const std::string& muTauFileName, const std::string& metFileName) :
         tau_corrections_(CorrectionSet::from_file(tauFileName)),
         tau_trg_(tau_corrections_->at("tau_trigger")),
         deepTauVersion_(deepTauVersion),
@@ -82,16 +82,24 @@ public:
     {
         auto eTauFile = root_ext::OpenRootFile(eTauFileName);
         histo_eTau_ele_SF.reset(root_ext::ReadCloneObject<TH2>(*eTauFile, "SF2D", "SF2D", true));
+        histo_eTau_ele_data.reset(root_ext::ReadCloneObject<TH2>(*eTauFile, "eff_data", "eff_data", true));
+        histo_eTau_ele_MC.reset(root_ext::ReadCloneObject<TH2>(*eTauFile, "eff_mc", "eff_mc", true));
 
         auto muTauFile = root_ext::OpenRootFile(muTauFileName);
         histo_muTau_mu_SF.reset(root_ext::ReadCloneObject<TH2>(*muTauFile, "SF2D", "SF2D", true));
+        histo_muTau_mu_data.reset(root_ext::ReadCloneObject<TH2>(*muTauFile, "eff_data", "eff_data", true));
+        histo_muTau_mu_MC.reset(root_ext::ReadCloneObject<TH2>(*muTauFile, "eff_mc", "eff_mc", true));
 
         auto eleFile = root_ext::OpenRootFile(eleFileName);
         histo_ele_SF.reset(root_ext::ReadCloneObject<TH2>(*eleFile, "SF2D", "SF2D", true));
+        histo_ele_data.reset(root_ext::ReadCloneObject<TH2>(*eleFile, "eff_data", "eff_data", true));
+        histo_ele_MC.reset(root_ext::ReadCloneObject<TH2>(*eleFile, "eff_mc", "eff_mc", true));
 
 
         auto muFile = root_ext::OpenRootFile(muFileName);
         histo_mu_SF_24.reset(root_ext::ReadCloneObject<TH2>(*muFile, hist_mu_name[0].c_str(), hist_mu_name[0].c_str(), true));
+        histo_mu_SF_24_data.reset(root_ext::ReadCloneObject<TH2>(*muFile, hist_mu_name[0].c_str(), (hist_mu_name[0]+"_efficiencyData").c_str(), true));
+        histo_mu_SF_24_MC.reset(root_ext::ReadCloneObject<TH2>(*muFile, hist_mu_name[0].c_str(), (hist_mu_name[0]+"_efficiencyMC").c_str(), true));
         histo_mu_SF_50or24.reset(root_ext::ReadCloneObject<TH2>(*muFile, hist_mu_name[1].c_str(), hist_mu_name[1].c_str(), true));
         histo_mu_SF_50.reset(root_ext::ReadCloneObject<TH2>(*muFile, hist_mu_name[2].c_str(), hist_mu_name[2].c_str(), true));
 
@@ -101,6 +109,25 @@ public:
         funcData.reset(ReadCloneObjectTF1<TF1>(*metFile, "SigmoidFuncData", "SigmoidFuncData"));
         funcMC.reset(ReadCloneObjectTF1<TF1>(*metFile, "SigmoidFuncMC", "SigmoidFuncMC"));
 
+    }
+
+    float getTauEffData_fromCorrLib(const LorentzVectorM& Tau_p4, int Tau_decayMode, const std::string& trg_type, Channel ch, UncSource source, UncScale scale) const
+    {
+        if(isTwoProngDM(Tau_decayMode)) throw std::runtime_error("no SF for two prong tau decay modes");
+        const auto & wpVSjet = wps_map_.count(ch) ? wps_map_.at(ch).at(2).first : "Loose";
+        const UncScale tau_scale = sourceApplies_tau_fromCorrLib(source, Tau_decayMode, trg_type)
+                                        ? scale : UncScale::Central;
+        const std::string& scale_str = getTauScaleStr(tau_scale);
+        return tau_trg_->evaluate({Tau_p4.pt(), Tau_decayMode, trg_type, wpVSjet,"eff_data", scale_str});
+    }
+    float getTauEffMC_fromCorrLib(const LorentzVectorM& Tau_p4, int Tau_decayMode, const std::string& trg_type, Channel ch, UncSource source, UncScale scale) const
+    {
+        if(isTwoProngDM(Tau_decayMode)) throw std::runtime_error("no SF for two prong tau decay modes");
+        const auto & wpVSjet = wps_map_.count(ch) ? wps_map_.at(ch).at(2).first : "Loose";
+        const UncScale tau_scale = sourceApplies_tau_fromCorrLib(source, Tau_decayMode, trg_type)
+                                        ? scale : UncScale::Central;
+        const std::string& scale_str = getTauScaleStr(tau_scale);
+        return tau_trg_->evaluate({Tau_p4.pt(), Tau_decayMode, trg_type, wpVSjet,"eff_mc", scale_str});
     }
 
     float getTauSF_fromCorrLib(const LorentzVectorM& Tau_p4, int Tau_decayMode, const std::string& trg_type, Channel ch, UncSource source, UncScale scale) const
@@ -134,6 +161,7 @@ public:
         if(scale == UncScale::Central){ return metSF.getSF(vMETnoMu2.Mod());}
         return scale == UncScale::Up ? metSF.getSF(vMETnoMu2.Mod()) + metSF.getSFError(vMETnoMu2.Mod()) : metSF.getSF(vMETnoMu2.Mod()) - metSF.getSFError(vMETnoMu2.Mod()) ;
     }
+
     float getSFsFromHisto(const std::unique_ptr<TH2>& histo, const LorentzVectorM& part_p4, UncScale scale, bool wantAbsEta) const
     {
         const auto x_axis = histo->GetXaxis();
@@ -153,9 +181,56 @@ public:
 
         return histo->GetBinContent(x_bin,y_bin) + static_cast<int>(scale) * histo->GetBinError(x_bin,y_bin);
     }
+    float getEffMC_fromRootFile(const LorentzVectorM& part_p4, UncSource source, UncScale scale, bool wantAbsEta=false, bool isMuTau=false) const {
+        float sf = 1.;
+        if (source== UncSource::singleMu24){
+            const UncScale mu_scale = source== UncSource::singleMu24 ? scale : UncScale::Central;
+            sf= getSFsFromHisto(histo_mu_SF_24_MC, part_p4, mu_scale, wantAbsEta);
+        }
+        if (source== UncSource::singleEle){
+            const UncScale ele_scale = source== UncSource::singleEle ? scale : UncScale::Central;
+            sf= getSFsFromHisto(histo_ele_MC, part_p4, ele_scale, wantAbsEta);
+        }
+        if (source== UncSource::mutau_mu || source == UncSource::etau_ele){
+            UncScale xTrg_scale = UncScale::Central;
+            if(source == UncSource::mutau_mu && isMuTau) {
+                xTrg_scale = scale;
+                sf= getSFsFromHisto(histo_muTau_mu_MC, part_p4, xTrg_scale, wantAbsEta);
+            }
+            if(source == UncSource::etau_ele && !(isMuTau) ) {
+                xTrg_scale = scale;
+                sf= getSFsFromHisto(histo_eTau_ele_MC, part_p4, xTrg_scale, wantAbsEta);
+            }
+        }
+        return sf;
+    }
 
-    float getSF_fromRootFile(const LorentzVectorM& part_p4, UncSource source, UncScale scale, bool isMuTau=false) const {
-        bool wantAbsEta = isMuTau ? true : false;
+    float getEffData_fromRootFile(const LorentzVectorM& part_p4, UncSource source, UncScale scale, bool wantAbsEta=false, bool isMuTau=false) const {
+        float sf = 1.;
+        if (source== UncSource::singleMu24){
+            const UncScale mu_scale = source== UncSource::singleMu24 ? scale : UncScale::Central;
+            sf= getSFsFromHisto(histo_mu_SF_24_data, part_p4, mu_scale, wantAbsEta);
+        }
+        if (source== UncSource::singleEle){
+            const UncScale ele_scale = source== UncSource::singleEle ? scale : UncScale::Central;
+            sf= getSFsFromHisto(histo_ele_data, part_p4, ele_scale, wantAbsEta);
+        }
+        if (source== UncSource::mutau_mu || source == UncSource::etau_ele){
+            UncScale xTrg_scale = UncScale::Central;
+            if(source == UncSource::mutau_mu && isMuTau) {
+                xTrg_scale = scale;
+                sf= getSFsFromHisto(histo_muTau_mu_data, part_p4, xTrg_scale, wantAbsEta);
+            }
+            if(source == UncSource::etau_ele && !(isMuTau) ) {
+                xTrg_scale = scale;
+                sf= getSFsFromHisto(histo_eTau_ele_data, part_p4, xTrg_scale, wantAbsEta);
+            }
+        }
+        return sf;
+    }
+
+    float getSF_fromRootFile(const LorentzVectorM& part_p4, UncSource source, UncScale scale, bool wantAbsEta=false, bool isMuTau=false) const {
+        //bool wantAbsEta = isMuTau ? true : false;
         float sf = 1.;
         if (source== UncSource::singleMu24){
             const UncScale mu_scale = source== UncSource::singleMu24 ? scale : UncScale::Central;
@@ -288,9 +363,21 @@ private:
     Correction::Ref mu_trg_;
     const std::string period_;
     std::unique_ptr<TH2> histo_ele_SF;
+    std::unique_ptr<TH2> histo_ele_data;
+    std::unique_ptr<TH2> histo_ele_MC;
+
     std::unique_ptr<TH2> histo_eTau_ele_SF;
+    std::unique_ptr<TH2> histo_eTau_ele_data;
+    std::unique_ptr<TH2> histo_eTau_ele_MC;
+
     std::unique_ptr<TH2> histo_muTau_mu_SF;
+    std::unique_ptr<TH2> histo_muTau_mu_data;
+    std::unique_ptr<TH2> histo_muTau_mu_MC;
+
     std::unique_ptr<TH2> histo_mu_SF_24;
+    std::unique_ptr<TH2> histo_mu_SF_24_data;
+    std::unique_ptr<TH2> histo_mu_SF_24_MC;
+
     std::unique_ptr<TH2> histo_mu_SF_50or24;
     std::unique_ptr<TH2> histo_mu_SF_50;
 

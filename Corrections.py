@@ -211,6 +211,7 @@ class Corrections:
         generator_name = samples[sample]['generator'] if samples[sample]['sampleType'] != 'data' else ''
         genWeight_def = 'double(genWeight)'
         if generator_name in [ "madgraph", "amcatnlo" ]:
+            #print("using madgraph or amcatnlo")
             genWeight_def = 'std::copysign<double>(1., genWeight)'
         df = df.Define('genWeightD', genWeight_def)
 
