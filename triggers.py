@@ -74,6 +74,17 @@ class TrigCorrProducer:
 
     }
 
+    muon_trgHistNames_eff_dict = {
+        "2018_UL": ["NUM_IsoMu24_DEN_CutBasedIdTight_and_PFIsoTight_abseta_pt"],
+
+        "2017_UL": ["NUM_IsoMu27_DEN_CutBasedIdTight_and_PFIsoTight_abseta_pt"],
+
+        "2016preVFP_UL":["NUM_IsoMu24_or_IsoTkMu24_DEN_CutBasedIdTight_and_PFIsoTight_abseta_pt"],
+
+        "2016postVFP_UL":["NUM_IsoMu24_or_IsoTkMu24_DEN_CutBasedIdTight_and_PFIsoTight_abseta_pt"]
+
+    }
+
     muon_trgHistNames_dict = {
         "2018_UL": ["NUM_IsoMu24_DEN_CutBasedIdTight_and_PFIsoTight_eta_pt_syst","NUM_IsoMu24_or_Mu50_DEN_CutBasedIdTight_and_PFIsoTight_eta_pt_syst", "NUM_Mu50_or_OldMu100_or_TkMu100_DEN_CutBasedIdGlobalHighPt_and_TkIsoLoose_eta_pt_syst"],
 
@@ -119,8 +130,11 @@ class TrigCorrProducer:
             trigNames_mu_vec = """std::vector<std::string>{\""""
             trigNames_mu_vec += """\", \"""".join(path for path in self.muon_trgHistNames_dict[period])
             trigNames_mu_vec += """\" } """
+            effNames_mu_vec = """std::vector<std::string>{\""""
+            effNames_mu_vec += """\", \"""".join(path for path in self.muon_trgHistNames_eff_dict[period])
+            effNames_mu_vec += """\" } """
             #print(trigNames_mu_vec)
-            ROOT.gInterpreter.ProcessLine(f"""::correction::TrigCorrProvider::Initialize("{jsonFile_Tau}", "{self.deepTauVersion}", {wp_map_cpp}, "{jsonFile_Mu}", "{year}", {trigNames_mu_vec},"{jsonFile_e}","{jsonFile_e_XTrg}","{jsonFile_mu_XTrg}", "{jsonFile_MET}")""")
+            ROOT.gInterpreter.ProcessLine(f"""::correction::TrigCorrProvider::Initialize("{jsonFile_Tau}", "{self.deepTauVersion}", {wp_map_cpp}, "{jsonFile_Mu}", "{year}", {trigNames_mu_vec},{effNames_mu_vec},"{jsonFile_e}","{jsonFile_e_XTrg}","{jsonFile_mu_XTrg}", "{jsonFile_MET}")""")
             TrigCorrProducer.initialized = True
 
     def getSF(self, df, trigger_names, lepton_legs, return_variations, isCentral):
@@ -176,30 +190,30 @@ class TrigCorrProducer:
                             df = df.Define(f"{branch_name}", f"static_cast<float>({branch_name}_double)")
                         SF_branches.append(f"{branch_name}")
 
-        trg_name = 'singleMu50'
-        if trg_name in trigger_names:
-            sf_sources = TrigCorrProducer.SFSources[trg_name] if return_variations else []
-            for leg_idx, leg_name in enumerate(lepton_legs):
-                applyTrgBranch_name = f"{trg_name}_{leg_name}_ApplyTrgSF"
-                df = df.Define(applyTrgBranch_name, f"""HttCandidate.leg_type[{leg_idx}] == Leg::mu && HLT_{trg_name} && {leg_name}_HasMatching_{trg_name}""")
-                for source in [ central ] + sf_sources:
-                    for scale in getScales(source):
-                        if not isCentral and scale!= central: continue
-                        syst_name = getSystName(source, scale)
-                        suffix = syst_name
-                        if scale == central:
-                            suffix = f"{trg_name}_{syst_name}"
-                        branch_name = f"weight_{leg_name}_TrgSF_{suffix}"
-                        branch_central = f"weight_{leg_name}_TrgSF_{trg_name}_{getSystName(central,central)}"
-                        df = df.Define(f"{branch_name}_double",
-                                    f'''{applyTrgBranch_name} ? ::correction::TrigCorrProvider::getGlobal().getSF_fromRootFile(
-                                 HttCandidate.leg_p4[{leg_idx}],::correction::TrigCorrProvider::UncSource::{source}, ::correction::UncScale::{scale} ) : 1.f''')
-                        if scale != central:
-                            df = df.Define(f"{branch_name}_rel", f"static_cast<float>({branch_name}_double/{branch_central})")
-                            branch_name += '_rel'
-                        else:
-                            df = df.Define(f"{branch_name}", f"static_cast<float>({branch_name}_double)")
-                        SF_branches.append(f"{branch_name}")
+                        branch_eff_data_name = f"eff_data_{leg_name}_TrgSF_{suffix}"
+                        branch_central = f"eff_data_{leg_name}_TrgSF_{trg_name}_{getSystName(central,central)}"
+                        df = df.Define(f"{branch_eff_data_name}_double",
+                                    f'''{applyTrgBranch_name} ? ::correction::TrigCorrProvider::getGlobal().getEffData_fromRootFile(
+                                 HttCandidate.leg_p4[{leg_idx}],::correction::TrigCorrProvider::UncSource::{source}, ::correction::UncScale::{scale}, true) : 1.f''')
+                        #if scale != central:
+                        #    df = df.Define(f"{branch_eff_data_name}_rel", f"static_cast<float>({branch_eff_data_name}_double/{branch_central})")
+                        #    branch_eff_data_name += '_rel'
+                        #else:
+                        df = df.Define(f"{branch_eff_data_name}", f"static_cast<float>({branch_eff_data_name}_double)")
+                        SF_branches.append(f"{branch_eff_data_name}")
+
+                        branch_eff_MC_name = f"eff_MC_{leg_name}_TrgSF_{suffix}"
+                        branch_central = f"eff_MC_{leg_name}_TrgSF_{trg_name}_{getSystName(central,central)}"
+                        df = df.Define(f"{branch_eff_MC_name}_double",
+                                    f'''{applyTrgBranch_name} ? ::correction::TrigCorrProvider::getGlobal().getEffMC_fromRootFile(
+                                 HttCandidate.leg_p4[{leg_idx}],::correction::TrigCorrProvider::UncSource::{source}, ::correction::UncScale::{scale}, true) : 1.f''')
+                        #if scale != central:
+                        #    df = df.Define(f"{branch_eff_MC_name}_rel", f"static_cast<float>({branch_eff_MC_name}_double/{branch_central})")
+                        #    branch_eff_MC_name += '_rel'
+                        #else:
+                        df = df.Define(f"{branch_eff_MC_name}", f"static_cast<float>({branch_eff_MC_name}_double)")
+                        SF_branches.append(f"{branch_eff_MC_name}")
+
         trg_name = 'singleEle'
         if trg_name in trigger_names:
             sf_sources = TrigCorrProducer.SFSources[trg_name] if return_variations else []
@@ -225,6 +239,32 @@ class TrigCorrProducer:
                             df = df.Define(f"{branch_name}", f"static_cast<float>({branch_name}_double)")
                         SF_branches.append(f"{branch_name}")
 
+                        branch_eff_data_name = f"eff_data_{leg_name}_TrgSF_{suffix}"
+                        branch_central = f"eff_data_{leg_name}_TrgSF_{trg_name}_{getSystName(central,central)}"
+                        df = df.Define(f"{branch_eff_data_name}_double",
+                                    f'''{applyTrgBranch_name} ? ::correction::TrigCorrProvider::getGlobal().getEffData_fromRootFile(
+                                 HttCandidate.leg_p4[{leg_idx}],::correction::TrigCorrProvider::UncSource::{source}, ::correction::UncScale::{scale}) : 1.f''')
+                         #if scale != central:
+                        #    df = df.Define(f"{branch_eff_data_name}_rel", f"static_cast<float>({branch_eff_data_name}_double/{branch_central})")
+                        #    branch_eff_data_name += '_rel'
+                        #else:
+                        df = df.Define(f"{branch_eff_data_name}", f"static_cast<float>({branch_eff_data_name}_double)")
+                        SF_branches.append(f"{branch_eff_data_name}")
+
+
+                        branch_eff_MC_name = f"eff_MC_{leg_name}_TrgSF_{suffix}"
+                        branch_central = f"eff_MC_{leg_name}_TrgSF_{trg_name}_{getSystName(central,central)}"
+                        df = df.Define(f"{branch_eff_MC_name}_double",
+                                    f'''{applyTrgBranch_name} ? ::correction::TrigCorrProvider::getGlobal().getEffMC_fromRootFile(
+                                 HttCandidate.leg_p4[{leg_idx}],::correction::TrigCorrProvider::UncSource::{source}, ::correction::UncScale::{scale}) : 1.f''')
+                         #if scale != central:
+                        #    df = df.Define(f"{branch_eff_MC_name}_rel", f"static_cast<float>({branch_eff_MC_name}_double/{branch_central})")
+                        #    branch_eff_MC_name += '_rel'
+                        #else:
+                        df = df.Define(f"{branch_eff_MC_name}", f"static_cast<float>({branch_eff_MC_name}_double)")
+                        SF_branches.append(f"{branch_eff_MC_name}")
+
+
         trg_name = 'mutau'
         if trg_name in trigger_names:
             sf_sources = TrigCorrProducer.SFSources[trg_name] if return_variations else []
@@ -240,14 +280,20 @@ class TrigCorrProducer:
                             suffix = f"{trg_name}_{syst_name}"
                         branch_name = f"weight_{leg_name}_TrgSF_{suffix}"
                         branch_central = f"weight_{leg_name}_TrgSF_{trg_name}_{getSystName(central,central)}"
+                        branch_eff_data_name = f"eff_data_{leg_name}_TrgSF_{suffix}"
+                        branch_central = f"eff_data_{leg_name}_TrgSF_{trg_name}_{getSystName(central,central)}"
+                        branch_eff_MC_name = f"eff_MC_{leg_name}_TrgSF_{suffix}"
+                        branch_central = f"eff_MC_{leg_name}_TrgSF_{trg_name}_{getSystName(central,central)}"
                         if leg_idx == 0:
                             df = df.Define(f"{branch_name}_double",
                                     f'''
                                     if({applyTrgBranch_name} && HttCandidate.leg_type[{leg_idx}] == Leg::mu)
                                     {{
-                                        return ::correction::TrigCorrProvider::getGlobal().getSF_fromRootFile(HttCandidate.leg_p4[{leg_idx}], ::correction::TrigCorrProvider::UncSource::{source},::correction::UncScale::{scale}, true);
+                                        return ::correction::TrigCorrProvider::getGlobal().getSF_fromRootFile(HttCandidate.leg_p4[{leg_idx}], ::correction::TrigCorrProvider::UncSource::{source},::correction::UncScale::{scale}, true, true);
                                     }}
                                     return 1.f;''')
+                            df = df.Define(f"{branch_eff_data_name}_double", f'''if({applyTrgBranch_name} && HttCandidate.leg_type[{leg_idx}] == Leg::mu) {{::correction::TrigCorrProvider::getGlobal().getEffData_fromRootFile(HttCandidate.leg_p4[{leg_idx}],::correction::TrigCorrProvider::UncSource::{source}, ::correction::UncScale::{scale}, true, true); }} return 1.f;''')
+                            df = df.Define(f"{branch_eff_MC_name}_double", f'''if({applyTrgBranch_name} && HttCandidate.leg_type[{leg_idx}] == Leg::mu) {{::correction::TrigCorrProvider::getGlobal().getEffMC_fromRootFile(HttCandidate.leg_p4[{leg_idx}],::correction::TrigCorrProvider::UncSource::{source}, ::correction::UncScale::{scale}, true, true); }} return 1.f;''')
                         elif leg_idx ==1:
                             df = df.Define(f"{branch_name}_double",
                                 f'''
@@ -257,14 +303,33 @@ class TrigCorrProducer:
                                     HttCandidate.leg_p4[{leg_idx}], Tau_decayMode.at(HttCandidate.leg_index[{leg_idx}]), "{trg_name}", HttCandidate.channel(), ::correction::TrigCorrProvider::UncSource::{source}, ::correction::UncScale::{scale} );
                                 }}
                                 return 1.f;''')
+                            df = df.Define(f"{branch_eff_data_name}_double", f'''if({applyTrgBranch_name} && HttCandidate.leg_type[{leg_idx}] == Leg::tau)
+                                {{
+                                    return ::correction::TrigCorrProvider::getGlobal().getTauEffData_fromCorrLib(
+                                    HttCandidate.leg_p4[{leg_idx}], Tau_decayMode.at(HttCandidate.leg_index[{leg_idx}]), "{trg_name}", HttCandidate.channel(), ::correction::TrigCorrProvider::UncSource::{source}, ::correction::UncScale::{scale} );
+                                }}
+                                return 1.f;''')
+                            df = df.Define(f"{branch_eff_MC_name}_double", f''' if({applyTrgBranch_name} && HttCandidate.leg_type[{leg_idx}] == Leg::tau)
+                                {{
+                                    return ::correction::TrigCorrProvider::getGlobal().getTauEffMC_fromCorrLib(
+                                    HttCandidate.leg_p4[{leg_idx}], Tau_decayMode.at(HttCandidate.leg_index[{leg_idx}]), "{trg_name}", HttCandidate.channel(), ::correction::TrigCorrProvider::UncSource::{source}, ::correction::UncScale::{scale} );
+                                }}
+                                return 1.f; ''')
                         else:
                             print("not known leg")
+
+
                         if scale != central:
                             df = df.Define(f"{branch_name}_rel", f"static_cast<float>({branch_name}_double/{branch_central})")
                             branch_name += '_rel'
+
                         else:
                             df = df.Define(f"{branch_name}", f"static_cast<float>({branch_name}_double)")
+                        df = df.Define(f"{branch_eff_data_name}", f"static_cast<float>({branch_eff_data_name}_double)")
+                        df = df.Define(f"{branch_eff_MC_name}", f"static_cast<float>({branch_eff_MC_name}_double)")
                         SF_branches.append(f"{branch_name}")
+                        SF_branches.append(f"{branch_eff_data_name}")
+                        SF_branches.append(f"{branch_eff_MC_name}")
 
         trg_name = 'etau'
         if trg_name in trigger_names:
@@ -281,6 +346,10 @@ class TrigCorrProducer:
                             suffix = f"{trg_name}_{syst_name}"
                         branch_name = f"weight_{leg_name}_TrgSF_{suffix}"
                         branch_central = f"weight_{leg_name}_TrgSF_{trg_name}_{getSystName(central,central)}"
+                        branch_eff_data_name = f"eff_data_{leg_name}_TrgSF_{suffix}"
+                        branch_central = f"eff_data_{leg_name}_TrgSF_{trg_name}_{getSystName(central,central)}"
+                        branch_eff_MC_name = f"eff_MC_{leg_name}_TrgSF_{suffix}"
+                        branch_central = f"eff_MC_{leg_name}_TrgSF_{trg_name}_{getSystName(central,central)}"
                         if leg_idx == 0:
                             df = df.Define(f"{branch_name}_double",
                                     f'''
@@ -289,6 +358,8 @@ class TrigCorrProducer:
                                         return ::correction::TrigCorrProvider::getGlobal().getSF_fromRootFile(HttCandidate.leg_p4[{leg_idx}], ::correction::TrigCorrProvider::UncSource::{source},::correction::UncScale::{scale}, true);
                                     }}
                                     return 1.f;''')
+                            df = df.Define(f"{branch_eff_data_name}_double", f'''if({applyTrgBranch_name} && HttCandidate.leg_type[{leg_idx}] == Leg::e) {{::correction::TrigCorrProvider::getGlobal().getEffData_fromRootFile(HttCandidate.leg_p4[{leg_idx}],::correction::TrigCorrProvider::UncSource::{source}, ::correction::UncScale::{scale}, true); }} return 1.f;''')
+                            df = df.Define(f"{branch_eff_MC_name}_double", f'''if({applyTrgBranch_name} && HttCandidate.leg_type[{leg_idx}] == Leg::e) {{::correction::TrigCorrProvider::getGlobal().getEffMC_fromRootFile(HttCandidate.leg_p4[{leg_idx}],::correction::TrigCorrProvider::UncSource::{source}, ::correction::UncScale::{scale}, true); }} return 1.f;''')
                         elif leg_idx ==1:
                             df = df.Define(f"{branch_name}_double",
                                 f'''
@@ -298,14 +369,31 @@ class TrigCorrProducer:
                                     HttCandidate.leg_p4[{leg_idx}], Tau_decayMode.at(HttCandidate.leg_index[{leg_idx}]), "{trg_name}", HttCandidate.channel(), ::correction::TrigCorrProvider::UncSource::{source}, ::correction::UncScale::{scale} );
                                 }}
                                 return 1.f;''')
+                            df = df.Define(f"{branch_eff_data_name}_double", f'''if({applyTrgBranch_name} && HttCandidate.leg_type[{leg_idx}] == Leg::tau)
+                                {{
+                                    return ::correction::TrigCorrProvider::getGlobal().getTauEffData_fromCorrLib(
+                                    HttCandidate.leg_p4[{leg_idx}], Tau_decayMode.at(HttCandidate.leg_index[{leg_idx}]), "{trg_name}", HttCandidate.channel(), ::correction::TrigCorrProvider::UncSource::{source}, ::correction::UncScale::{scale} );
+                                }}
+                                return 1.f;''')
+                            df = df.Define(f"{branch_eff_MC_name}_double", f''' if({applyTrgBranch_name} && HttCandidate.leg_type[{leg_idx}] == Leg::tau)
+                                {{
+                                    return ::correction::TrigCorrProvider::getGlobal().getTauEffMC_fromCorrLib(
+                                    HttCandidate.leg_p4[{leg_idx}], Tau_decayMode.at(HttCandidate.leg_index[{leg_idx}]), "{trg_name}", HttCandidate.channel(), ::correction::TrigCorrProvider::UncSource::{source}, ::correction::UncScale::{scale} );
+                                }}
+                                return 1.f; ''')
                         else:
                             print("not known leg")
+
                         if scale != central:
                             df = df.Define(f"{branch_name}_rel", f"static_cast<float>({branch_name}_double/{branch_central})")
                             branch_name += '_rel'
                         else:
                             df = df.Define(f"{branch_name}", f"static_cast<float>({branch_name}_double)")
+                        df = df.Define(f"{branch_eff_data_name}", f"static_cast<float>({branch_eff_data_name}_double)")
+                        df = df.Define(f"{branch_eff_MC_name}", f"static_cast<float>({branch_eff_MC_name}_double)")
                         SF_branches.append(f"{branch_name}")
+                        SF_branches.append(f"{branch_eff_data_name}")
+                        SF_branches.append(f"{branch_eff_MC_name}")
         trg_name = 'MET'
         if trg_name in trigger_names:
             jsonFile_MET = os.path.join(os.environ['ANALYSIS_PATH'],TrigCorrProducer.MET_jsonPath.format(self.period,year_METfile[self.period]))
