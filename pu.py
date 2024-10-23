@@ -12,6 +12,10 @@ class puWeightProducer:
 
     uncSource = ['pu']
     golden_json_dict = {
+        "2023_Summer23BPix":"Collisions2023_369803_370790_eraD_GoldenJson",
+        "2023_Summer23":"Collisions2023_366403_369802_eraBC_GoldenJson",
+        "2022_Summer22EE":"Collisions2022_359022_362760_eraEFG_GoldenJson",
+        "2022_Summer22":"Collisions2022_355100_357900_eraBCD_GoldenJson",
         "2018_UL":"Collisions18_UltraLegacy_goldenJSON",
         "2017_UL": "Collisions17_UltraLegacy_goldenJSON",
         "2016preVFP_UL":"Collisions16_UltraLegacy_goldenJSON",
