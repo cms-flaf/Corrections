@@ -6,6 +6,10 @@ from .CorrectionsCore import *
 from RunKit.run_tools import ps_call
 
 period_names = {
+    'Run3_2023BPix': '2023_Summer23BPix',
+    'Run3_2023': '2023_Summer23',
+    'Run3_2022EE': '2022_Summer22EE',
+    'Run3_2022': '2022_Summer22',
     'Run2_2016_HIPM': '2016preVFP_UL',
     'Run2_2016': '2016postVFP_UL',
     'Run2_2017': '2017_UL',
@@ -175,7 +179,9 @@ class Corrections:
                                     return_variations=True, isCentral=True):
         lumi = global_params['luminosity']
         sampleType = samples[sample]['sampleType']
+        #print(f"sampletype: {sampleType}")
         generator = samples[sample]['generator']
+        #print(f"xsection file: {global_params['crossSectionsFile']}, sampleType: {samples[sample]['sampleType']}, xs_name: {samples[sample].items()}")
         xsFile = global_params['crossSectionsFile']
         xsFilePath = os.path.join(os.environ['ANALYSIS_PATH'], xsFile)
         with open(xsFilePath, 'r') as xs_file:
