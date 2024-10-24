@@ -145,24 +145,6 @@ namespace correction {
     class JetCorrectionProvider : public JetCorrProviderBase<JetCorrectionProvider>
     {
         public:
-        // enum class UncSource : int
-        // {
-        //     Central = -1,
-        //     JER = 0,
-        //     Total = 1,
-        //     RelativeBal = 2,
-        //     HF = 3,
-        //     BBEC1 = 4,
-        //     EC2 = 5,
-        //     Absolute = 6,
-        //     FlavorQCD = 7,
-        //     BBEC1_year = 8,
-        //     Absolute_year = 9,
-        //     EC2_year = 10,
-        //     HF_year = 11,
-        //     RelativeSample_year = 12
-        // };
-
         // json_file_name - path to json file with corrections
         // e.g. /cvmfs/cms.cern.ch/rsync/cms-nanoAOD/jsonpog-integration/POG/JME/2022_Summer2022/jet_jerc.json.gz
 
