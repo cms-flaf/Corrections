@@ -53,54 +53,90 @@ class JetCorrProducer:
     jsonPath_btag = "/cvmfs/cms.cern.ch/rsync/cms-nanoAOD/jsonpog-integration/POG/BTV/{}/btagging.json.gz"
 
     initialized = False
-    uncSources_core = ["FlavorQCD","RelativeBal", "HF", "BBEC1", "EC2", "Absolute", "BBEC1_", "Absolute_", "EC2_", "HF_", "RelativeSample_" ]
+    uncSources_core = [ "Central", 
+                        "Total", 
+                        "FlavorQCD", 
+                        "RelativeBal", 
+                        "HF", 
+                        "BBEC1", 
+                        "EC2", 
+                        "Absolute", 
+                        "BBEC1_", 
+                        "Absolute_", 
+                        "EC2_", 
+                        "HF_", 
+                        "RelativeSample_" ]
+
+    jet_jsonPath = "/cvmfs/cms.cern.ch/rsync/cms-nanoAOD/jsonpog-integration/POG/JME/{}/jet_jerc.json.gz"
+    # fatjet_jsonPath = "/cvmfs/cms.cern.ch/rsync/cms-nanoAOD/jsonpog-integration/POG/JME/{}/fatJet_jerc.json.gz"
+
+    run3_period_map = { "2022_Summer22": "Summer22_22Sep2023_V2_MC" }
 
     #Sources = []
     period = None
-    def __init__(self, period,isData):
-        JEC_SF_path_period = JetCorrProducer.JEC_SF_path.format(period)
-        JEC_dir = directories_JEC[period]
-        JEC_SF_db = "Corrections/data/JECDatabase/textFiles/"
+    def __init__(self, period, isData):
+        self.year = int(period[:4])
+        print(f"period: {period}")
+        print(f"year: {self.year}")
+        if self.year < 2022:
+            print("Initializing old JetCorrProducer")
+            JEC_SF_path_period = JetCorrProducer.JEC_SF_path.format(period)
+            JEC_dir = directories_JEC[period]
+            JEC_SF_db = "Corrections/data/JECDatabase/textFiles/"
 
-        JER_dir = directories_JER[period]
-        JER_SF_db = "Corrections/data/JRDatabase/textFiles/"
+            JER_dir = directories_JER[period]
+            JER_SF_db = "Corrections/data/JRDatabase/textFiles/"
 
-        JER_SF_txtPath_MC = f"{JER_SF_db}/{JER_dir}_MC/{JER_dir}_MC_SF_AK4PFchs.txt"
-        JER_PtRes_txtPath_MC = f"{JER_SF_db}/{JER_dir}_MC/{JER_dir}_MC_PtResolution_AK4PFchs.txt"
-        JER_PhiRes_txtPath_MC = f"{JER_SF_db}/{JER_dir}_MC/{JER_dir}_MC_PhiResolution_AK4PFchs.txt"
-        JER_EtaRes_txtPath_MC = f"{JER_SF_db}/{JER_dir}_MC/{JER_dir}_MC_EtaResolution_AK4PFchs.txt"
+            JER_SF_txtPath_MC = f"{JER_SF_db}/{JER_dir}_MC/{JER_dir}_MC_SF_AK4PFchs.txt"
+            JER_PtRes_txtPath_MC = f"{JER_SF_db}/{JER_dir}_MC/{JER_dir}_MC_PtResolution_AK4PFchs.txt"
+            JER_PhiRes_txtPath_MC = f"{JER_SF_db}/{JER_dir}_MC/{JER_dir}_MC_PhiResolution_AK4PFchs.txt"
+            JER_EtaRes_txtPath_MC = f"{JER_SF_db}/{JER_dir}_MC/{JER_dir}_MC_EtaResolution_AK4PFchs.txt"
 
-        JER_SF_txtPath_data = f"{JER_SF_db}/{JER_dir}_DATA/{JER_dir}_DATA_SF_AK4PFchs.txt"
-        JER_PtRes_txtPath_data = f"{JER_SF_db}/{JER_dir}_DATA/{JER_dir}_DATA_PtResolution_AK4PFchs.txt"
-        JER_PhiRes_txtPath_data = f"{JER_SF_db}/{JER_dir}_DATA/{JER_dir}_DATA_PhiResolution_AK4PFchs.txt"
-        JER_EtaRes_txtPath_data = f"{JER_SF_db}/{JER_dir}_DATA/{JER_dir}_DATA_EtaResolution_AK4PFchs.txt"
+            JER_SF_txtPath_data = f"{JER_SF_db}/{JER_dir}_DATA/{JER_dir}_DATA_SF_AK4PFchs.txt"
+            JER_PtRes_txtPath_data = f"{JER_SF_db}/{JER_dir}_DATA/{JER_dir}_DATA_PtResolution_AK4PFchs.txt"
+            JER_PhiRes_txtPath_data = f"{JER_SF_db}/{JER_dir}_DATA/{JER_dir}_DATA_PhiResolution_AK4PFchs.txt"
+            JER_EtaRes_txtPath_data = f"{JER_SF_db}/{JER_dir}_DATA/{JER_dir}_DATA_EtaResolution_AK4PFchs.txt"
 
-        JEC_Regouped_txtPath_MC = f"{JEC_SF_db}/{JEC_dir}/{regrouped_files_names[period]}"
+            JEC_Regouped_txtPath_MC = f"{JEC_SF_db}/{JEC_dir}/{regrouped_files_names[period]}"
 
-        JetCorrProducer.isData = isData
+            JetCorrProducer.isData = isData
 
-        ptResolution = os.path.join(os.environ['ANALYSIS_PATH'],JER_PtRes_txtPath_MC.format(period))
-        ptResolutionSF = os.path.join(os.environ['ANALYSIS_PATH'],JER_SF_txtPath_MC.format(period))
-        JEC_Regrouped = os.path.join(os.environ['ANALYSIS_PATH'], JEC_Regouped_txtPath_MC.format(period))
-        if JetCorrProducer.isData:
-            ptResolution = os.path.join(os.environ['ANALYSIS_PATH'],JER_PtRes_txtPath_data.format(period))
-            ptResolutionSF = os.path.join(os.environ['ANALYSIS_PATH'],JER_SF_txtPath_data.format(period))
-        if not JetCorrProducer.initialized:
-            ROOT.gSystem.Load("libJetMETCorrectionsModules.so")
-            ROOT.gSystem.Load("libCondFormatsJetMETObjects.so")
-            ROOT.gSystem.Load("libCommonToolsUtils.so")
-            headers_dir = os.path.dirname(os.path.abspath(__file__))
-            header_path = os.path.join(headers_dir, "jet.h")
-            JME_calc_base = os.path.join(headers_dir, "JMECalculatorBase.cc")
-            JME_calc_path = os.path.join(headers_dir, "JMESystematicsCalculators.cc")
-            ROOT.gInterpreter.Declare(f'#include "{JME_calc_base}"')
-            ROOT.gInterpreter.Declare(f'#include "{JME_calc_path}"')
-            ROOT.gInterpreter.Declare(f'#include "{header_path}"')
-            ROOT.gInterpreter.ProcessLine(f"""::correction::JetCorrProvider::Initialize("{ptResolution}", "{ptResolutionSF}","{JEC_Regrouped}", "{periods[period]}")""")
-            JetCorrProducer.period = period
-            JetCorrProducer.initialized = True
+            ptResolution = os.path.join(os.environ['ANALYSIS_PATH'],JER_PtRes_txtPath_MC.format(period))
+            ptResolutionSF = os.path.join(os.environ['ANALYSIS_PATH'],JER_SF_txtPath_MC.format(period))
+            JEC_Regrouped = os.path.join(os.environ['ANALYSIS_PATH'], JEC_Regouped_txtPath_MC.format(period))
+            if JetCorrProducer.isData:
+                ptResolution = os.path.join(os.environ['ANALYSIS_PATH'],JER_PtRes_txtPath_data.format(period))
+                ptResolutionSF = os.path.join(os.environ['ANALYSIS_PATH'],JER_SF_txtPath_data.format(period))
+            if not JetCorrProducer.initialized:
+                ROOT.gSystem.Load("libJetMETCorrectionsModules.so")
+                ROOT.gSystem.Load("libCondFormatsJetMETObjects.so")
+                ROOT.gSystem.Load("libCommonToolsUtils.so")
+                headers_dir = os.path.dirname(os.path.abspath(__file__))
+                header_path = os.path.join(headers_dir, "jet.h")
+                JME_calc_base = os.path.join(headers_dir, "JMECalculatorBase.cc")
+                JME_calc_path = os.path.join(headers_dir, "JMESystematicsCalculators.cc")
+                ROOT.gInterpreter.Declare(f'#include "{JME_calc_base}"')
+                ROOT.gInterpreter.Declare(f'#include "{JME_calc_path}"')
+                ROOT.gInterpreter.Declare(f'#include "{header_path}"')
+                ROOT.gInterpreter.ProcessLine(f"""::correction::JetCorrProvider::Initialize("{ptResolution}", "{ptResolutionSF}","{JEC_Regrouped}", "{periods[period]}")""")
+                JetCorrProducer.period = period
+                JetCorrProducer.initialized = True
+        else:
+            print("Initializing new JetCorrProducer")
+            path = JetCorrProducer.jet_jsonPath.format(period)
+            jet_jsonFile = os.path.join(os.environ['ANALYSIS_PATH'], path)
+            run3_period_map = JetCorrProducer.run3_period_map
+            year = period.split('_')[0]
+            algo = "AK4PFPuppi"
+            if not JetCorrProducer.initialized:
+                headers_dir = os.path.dirname(os.path.abspath(__file__))
+                header_path = os.path.join(headers_dir, "jet.h")
+                ROOT.gInterpreter.Declare(f'#include "{header_path}"')
+                ROOT.gInterpreter.ProcessLine(f'::correction::JetCorrectionProvider::Initialize("{jet_jsonFile}", "{run3_period_map[period]}", "{algo}", "{year}")')
+                JetCorrProducer.initialized = True
 
-    def getP4Variations(self, df, source_dict, apply_JER=True, apply_JES=True):
+
+    def getP4Variations_run2(self, df, source_dict, apply_JER, apply_JES):
         df = df.Define(f'Jet_p4_shifted_map', f'''::correction::JetCorrProvider::getGlobal().getShiftedP4(
                                 Jet_pt, Jet_eta, Jet_phi, Jet_mass, Jet_rawFactor, Jet_area,
                                 Jet_jetId, Rho_fixedGridRhoFastjetAll, Jet_partonFlavour, 0, GenJet_pt, GenJet_eta,
@@ -109,7 +145,7 @@ class JetCorrProducer:
         if apply_JER:
             apply_jer_list.append("JER")
         apply_jes_list = JetCorrProducer.uncSources_core if apply_JES else []
-        for source in [ central] + apply_jes_list + apply_jer_list:
+        for source in [ central ] + apply_jes_list + apply_jer_list:
             source_eff = source
             if source in apply_jes_list: # source!=central and source != "JER":
                 source_eff= "JES_" + source_eff
@@ -122,6 +158,32 @@ class JetCorrProducer:
                 df = df.Define(f'Jet_p4_{syst_name}', f'''Jet_p4_shifted_map.at({{::correction::JetCorrProvider::UncSource::{source}, ::correction::UncScale::{scale}}})''')
                 df = df.Define(f'Jet_p4_{syst_name}_delta', f'Jet_p4_{syst_name} - Jet_p4_{nano}')
         return df,source_dict
+
+
+    def getP4Variations_run3(self, df, source_dict, apply_JER, apply_JES):
+        df = df.Define("Jet_p4_shifted_map", "::correction::JetCorrectionProvider::getGlobal().getShiftedP4(Jet_pt, Jet_eta, Jet_phi, Jet_mass)")
+
+        for source in JetCorrProducer.uncSources_core:
+            if source not in ["Central", "Total"]:
+                continue
+
+            updateSourceDict(source_dict, source, 'Jet')
+            for scale in getScales(source):
+                syst_name = getSystName(source, scale)
+
+                df = df.Define(f"Jet_p4_{syst_name}", f"Jet_p4_shifted_map.at({{::correction::JetCorrectionProvider::UncSource::{source}, ::correction::UncScale::{scale}}})")
+                df = df.Define(f"Jet_p4_{syst_name}_delta", f"Jet_p4_{syst_name} - Jet_p4_{nano}")
+
+        return df, source_dict
+
+
+    def getP4Variations(self, df, source_dict, apply_JER=True, apply_JES=True):
+        if self.year < 2022:
+            return self.getP4Variations_run2(df, source_dict, apply_JER, apply_JES)
+        else:
+            # for now only applying JES
+            # JER will be implemented later
+            return self.getP4Variations_run3(df, source_dict, False, apply_JES)
 
 
     def getEnergyResolution(self, df):
