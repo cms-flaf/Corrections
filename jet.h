@@ -30,7 +30,7 @@ namespace correction {
         };
     };
 
-    class JetCorrProvider : public CorrectionsBase<JetCorrProvider> {
+    class JetCorrProvider : public JetCorrProviderBase<JetCorrProvider> {
     public:
         static const std::string getFullNameUnc(const std::string source_name, const std::string year, bool need_year){
             return need_year ? source_name+year : source_name;
