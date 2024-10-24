@@ -5,14 +5,9 @@
 #include "JMESystematicsCalculators.h"
 
 namespace correction {
-
-    // base class for jet corrections
-    template <typename CorrClass>
-    class JetCorrProviderBase : public CorrectionsBase<CorrClass>
-    {
-        public:
-        enum class UncSource : int
-        {
+    class JetCorrProvider : public CorrectionsBase<JetCorrProvider> {
+    public:
+        enum class UncSource : int {
             Central = -1,
             JER = 0,
             Total = 1,
@@ -28,10 +23,7 @@ namespace correction {
             HF_year = 11,
             RelativeSample_year = 12
         };
-    };
 
-    class JetCorrProvider : public JetCorrProviderBase<JetCorrProvider> {
-    public:
         static const std::string getFullNameUnc(const std::string source_name, const std::string year, bool need_year){
             return need_year ? source_name+year : source_name;
         }
@@ -124,9 +116,27 @@ namespace correction {
 
     // run3 code starts here
     // main difference: all corrections are retrieved from json file using correctionlib
-    class JetCorrectionProvider : public JetCorrProviderBase<JetCorrectionProvider>
+    class JetCorrectionProvider : public CorrectionsBase<JetCorrectionProvider>
     {
         public:
+        enum class UncSource : int
+        {
+            Central = -1,
+            JER = 0,
+            Total = 1,
+            RelativeBal = 2,
+            HF = 3,
+            BBEC1 = 4,
+            EC2 = 5,
+            Absolute = 6,
+            FlavorQCD = 7,
+            BBEC1_year = 8,
+            Absolute_year = 9,
+            EC2_year = 10,
+            HF_year = 11,
+            RelativeSample_year = 12
+        };
+
         // json_file_name - path to json file with corrections
         // e.g. /cvmfs/cms.cern.ch/rsync/cms-nanoAOD/jsonpog-integration/POG/JME/2022_Summer2022/jet_jerc.json.gz
 
