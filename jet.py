@@ -53,18 +53,18 @@ class JetCorrProducer:
     jsonPath_btag = "/cvmfs/cms.cern.ch/rsync/cms-nanoAOD/jsonpog-integration/POG/BTV/{}/btagging.json.gz"
 
     initialized = False
-    uncSources_core = [ "Central", 
-                        "Total", 
-                        "FlavorQCD", 
-                        "RelativeBal", 
-                        "HF", 
-                        "BBEC1", 
-                        "EC2", 
-                        "Absolute", 
-                        "BBEC1_", 
-                        "Absolute_", 
-                        "EC2_", 
-                        "HF_", 
+    uncSources_core = [ "Central",
+                        "Total",
+                        "FlavorQCD",
+                        "RelativeBal",
+                        "HF",
+                        "BBEC1",
+                        "EC2",
+                        "Absolute",
+                        "BBEC1_",
+                        "Absolute_",
+                        "EC2_",
+                        "HF_",
                         "RelativeSample_" ]
 
     jet_jsonPath = "/cvmfs/cms.cern.ch/rsync/cms-nanoAOD/jsonpog-integration/POG/JME/{}/jet_jerc.json.gz"
@@ -187,6 +187,5 @@ class JetCorrProducer:
 
 
     def getEnergyResolution(self, df):
-        df= df.Define(f"Jet_ptRes", f""" ::correction::JetCorrProvider::getGlobal().getResolution(
-            Jet_pt, Jet_eta, Rho_fixedGridRhoFastjetAll ) """)
+        df= df.Define(f"Jet_ptRes", f""" ::correction::JetCorrProvider::getGlobal().getResolution(Jet_pt, Jet_eta, Rho_fixedGridRhoFastjetAll ) """)
         return df
