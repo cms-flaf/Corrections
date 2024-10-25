@@ -5,13 +5,6 @@ import itertools
 from .CorrectionsCore import *
 from RunKit.run_tools import ps_call
 
-period_names = {
-    'Run2_2016_HIPM': '2016preVFP_UL',
-    'Run2_2016': '2016postVFP_UL',
-    'Run2_2017': '2017_UL',
-    'Run2_2018': '2018_UL',
-}
-
 def findRefSample(config, sample_type):
     refSample = []
     for sample, sampleDef in config.items():
@@ -52,7 +45,6 @@ class Corrections:
                     lib_name = param[2:].strip()
             corr_lib = f"{lib_path}/lib{lib_name}.so"
             if not os.path.exists(corr_lib):
-                print(f'correction config output: {output}')
                 raise RuntimeError("Correction library is not found.")
             ROOT.gSystem.Load(corr_lib)
 
@@ -125,7 +117,8 @@ class Corrections:
     def mu(self):
         if self.mu_ is None:
             from .mu import MuCorrProducer
-            self.mu_ = MuCorrProducer(period_names[self.period])
+            # self.mu_ = MuCorrProducer(period_names[self.period])
+            self.mu_ = MuCorrProducer(self.period)
         return self.mu_
 
     @property
@@ -188,8 +181,6 @@ class Corrections:
         if sampleType in [ 'DY', 'W' ] and global_params.get('use_stitching', True):
             xs_stitching_name = samples[sample]['crossSectionStitch']
             inclusive_sample_name = findRefSample(samples, sampleType)
-            #print(inclusive_sample_name)
-            #print(sample)
             xs_name = samples[inclusive_sample_name]['crossSection']
             xs_stitching = xs_dict[xs_stitching_name]['crossSec']
             xs_stitching_incl = xs_dict[samples[inclusive_sample_name]['crossSectionStitch']]['crossSec']
