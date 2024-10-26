@@ -118,7 +118,6 @@ class MuCorrProducer:
             MuCorrProducer.initialized = True
 
     def getMuonIDSF(self, df, lepton_legs, isCentral, return_variations):
-        hh_bbww = True
         SF_branches = []
         #sf_sources = MuCorrProducer.muID_SF_Sources + MuCorrProducer.muReco_SF_sources + MuCorrProducer.muIso_SF_Sources
         sf_sources = MuCorrProducer.muID_SF_Sources[MuCorrProducer.period] + MuCorrProducer.muReco_SF_sources[MuCorrProducer.period] + MuCorrProducer.muIso_SF_Sources[MuCorrProducer.period]
@@ -133,15 +132,10 @@ class MuCorrProducer:
                     branch_name = f"weight_{leg_name}_MuonID_SF_{syst_name}"
                     branch_central = f"""weight_{leg_name}_MuonID_SF_{source_name+central}"""
                     if source in MuCorrProducer.muReco_SF_sources:
-                        if hh_bbww:
-                            df = df.Define(f"{branch_name}_double",f'''HwwCandidate.leg_type[{leg_idx}] == Leg::mu && HwwCandidate.leg_p4[{leg_idx}].pt() >= 10 && HwwCandidate.leg_p4[{leg_idx}].pt() <= 200 ? ::correction::MuCorrProvider::getGlobal().getMuonSF( HwwCandidate.leg_p4[{leg_idx}], Muon_pfRelIso04_all.at(HwwCandidate.leg_index[{leg_idx}]), Muon_tightId.at(HwwCandidate.leg_index[{leg_idx}]),Muon_tkRelIso.at(HwwCandidate.leg_index[{leg_idx}]),Muon_highPtId.at(HwwCandidate.leg_index[{leg_idx}]),::correction::MuCorrProvider::UncSource::{source}, ::correction::UncScale::{scale}, "{MuCorrProducer.period}") : 1.''')
-                        else:
-                            df = df.Define(f"{branch_name}_double",f'''HttCandidate.leg_type[{leg_idx}] == Leg::mu && HttCandidate.leg_p4[{leg_idx}].pt() >= 10 && HttCandidate.leg_p4[{leg_idx}].pt() <= 200 ? ::correction::MuCorrProvider::getGlobal().getMuonSF( HttCandidate.leg_p4[{leg_idx}], Muon_pfRelIso04_all.at(HttCandidate.leg_index[{leg_idx}]), Muon_tightId.at(HttCandidate.leg_index[{leg_idx}]),Muon_tkRelIso.at(HttCandidate.leg_index[{leg_idx}]),Muon_highPtId.at(HttCandidate.leg_index[{leg_idx}]),::correction::MuCorrProvider::UncSource::{source}, ::correction::UncScale::{scale}, "{MuCorrProducer.period}") : 1.''')
+                        df = df.Define(f"{branch_name}_double",f'''{leg_name}_type == static_cast<int>(Leg::mu) && {leg_name}_pt >= 10 && {leg_name}_pt <= 200 && {leg_name}_index >= 0 ? ::correction::MuCorrProvider::getGlobal().getMuonSF({leg_name}_p4, Muon_pfRelIso04_all.at({leg_name}_index), Muon_tightId.at({leg_name}_index),Muon_tkRelIso.at({leg_name}_index),Muon_highPtId.at({leg_name}_index),::correction::MuCorrProvider::UncSource::{source}, ::correction::UncScale::{scale}, "{MuCorrProducer.period}") : 1.''')
                     else:
-                        if hh_bbww:
-                            df = df.Define(f"{branch_name}_double", f'''{leg_name}_type == static_cast<int>(Leg::mu) && {leg_name}_pt >= 15 && {leg_name}_index >= 0 ? ::correction::MuCorrProvider::getGlobal().getMuonSF({leg_name}_p4, Muon_pfRelIso04_all.at({leg_name}_index), Muon_tightId.at({leg_name}_index),Muon_tkRelIso.at({leg_name}_index),Muon_highPtId.at({leg_name}_index),::correction::MuCorrProvider::UncSource::{source}, ::correction::UncScale::{scale}, "{MuCorrProducer.period}") : 1.''')
-                        else:
-                            df = df.Define(f"{branch_name}_double", f'''HttCandidate.leg_type[{leg_idx}] == Leg::mu && HttCandidate.leg_p4[{leg_idx}].pt() >= 15 ? ::correction::MuCorrProvider::getGlobal().getMuonSF(HttCandidate.leg_p4[{leg_idx}], Muon_pfRelIso04_all.at(HttCandidate.leg_index[{leg_idx}]), Muon_tightId.at(HttCandidate.leg_index[{leg_idx}]),Muon_tkRelIso.at(HttCandidate.leg_index[{leg_idx}]),Muon_highPtId.at(HttCandidate.leg_index[{leg_idx}]),::correction::MuCorrProvider::UncSource::{source}, ::correction::UncScale::{scale}, "{MuCorrProducer.period}") : 1.''')
+                        df = df.Define(f"{branch_name}_double",f'''{leg_name}_type == static_cast<int>(Leg::mu) && {leg_name}_pt >= 15 && {leg_name}_index >= 0 ? ::correction::MuCorrProvider::getGlobal().getMuonSF({leg_name}_p4, Muon_pfRelIso04_all.at({leg_name}_index), Muon_tightId.at({leg_name}_index),Muon_tkRelIso.at({leg_name}_index),Muon_highPtId.at({leg_name}_index),::correction::MuCorrProvider::UncSource::{source}, ::correction::UncScale::{scale}, "{MuCorrProducer.period}") : 1.''')
+
                     #print(f"{branch_name}_double")
                     #if scale==central:
                     #    df.Filter(f"{branch_name}_double!=1.").Display({f"{branch_name}_double"}).Print()
@@ -160,7 +154,6 @@ class MuCorrProducer:
 ########################################################################################################
     #### NO MORE NEEDED (but keeping just in case :D ) ####
     def getHighPtMuonIDSF(self, df, lepton_legs, isCentral, return_variations):
-        hh_bbww = True
         highPtMuSF_branches = []
         sf_sources =  MuCorrProducer.highPtmuReco_SF_sources + MuCorrProducer.highPtmuID_SF_Sources + MuCorrProducer.highPtmuIso_SF_Sources
         sf_scales = [up, down] if return_variations else []
@@ -172,12 +165,8 @@ class MuCorrProducer:
                 syst_name = source_name+scale if source != central else 'Central'
                 for leg_idx, leg_name in enumerate(lepton_legs):
                     branch_name = f"weight_{leg_name}_HighPt_MuonID_SF_{syst_name}"
-                    #print(branch_name)
                     branch_central = f"""weight_{leg_name}_HighPt_MuonID_SF_{source_name+central}"""
-                    if hh_bbww:
-                        df = df.Define(f"{branch_name}_double",f'''{leg_name}_type == static_cast<int>(Leg::mu) && {leg_name}_pt >= 200 && {leg_name}_index >= 0 ? ::correction::HighPtMuCorrProvider::getGlobal().getHighPtMuonSF({leg_name}_p4, Muon_pfRelIso04_all.at({leg_name}_index), Muon_tightId.at({leg_name}_index), Muon_highPtId.at({leg_name}_index), Muon_tkRelIso.at({leg_name}_index),::correction::HighPtMuCorrProvider::UncSource::{source}, ::correction::UncScale::{scale}) : 1.''')
-                    else:
-                        df = df.Define(f"{branch_name}_double",f'''HttCandidate.leg_type[{leg_idx}] == Leg::mu && HttCandidate.leg_p4[{leg_idx}].pt() >= 120 ? ::correction::HighPtMuCorrProvider::getGlobal().getHighPtMuonSF( HttCandidate.leg_p4[{leg_idx}], Muon_pfRelIso04_all.at(HttCandidate.leg_index[{leg_idx}]), Muon_tightId.at(HttCandidate.leg_index[{leg_idx}]), Muon_highPtId.at(HttCandidate.leg_index[{leg_idx}]), Muon_tkRelIso.at(HttCandidate.leg_index[{leg_idx}]),::correction::HighPtMuCorrProvider::UncSource::{source}, ::correction::UncScale::{scale}) : 1.''')
+                    df = df.Define(f"{branch_name}_double",f'''{leg_name}_type == static_cast<int>(Leg::mu) && {leg_name}_pt >= 200 && {leg_name}_index >= 0 ? ::correction::HighPtMuCorrProvider::getGlobal().getHighPtMuonSF({leg_name}_p4, Muon_pfRelIso04_all.at({leg_name}_index), Muon_tightId.at({leg_name}_index), Muon_highPtId.at({leg_name}_index), Muon_tkRelIso.at({leg_name}_index),::correction::HighPtMuCorrProvider::UncSource::{source}, ::correction::UncScale::{scale}) : 1.''')
 
                     #df.Display({f"""{branch_name}_double"""}).Print()
                     #if source in MuCorrProducer.muReco_SF_sources:
