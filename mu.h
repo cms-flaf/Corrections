@@ -41,6 +41,8 @@ public:
         NUM_IsoMu27_DEN_CutBasedIdTight_and_PFIsoTight = 29,
         NUM_IsoMu24_or_IsoTkMu24_DEN_CutBasedIdTight_and_PFIsoTight = 30,
 
+        NUM_LoosePFIso_DEN_TightID = 31,
+
     };
     static const std::map<WorkingPointsMuonID, std::string>& getWPID()
     {
@@ -85,6 +87,7 @@ public:
         // ISO
         if(source == UncSource::NUM_TightRelIso_DEN_TightIDandIPCut && tightID_condition ) return true;
         if(source == UncSource::NUM_TightRelTkIso_DEN_TrkHighPtIDandIPCut && highPtID_condition ) return true;
+        if(source == UncSource::NUM_LoosePFIso_DEN_TightID && tightID_condition ) return true;
 
         // TRG
         if(source == UncSource::NUM_IsoMu24_DEN_CutBasedIdTight_and_PFIsoTight&& muon_Pt > 26) return true;
@@ -93,25 +96,44 @@ public:
         return false;
     }
 
-    MuCorrProvider(const std::string& fileName, const int& year) :
+    MuCorrProvider(const std::string& fileName, const std::string& era) :
     corrections_(CorrectionSet::from_file(fileName))
     {
-        muIDCorrections["NUM_TrackerMuons_DEN_genTracks"]=corrections_->at("NUM_TrackerMuons_DEN_genTracks");
-        muIDCorrections["NUM_TightID_DEN_TrackerMuons"]=corrections_->at("NUM_TightID_DEN_TrackerMuons");
-        muIDCorrections["NUM_TightID_DEN_genTracks"]=corrections_->at("NUM_TightID_DEN_genTracks");
-        muIDCorrections["NUM_HighPtID_DEN_TrackerMuons"]=corrections_->at("NUM_HighPtID_DEN_TrackerMuons");
-        muIDCorrections["NUM_HighPtID_DEN_genTracks"]=corrections_->at("NUM_HighPtID_DEN_genTracks");
-        muIDCorrections["NUM_TightRelIso_DEN_TightIDandIPCut"]=corrections_->at("NUM_TightRelIso_DEN_TightIDandIPCut");
-        muIDCorrections["NUM_TightRelTkIso_DEN_TrkHighPtIDandIPCut"]=corrections_->at("NUM_TightRelTkIso_DEN_TrkHighPtIDandIPCut");
+        /*
+        Eventually we want to switch this interface with a map and a loop
+        map < era -> set<string>
+        dict = {
+            era: [list of silly names]
+        }
 
-        if (year==2018){
+        for sillyname in dict[era]:
+            muIDCorr[sillyname] = corrections_->at[sillyname]
+        */
+
+
+        if (era == "Run2_2016" || era == "Run2_2016_HIPM" || era == "Run2_2017" || era == "Run2_2018"){
+            muIDCorrections["NUM_TrackerMuons_DEN_genTracks"]=corrections_->at("NUM_TrackerMuons_DEN_genTracks");
+            muIDCorrections["NUM_TightID_DEN_TrackerMuons"]=corrections_->at("NUM_TightID_DEN_TrackerMuons");
+            muIDCorrections["NUM_TightID_DEN_genTracks"]=corrections_->at("NUM_TightID_DEN_genTracks");
+            muIDCorrections["NUM_HighPtID_DEN_TrackerMuons"]=corrections_->at("NUM_HighPtID_DEN_TrackerMuons");
+            muIDCorrections["NUM_HighPtID_DEN_genTracks"]=corrections_->at("NUM_HighPtID_DEN_genTracks");
+            muIDCorrections["NUM_TightRelIso_DEN_TightIDandIPCut"]=corrections_->at("NUM_TightRelIso_DEN_TightIDandIPCut");
+            muIDCorrections["NUM_TightRelTkIso_DEN_TrkHighPtIDandIPCut"]=corrections_->at("NUM_TightRelTkIso_DEN_TrkHighPtIDandIPCut");
+        }
+        if (era=="Run2_2018"){
+
             muIDCorrections["NUM_IsoMu24_DEN_CutBasedIdTight_and_PFIsoTight"] = corrections_->at("NUM_IsoMu24_DEN_CutBasedIdTight_and_PFIsoTight");
         }
-        if(year==2017){
+        if(era=="Run2_2017"){
             muIDCorrections["NUM_IsoMu27_DEN_CutBasedIdTight_and_PFIsoTight"] = corrections_->at("NUM_IsoMu27_DEN_CutBasedIdTight_and_PFIsoTight");
         }
-        if (year == 2016 ){
+        if ((era == "Run2_2016_HIPM") || (era == "Run2_2016")){
             muIDCorrections["NUM_IsoMu24_or_IsoTkMu24_DEN_CutBasedIdTight_and_PFIsoTight"] = corrections_->at("NUM_IsoMu24_or_IsoTkMu24_DEN_CutBasedIdTight_and_PFIsoTight");
+        }
+        if (era == "Run3_2022"){
+            muIDCorrections["NUM_TightID_DEN_TrackerMuons"]=corrections_->at("NUM_TightID_DEN_TrackerMuons");
+            muIDCorrections["NUM_LoosePFIso_DEN_TightID"]=corrections_->at("NUM_LoosePFIso_DEN_TightID");
+            muIDCorrections["NUM_IsoMu24_DEN_CutBasedIdTight_and_PFIsoTight"]=corrections_->at("NUM_IsoMu24_DEN_CutBasedIdTight_and_PFIsoTight");
         }
     }
 
@@ -172,6 +194,7 @@ private:
         if (source == UncSource::NUM_TrackerMuons_DEN_genTracks) k = "NUM_TrackerMuons_DEN_genTracks";
         if (source == UncSource::NUM_TrkHighPtID_DEN_genTracks) k = "NUM_TrkHighPtID_DEN_genTracks";
         if (source == UncSource::NUM_TrkHighPtID_DEN_TrackerMuons) k = "NUM_TrkHighPtID_DEN_TrackerMuons";
+        if (source == UncSource::NUM_LoosePFIso_DEN_TightID) k = "NUM_LoosePFIso_DEN_TightID";
         return k;
     }
 private:
