@@ -162,44 +162,50 @@ public:
         return scale == UncScale::Up ? metSF.getSF(vMETnoMu2.Mod()) + metSF.getSFError(vMETnoMu2.Mod()) : metSF.getSF(vMETnoMu2.Mod()) - metSF.getSFError(vMETnoMu2.Mod()) ;
     }
 
-    float getSFsFromHisto(const std::unique_ptr<TH2>& histo, const LorentzVectorM& part_p4, UncScale scale, bool wantAbsEta) const
+    float getSFsFromHisto(const std::unique_ptr<TH2>& histo, const LorentzVectorM& part_p4, UncScale scale, bool inverted_bins, bool wantAbsEta) const
     {
         const auto x_axis = histo->GetXaxis();
         const auto eta = wantAbsEta ? std::abs(part_p4.Eta()) : part_p4.Eta();
-        int x_bin = x_axis->FindFixBin(eta);
+        int x_bin = x_axis->FindFixBin(part_p4.Pt());
+        if(inverted_bins){
+            x_bin =  x_axis->FindFixBin(eta);
+        }
         if(x_bin < 1)
             x_bin =1;
         if( x_bin > x_axis->GetNbins() )
             x_bin = x_axis->GetNbins();
         const auto y_axis = histo->GetYaxis();
 
-        int y_bin = y_axis->FindFixBin(part_p4.Pt());
+        int y_bin = y_axis->FindFixBin(eta);
+        if(inverted_bins){
+            y_bin = y_axis->FindFixBin(part_p4.Pt());
+        }
         if(y_bin < 1)
             y_bin =1;
         if( y_bin > y_axis->GetNbins() )
             y_bin = y_axis->GetNbins();
-
+        // std::cout << "x, y = " << x_bin << "," << y_bin << " bin content " << histo->GetBinContent(x_bin,y_bin) << " scale " << static_cast<int>(scale) << " bin error " << histo->GetBinError(x_bin,y_bin) << std::endl;
         return histo->GetBinContent(x_bin,y_bin) + static_cast<int>(scale) * histo->GetBinError(x_bin,y_bin);
     }
     float getEffMC_fromRootFile(const LorentzVectorM& part_p4, UncSource source, UncScale scale, bool wantAbsEta=false, bool isMuTau=false) const {
         float sf = 1.;
         if (source== UncSource::singleMu24){
             const UncScale mu_scale = source== UncSource::singleMu24 ? scale : UncScale::Central;
-            sf= getSFsFromHisto(histo_mu_SF_24_MC, part_p4, mu_scale, wantAbsEta);
+            sf= getSFsFromHisto(histo_mu_SF_24_MC, part_p4, mu_scale, false, wantAbsEta);
         }
         if (source== UncSource::singleEle){
             const UncScale ele_scale = source== UncSource::singleEle ? scale : UncScale::Central;
-            sf= getSFsFromHisto(histo_ele_MC, part_p4, ele_scale, wantAbsEta);
+            sf= getSFsFromHisto(histo_ele_MC, part_p4, ele_scale,  false, wantAbsEta);
         }
         if (source== UncSource::mutau_mu || source == UncSource::etau_ele){
             UncScale xTrg_scale = UncScale::Central;
             if(source == UncSource::mutau_mu && isMuTau) {
                 xTrg_scale = scale;
-                sf= getSFsFromHisto(histo_muTau_mu_MC, part_p4, xTrg_scale, wantAbsEta);
+                sf= getSFsFromHisto(histo_muTau_mu_MC, part_p4, xTrg_scale,  false,wantAbsEta);
             }
             if(source == UncSource::etau_ele && !(isMuTau) ) {
                 xTrg_scale = scale;
-                sf= getSFsFromHisto(histo_eTau_ele_MC, part_p4, xTrg_scale, wantAbsEta);
+                sf= getSFsFromHisto(histo_eTau_ele_MC, part_p4, xTrg_scale,  false,wantAbsEta);
             }
         }
         return sf;
@@ -209,21 +215,21 @@ public:
         float sf = 1.;
         if (source== UncSource::singleMu24){
             const UncScale mu_scale = source== UncSource::singleMu24 ? scale : UncScale::Central;
-            sf= getSFsFromHisto(histo_mu_SF_24_data, part_p4, mu_scale, wantAbsEta);
+            sf= getSFsFromHisto(histo_mu_SF_24_data, part_p4, mu_scale,  false,wantAbsEta);
         }
         if (source== UncSource::singleEle){
             const UncScale ele_scale = source== UncSource::singleEle ? scale : UncScale::Central;
-            sf= getSFsFromHisto(histo_ele_data, part_p4, ele_scale, wantAbsEta);
+            sf= getSFsFromHisto(histo_ele_data, part_p4, ele_scale,  false,wantAbsEta);
         }
         if (source== UncSource::mutau_mu || source == UncSource::etau_ele){
             UncScale xTrg_scale = UncScale::Central;
             if(source == UncSource::mutau_mu && isMuTau) {
                 xTrg_scale = scale;
-                sf= getSFsFromHisto(histo_muTau_mu_data, part_p4, xTrg_scale, wantAbsEta);
+                sf= getSFsFromHisto(histo_muTau_mu_data, part_p4, xTrg_scale,  false,wantAbsEta);
             }
             if(source == UncSource::etau_ele && !(isMuTau) ) {
                 xTrg_scale = scale;
-                sf= getSFsFromHisto(histo_eTau_ele_data, part_p4, xTrg_scale, wantAbsEta);
+                sf= getSFsFromHisto(histo_eTau_ele_data, part_p4, xTrg_scale,  false,wantAbsEta);
             }
         }
         return sf;
@@ -234,30 +240,31 @@ public:
         float sf = 1.;
         if (source== UncSource::singleMu24){
             const UncScale mu_scale = source== UncSource::singleMu24 ? scale : UncScale::Central;
-            sf= getSFsFromHisto(histo_mu_SF_24, part_p4, mu_scale, wantAbsEta);
+            sf= getSFsFromHisto(histo_mu_SF_24, part_p4, mu_scale, false, wantAbsEta);
         }
         if (source== UncSource::singleMu50or24){
             const UncScale mu_scale = source== UncSource::singleMu50or24 ? scale : UncScale::Central;
-            sf= getSFsFromHisto(histo_mu_SF_50or24, part_p4, mu_scale, wantAbsEta);
+            sf= getSFsFromHisto(histo_mu_SF_50or24, part_p4, mu_scale, false, wantAbsEta);
         }
 
         if (source== UncSource::singleMu50){
             const UncScale mu_scale = source== UncSource::singleMu50 ? scale : UncScale::Central;
-            sf= getSFsFromHisto(histo_mu_SF_50, part_p4, mu_scale, wantAbsEta);
+            sf= getSFsFromHisto(histo_mu_SF_50, part_p4, mu_scale, false, wantAbsEta);
         }
         if (source== UncSource::singleEle){
             const UncScale ele_scale = source== UncSource::singleEle ? scale : UncScale::Central;
-            sf= getSFsFromHisto(histo_ele_SF, part_p4, ele_scale, wantAbsEta);
+            sf= getSFsFromHisto(histo_ele_SF, part_p4, ele_scale, false, wantAbsEta);
+            // std::cout << sf << std::endl;
         }
         if (source== UncSource::mutau_mu || source == UncSource::etau_ele){
             UncScale xTrg_scale = UncScale::Central;
             if(source == UncSource::mutau_mu && isMuTau) {
                 xTrg_scale = scale;
-                sf= getSFsFromHisto(histo_muTau_mu_SF, part_p4, xTrg_scale, wantAbsEta);
+                sf= getSFsFromHisto(histo_muTau_mu_SF, part_p4, xTrg_scale, false, wantAbsEta);
             }
             if(source == UncSource::etau_ele && !(isMuTau) ) {
                 xTrg_scale = scale;
-                sf= getSFsFromHisto(histo_eTau_ele_SF, part_p4, xTrg_scale, wantAbsEta);
+                sf= getSFsFromHisto(histo_eTau_ele_SF, part_p4, xTrg_scale, false, wantAbsEta);
             }
         }
         return sf;
