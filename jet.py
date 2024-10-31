@@ -161,7 +161,7 @@ class JetCorrProducer:
 
 
     def getP4Variations_run3(self, df, source_dict, apply_JER, apply_JES):
-        df = df.Define("Jet_p4_shifted_map", "::correction::JetCorrectionProvider::getGlobal().getShiftedP4(Jet_pt, Jet_eta, Jet_phi, Jet_mass)")
+        df = df.Define("Jet_p4_shifted_map", "::correction::JetCorrectionProvider::getGlobal().getShiftedP4(Jet_pt, Jet_eta, Jet_phi, Jet_mass, Jet_rawFactor, Jet_area, Rho_fixedGridRhoFastjetAll)")
 
         for source in JetCorrProducer.uncSources_core:
             if source not in ["Central", "Total"]:
