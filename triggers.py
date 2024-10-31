@@ -232,6 +232,7 @@ class TrigCorrProducer:
                         df = df.Define(f"{branch_name}_double",
                                     f'''{applyTrgBranch_name} ? ::correction::TrigCorrProvider::getGlobal().getSF_fromRootFile(
                                  HttCandidate.leg_p4[{leg_idx}],::correction::TrigCorrProvider::UncSource::{source}, ::correction::UncScale::{scale} ) : 1.f''')
+                        # df.Filter("HLT_singleEle").Display({f"""{branch_name}_double"""}).Print()
                         if scale != central:
                             df = df.Define(f"{branch_name}_rel", f"static_cast<float>({branch_name}_double/{branch_central})")
                             branch_name += '_rel'
