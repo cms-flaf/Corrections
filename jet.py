@@ -55,6 +55,7 @@ class JetCorrProducer:
     initialized = False
     uncSources_core = [ "Central",
                         "Total",
+                        "JER",
                         "FlavorQCD",
                         "RelativeBal",
                         "HF",
@@ -69,8 +70,10 @@ class JetCorrProducer:
 
     jet_jsonPath = "/cvmfs/cms.cern.ch/rsync/cms-nanoAOD/jsonpog-integration/POG/JME/{}/jet_jerc.json.gz"
     # fatjet_jsonPath = "/cvmfs/cms.cern.ch/rsync/cms-nanoAOD/jsonpog-integration/POG/JME/{}/fatJet_jerc.json.gz"
+    jersmear_jsonPath = "/cvmfs/cms.cern.ch/rsync/cms-nanoAOD/jsonpog-integration/POG/JME/jer_smear.json.gz"
 
-    run3_period_map = { "2022_Summer22": "Summer22_22Sep2023_V2_MC" }
+    # format: key = period, value = (JEC tag, JER tag)
+    run3_period_map = { "2022_Summer22": ("Summer22_22Sep2023_V2_MC", "Summer22_22Sep2023_JRV1_MC") }
 
     #Sources = []
     period = None
@@ -123,16 +126,19 @@ class JetCorrProducer:
                 JetCorrProducer.initialized = True
         else:
             print("Initializing new JetCorrProducer")
-            path = JetCorrProducer.jet_jsonPath.format(period)
-            jet_jsonFile = os.path.join(os.environ['ANALYSIS_PATH'], path)
+            jet_path = JetCorrProducer.jet_jsonPath.format(period)
+            jet_jsonFile = os.path.join(os.environ['ANALYSIS_PATH'], jet_path)
+            jersmear_path = JetCorrProducer.jersmear_jsonPath
+            jetsmear_jsonFile = os.path.join(os.environ['ANALYSIS_PATH'], jersmear_path)
             run3_period_map = JetCorrProducer.run3_period_map
+            jec_tag, jer_tag = run3_period_map[period]
             year = period.split('_')[0]
             algo = "AK4PFPuppi"
             if not JetCorrProducer.initialized:
                 headers_dir = os.path.dirname(os.path.abspath(__file__))
                 header_path = os.path.join(headers_dir, "jet.h")
                 ROOT.gInterpreter.Declare(f'#include "{header_path}"')
-                ROOT.gInterpreter.ProcessLine(f'::correction::JetCorrectionProvider::Initialize("{jet_jsonFile}", "{run3_period_map[period]}", "{algo}", "{year}")')
+                ROOT.gInterpreter.ProcessLine(f'::correction::JetCorrectionProvider::Initialize("{jet_jsonFile}", "{jetsmear_jsonFile}", "{jec_tag}", "{jer_tag}", "{algo}", "{year}")')
                 JetCorrProducer.initialized = True
 
 
@@ -161,10 +167,12 @@ class JetCorrProducer:
 
 
     def getP4Variations_run3(self, df, source_dict, apply_JER, apply_JES):
-        df = df.Define("Jet_p4_shifted_map", "::correction::JetCorrectionProvider::getGlobal().getShiftedP4(Jet_pt, Jet_eta, Jet_phi, Jet_mass, Jet_rawFactor, Jet_area, Rho_fixedGridRhoFastjetAll)")
+        df = df.Define("Jet_p4_shifted_map", f'''::correction::JetCorrectionProvider::getGlobal().getShiftedP4(Jet_pt, Jet_eta, Jet_phi, Jet_mass,
+                                                                                                               Jet_rawFactor, Jet_area, Rho_fixedGridRhoFastjetAll,
+                                                                                                               GenJet_pt, Jet_genJetIdx, event)''')
 
         for source in JetCorrProducer.uncSources_core:
-            if source not in ["Central", "Total"]:
+            if source not in ["Central", "Total", "JER"]:
                 continue
 
             updateSourceDict(source_dict, source, 'Jet')
@@ -181,9 +189,7 @@ class JetCorrProducer:
         if self.year < 2022:
             return self.getP4Variations_run2(df, source_dict, apply_JER, apply_JES)
         else:
-            # for now only applying JES
-            # JER will be implemented later
-            return self.getP4Variations_run3(df, source_dict, False, apply_JES)
+            return self.getP4Variations_run3(df, source_dict, apply_JER, apply_JES)
 
 
     def getEnergyResolution(self, df):
