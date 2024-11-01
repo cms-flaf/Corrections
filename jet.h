@@ -147,22 +147,28 @@ namespace correction {
 
         // algo - type of jet algorithm
         // e.g. AK4PFPuppi
-        JetCorrectionProvider(std::string const& json_file_name, std::string const& jec_tag, std::string const& algo, std::string const& year)
+        JetCorrectionProvider(std::string const& json_file_name, std::string const& jetsmear_file_name, std::string const& jec_tag, std::string const& jer_tag, std::string const& algo, std::string const& year)
         :   corrset_(CorrectionSet::from_file(json_file_name))
+        ,   jersmear_corrset_(CorrectionSet::from_file(jetsmear_file_name))
         ,   jec_tag_(jec_tag)
+        ,   jer_tag_(jer_tag)
         ,   algo_(algo)
         ,   year_(year)
         {}
 
-        std::map<std::pair<UncSource, UncScale>, RVecLV> getShiftedP4(RVecF Jet_pt, const RVecF& Jet_eta, const RVecF& Jet_phi, RVecF Jet_mass,
-                                                                      const RVecF& Jet_rawFactor, const RVecF& Jet_area, const float rho) const
+        std::map<std::pair<UncSource, UncScale>, RVecLV> getShiftedP4(const RVecF& Jet_pt, const RVecF& Jet_eta, const RVecF& Jet_phi, const RVecF& Jet_mass,
+                                                                      const RVecF& Jet_rawFactor, const RVecF& Jet_area, const float rho,
+                                                                      const RVecF& GenJet_pt, const RVecI& Jet_genJetIdx, int event) const
         {
             std::map<std::pair<UncSource, UncScale>, RVecLV> all_shifted_p4;
-            std::vector<UncScale> uncScales = { UncScale::Central, UncScale::Up, UncScale::Down };
+            std::vector<UncScale> uncScales = { UncScale::Up, UncScale::Down };
 
             size_t sz = Jet_pt.size();
 
             std::string cmpd_corr_name = jec_tag_ + "_L1L2L3Res_" + algo_;
+            std::string jer_pt_res_name = jer_tag_ + "_PtResolution_" + algo_;
+            std::string jer_sf_name = jer_tag_ + "_ScaleFactor_" + algo_;
+            std::vector<double> jer_pt_resolutions;
             RVecLV central_p4(sz);
             for (size_t i = 0; i < sz; ++i)
             {
@@ -170,61 +176,72 @@ namespace correction {
                 Jet_pt[i] *= 1.0 - Jet_rawFactor[i];
                 Jet_mass[i] *= 1.0 - Jet_rawFactor[i];
 
-                // apply compound correction
+                // extract jer scale factor and resolution
+                Correction::Ref corr_jer_sf = corrset_->at(jer_sf_name);
+                Correction::Ref corr_jer_res = corrset_->at(jer_pt_res_name);
+                double jer_sf = corr_jer_sf->evaluate({Jet_eta[i], Jet_pt[i], "nom"});
+                double jer_pt_res = corr_jer_res->evaluate({Jet_eta[i], Jet_pt[i], rho});
+                jer_pt_resolutions.push_back(jer_pt_res);
+
+                Correction::Ref jersmear_corr = jersmear_corrset_->at("JERSmear");
+                int genjet_idx = Jet_genJetIdx[i];
+                double genjet_pt = genjet_idx != -1 ? GenJet_pt[genjet_idx] : -1.0;
+                double jersmear_factor = jersmear_corr->evaluate({Jet_pt[i], Jet_eta[i], genjet_pt, rho, event, jer_pt_res, jer_sf});
+
+                // extract compound correction
                 CompoundCorrection::Ref cmpd_corr = corrset_->compound().at(cmpd_corr_name);
                 double cmpd_sf = cmpd_corr->evaluate({Jet_area[i], Jet_eta[i], Jet_pt[i], rho});
 
+                // apply compound correction
                 Jet_pt[i] *= cmpd_sf;
                 Jet_mass[i] *= cmpd_sf;
+
+                // apply jer smearing
+                Jet_pt[i] *= jersmear_factor;
+                Jet_mass[i] *= jersmear_factor;
 
                 central_p4[i] = LorentzVectorM(Jet_pt[i], Jet_eta[i], Jet_phi[i], Jet_mass[i]);
             }
 
             all_shifted_p4.insert({{UncSource::Central, UncScale::Central}, central_p4});
 
-            // unscale p4 here
-            // ...
-            // scale with correct JEC (L1L2L3compound)
-            // apply JEC MC data residual
-
-            // apply JER for MC
-            // all_shifted_p4[Central, Central] = unscaled + compound + residual + jer
-
-            // in unc_map leave total; jer
-
+            // apply uncertainties from uncertainty map
             for (auto const& uncScale: uncScales)
             {
                 for (auto const& [unc_source, unc_name]: unc_map)
                 {
-                    if (unc_source != UncSource::Central && uncScale == UncScale::Central)
-                    {
-                        continue;
-                    }
-
-                    if (unc_source == UncSource::Central && uncScale != UncScale::Central)
-                    {
-                        continue;
-                    }
-
                     RVecLV shifted_p4(sz);
-                    for (size_t jet_idx = 0 ; jet_idx < sz; ++jet_idx)
+
+                    if (unc_source == UncSource::JER)
                     {
-                        double sf = 1.0;
-                        if (unc_source != UncSource::Central)
+                        for (size_t jet_idx = 0; jet_idx < sz; ++jet_idx)
                         {
-                            auto last = --unc_name.end();
-                            std::string name = unc_name;
-                            if (*last == '_')
+                            double sf = 1.0;
+                            sf += static_cast<int>(uncScale)*jer_pt_resolutions[jet_idx];
+                            shifted_p4[jet_idx] = LorentzVectorM(sf*Jet_pt[jet_idx], Jet_eta[jet_idx], Jet_phi[jet_idx], Jet_mass[jet_idx]);
+                        }
+                    }
+                    else
+                    {
+                        for (size_t jet_idx = 0 ; jet_idx < sz; ++jet_idx)
+                        {
+                            double sf = 1.0;
+
+                            std::string full_name = jec_tag_;
+                            full_name += '_';
+                            full_name += unc_name;
+                            full_name += '_';
+                            if (year_dep_map.at(unc_source))
                             {
-                                name += year_;
+                                full_name += year_;
+                                full_name += '_';
                             }
-                            name += '_';
-                            std::string full_name = jec_tag_ + name + algo_;
+                            full_name += algo_;
                             Correction::Ref corr = corrset_->at(full_name);
                             double unc = corr->evaluate({Jet_eta[jet_idx], Jet_pt[jet_idx]});
                             sf += static_cast<int>(uncScale)*unc;
+                            shifted_p4[jet_idx] = LorentzVectorM(sf*Jet_pt[jet_idx], Jet_eta[jet_idx], Jet_phi[jet_idx], sf*Jet_mass[jet_idx]);
                         }
-                        shifted_p4[jet_idx] = LorentzVectorM(sf*Jet_pt[jet_idx], Jet_eta[jet_idx], Jet_phi[jet_idx], sf*Jet_mass[jet_idx]);
                     }
                     all_shifted_p4.insert({{unc_source, uncScale}, shifted_p4});
                 }
@@ -234,12 +251,17 @@ namespace correction {
 
         private:
         std::unique_ptr<CorrectionSet> corrset_;
+        std::unique_ptr<CorrectionSet> jersmear_corrset_;
         std::string jec_tag_;
+        std::string jer_tag_;
         std::string algo_;
         std::string year_;
 
-        inline static const std::map<UncSource, std::string> unc_map = { { UncSource::Total, "_Total" },
+        inline static const std::map<UncSource, std::string> unc_map = { { UncSource::Total, "Total" },
                                                                          { UncSource::JER, "JER" } };
+
+        inline static const std::map<UncSource, bool> year_dep_map = { { UncSource::Total, false },
+                                                                       { UncSource::JER, false } };
 
         // inline static const std::map<UncSource, std::string> unc_map = { { UncSource::Central, "Central" },
         //                                                                  { UncSource::JER, "JER" },
@@ -250,11 +272,11 @@ namespace correction {
         //                                                                  { UncSource::EC2, "Regrouped_EC2" },
         //                                                                  { UncSource::Absolute, "Regrouped_Absolute" },
         //                                                                  { UncSource::FlavorQCD, "Regrouped_FlavorQCD" },
-        //                                                                  { UncSource::BBEC1_year, "Regrouped_BBEC1_" },
-        //                                                                  { UncSource::Absolute_year, "Regrouped_Absolute_" },
-        //                                                                  { UncSource::EC2_year, "Regrouped_EC2_" },
-        //                                                                  { UncSource::HF_year, "Regrouped_RelativeStatHF_" },
-        //                                                                  { UncSource::RelativeSample_year, "Regrouped_RelativeSample_" } };
+        //                                                                  { UncSource::BBEC1_year, "Regrouped_BBEC1" },
+        //                                                                  { UncSource::Absolute_year, "Regrouped_Absolute" },
+        //                                                                  { UncSource::EC2_year, "Regrouped_EC2" },
+        //                                                                  { UncSource::HF_year, "Regrouped_RelativeStatHF" },
+        //                                                                  { UncSource::RelativeSample_year, "Regrouped_RelativeSample" } };
     };
 
 } // namespace correction
