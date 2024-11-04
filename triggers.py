@@ -193,7 +193,7 @@ class TrigCorrProducer:
         for source in sf_sources:
             for scale in sf_scales:
                 if not isCentral and scale!= central: continue
-                branch_SF_central = f"weight_TrgSF_{trg_name}_{source}Central"
+                branch_SF_central = f"weight_TrgSF_{source}Central"
                 branch_SF_name = f"weight_TrgSF_{source}{scale}"
                 df = df.Define(f"{branch_SF_name}_double",
                                 f'''{applyTrgBranch_name} ? ::correction::TrigCorrProvider::getGlobal().getMETTrgSF(
@@ -212,7 +212,7 @@ class TrigCorrProducer:
                 if not isCentral and scale!= central: continue
                 branch_SF_name_prefix = f"weight_tau{leg_idx+1}_TrgSF"
                 # branch_SF_name = f"{branch_SF_name_prefix}_{source}{scale}"
-                branch_SF_central = f"{branch_SF_name_prefix}_{trg_name}_{source}Central"
+                branch_SF_central = f"{branch_SF_name_prefix}_{source}Central"
                 branch_SF_name = f"{branch_SF_name_prefix}_{source}{scale}"
                 value_shifted = self.singleTau_SF_dict[self.period][scale]
 
@@ -240,14 +240,14 @@ class TrigCorrProducer:
             sf_sources = TrigCorrProducer.SFSources[trg_name]
             sf_scales = [central, up, down ] if return_variations else [ central ]
             for leg_idx, leg_name in enumerate(lepton_legs):
-                print(leg_name)
+                # print(leg_name)
                 applyTrgBranch_name = f"{trg_name}_{leg_name}_ApplyTrgSF"
                 # applyTrgBranch_name_condition = "true"
                 leg_to_be = legs_to_be[trg_name][leg_idx]
                 apply_corrlib = leg_to_be == 'tau'
-                print(leg_to_be)
+                # print(leg_to_be)
                 applyTrgBranch_name_condition = f"""HttCandidate.leg_type[{leg_idx}] == Leg::{leg_to_be} && HLT_{trg_name} && {leg_name}_HasMatching_{trg_name}"""
-                print(applyTrgBranch_name_condition)
+                # print(applyTrgBranch_name_condition)
                 df = df.Define(applyTrgBranch_name, applyTrgBranch_name_condition)
                 df,SF_branches= self.addSFsbranches(df,sf_sources,sf_scales,isCentral,leg_idx,leg_name,trg_name,applyTrgBranch_name, SF_branches,apply_corrlib)
 

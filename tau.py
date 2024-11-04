@@ -86,16 +86,18 @@ class TauCorrProducer:
                         #     branch_name_Medium_final = f"""weight_{leg_name}_TauID_SF_Medium_{central}"""
                         # else:
                         #     branch_name_Medium_final = f"""weight_{leg_name}_TauID_SF_Medium_{syst_name}_abs""" #continue
-
+                        branch_name_Medium_final = branch_Medium_name
                         #df = df.Define(branch_Loose_name, f"static_cast<float>({branch_Loose_name}_double)")
-                        df = df.Define(branch_Medium_name, f"static_cast<float>({branch_Medium_name}_double)")
+                        df = df.Define(branch_name_Medium_final, f"static_cast<float>({branch_Medium_name}_double)")
                     #SF_branches.append(branch_name_Loose_final)
-                    SF_branches.append(branch_Medium_name)
+                    SF_branches.append(branch_name_Medium_final)
             prod_central_1 = " * ".join(Central_branches["0"])
             prod_central_2 = " * ".join(Central_branches["1"])
-        print(prod_central_1)
-        print(prod_central_2)
+        # print(prod_central_1)
+        # print(prod_central_2)
         df = df.Define("weight_tau1_TauID_SF_Medium_Central", prod_central_1)
         df = df.Define("weight_tau2_TauID_SF_Medium_Central", prod_central_2)
+        SF_branches.append("weight_tau1_TauID_SF_Medium_Central")
+        SF_branches.append("weight_tau2_TauID_SF_Medium_Central")
         return df,SF_branches
 
