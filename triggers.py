@@ -137,315 +137,137 @@ class TrigCorrProducer:
             ROOT.gInterpreter.ProcessLine(f"""::correction::TrigCorrProvider::Initialize("{jsonFile_Tau}", "{self.deepTauVersion}", {wp_map_cpp}, "{jsonFile_Mu}", "{year}", {trigNames_mu_vec},{effNames_mu_vec},"{jsonFile_e}","{jsonFile_e_XTrg}","{jsonFile_mu_XTrg}", "{jsonFile_MET}")""")
             TrigCorrProducer.initialized = True
 
+    def addSFsbranches(self,df,sf_sources,sf_scales,isCentral,leg_idx,leg_name,trg_name,applyTrgBranch_name, SF_branches,fromCorrLib=False):
+        # print(f"processing {trg_name} for {leg_idx} {leg_name}")
+        for source in sf_sources:
+            # print(f"processing {source}")
+            for scale in sf_scales:
+                # print(f"processing {scale}")
+                if not isCentral and scale!= central: continue
+                branch_SF_name_prefix = f"weight_{leg_name}_TrgSF"
+                branch_SF_central = f"{branch_SF_name_prefix}_{source}Central"
+                branch_eff_data_prefix = f"eff_data_{leg_name}_Trg"
+                branch_eff_data_central = f"{branch_eff_data_prefix}_{source}Central"
+                branch_eff_MC_prefix = f"eff_MC_{leg_name}_Trg"
+                branch_eff_MC_central = f"{branch_eff_MC_prefix}_{source}Central"
+                branch_SF_name = f"{branch_SF_name_prefix}_{source}{scale}"
+                branch_eff_data_name = branch_eff_data_central if scale == central else  f"{branch_eff_data_prefix}_{source}{scale}"
+                branch_eff_MC_name = branch_eff_MC_central if scale == central else  f"{branch_eff_MC_prefix}_{source}{scale}"
+                # print(f"branch name will be {branch_SF_name}")
+
+                if f"{branch_SF_name}_double" in df.GetColumnNames():
+                    # print(f"{branch_SF_name}_double in df cols" )
+                    continue
+                if fromCorrLib == True:
+                    df = df.Define(f"{branch_SF_name}_double",
+                            f'''{applyTrgBranch_name} ? ::correction::TrigCorrProvider::getGlobal().getTauSF_fromCorrLib(
+                            HttCandidate.leg_p4[{leg_idx}], Tau_decayMode.at(HttCandidate.leg_index[{leg_idx}]), "{trg_name}", HttCandidate.channel(), ::correction::TrigCorrProvider::UncSource::{source}, ::correction::UncScale::{scale} ) : 1.f;''')
+                    df = df.Define(f"{branch_eff_data_name}",
+                            f'''{applyTrgBranch_name} ? ::correction::TrigCorrProvider::getGlobal().getTauEffData_fromCorrLib(
+                            HttCandidate.leg_p4[{leg_idx}], Tau_decayMode.at(HttCandidate.leg_index[{leg_idx}]), "{trg_name}", HttCandidate.channel(), ::correction::TrigCorrProvider::UncSource::{source}, ::correction::UncScale::{scale} ) : 1.f;''')
+                    df = df.Define(f"{branch_eff_MC_name}",
+                                f'''{applyTrgBranch_name} ? ::correction::TrigCorrProvider::getGlobal().getTauEffMC_fromCorrLib(
+                                    HttCandidate.leg_p4[{leg_idx}], Tau_decayMode.at(HttCandidate.leg_index[{leg_idx}]), "{trg_name}", HttCandidate.channel(), ::correction::TrigCorrProvider::UncSource::{source}, ::correction::UncScale::{scale} ): 1.f;''')
+                else:
+                    df = df.Define(f"{branch_SF_name}_double",
+                                f'''{applyTrgBranch_name} ? ::correction::TrigCorrProvider::getGlobal().getSF_fromRootFile(
+                                HttCandidate.leg_p4[{leg_idx}],::correction::TrigCorrProvider::UncSource::{source}, ::correction::UncScale::{scale} ) : 1.f''')
+                    df = df.Define(f"{branch_eff_data_name}",
+                                f'''{applyTrgBranch_name} ? ::correction::TrigCorrProvider::getGlobal().getEffData_fromRootFile(
+                                HttCandidate.leg_p4[{leg_idx}],::correction::TrigCorrProvider::UncSource::{source}, ::correction::UncScale::{scale}, true) : 1.f''')
+                    df = df.Define(f"{branch_eff_MC_name}",
+                                f'''{applyTrgBranch_name} ? ::correction::TrigCorrProvider::getGlobal().getEffMC_fromRootFile(
+                                HttCandidate.leg_p4[{leg_idx}],::correction::TrigCorrProvider::UncSource::{source}, ::correction::UncScale::{scale}, true) : 1.f''')
+                if scale != central:
+                    df = df.Define(f"{branch_SF_name}_rel", f"static_cast<float>({branch_SF_name}_double/{branch_SF_central})")
+                    branch_SF_name += '_rel'
+                else:
+                    df = df.Define(f"{branch_SF_name}", f"static_cast<float>({branch_SF_name}_double)")
+                SF_branches.append(f"{branch_SF_name}")
+                SF_branches.append(f"{branch_eff_data_name}")
+                SF_branches.append(f"{branch_eff_MC_name}")
+        # print(f"now sf branches are {SF_branches}")
+        return df,SF_branches
+
+    def addMETBranch(self, df,sf_sources,sf_scales,isCentral,trg_name,applyTrgBranch_name, SF_branches):
+        for source in sf_sources:
+            for scale in sf_scales:
+                if not isCentral and scale!= central: continue
+                branch_SF_central = f"weight_TrgSF_{trg_name}_{source}Central"
+                branch_SF_name = f"weight_TrgSF_{source}{scale}"
+                df = df.Define(f"{branch_SF_name}_double",
+                                f'''{applyTrgBranch_name} ? ::correction::TrigCorrProvider::getGlobal().getMETTrgSF(
+                                "{self.year}",metnomu_pt, metnomu_phi, ::correction::UncScale::{scale} ) : 1.f''')
+                if scale != central:
+                    df = df.Define(f"{branch_SF_name}_rel", f"static_cast<float>({branch_SF_name}_double/{branch_SF_central})")
+                    branch_SF_name += '_rel'
+                else:
+                    df = df.Define(f"{branch_SF_name}", f"static_cast<float>({branch_SF_name}_double)")
+                SF_branches.append(f"{branch_SF_name}")
+        return df,SF_branches
+
+    def addSingleTauBranch(self, df,sf_sources,sf_scales,isCentral,trg_name,leg_idx,applyTrgBranch_name, SF_branches):
+        for source in sf_sources:
+            for scale in sf_scales:
+                if not isCentral and scale!= central: continue
+                branch_SF_name_prefix = f"weight_tau{leg_idx+1}_TrgSF"
+                # branch_SF_name = f"{branch_SF_name_prefix}_{source}{scale}"
+                branch_SF_central = f"{branch_SF_name_prefix}_{trg_name}_{source}Central"
+                branch_SF_name = f"{branch_SF_name_prefix}_{source}{scale}"
+                value_shifted = self.singleTau_SF_dict[self.period][scale]
+
+                df = df.Define(f"{branch_SF_name}_double",
+                                f'''{applyTrgBranch_name} ? {value_shifted} : 1.f''')
+                if scale != central:
+                    df = df.Define(f"{branch_SF_name}_rel", f"static_cast<float>({branch_SF_name}_double/{branch_SF_central})")
+                    branch_SF_name += '_rel'
+                else:
+                    df = df.Define(f"{branch_SF_name}", f"static_cast<float>({branch_SF_name}_double)")
+                SF_branches.append(f"{branch_SF_name}")
+        return df,SF_branches
+
     def getSF(self, df, trigger_names, lepton_legs, return_variations, isCentral):
         SF_branches = []
-        trg_name = 'ditau'
-        if trg_name in trigger_names:
-            sf_sources = TrigCorrProducer.SFSources[trg_name] if return_variations else []
+        legs_to_be ={
+            'mutau' : ['mu','tau'],
+            'etau':['e','tau'],
+            'ditau':['tau','tau'],
+            'singleEle':['e','e'],
+            'singleMu' : ['mu','mu']
+        }
+        for trg_name in ['mutau','etau','ditau','singleMu', 'singleEle']:
+            if trg_name not in trigger_names: continue
+            sf_sources = TrigCorrProducer.SFSources[trg_name]
+            sf_scales = [central, up, down ] if return_variations else [ central ]
             for leg_idx, leg_name in enumerate(lepton_legs):
-                applyTrgBranch_name = f"{trg_name}_tau{leg_idx+1}_ApplyTrgSF"
-                df = df.Define(applyTrgBranch_name, f"""HttCandidate.leg_type[{leg_idx}] == Leg::tau && HLT_{trg_name} && {leg_name}_HasMatching_{trg_name}""")
-                for source in [ central ] + sf_sources:
-                    for scale in getScales(source):
-                        if not isCentral and scale!= central: continue
-                        syst_name = getSystName(source, scale)
-                        suffix = syst_name
-                        if scale == central:
-                            suffix = f"{trg_name}_{syst_name}"
-                        branch_name = f"weight_{leg_name}_TrgSF_{suffix}"
-                        branch_central = f"weight_{leg_name}_TrgSF_{trg_name}_{getSystName(central,central)}"
-                        df = df.Define(f"{branch_name}_double",
-                                    f'''{applyTrgBranch_name} ? ::correction::TrigCorrProvider::getGlobal().getTauSF_fromCorrLib(
-                                 HttCandidate.leg_p4[{leg_idx}], Tau_decayMode.at(HttCandidate.leg_index[{leg_idx}]), "{trg_name}", HttCandidate.channel(),
-                                ::correction::TrigCorrProvider::UncSource::{source}, ::correction::UncScale::{scale} ) : 1.f''')
-                        if scale != central:
-                            df = df.Define(f"{branch_name}_rel", f"static_cast<float>({branch_name}_double/{branch_central})")
-                            branch_name += '_rel'
-                        else:
-                            df = df.Define(f"{branch_name}", f"static_cast<float>({branch_name}_double)")
-                        SF_branches.append(f"{branch_name}")
-
-        trg_name = 'singleMu'
-        if trg_name in trigger_names:
-            sf_sources = TrigCorrProducer.SFSources[trg_name] if return_variations else []
-            for leg_idx, leg_name in enumerate(lepton_legs):
+                print(leg_name)
                 applyTrgBranch_name = f"{trg_name}_{leg_name}_ApplyTrgSF"
-                df = df.Define(applyTrgBranch_name, f"""HttCandidate.leg_type[{leg_idx}] == Leg::mu && HLT_{trg_name} && {leg_name}_HasMatching_{trg_name}""")
-                for source in [ central ] + sf_sources:
-                    for scale in getScales(source):
-                        if not isCentral and scale!= central: continue
-                        syst_name = getSystName(source, scale)
-                        suffix = syst_name
-                        if scale == central:
-                            suffix = f"{trg_name}_{syst_name}"
-                        branch_name = f"weight_{leg_name}_TrgSF_{suffix}"
-                        branch_central = f"weight_{leg_name}_TrgSF_{trg_name}_{getSystName(central,central)}"
-                        df = df.Define(f"{branch_name}_double",
-                                    f'''{applyTrgBranch_name} ? ::correction::TrigCorrProvider::getGlobal().getSF_fromRootFile(
-                                 HttCandidate.leg_p4[{leg_idx}],::correction::TrigCorrProvider::UncSource::{source}, ::correction::UncScale::{scale} ) : 1.f''')
-                        if scale != central:
-                            df = df.Define(f"{branch_name}_rel", f"static_cast<float>({branch_name}_double/{branch_central})")
-                            branch_name += '_rel'
-                        else:
-                            df = df.Define(f"{branch_name}", f"static_cast<float>({branch_name}_double)")
-                        SF_branches.append(f"{branch_name}")
+                # applyTrgBranch_name_condition = "true"
+                leg_to_be = legs_to_be[trg_name][leg_idx]
+                apply_corrlib = leg_to_be == 'tau'
+                print(leg_to_be)
+                applyTrgBranch_name_condition = f"""HttCandidate.leg_type[{leg_idx}] == Leg::{leg_to_be} && HLT_{trg_name} && {leg_name}_HasMatching_{trg_name}"""
+                print(applyTrgBranch_name_condition)
+                df = df.Define(applyTrgBranch_name, applyTrgBranch_name_condition)
+                df,SF_branches= self.addSFsbranches(df,sf_sources,sf_scales,isCentral,leg_idx,leg_name,trg_name,applyTrgBranch_name, SF_branches,apply_corrlib)
 
-                        branch_eff_data_name = f"eff_data_{leg_name}_TrgSF_{suffix}"
-                        branch_central = f"eff_data_{leg_name}_TrgSF_{trg_name}_{getSystName(central,central)}"
-                        df = df.Define(f"{branch_eff_data_name}_double",
-                                    f'''{applyTrgBranch_name} ? ::correction::TrigCorrProvider::getGlobal().getEffData_fromRootFile(
-                                 HttCandidate.leg_p4[{leg_idx}],::correction::TrigCorrProvider::UncSource::{source}, ::correction::UncScale::{scale}, true) : 1.f''')
-                        #if scale != central:
-                        #    df = df.Define(f"{branch_eff_data_name}_rel", f"static_cast<float>({branch_eff_data_name}_double/{branch_central})")
-                        #    branch_eff_data_name += '_rel'
-                        #else:
-                        df = df.Define(f"{branch_eff_data_name}", f"static_cast<float>({branch_eff_data_name}_double)")
-                        SF_branches.append(f"{branch_eff_data_name}")
+        MET_trg = "MET"
+        if MET_trg in trigger_names:
+            sf_sources = TrigCorrProducer.SFSources[MET_trg]
+            sf_scales = [central, up, down ] if return_variations else [ central ]
+            applyTrgBranch_name = f"{MET_trg}_ApplyTrgSF"
+            applyTrgBranch_name_condition = f"""HLT_{MET_trg}"""
+            df = df.Define(applyTrgBranch_name,applyTrgBranch_name_condition)
+            df,SF_branches= self.addMETBranch(df,sf_sources,sf_scales,isCentral,MET_trg,applyTrgBranch_name, SF_branches)
 
-                        branch_eff_MC_name = f"eff_MC_{leg_name}_TrgSF_{suffix}"
-                        branch_central = f"eff_MC_{leg_name}_TrgSF_{trg_name}_{getSystName(central,central)}"
-                        df = df.Define(f"{branch_eff_MC_name}_double",
-                                    f'''{applyTrgBranch_name} ? ::correction::TrigCorrProvider::getGlobal().getEffMC_fromRootFile(
-                                 HttCandidate.leg_p4[{leg_idx}],::correction::TrigCorrProvider::UncSource::{source}, ::correction::UncScale::{scale}, true) : 1.f''')
-                        #if scale != central:
-                        #    df = df.Define(f"{branch_eff_MC_name}_rel", f"static_cast<float>({branch_eff_MC_name}_double/{branch_central})")
-                        #    branch_eff_MC_name += '_rel'
-                        #else:
-                        df = df.Define(f"{branch_eff_MC_name}", f"static_cast<float>({branch_eff_MC_name}_double)")
-                        SF_branches.append(f"{branch_eff_MC_name}")
+        singleTau_trg = 'singleTau'
+        if singleTau_trg in trigger_names:
 
-        trg_name = 'singleEle'
-        if trg_name in trigger_names:
-            sf_sources = TrigCorrProducer.SFSources[trg_name] if return_variations else []
+            sf_sources = TrigCorrProducer.SFSources[singleTau_trg]
+            sf_scales = [central, up, down ] if return_variations else [ central ]
             for leg_idx, leg_name in enumerate(lepton_legs):
-                applyTrgBranch_name = f"{trg_name}_{leg_name}_ApplyTrgSF"
-                df = df.Define(applyTrgBranch_name, f"""HttCandidate.leg_type[{leg_idx}] == Leg::e && HLT_{trg_name} && {leg_name}_HasMatching_{trg_name}""")
-                for source in [ central ] + sf_sources:
-                    for scale in getScales(source):
-                        if not isCentral and scale!= central: continue
-                        syst_name = getSystName(source, scale)
-                        suffix = syst_name
-                        if scale == central:
-                            suffix = f"{trg_name}_{syst_name}"
-                        branch_name = f"weight_{leg_name}_TrgSF_{suffix}"
-                        branch_central = f"weight_{leg_name}_TrgSF_{trg_name}_{getSystName(central,central)}"
-                        df = df.Define(f"{branch_name}_double",
-                                    f'''{applyTrgBranch_name} ? ::correction::TrigCorrProvider::getGlobal().getSF_fromRootFile(
-                                 HttCandidate.leg_p4[{leg_idx}],::correction::TrigCorrProvider::UncSource::{source}, ::correction::UncScale::{scale} ) : 1.f''')
-                        # df.Filter("HLT_singleEle").Display({f"""{branch_name}_double"""}).Print()
-                        if scale != central:
-                            df = df.Define(f"{branch_name}_rel", f"static_cast<float>({branch_name}_double/{branch_central})")
-                            branch_name += '_rel'
-                        else:
-                            df = df.Define(f"{branch_name}", f"static_cast<float>({branch_name}_double)")
-                        SF_branches.append(f"{branch_name}")
-
-                        branch_eff_data_name = f"eff_data_{leg_name}_TrgSF_{suffix}"
-                        branch_central = f"eff_data_{leg_name}_TrgSF_{trg_name}_{getSystName(central,central)}"
-                        df = df.Define(f"{branch_eff_data_name}_double",
-                                    f'''{applyTrgBranch_name} ? ::correction::TrigCorrProvider::getGlobal().getEffData_fromRootFile(
-                                 HttCandidate.leg_p4[{leg_idx}],::correction::TrigCorrProvider::UncSource::{source}, ::correction::UncScale::{scale}) : 1.f''')
-                         #if scale != central:
-                        #    df = df.Define(f"{branch_eff_data_name}_rel", f"static_cast<float>({branch_eff_data_name}_double/{branch_central})")
-                        #    branch_eff_data_name += '_rel'
-                        #else:
-                        df = df.Define(f"{branch_eff_data_name}", f"static_cast<float>({branch_eff_data_name}_double)")
-                        SF_branches.append(f"{branch_eff_data_name}")
-
-
-                        branch_eff_MC_name = f"eff_MC_{leg_name}_TrgSF_{suffix}"
-                        branch_central = f"eff_MC_{leg_name}_TrgSF_{trg_name}_{getSystName(central,central)}"
-                        df = df.Define(f"{branch_eff_MC_name}_double",
-                                    f'''{applyTrgBranch_name} ? ::correction::TrigCorrProvider::getGlobal().getEffMC_fromRootFile(
-                                 HttCandidate.leg_p4[{leg_idx}],::correction::TrigCorrProvider::UncSource::{source}, ::correction::UncScale::{scale}) : 1.f''')
-                         #if scale != central:
-                        #    df = df.Define(f"{branch_eff_MC_name}_rel", f"static_cast<float>({branch_eff_MC_name}_double/{branch_central})")
-                        #    branch_eff_MC_name += '_rel'
-                        #else:
-                        df = df.Define(f"{branch_eff_MC_name}", f"static_cast<float>({branch_eff_MC_name}_double)")
-                        SF_branches.append(f"{branch_eff_MC_name}")
-
-
-        trg_name = 'mutau'
-        if trg_name in trigger_names:
-            sf_sources = TrigCorrProducer.SFSources[trg_name] if return_variations else []
-            for leg_idx, leg_name in enumerate(lepton_legs):
-                applyTrgBranch_name = f"{trg_name}_{leg_name}_ApplyTrgSF"
-                df = df.Define(applyTrgBranch_name, f"""HLT_{trg_name} && {leg_name}_HasMatching_{trg_name}""")
-                for source in [ central ] + sf_sources:
-                    for scale in getScales(source):
-                        if not isCentral and scale!= central: continue
-                        syst_name = getSystName(source, scale)
-                        suffix = syst_name
-                        if scale == central:
-                            suffix = f"{trg_name}_{syst_name}"
-                        branch_name = f"weight_{leg_name}_TrgSF_{suffix}"
-                        branch_central = f"weight_{leg_name}_TrgSF_{trg_name}_{getSystName(central,central)}"
-                        branch_eff_data_name = f"eff_data_{leg_name}_TrgSF_{suffix}"
-                        branch_central = f"eff_data_{leg_name}_TrgSF_{trg_name}_{getSystName(central,central)}"
-                        branch_eff_MC_name = f"eff_MC_{leg_name}_TrgSF_{suffix}"
-                        branch_central = f"eff_MC_{leg_name}_TrgSF_{trg_name}_{getSystName(central,central)}"
-                        if leg_idx == 0:
-                            df = df.Define(f"{branch_name}_double",
-                                    f'''
-                                    if({applyTrgBranch_name} && HttCandidate.leg_type[{leg_idx}] == Leg::mu)
-                                    {{
-                                        return ::correction::TrigCorrProvider::getGlobal().getSF_fromRootFile(HttCandidate.leg_p4[{leg_idx}], ::correction::TrigCorrProvider::UncSource::{source},::correction::UncScale::{scale}, true, true);
-                                    }}
-                                    return 1.f;''')
-                            df = df.Define(f"{branch_eff_data_name}_double", f'''if({applyTrgBranch_name} && HttCandidate.leg_type[{leg_idx}] == Leg::mu) {{::correction::TrigCorrProvider::getGlobal().getEffData_fromRootFile(HttCandidate.leg_p4[{leg_idx}],::correction::TrigCorrProvider::UncSource::{source}, ::correction::UncScale::{scale}, true, true); }} return 1.f;''')
-                            df = df.Define(f"{branch_eff_MC_name}_double", f'''if({applyTrgBranch_name} && HttCandidate.leg_type[{leg_idx}] == Leg::mu) {{::correction::TrigCorrProvider::getGlobal().getEffMC_fromRootFile(HttCandidate.leg_p4[{leg_idx}],::correction::TrigCorrProvider::UncSource::{source}, ::correction::UncScale::{scale}, true, true); }} return 1.f;''')
-                        elif leg_idx ==1:
-                            df = df.Define(f"{branch_name}_double",
-                                f'''
-                                if({applyTrgBranch_name} && HttCandidate.leg_type[{leg_idx}] == Leg::tau)
-                                {{
-                                    return ::correction::TrigCorrProvider::getGlobal().getTauSF_fromCorrLib(
-                                    HttCandidate.leg_p4[{leg_idx}], Tau_decayMode.at(HttCandidate.leg_index[{leg_idx}]), "{trg_name}", HttCandidate.channel(), ::correction::TrigCorrProvider::UncSource::{source}, ::correction::UncScale::{scale} );
-                                }}
-                                return 1.f;''')
-                            df = df.Define(f"{branch_eff_data_name}_double", f'''if({applyTrgBranch_name} && HttCandidate.leg_type[{leg_idx}] == Leg::tau)
-                                {{
-                                    return ::correction::TrigCorrProvider::getGlobal().getTauEffData_fromCorrLib(
-                                    HttCandidate.leg_p4[{leg_idx}], Tau_decayMode.at(HttCandidate.leg_index[{leg_idx}]), "{trg_name}", HttCandidate.channel(), ::correction::TrigCorrProvider::UncSource::{source}, ::correction::UncScale::{scale} );
-                                }}
-                                return 1.f;''')
-                            df = df.Define(f"{branch_eff_MC_name}_double", f''' if({applyTrgBranch_name} && HttCandidate.leg_type[{leg_idx}] == Leg::tau)
-                                {{
-                                    return ::correction::TrigCorrProvider::getGlobal().getTauEffMC_fromCorrLib(
-                                    HttCandidate.leg_p4[{leg_idx}], Tau_decayMode.at(HttCandidate.leg_index[{leg_idx}]), "{trg_name}", HttCandidate.channel(), ::correction::TrigCorrProvider::UncSource::{source}, ::correction::UncScale::{scale} );
-                                }}
-                                return 1.f; ''')
-                        else:
-                            print("not known leg")
-
-
-                        if scale != central:
-                            df = df.Define(f"{branch_name}_rel", f"static_cast<float>({branch_name}_double/{branch_central})")
-                            branch_name += '_rel'
-
-                        else:
-                            df = df.Define(f"{branch_name}", f"static_cast<float>({branch_name}_double)")
-                        df = df.Define(f"{branch_eff_data_name}", f"static_cast<float>({branch_eff_data_name}_double)")
-                        df = df.Define(f"{branch_eff_MC_name}", f"static_cast<float>({branch_eff_MC_name}_double)")
-                        SF_branches.append(f"{branch_name}")
-                        SF_branches.append(f"{branch_eff_data_name}")
-                        SF_branches.append(f"{branch_eff_MC_name}")
-
-        trg_name = 'etau'
-        if trg_name in trigger_names:
-            sf_sources = TrigCorrProducer.SFSources[trg_name] if return_variations else []
-            for leg_idx, leg_name in enumerate(lepton_legs):
-                applyTrgBranch_name = f"{trg_name}_{leg_name}_ApplyTrgSF"
-                df = df.Define(applyTrgBranch_name, f"""HLT_{trg_name} && {leg_name}_HasMatching_{trg_name}""")
-                for source in [ central ] + sf_sources:
-                    for scale in getScales(source):
-                        if not isCentral and scale!= central: continue
-                        syst_name = getSystName(source, scale)
-                        suffix = syst_name
-                        if scale == central:
-                            suffix = f"{trg_name}_{syst_name}"
-                        branch_name = f"weight_{leg_name}_TrgSF_{suffix}"
-                        branch_central = f"weight_{leg_name}_TrgSF_{trg_name}_{getSystName(central,central)}"
-                        branch_eff_data_name = f"eff_data_{leg_name}_TrgSF_{suffix}"
-                        branch_central = f"eff_data_{leg_name}_TrgSF_{trg_name}_{getSystName(central,central)}"
-                        branch_eff_MC_name = f"eff_MC_{leg_name}_TrgSF_{suffix}"
-                        branch_central = f"eff_MC_{leg_name}_TrgSF_{trg_name}_{getSystName(central,central)}"
-                        if leg_idx == 0:
-                            df = df.Define(f"{branch_name}_double",
-                                    f'''
-                                    if({applyTrgBranch_name} && HttCandidate.leg_type[{leg_idx}] == Leg::e)
-                                    {{
-                                        return ::correction::TrigCorrProvider::getGlobal().getSF_fromRootFile(HttCandidate.leg_p4[{leg_idx}], ::correction::TrigCorrProvider::UncSource::{source},::correction::UncScale::{scale}, true);
-                                    }}
-                                    return 1.f;''')
-                            df = df.Define(f"{branch_eff_data_name}_double", f'''if({applyTrgBranch_name} && HttCandidate.leg_type[{leg_idx}] == Leg::e) {{::correction::TrigCorrProvider::getGlobal().getEffData_fromRootFile(HttCandidate.leg_p4[{leg_idx}],::correction::TrigCorrProvider::UncSource::{source}, ::correction::UncScale::{scale}, true); }} return 1.f;''')
-                            df = df.Define(f"{branch_eff_MC_name}_double", f'''if({applyTrgBranch_name} && HttCandidate.leg_type[{leg_idx}] == Leg::e) {{::correction::TrigCorrProvider::getGlobal().getEffMC_fromRootFile(HttCandidate.leg_p4[{leg_idx}],::correction::TrigCorrProvider::UncSource::{source}, ::correction::UncScale::{scale}, true); }} return 1.f;''')
-                        elif leg_idx ==1:
-                            df = df.Define(f"{branch_name}_double",
-                                f'''
-                                if({applyTrgBranch_name} && HttCandidate.leg_type[{leg_idx}] == Leg::tau)
-                                {{
-                                    return ::correction::TrigCorrProvider::getGlobal().getTauSF_fromCorrLib(
-                                    HttCandidate.leg_p4[{leg_idx}], Tau_decayMode.at(HttCandidate.leg_index[{leg_idx}]), "{trg_name}", HttCandidate.channel(), ::correction::TrigCorrProvider::UncSource::{source}, ::correction::UncScale::{scale} );
-                                }}
-                                return 1.f;''')
-                            df = df.Define(f"{branch_eff_data_name}_double", f'''if({applyTrgBranch_name} && HttCandidate.leg_type[{leg_idx}] == Leg::tau)
-                                {{
-                                    return ::correction::TrigCorrProvider::getGlobal().getTauEffData_fromCorrLib(
-                                    HttCandidate.leg_p4[{leg_idx}], Tau_decayMode.at(HttCandidate.leg_index[{leg_idx}]), "{trg_name}", HttCandidate.channel(), ::correction::TrigCorrProvider::UncSource::{source}, ::correction::UncScale::{scale} );
-                                }}
-                                return 1.f;''')
-                            df = df.Define(f"{branch_eff_MC_name}_double", f''' if({applyTrgBranch_name} && HttCandidate.leg_type[{leg_idx}] == Leg::tau)
-                                {{
-                                    return ::correction::TrigCorrProvider::getGlobal().getTauEffMC_fromCorrLib(
-                                    HttCandidate.leg_p4[{leg_idx}], Tau_decayMode.at(HttCandidate.leg_index[{leg_idx}]), "{trg_name}", HttCandidate.channel(), ::correction::TrigCorrProvider::UncSource::{source}, ::correction::UncScale::{scale} );
-                                }}
-                                return 1.f; ''')
-                        else:
-                            print("not known leg")
-
-                        if scale != central:
-                            df = df.Define(f"{branch_name}_rel", f"static_cast<float>({branch_name}_double/{branch_central})")
-                            branch_name += '_rel'
-                        else:
-                            df = df.Define(f"{branch_name}", f"static_cast<float>({branch_name}_double)")
-                        df = df.Define(f"{branch_eff_data_name}", f"static_cast<float>({branch_eff_data_name}_double)")
-                        df = df.Define(f"{branch_eff_MC_name}", f"static_cast<float>({branch_eff_MC_name}_double)")
-                        SF_branches.append(f"{branch_name}")
-                        SF_branches.append(f"{branch_eff_data_name}")
-                        SF_branches.append(f"{branch_eff_MC_name}")
-        trg_name = 'MET'
-        if trg_name in trigger_names:
-            jsonFile_MET = os.path.join(os.environ['ANALYSIS_PATH'],TrigCorrProducer.MET_jsonPath.format(self.period,year_METfile[self.period]))
-            sf_sources = TrigCorrProducer.SFSources[trg_name] if return_variations else []
-            applyTrgBranch_name = f"{trg_name}_ApplyTrgSF"
-            df = df.Define(applyTrgBranch_name, f"""HLT_{trg_name}""")
-            for source in [ central ] + sf_sources:
-                for scale in getScales(source):
-                    if not isCentral and scale!= central: continue
-                    syst_name = getSystName(source, scale)
-                    suffix = syst_name
-                    if scale == central:
-                        suffix = f"{trg_name}_{syst_name}"
-                    branch_name = f"weight_TrgSF_{suffix}"
-                    branch_central = f"weight_TrgSF_{trg_name}_{getSystName(central,central)}"
-                    df = df.Define(f"{branch_name}_double",
-                                    f'''{applyTrgBranch_name} ? ::correction::TrigCorrProvider::getGlobal().getMETTrgSF(
-                                 "{self.year}",metnomu_pt, metnomu_phi, ::correction::UncScale::{scale} ) : 1.f''')
-                    if scale != central:
-                        df = df.Define(f"{branch_name}_rel", f"static_cast<float>({branch_name}_double/{branch_central})")
-                        branch_name += '_rel'
-                    else:
-                        df = df.Define(f"{branch_name}", f"static_cast<float>({branch_name}_double)")
-                    SF_branches.append(f"{branch_name}")
-        trg_name = 'singleTau'
-        if trg_name in trigger_names:
-            sf_sources = TrigCorrProducer.SFSources[trg_name] if return_variations else []
-            for leg_idx, leg_name in enumerate(lepton_legs):
-                applyTrgBranch_name = f"{trg_name}_{leg_name}_ApplyTrgSF"
-                df = df.Define(applyTrgBranch_name, f"""HLT_{trg_name} && {leg_name}_HasMatching_{trg_name}""")
-                for source in [ central ] + sf_sources:
-                    for scale in getScales(source):
-                        if not isCentral and scale!= central: continue
-                        syst_name = getSystName(source, scale)
-                        suffix = syst_name
-                        if scale == central:
-                            suffix = f"{trg_name}_{syst_name}"
-                        branch_name = f"weight_{leg_name}_TrgSF_{suffix}"
-                        branch_central = f"weight_{leg_name}_TrgSF_{trg_name}_{getSystName(central,central)}"
-                        value_shifted = self.singleTau_SF_dict[self.period][scale]
-                        df = df.Define(f"{branch_name}_double",
-                                f"""
-                                if({applyTrgBranch_name} && HttCandidate.leg_type[{leg_idx}] == Leg::tau)
-                                {{
-                                    return {value_shifted};
-                                }}
-                                return 1.;""")
-                        if scale != central:
-                            df = df.Define(f"{branch_name}_rel", f"static_cast<float>({branch_name}_double/{branch_central})")
-                            branch_name += '_rel'
-                        else:
-                            df = df.Define(f"{branch_name}", f"static_cast<float>({branch_name}_double)")
-                        SF_branches.append(f"{branch_name}")
+                applyTrgBranch_name = f"{singleTau_trg}_{leg_name}_ApplyTrgSF"
+                applyTrgBranch_name_condition = f"""HttCandidate.leg_type[{leg_idx}] == Leg::{leg_to_be} && HLT_{trg_name} && {leg_name}_HasMatching_{trg_name}"""
+                df = df.Define(applyTrgBranch_name, applyTrgBranch_name_condition)
+                df,SF_branches= self.addSingleTauBranch(df,sf_sources,sf_scales,isCentral,singleTau_trg,leg_idx,applyTrgBranch_name, SF_branches)
         return df,SF_branches

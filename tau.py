@@ -53,7 +53,8 @@ class TauCorrProducer:
         sf_sources =TauCorrProducer.SFSources_tau+TauCorrProducer.SFSources_genuineLep
         sf_scales = [up, down] if return_variations else []
         SF_branches = []
-        for source in [ central ] + sf_sources:
+        Central_branches = {"0" : [] , "1": []}
+        for source in sf_sources:
             for scale in [ central ] + sf_scales:
                 if source == central and scale != central: continue
                 if not isCentral and scale!= central: continue
@@ -62,7 +63,7 @@ class TauCorrProducer:
                     #branch_Loose_name = f"weight_{leg_name}_TauID_SF_Loose_{syst_name}"
                     branch_Medium_name = f"weight_{leg_name}_TauID_SF_Medium_{syst_name}"
                     #branch_Loose_central = f"""weight_{leg_name}_TauID_SF_Loose_{central}"""
-                    branch_Medium_central = f"""weight_{leg_name}_TauID_SF_Medium_{central}"""
+                    branch_Medium_central = f"""weight_{leg_name}_TauID_SF_Medium_{source}Central"""
                     df = df.Define(f"{branch_Medium_name}_double",
                                 f'''HttCandidate.leg_type[{leg_idx}] == Leg::tau ? ::correction::TauCorrProvider::getGlobal().getSF(
                                HttCandidate.leg_p4[{leg_idx}], Tau_decayMode.at(HttCandidate.leg_index[{leg_idx}]),
@@ -79,16 +80,22 @@ class TauCorrProducer:
                         #df = df.Define(branch_name_Loose_final, f"static_cast<float>({branch_Loose_name}_double/#{branch_Loose_central})")
                         df = df.Define(branch_name_Medium_final, f"static_cast<float>({branch_Medium_name}_double/{branch_Medium_central})")
                     else:
-                        if source == central:
-                            #branch_name_Loose_final = f"""weight_{leg_name}_TauID_SF_Loose_{central}"""
-                            branch_name_Medium_final = f"""weight_{leg_name}_TauID_SF_Medium_{central}"""
-                        else:
-                            branch_name_Medium_final = f"""weight_{leg_name}_TauID_SF_Medium_{syst_name}_abs""" #continue
+                        Central_branches[f"{leg_idx}"].append(branch_Medium_name)
+                        # if source == central:
+                        #     #branch_name_Loose_final = f"""weight_{leg_name}_TauID_SF_Loose_{central}"""
+                        #     branch_name_Medium_final = f"""weight_{leg_name}_TauID_SF_Medium_{central}"""
+                        # else:
+                        #     branch_name_Medium_final = f"""weight_{leg_name}_TauID_SF_Medium_{syst_name}_abs""" #continue
 
-                        #df = df.Define(branch_name_Loose_final, f"static_cast<float>({branch_Loose_name}_double)")
-                        df = df.Define(branch_name_Medium_final, f"static_cast<float>({branch_Medium_name}_double)")
+                        #df = df.Define(branch_Loose_name, f"static_cast<float>({branch_Loose_name}_double)")
+                        df = df.Define(branch_Medium_name, f"static_cast<float>({branch_Medium_name}_double)")
                     #SF_branches.append(branch_name_Loose_final)
-                    SF_branches.append(branch_name_Medium_final)
-
+                    SF_branches.append(branch_Medium_name)
+            prod_central_1 = " * ".join(Central_branches["0"])
+            prod_central_2 = " * ".join(Central_branches["1"])
+        print(prod_central_1)
+        print(prod_central_2)
+        df = df.Define("weight_tau1_TauID_SF_Medium_Central", prod_central_1)
+        df = df.Define("weight_tau2_TauID_SF_Medium_Central", prod_central_2)
         return df,SF_branches
 
