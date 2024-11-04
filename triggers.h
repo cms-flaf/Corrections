@@ -118,7 +118,10 @@ public:
         const UncScale tau_scale = sourceApplies_tau_fromCorrLib(source, Tau_decayMode, trg_type)
                                         ? scale : UncScale::Central;
         const std::string& scale_str = getTauScaleStr(tau_scale);
-        return tau_trg_->evaluate({Tau_p4.pt(), Tau_decayMode, trg_type, wpVSjet,"eff_data", scale_str});
+
+        auto effdata = tau_trg_->evaluate({Tau_p4.pt(), Tau_decayMode, trg_type, wpVSjet,"eff_data", scale_str});
+        return sourceApplies_tau_fromCorrLib(source, Tau_decayMode, trg_type) ? effdata : 1.f ;
+        // return tau_trg_->evaluate({Tau_p4.pt(), Tau_decayMode, trg_type, wpVSjet,"eff_data", scale_str});
     }
     float getTauEffMC_fromCorrLib(const LorentzVectorM& Tau_p4, int Tau_decayMode, const std::string& trg_type, Channel ch, UncSource source, UncScale scale) const
     {
@@ -127,17 +130,29 @@ public:
         const UncScale tau_scale = sourceApplies_tau_fromCorrLib(source, Tau_decayMode, trg_type)
                                         ? scale : UncScale::Central;
         const std::string& scale_str = getTauScaleStr(tau_scale);
-        return tau_trg_->evaluate({Tau_p4.pt(), Tau_decayMode, trg_type, wpVSjet,"eff_mc", scale_str});
+        auto effmc = tau_trg_->evaluate({Tau_p4.pt(), Tau_decayMode, trg_type, wpVSjet,"eff_mc", scale_str});
+        return sourceApplies_tau_fromCorrLib(source, Tau_decayMode, trg_type) ? effmc : 1.f ;
     }
 
     float getTauSF_fromCorrLib(const LorentzVectorM& Tau_p4, int Tau_decayMode, const std::string& trg_type, Channel ch, UncSource source, UncScale scale) const
     {
         if(isTwoProngDM(Tau_decayMode)) throw std::runtime_error("no SF for two prong tau decay modes");
         const auto & wpVSjet = wps_map_.count(ch) ? wps_map_.at(ch).at(2).first : "Loose";
+        std::cout<< "WP VS jet = " ;
+        std::cout << wpVSjet << std::endl ;
         const UncScale tau_scale = sourceApplies_tau_fromCorrLib(source, Tau_decayMode, trg_type)
                                         ? scale : UncScale::Central;
+        std::cout<< "decay mode = " ;
+        std::cout << Tau_decayMode << "\n trigger = " << trg_type << std::endl;
         const std::string& scale_str = getTauScaleStr(tau_scale);
-        return tau_trg_->evaluate({Tau_p4.pt(), Tau_decayMode, trg_type, wpVSjet,"sf", scale_str});
+        std::cout<< "scale = " ;
+        std::cout << scale_str << std::endl;
+        std::cout << "pt " << Tau_p4.pt()<< std::endl;
+        auto sf = tau_trg_->evaluate({Tau_p4.pt(), Tau_decayMode, trg_type, wpVSjet,"sf", scale_str});
+        std::cout<< "sf = " ;
+        std::cout << sf << std::endl;
+        std::cout << std::endl;
+        return sourceApplies_tau_fromCorrLib(source, Tau_decayMode, trg_type) ? sf : 1.f ;
     }
 
     float getMETTrgSF(const std::string year, const float& metnomu_pt, const float& metnomu_phi, UncScale scale) const
@@ -162,7 +177,7 @@ public:
         return scale == UncScale::Up ? metSF.getSF(vMETnoMu2.Mod()) + metSF.getSFError(vMETnoMu2.Mod()) : metSF.getSF(vMETnoMu2.Mod()) - metSF.getSFError(vMETnoMu2.Mod()) ;
     }
 
-    float getSFsFromHisto(const std::unique_ptr<TH2>& histo, const LorentzVectorM& part_p4, UncScale scale, bool inverted_bins, bool wantAbsEta) const
+    float getSFsFromHisto(const std::unique_ptr<TH2>& histo, const LorentzVectorM& part_p4, UncScale scale, bool inverted_bins, bool wantAbsEta, bool verbose=false) const
     {
         const auto x_axis = histo->GetXaxis();
         const auto eta = wantAbsEta ? std::abs(part_p4.Eta()) : part_p4.Eta();
@@ -184,7 +199,8 @@ public:
             y_bin =1;
         if( y_bin > y_axis->GetNbins() )
             y_bin = y_axis->GetNbins();
-        // std::cout << "x, y = " << x_bin << "," << y_bin << " bin content " << histo->GetBinContent(x_bin,y_bin) << " scale " << static_cast<int>(scale) << " bin error " << histo->GetBinError(x_bin,y_bin) << std::endl;
+        if (verbose)
+            {std::cout << "x, y = " << x_bin << "," << y_bin << " bin content " << histo->GetBinContent(x_bin,y_bin) << " scale " << static_cast<int>(scale) << " bin error " << histo->GetBinError(x_bin,y_bin) << std::endl;}
         return histo->GetBinContent(x_bin,y_bin) + static_cast<int>(scale) * histo->GetBinError(x_bin,y_bin);
     }
     float getEffMC_fromRootFile(const LorentzVectorM& part_p4, UncSource source, UncScale scale, bool wantAbsEta=false, bool isMuTau=false) const {
@@ -195,7 +211,8 @@ public:
         }
         if (source== UncSource::singleEle){
             const UncScale ele_scale = source== UncSource::singleEle ? scale : UncScale::Central;
-            sf= getSFsFromHisto(histo_ele_MC, part_p4, ele_scale,  false, wantAbsEta);
+            sf= getSFsFromHisto(histo_ele_MC, part_p4, ele_scale,  false, wantAbsEta, false);
+            // std::cout << "applying SF single ele for " << static_cast<int>(ele_scale) << " scale " << sf << std::endl;
         }
         if (source== UncSource::mutau_mu || source == UncSource::etau_ele){
             UncScale xTrg_scale = UncScale::Central;
