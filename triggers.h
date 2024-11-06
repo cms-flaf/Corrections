@@ -257,7 +257,7 @@ public:
         float sf = 1.;
         if (source== UncSource::singleMu){
             const UncScale mu_scale = source== UncSource::singleMu ? scale : UncScale::Central;
-            sf= getSFsFromHisto(histo_mu_SF, part_p4, mu_scale, true, false);
+            sf= getSFsFromHisto(histo_mu_SF, part_p4, mu_scale, true, true);
         }
         if (source== UncSource::singleMu50or24){
             const UncScale mu_scale = source== UncSource::singleMu50or24 ? scale : UncScale::Central;
