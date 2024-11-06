@@ -13,7 +13,7 @@ public:
         ditau_DM0 = 0,
         ditau_DM1 = 1,
         ditau_3Prong = 2,
-        singleMu24 = 3,
+        singleMu = 3,
         singleMu50or24 = 4,
         singleMu50 = 5,
         singleEle = 6,
@@ -97,9 +97,9 @@ public:
 
 
         auto muFile = root_ext::OpenRootFile(muFileName);
-        histo_mu_SF_24.reset(root_ext::ReadCloneObject<TH2>(*muFile, hist_mu_name[0].c_str(), hist_mu_name[0].c_str(), true));
-        histo_mu_SF_24_data.reset(root_ext::ReadCloneObject<TH2>(*muFile, hist_mu_name[0].c_str(), (hist_mu_name[0]+"_efficiencyData").c_str(), true));
-        histo_mu_SF_24_MC.reset(root_ext::ReadCloneObject<TH2>(*muFile, hist_mu_name[0].c_str(), (hist_mu_name[0]+"_efficiencyMC").c_str(), true));
+        histo_mu_SF.reset(root_ext::ReadCloneObject<TH2>(*muFile, hist_mu_name[0].c_str(), hist_mu_name[0].c_str(), true));
+        histo_mu_SF_data.reset(root_ext::ReadCloneObject<TH2>(*muFile, hist_mu_name[0].c_str(), (hist_mu_name[0]+"_efficiencyData").c_str(), true));
+        histo_mu_SF_MC.reset(root_ext::ReadCloneObject<TH2>(*muFile, hist_mu_name[0].c_str(), (hist_mu_name[0]+"_efficiencyMC").c_str(), true));
         histo_mu_SF_50or24.reset(root_ext::ReadCloneObject<TH2>(*muFile, hist_mu_name[1].c_str(), hist_mu_name[1].c_str(), true));
         histo_mu_SF_50.reset(root_ext::ReadCloneObject<TH2>(*muFile, hist_mu_name[2].c_str(), hist_mu_name[2].c_str(), true));
 
@@ -205,24 +205,24 @@ public:
     }
     float getEffMC_fromRootFile(const LorentzVectorM& part_p4, UncSource source, UncScale scale, bool wantAbsEta=false, bool isMuTau=false) const {
         float sf = 1.;
-        if (source== UncSource::singleMu24){
-            const UncScale mu_scale = source== UncSource::singleMu24 ? scale : UncScale::Central;
-            sf= getSFsFromHisto(histo_mu_SF_24_MC, part_p4, mu_scale, false, wantAbsEta);
+        if (source== UncSource::singleMu){
+            const UncScale mu_scale = source== UncSource::singleMu ? scale : UncScale::Central;
+            sf= getSFsFromHisto(histo_mu_SF_MC, part_p4, mu_scale, true, true);
         }
         if (source== UncSource::singleEle){
             const UncScale ele_scale = source== UncSource::singleEle ? scale : UncScale::Central;
-            sf= getSFsFromHisto(histo_ele_MC, part_p4, ele_scale,  false, wantAbsEta, false);
+            sf= getSFsFromHisto(histo_ele_MC, part_p4, ele_scale, false, false);
             std::cout << "applying SF single ele for " << static_cast<int>(ele_scale) << " scale " << sf << std::endl;
         }
         if (source== UncSource::mutau_mu || source == UncSource::etau_ele){
             UncScale xTrg_scale = UncScale::Central;
             if(source == UncSource::mutau_mu && isMuTau) {
                 xTrg_scale = scale;
-                sf= getSFsFromHisto(histo_muTau_mu_MC, part_p4, xTrg_scale,  false,wantAbsEta);
+                sf= getSFsFromHisto(histo_muTau_mu_MC, part_p4, xTrg_scale,  false, false);
             }
             if(source == UncSource::etau_ele && !(isMuTau) ) {
                 xTrg_scale = scale;
-                sf= getSFsFromHisto(histo_eTau_ele_MC, part_p4, xTrg_scale,  false,wantAbsEta);
+                sf= getSFsFromHisto(histo_eTau_ele_MC, part_p4, xTrg_scale,  false, false);
             }
         }
         return sf;
@@ -230,23 +230,23 @@ public:
 
     float getEffData_fromRootFile(const LorentzVectorM& part_p4, UncSource source, UncScale scale, bool wantAbsEta=false, bool isMuTau=false) const {
         float sf = 1.;
-        if (source== UncSource::singleMu24){
-            const UncScale mu_scale = source== UncSource::singleMu24 ? scale : UncScale::Central;
-            sf= getSFsFromHisto(histo_mu_SF_24_data, part_p4, mu_scale,  false,wantAbsEta);
+        if (source== UncSource::singleMu){
+            const UncScale mu_scale = source== UncSource::singleMu ? scale : UncScale::Central;
+            sf= getSFsFromHisto(histo_mu_SF_data, part_p4, mu_scale,  true,true);
         }
         if (source== UncSource::singleEle){
             const UncScale ele_scale = source== UncSource::singleEle ? scale : UncScale::Central;
-            sf= getSFsFromHisto(histo_ele_data, part_p4, ele_scale,  false,wantAbsEta);
+            sf= getSFsFromHisto(histo_ele_data, part_p4, ele_scale,  false,false);
         }
         if (source== UncSource::mutau_mu || source == UncSource::etau_ele){
             UncScale xTrg_scale = UncScale::Central;
             if(source == UncSource::mutau_mu && isMuTau) {
                 xTrg_scale = scale;
-                sf= getSFsFromHisto(histo_muTau_mu_data, part_p4, xTrg_scale,  false,wantAbsEta);
+                sf= getSFsFromHisto(histo_muTau_mu_data, part_p4, xTrg_scale,  false,false);
             }
             if(source == UncSource::etau_ele && !(isMuTau) ) {
                 xTrg_scale = scale;
-                sf= getSFsFromHisto(histo_eTau_ele_data, part_p4, xTrg_scale,  false,wantAbsEta);
+                sf= getSFsFromHisto(histo_eTau_ele_data, part_p4, xTrg_scale,  false,false);
             }
         }
         return sf;
@@ -255,33 +255,33 @@ public:
     float getSF_fromRootFile(const LorentzVectorM& part_p4, UncSource source, UncScale scale, bool wantAbsEta=false, bool isMuTau=false) const {
         //bool wantAbsEta = isMuTau ? true : false;
         float sf = 1.;
-        if (source== UncSource::singleMu24){
-            const UncScale mu_scale = source== UncSource::singleMu24 ? scale : UncScale::Central;
-            sf= getSFsFromHisto(histo_mu_SF_24, part_p4, mu_scale, false, wantAbsEta);
+        if (source== UncSource::singleMu){
+            const UncScale mu_scale = source== UncSource::singleMu ? scale : UncScale::Central;
+            sf= getSFsFromHisto(histo_mu_SF, part_p4, mu_scale, true, false);
         }
         if (source== UncSource::singleMu50or24){
             const UncScale mu_scale = source== UncSource::singleMu50or24 ? scale : UncScale::Central;
-            sf= getSFsFromHisto(histo_mu_SF_50or24, part_p4, mu_scale, false, wantAbsEta);
+            sf= getSFsFromHisto(histo_mu_SF_50or24, part_p4, mu_scale, false, false);
         }
 
         if (source== UncSource::singleMu50){
             const UncScale mu_scale = source== UncSource::singleMu50 ? scale : UncScale::Central;
-            sf= getSFsFromHisto(histo_mu_SF_50, part_p4, mu_scale, false, wantAbsEta);
+            sf= getSFsFromHisto(histo_mu_SF_50, part_p4, mu_scale, false, false);
         }
         if (source== UncSource::singleEle){
             const UncScale ele_scale = source== UncSource::singleEle ? scale : UncScale::Central;
-            sf= getSFsFromHisto(histo_ele_SF, part_p4, ele_scale, false, wantAbsEta);
+            sf= getSFsFromHisto(histo_ele_SF, part_p4, ele_scale, false, false);
             std::cout << sf << std::endl;
         }
         if (source== UncSource::mutau_mu || source == UncSource::etau_ele){
             UncScale xTrg_scale = UncScale::Central;
             if(source == UncSource::mutau_mu && isMuTau) {
                 xTrg_scale = scale;
-                sf= getSFsFromHisto(histo_muTau_mu_SF, part_p4, xTrg_scale, false, wantAbsEta);
+                sf= getSFsFromHisto(histo_muTau_mu_SF, part_p4, xTrg_scale, false, false);
             }
             if(source == UncSource::etau_ele && !(isMuTau) ) {
                 xTrg_scale = scale;
-                sf= getSFsFromHisto(histo_eTau_ele_SF, part_p4, xTrg_scale, false, wantAbsEta);
+                sf= getSFsFromHisto(histo_eTau_ele_SF, part_p4, xTrg_scale, false, false);
             }
         }
         return sf;
@@ -398,9 +398,9 @@ private:
     std::unique_ptr<TH2> histo_muTau_mu_data;
     std::unique_ptr<TH2> histo_muTau_mu_MC;
 
-    std::unique_ptr<TH2> histo_mu_SF_24;
-    std::unique_ptr<TH2> histo_mu_SF_24_data;
-    std::unique_ptr<TH2> histo_mu_SF_24_MC;
+    std::unique_ptr<TH2> histo_mu_SF;
+    std::unique_ptr<TH2> histo_mu_SF_data;
+    std::unique_ptr<TH2> histo_mu_SF_MC;
 
     std::unique_ptr<TH2> histo_mu_SF_50or24;
     std::unique_ptr<TH2> histo_mu_SF_50;
