@@ -156,7 +156,7 @@ namespace correction {
         ,   year_(year)
         {}
 
-        std::map<std::pair<UncSource, UncScale>, RVecLV> getShiftedP4(const RVecF& Jet_pt, const RVecF& Jet_eta, const RVecF& Jet_phi, const RVecF& Jet_mass,
+        std::map<std::pair<UncSource, UncScale>, RVecLV> getShiftedP4(RVecF Jet_pt, const RVecF& Jet_eta, const RVecF& Jet_phi, RVecF Jet_mass,
                                                                       const RVecF& Jet_rawFactor, const RVecF& Jet_area, const float rho,
                                                                       const RVecF& GenJet_pt, const RVecI& Jet_genJetIdx, int event) const
         {
@@ -218,7 +218,7 @@ namespace correction {
                         {
                             double sf = 1.0;
                             sf += static_cast<int>(uncScale)*jer_pt_resolutions[jet_idx];
-                            shifted_p4[jet_idx] = LorentzVectorM(sf*Jet_pt[jet_idx], Jet_eta[jet_idx], Jet_phi[jet_idx], Jet_mass[jet_idx]);
+                            shifted_p4[jet_idx] = LorentzVectorM(sf*Jet_pt[jet_idx], Jet_eta[jet_idx], Jet_phi[jet_idx], sf*Jet_mass[jet_idx]);
                         }
                     }
                     else
