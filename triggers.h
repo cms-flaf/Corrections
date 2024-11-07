@@ -199,7 +199,7 @@ public:
             y_bin =1;
         if( y_bin > y_axis->GetNbins() )
             y_bin = y_axis->GetNbins();
-        if (verbose)
+        // if (verbose)
             // {std::cout << "x, y = " << x_bin << "," << y_bin << " bin content " << histo->GetBinContent(x_bin,y_bin) << " scale " << static_cast<int>(scale) << " bin error " << histo->GetBinError(x_bin,y_bin) << std::endl;}
         return histo->GetBinContent(x_bin,y_bin) + static_cast<int>(scale) * histo->GetBinError(x_bin,y_bin);
     }
@@ -212,7 +212,7 @@ public:
         if (source== UncSource::singleEle){
             const UncScale ele_scale = source== UncSource::singleEle ? scale : UncScale::Central;
             sf= getSFsFromHisto(histo_ele_MC, part_p4, ele_scale, false, false);
-            std::cout << "applying SF single ele for " << static_cast<int>(ele_scale) << " scale " << sf << std::endl;
+            // std::cout << "applying SF single ele for " << static_cast<int>(ele_scale) << " scale " << sf << std::endl;
         }
         if (source== UncSource::mutau_mu || source == UncSource::etau_ele){
             UncScale xTrg_scale = UncScale::Central;
@@ -271,7 +271,7 @@ public:
         if (source== UncSource::singleEle){
             const UncScale ele_scale = source== UncSource::singleEle ? scale : UncScale::Central;
             sf= getSFsFromHisto(histo_ele_SF, part_p4, ele_scale, false, false);
-            std::cout << sf << std::endl;
+            // std::cout << sf << std::endl;
         }
         if (source== UncSource::mutau_mu || source == UncSource::etau_ele){
             UncScale xTrg_scale = UncScale::Central;
