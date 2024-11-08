@@ -211,6 +211,7 @@ class Corrections:
         generator_name = samples[sample]['generator'] if samples[sample]['sampleType'] != 'data' else ''
         genWeight_def = 'double(genWeight)'
         if generator_name in [ "madgraph", "amcatnlo" ]:
+            #print("using madgraph or amcatnlo")
             genWeight_def = 'std::copysign<double>(1., genWeight)'
         df = df.Define('genWeightD', genWeight_def)
 
@@ -288,3 +289,8 @@ class Corrections:
                 df = df.Define(f'weight_denom_{syst_name}', weight_formula)
                 syst_names.append(syst_name)
         return df, syst_names
+
+
+# amcatnlo problem
+# https://cms-talk.web.cern.ch/t/correct-way-to-stitch-lo-w-jet-inclusive-and-jet-binned-samples/17651/3
+# https://cms-talk.web.cern.ch/t/stitching-fxfx-merged-njet-binned-samples/16751/7
