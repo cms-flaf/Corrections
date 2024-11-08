@@ -179,7 +179,6 @@ class Corrections:
                                     return_variations=True, isCentral=True):
         lumi = global_params['luminosity']
         sampleType = samples[sample]['sampleType']
-        #print(f"sampletype: {sampleType}")
         generator = samples[sample]['generator']
         #print(f"xsection file: {global_params['crossSectionsFile']}, sampleType: {samples[sample]['sampleType']}, xs_name: {samples[sample].items()}")
         xsFile = global_params['crossSectionsFile']
