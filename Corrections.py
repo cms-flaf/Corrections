@@ -10,7 +10,11 @@ period_names = {
     'Run2_2016': '2016postVFP_UL',
     'Run2_2017': '2017_UL',
     'Run2_2018': '2018_UL',
-    'Run3_2022': '2022_Summer22'
+    'Run3_2022': '2022_Summer22',
+    'Run3_2022EE': '2022_Summer22EE',
+    'Run3_2023': '2023_Summer23',
+    'Run3_2023BPix': '2023_Summer23BPix',
+    'Run3_2024': '2024_Winter24'
 }
 
 def findRefSample(config, sample_type):
@@ -156,10 +160,9 @@ class Corrections:
             df, source_dict = self.tau.getES(df, source_dict)
         if 'JEC' in self.to_apply or 'JER' in self.to_apply:
             df, source_dict = self.jet.getP4Variations(df, source_dict, 'JER' in self.to_apply, 'JEC' in self.to_apply)
-            # df, source_dict = self.fatjet.getP4Variations(df, source_dict, 'JER' in self.to_apply, 'JEC' in self.to_apply)
-        # if 'tauES' in self.to_apply or 'JEC' in self.to_apply or 'JEC' in self.to_apply:
-        #     df, source_dict = self.met.getPFMET(df, source_dict)
-        print(source_dict)
+            df, source_dict = self.fatjet.getP4Variations(df, source_dict, 'JER' in self.to_apply, 'JEC' in self.to_apply)
+        if 'tauES' in self.to_apply or 'JEC' in self.to_apply or 'JEC' in self.to_apply:
+            df, source_dict = self.met.getPFMET(df, source_dict)
         syst_dict = { }
         for source, source_objs in source_dict.items():
             for scale in getScales(source):
