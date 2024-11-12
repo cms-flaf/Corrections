@@ -77,11 +77,12 @@ class JetCorrProducer:
 
     #Sources = []
     period = None
-    def __init__(self, period, isData):
+    def __init__(self, period, isData, use_corrlib = True, use_regrouped = False):
+        self.use_regrouped = use_regrouped
         self.year = int(period[:4])
         print(f"period: {period}")
         print(f"year: {self.year}")
-        if self.year < 2022:
+        if not use_corrlib:
             print("Initializing old JetCorrProducer")
             JEC_SF_path_period = JetCorrProducer.JEC_SF_path.format(period)
             JEC_dir = directories_JEC[period]
@@ -138,7 +139,7 @@ class JetCorrProducer:
                 headers_dir = os.path.dirname(os.path.abspath(__file__))
                 header_path = os.path.join(headers_dir, "jet.h")
                 ROOT.gInterpreter.Declare(f'#include "{header_path}"')
-                ROOT.gInterpreter.ProcessLine(f'::correction::JetCorrectionProvider::Initialize("{jet_jsonFile}", "{jetsmear_jsonFile}", "{jec_tag}", "{jer_tag}", "{algo}", "{year}")')
+                ROOT.gInterpreter.ProcessLine(f'::correction::JetCorrectionProvider::Initialize("{jet_jsonFile}", "{jetsmear_jsonFile}", "{jec_tag}", "{jer_tag}", "{algo}", "{year}, {self.use_regrouped}")')
                 JetCorrProducer.initialized = True
 
 
