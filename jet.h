@@ -150,19 +150,21 @@ private:
 
         // algo - type of jet algorithm
         // e.g. AK4PFPuppi
-        JetCorrectionProvider(std::string const& json_file_name, std::string const& jetsmear_file_name, std::string const& jec_tag, std::string const& jer_tag, std::string const& algo, std::string const& year)
+        JetCorrectionProvider(std::string const& json_file_name, std::string const& jetsmear_file_name, std::string const& jec_tag, std::string const& jer_tag, std::string const& algo, std::string const& year, bool use_regrouped = false)
         :   corrset_(CorrectionSet::from_file(json_file_name))
         ,   jersmear_corrset_(CorrectionSet::from_file(jetsmear_file_name))
         ,   jec_tag_(jec_tag)
         ,   jer_tag_(jer_tag)
         ,   algo_(algo)
         ,   year_(year)
+        ,   use_regrouped_(use_regrouped)
         {}
 
         std::map<std::pair<UncSource, UncScale>, RVecLV> getShiftedP4(RVecF Jet_pt, const RVecF& Jet_eta, const RVecF& Jet_phi, RVecF Jet_mass,
                                                                       const RVecF& Jet_rawFactor, const RVecF& Jet_area, const float rho,
                                                                       const RVecF& GenJet_pt, const RVecI& Jet_genJetIdx, int event) const
         {
+            auto const& unc_map = use_regrouped_ ? unc_map_regrouped : unc_map_total;
             std::map<std::pair<UncSource, UncScale>, RVecLV> all_shifted_p4;
             std::vector<UncScale> uncScales = { UncScale::Up, UncScale::Down };
 
@@ -260,26 +262,38 @@ private:
         std::string algo_;
         std::string year_;
 
-        inline static const std::map<UncSource, std::string> unc_map = { { UncSource::Total, "Total" },
-                                                                         { UncSource::JER, "JER" } };
+        inline static const std::map<UncSource, std::string> unc_map_total = { { UncSource::Total, "Total" },
+                                                                               { UncSource::JER, "JER" } };
 
-        inline static const std::map<UncSource, bool> year_dep_map = { { UncSource::Total, false },
-                                                                       { UncSource::JER, false } };
+        inline static const std::map<UncSource, bool> year_dep_map = { { UncSource::Central, false },
+                                                                       { UncSource::JER, false },
+                                                                       { UncSource::Total, false },
+                                                                       { UncSource::RelativeBal, false },
+                                                                       { UncSource::HF, false },
+                                                                       { UncSource::BBEC1, false },
+                                                                       { UncSource::EC2, false },
+                                                                       { UncSource::Absolute, false },
+                                                                       { UncSource::FlavorQCD, false },
+                                                                       { UncSource::BBEC1_year, true },
+                                                                       { UncSource::Absolute_year, true },
+                                                                       { UncSource::EC2_year, true },
+                                                                       { UncSource::HF_year, true },
+                                                                       { UncSource::RelativeSample_year, true } };
 
-        // inline static const std::map<UncSource, std::string> unc_map = { { UncSource::Central, "Central" },
-        //                                                                  { UncSource::JER, "JER" },
-        //                                                                  { UncSource::Total, "Total" },
-        //                                                                  { UncSource::RelativeBal, "Regrouped_RelativeBal" },
-        //                                                                  { UncSource::HF, "Regrouped_HF" },
-        //                                                                  { UncSource::BBEC1, "Regrouped_BBEC1" },
-        //                                                                  { UncSource::EC2, "Regrouped_EC2" },
-        //                                                                  { UncSource::Absolute, "Regrouped_Absolute" },
-        //                                                                  { UncSource::FlavorQCD, "Regrouped_FlavorQCD" },
-        //                                                                  { UncSource::BBEC1_year, "Regrouped_BBEC1" },
-        //                                                                  { UncSource::Absolute_year, "Regrouped_Absolute" },
-        //                                                                  { UncSource::EC2_year, "Regrouped_EC2" },
-        //                                                                  { UncSource::HF_year, "Regrouped_RelativeStatHF" },
-        //                                                                  { UncSource::RelativeSample_year, "Regrouped_RelativeSample" } };
+        inline static const std::map<UncSource, std::string> unc_map_regrouped = { { UncSource::Central, "Central" },
+                                                                                   { UncSource::JER, "JER" },
+                                                                                   { UncSource::Total, "Total" },
+                                                                                   { UncSource::RelativeBal, "Regrouped_RelativeBal" },
+                                                                                   { UncSource::HF, "Regrouped_HF" },
+                                                                                   { UncSource::BBEC1, "Regrouped_BBEC1" },
+                                                                                   { UncSource::EC2, "Regrouped_EC2" },
+                                                                                   { UncSource::Absolute, "Regrouped_Absolute" },
+                                                                                   { UncSource::FlavorQCD, "Regrouped_FlavorQCD" },
+                                                                                   { UncSource::BBEC1_year, "Regrouped_BBEC1" },
+                                                                                   { UncSource::Absolute_year, "Regrouped_Absolute" },
+                                                                                   { UncSource::EC2_year, "Regrouped_EC2" },
+                                                                                   { UncSource::HF_year, "Regrouped_RelativeStatHF" },
+                                                                                   { UncSource::RelativeSample_year, "Regrouped_RelativeSample" } };
     };
 
 } // namespace correction
