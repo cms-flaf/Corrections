@@ -280,9 +280,7 @@ private:
                                                                        { UncSource::HF_year, true },
                                                                        { UncSource::RelativeSample_year, true } };
 
-        inline static const std::map<UncSource, std::string> unc_map_regrouped = { { UncSource::Central, "Central" },
-                                                                                   { UncSource::JER, "JER" },
-                                                                                   { UncSource::Total, "Total" },
+        inline static const std::map<UncSource, std::string> unc_map_regrouped = { { UncSource::JER, "JER" },
                                                                                    { UncSource::RelativeBal, "Regrouped_RelativeBal" },
                                                                                    { UncSource::HF, "Regrouped_HF" },
                                                                                    { UncSource::BBEC1, "Regrouped_BBEC1" },
