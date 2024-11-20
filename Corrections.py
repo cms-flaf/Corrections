@@ -138,7 +138,11 @@ class Corrections:
     @property
     def trg(self):
         if self.trg_ is None:
-            from .triggers import TrigCorrProducer
+            print(self.period)
+            if self.period.split('_')[0].startswith('Run3'):
+                from .triggersRun3 import TrigCorrProducer
+            else:
+                from .triggers import TrigCorrProducer
             self.trg_ = TrigCorrProducer(period_names[self.period], self.config)
         return self.trg_
 
@@ -244,6 +248,8 @@ class Corrections:
             df, bTagShape_SF_branches = self.btag.getBTagShapeSF(df, isCentral, return_variations)
             all_weights.extend(bTagShape_SF_branches)
         if 'mu' in self.to_apply:
+            df, lowPtmuID_SF_branches = self.mu.getLowPtMuonIDSF(df, lepton_legs, isCentral, return_variations)
+            all_weights.extend(lowPtmuID_SF_branches)
             df, muID_SF_branches = self.mu.getMuonIDSF(df, lepton_legs, isCentral, return_variations)
             all_weights.extend(muID_SF_branches)
             df, highPtmuID_SF_branches = self.mu.getHighPtMuonIDSF(df, lepton_legs, isCentral, return_variations)
