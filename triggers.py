@@ -18,6 +18,7 @@ import yaml
 # singleTau: 2018 - (HLT_MediumChargedIsoPFTau180HighPtRelaxedIso_Trk50_eta2p1_v) - 	0.87 +/- 0.11
 
 year_singleElefile = {
+    "2022":"",
     "2018_UL":"sf_el_2018_HLTEle32.root",
     "2017_UL":"sf_el_2017_HLTEle32.root",
     "2016preVFP_UL":"sf_el_2016pre_HLTEle25.root",
@@ -25,6 +26,7 @@ year_singleElefile = {
 }
 
 year_singleMufile = {
+    "2022":"",
     "2018_UL":"Efficiencies_muon_generalTracks_Z_Run2018_UL_SingleMuonTriggers.root",
     "2017_UL":"Efficiencies_muon_generalTracks_Z_Run2017_UL_SingleMuonTriggers.root",
     "2016preVFP_UL":"Efficiencies_muon_generalTracks_Z_Run2016_UL_HIPM_SingleMuonTriggers.root",
@@ -32,6 +34,7 @@ year_singleMufile = {
 }
 
 year_xTrg_eTaufile = {
+    "2022":"",
     "2018_UL":"sf_el_2018_HLTEle24Tau30.root",
     "2017_UL":"sf_el_2017_HLTEle24Tau30.root",
     "2016preVFP_UL":"sf_mu_2016pre_HLTMu20Tau27.root",
@@ -39,6 +42,7 @@ year_xTrg_eTaufile = {
 }
 
 year_xTrg_muTaufile = {
+    "2022":"",
     "2018_UL":"sf_mu_2018_HLTMu20Tau27.root",
     "2017_UL":"sf_mu_2017_HLTMu20Tau27.root",
     "2016preVFP_UL":"sf_mu_2016pre_HLTMu20Tau27.root",
@@ -46,6 +50,7 @@ year_xTrg_muTaufile = {
 }
 
 year_METfile = {
+    "2022":"",
     "2018_UL":"150_mumu_fit_2018.root",
     "2017_UL":"150_mumu_fit_2017.root",
     "2016preVFP_UL":"150_mumu_fit_2016APV.root",
