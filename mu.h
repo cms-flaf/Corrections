@@ -130,7 +130,8 @@ public:
         if ((era == "Run2_2016_HIPM") || (era == "Run2_2016")){
             muIDCorrections["NUM_IsoMu24_or_IsoTkMu24_DEN_CutBasedIdTight_and_PFIsoTight"] = corrections_->at("NUM_IsoMu24_or_IsoTkMu24_DEN_CutBasedIdTight_and_PFIsoTight");
         }
-        if (era == "Run3_2022"){
+
+        if (era == "Run3_2022" || era == "Run3_2022EE" || era == "Run3_2023" || era == "Run3_2023BPix"){
             muIDCorrections["NUM_TightID_DEN_TrackerMuons"]=corrections_->at("NUM_TightID_DEN_TrackerMuons");
             muIDCorrections["NUM_LoosePFIso_DEN_TightID"]=corrections_->at("NUM_LoosePFIso_DEN_TightID");
             muIDCorrections["NUM_IsoMu24_DEN_CutBasedIdTight_and_PFIsoTight"]=corrections_->at("NUM_IsoMu24_DEN_CutBasedIdTight_and_PFIsoTight");
@@ -145,9 +146,14 @@ public:
             //const std::string& reco_scale_str = scale==UncScale::Central ? "nominal" : scale_str;
             return (muon_p4.Pt() >= 10 && muon_p4.Pt() < 200)? muIDCorrections.at(getUncSourceName(source))->evaluate({abs(muon_p4.Eta()), 50., scale_str}) : 1.;
         }
-        return source == UncSource::Central ? 1. : muIDCorrections.at(getUncSourceName(source))->evaluate({ abs(muon_p4.Eta()), muon_p4.Pt(), scale_str}) ;
+        float pt_low = 15.0;
+        float corr_SF = (muon_p4.Pt() >= pt_low) ? muIDCorrections.at(getUncSourceName(source))->evaluate({ abs(muon_p4.Eta()), muon_p4.Pt(), scale_str}) : muIDCorrections.at(getUncSourceName(source))->evaluate({ abs(muon_p4.Eta()), pt_low, scale_str});
+        return source == UncSource::Central ? 1. : corr_SF ;
+        //return source == UncSource::Central ? 1. : muIDCorrections.at(getUncSourceName(source))->evaluate({ abs(muon_p4.Eta()), muon_p4.Pt(), scale_str}) ;
     }
-
+    //Check range, but if it is out of range it is still valid and return 1.
+    //Read json for bounds, min/max to be within, use that value
+    //If its out of range return a bool as well
 private:
     static const std::map<float, std::set<std::pair<float, float>>>& getRecoSFMap()
         {
@@ -270,7 +276,10 @@ public:
         if (source == UncSource::NUM_GlobalMuons_DEN_TrackerMuonProbes) {
             return (muon_p4.Pt()>=200)? highPtmuCorrections.at(getUncSourceName(source))->evaluate({abs(muon_p4.Eta()), mu_p, scale_str}) : 1. ;
         }
-        return source == UncSource::Central ? 1. : highPtmuCorrections.at(getUncSourceName(source))->evaluate({abs(muon_p4.Eta()),muon_p4.Pt(), scale_str}) ;
+        float pt_low = 50.0;
+        float corr_SF = (muon_p4.Pt() >= pt_low) ? highPtmuCorrections.at(getUncSourceName(source))->evaluate({abs(muon_p4.Eta()),muon_p4.Pt(), scale_str}) : highPtmuCorrections.at(getUncSourceName(source))->evaluate({abs(muon_p4.Eta()), pt_low, scale_str});
+        return source == UncSource::Central ? 1. : corr_SF ;
+        // return source == UncSource::Central ? 1. : highPtmuCorrections.at(getUncSourceName(source))->evaluate({abs(muon_p4.Eta()),muon_p4.Pt(), scale_str}) ;
     }
 
 private:
@@ -303,4 +312,90 @@ private:
 };
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+class LowPtMuCorrProvider : public CorrectionsBase<LowPtMuCorrProvider> {
+public:
+    enum class UncSource : int {
+        Central = -1,
+        NUM_LooseID_DEN_TrackerMuons = 0,
+        NUM_MediumID_DEN_TrackerMuons = 1,
+        NUM_SoftID_DEN_TrackerMuons = 2,
+        NUM_TightID_DEN_TrackerMuons = 3,
+    };
+
+    static const std::string& getScaleStr(UncScale scale)
+    {
+        static const std::map<UncScale, std::string> names = {
+            { UncScale::Down, "systdown" },
+            { UncScale::Central, "nominal" },
+            { UncScale::Up, "systup" },
+        };
+        return names.at(scale);
+    }
+
+    //We can probably remove this highPtId bool, or maybe we will have to invent a lowPtId
+    static bool sourceApplies(UncSource source, const float Muon_pfRelIso04_all, const bool Muon_TightId, const float muon_Pt, const float Muon_tkRelIso, const bool Muon_highPtId)
+    {
+        // ID
+        bool tightID_condition = (Muon_TightId && Muon_pfRelIso04_all<0.15); //Since there is not an ISO, should we remove this pfRelIso?
+        if(source == UncSource::NUM_TightID_DEN_TrackerMuons && tightID_condition ) return true;
+        return false;
+    }
+
+    LowPtMuCorrProvider(const std::string& fileName) :
+    corrections_(CorrectionSet::from_file(fileName))
+    {
+        lowPtmuCorrections["NUM_TightID_DEN_TrackerMuons"]=corrections_->at("NUM_TightID_DEN_TrackerMuons");
+    }
+
+    float getLowPtMuonSF(const LorentzVectorM & muon_p4, const float Muon_pfRelIso04_all, const bool Muon_TightId, const float Muon_tkRelIso, const bool Muon_highPtId, UncSource source, UncScale scale) const {
+        const UncScale muID_scale = sourceApplies(source, Muon_pfRelIso04_all, Muon_TightId, muon_p4.Pt(), Muon_tkRelIso, Muon_highPtId) ? scale : UncScale::Central;
+        const std::string& scale_str = getScaleStr(muID_scale);
+        const auto mu_p = std::hypot(muon_p4.Px(),muon_p4.Py(),muon_p4.Pz());
+        return source == UncSource::Central ? 1. : lowPtmuCorrections.at(getUncSourceName(source))->evaluate({abs(muon_p4.Eta()),muon_p4.Pt(), scale_str}) ;
+    }
+
+private:
+
+    static std::string& getUncSourceName(UncSource source) {
+        static std::string sourcename = "Central";
+        if (source == UncSource::NUM_LooseID_DEN_TrackerMuons) sourcename =  "NUM_LooseID_DEN_TrackerMuons";
+        if (source == UncSource::NUM_MediumID_DEN_TrackerMuons) sourcename =  "NUM_MediumID_DEN_TrackerMuons";
+        if (source == UncSource::NUM_SoftID_DEN_TrackerMuons) sourcename =  "NUM_SoftID_DEN_TrackerMuons";
+        if (source == UncSource::NUM_TightID_DEN_TrackerMuons) sourcename =  "NUM_TightID_DEN_TrackerMuons";
+        return sourcename;
+    }
+private:
+    std::unique_ptr<CorrectionSet> corrections_;
+    std::map<std::string, Correction::Ref> lowPtmuCorrections;
+
+};
+
+
 } // namespace correction
+
+
+
+
+
+
+
+
+
+
+
+
+
