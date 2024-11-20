@@ -70,25 +70,28 @@ public:
         return names.at(scale);
     }
 
-     static bool sourceApplies(UncSource source, const float Muon_pfRelIso04_all, const bool Muon_TightId, const float muon_Pt, const float Muon_tkRelIso, const bool Muon_highPtId)
+     static bool sourceApplies(UncSource source, const int TauMu_genMatch, const float Muon_pfRelIso04_all, const bool Muon_TightId, const float muon_Pt, const float Muon_tkRelIso, const bool Muon_highPtId)
     {
-        // RECO
-        if(source == UncSource::NUM_TrackerMuons_DEN_genTracks) return true;
+        const GenLeptonMatch genMatch = static_cast<GenLeptonMatch>(TauMu_genMatch);
+        if((genMatch != GenLeptonMatch::Muon && genMatch != GenLeptonMatch::TauMuon)) return false;
+        if(genMatch == GenLeptonMatch::Muon || genMatch == GenLeptonMatch::TauMuon){
+            // RECO
+            if(source == UncSource::NUM_TrackerMuons_DEN_genTracks) return true;
 
-        // ID
-        bool tightID_condition = (Muon_TightId && Muon_pfRelIso04_all<0.15);
-        bool highPtID_condition = (Muon_highPtId && Muon_tkRelIso < 0.15);
-        if(source == UncSource::NUM_TightID_DEN_TrackerMuons && tightID_condition ) return true;
-        if(source == UncSource::NUM_TightID_DEN_genTracks && tightID_condition ) return true;
+            // ID
+            bool tightID_condition = (Muon_TightId && Muon_pfRelIso04_all<0.15);
+            bool highPtID_condition = (Muon_highPtId && Muon_tkRelIso < 0.15);
+            if(source == UncSource::NUM_TightID_DEN_TrackerMuons && tightID_condition ) return true;
+            if(source == UncSource::NUM_TightID_DEN_genTracks && tightID_condition ) return true;
 
-        if(source == UncSource::NUM_HighPtID_DEN_TrackerMuons && highPtID_condition ) return true;
-        if(source == UncSource::NUM_HighPtID_DEN_genTracks && highPtID_condition ) return true;
+            if(source == UncSource::NUM_HighPtID_DEN_TrackerMuons && highPtID_condition ) return true;
+            if(source == UncSource::NUM_HighPtID_DEN_genTracks && highPtID_condition ) return true;
 
-        // ISO
-        if(source == UncSource::NUM_TightRelIso_DEN_TightIDandIPCut && tightID_condition ) return true;
-        if(source == UncSource::NUM_TightRelTkIso_DEN_TrkHighPtIDandIPCut && highPtID_condition ) return true;
-        if(source == UncSource::NUM_LoosePFIso_DEN_TightID && tightID_condition ) return true;
-
+            // ISO
+            if(source == UncSource::NUM_TightRelIso_DEN_TightIDandIPCut && tightID_condition ) return true;
+            if(source == UncSource::NUM_TightRelTkIso_DEN_TrkHighPtIDandIPCut && highPtID_condition ) return true;
+            if(source == UncSource::NUM_LoosePFIso_DEN_TightID && tightID_condition ) return true;
+        }
         // TRG
         if(source == UncSource::NUM_IsoMu24_DEN_CutBasedIdTight_and_PFIsoTight&& muon_Pt > 26) return true;
         if(source == UncSource::NUM_IsoMu27_DEN_CutBasedIdTight_and_PFIsoTight&& muon_Pt > 29) return true;
@@ -138,9 +141,10 @@ public:
         }
     }
 
-    float getMuonSF(const LorentzVectorM & muon_p4, const float Muon_pfRelIso04_all, const bool Muon_TightId, const float Muon_tkRelIso, const bool Muon_highPtId, UncSource source, UncScale scale, std::string year) const {
-        const UncScale muID_scale = sourceApplies(source, Muon_pfRelIso04_all, Muon_TightId, muon_p4.Pt(), Muon_tkRelIso, Muon_highPtId)
-                                           ? scale : UncScale::Central;
+    float getMuonSF(const LorentzVectorM & muon_p4, const int TauMu_genMatch, const float Muon_pfRelIso04_all, const bool Muon_TightId, const float Muon_tkRelIso, const bool Muon_highPtId, UncSource source, UncScale scale, std::string year) const {
+        const GenLeptonMatch genMatch = static_cast<GenLeptonMatch>(TauMu_genMatch);
+        if((genMatch != GenLeptonMatch::Muon && genMatch != GenLeptonMatch::TauMuon)) return 1.;
+        const UncScale muID_scale = sourceApplies(source,TauMu_genMatch, Muon_pfRelIso04_all, Muon_TightId, muon_p4.Pt(), Muon_tkRelIso, Muon_highPtId) ? scale : UncScale::Central;
         const std::string& scale_str = getScaleStr(muID_scale);
         if (source == UncSource::NUM_TrackerMuons_DEN_genTracks) {
             //const std::string& reco_scale_str = scale==UncScale::Central ? "nominal" : scale_str;
@@ -245,17 +249,23 @@ public:
     }
 
 
-     static bool sourceApplies(UncSource source, const float Muon_pfRelIso04_all, const bool Muon_TightId, const float muon_Pt, const float Muon_tkRelIso, const bool Muon_highPtId)
+     static bool sourceApplies(UncSource source, const int TauMu_genMatch, const float Muon_pfRelIso04_all, const bool Muon_TightId, const float muon_Pt, const float Muon_tkRelIso, const bool Muon_highPtId)
     {
-        // RECO
-        if (source == UncSource::NUM_GlobalMuons_DEN_TrackerMuonProbes) return true;
-        // ID
-        bool tightID_condition = (Muon_TightId && Muon_pfRelIso04_all<0.15);
-        bool highPtID_condition = (Muon_highPtId && Muon_tkRelIso < 0.15);
-        if(source == UncSource::NUM_TightID_DEN_GlobalMuonProbes && tightID_condition ) return true;
-        if(source == UncSource::NUM_HighPtID_DEN_GlobalMuonProbes && highPtID_condition ) return true;
-        // ISO
-        if (source == UncSource::NUM_probe_TightRelTkIso_DEN_HighPtProbes && highPtID_condition ) return true;
+
+        const GenLeptonMatch genMatch = static_cast<GenLeptonMatch>(TauMu_genMatch);
+        if((genMatch != GenLeptonMatch::Muon && genMatch != GenLeptonMatch::TauMuon)) return false;
+
+        if(genMatch == GenLeptonMatch::Muon || genMatch == GenLeptonMatch::TauMuon){
+            // RECO
+            if (source == UncSource::NUM_GlobalMuons_DEN_TrackerMuonProbes) return true;
+            // ID
+            bool tightID_condition = (Muon_TightId && Muon_pfRelIso04_all<0.15);
+            bool highPtID_condition = (Muon_highPtId && Muon_tkRelIso < 0.15);
+            if(source == UncSource::NUM_TightID_DEN_GlobalMuonProbes && tightID_condition ) return true;
+            if(source == UncSource::NUM_HighPtID_DEN_GlobalMuonProbes && highPtID_condition ) return true;
+            // ISO
+            if (source == UncSource::NUM_probe_TightRelTkIso_DEN_HighPtProbes && highPtID_condition ) return true;
+        }
         return false;
     }
 
@@ -269,8 +279,11 @@ public:
 
     }
 
-    float getHighPtMuonSF(const LorentzVectorM & muon_p4, const float Muon_pfRelIso04_all, const bool Muon_TightId, const float Muon_tkRelIso, const bool Muon_highPtId, UncSource source, UncScale scale) const {
-        const UncScale muID_scale = sourceApplies(source, Muon_pfRelIso04_all, Muon_TightId, muon_p4.Pt(), Muon_tkRelIso, Muon_highPtId) ? scale : UncScale::Central;
+    float getHighPtMuonSF(const LorentzVectorM & muon_p4, const int TauMu_genMatch, const float Muon_pfRelIso04_all, const bool Muon_TightId, const float Muon_tkRelIso, const bool Muon_highPtId, UncSource source, UncScale scale) const {
+
+        const GenLeptonMatch genMatch = static_cast<GenLeptonMatch>(TauMu_genMatch);
+        if((genMatch != GenLeptonMatch::Electron && genMatch != GenLeptonMatch::TauElectron)) return 1.;
+        const UncScale muID_scale = sourceApplies(source,TauMu_genMatch, Muon_pfRelIso04_all, Muon_TightId, muon_p4.Pt(), Muon_tkRelIso, Muon_highPtId) ? scale : UncScale::Central;
         const std::string& scale_str = getScaleStr(muID_scale);
         const auto mu_p = std::hypot(muon_p4.Px(),muon_p4.Py(),muon_p4.Pz());
         if (source == UncSource::NUM_GlobalMuons_DEN_TrackerMuonProbes) {
