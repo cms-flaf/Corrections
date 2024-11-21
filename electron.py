@@ -14,24 +14,46 @@ from .CorrectionsCore import *
 class EleCorrProducer:
     EleID_JsonPath = "/cvmfs/cms.cern.ch/rsync/cms-nanoAOD/jsonpog-integration/POG/EGM/{}/electron.json.gz"
     EleES_JsonPath = "Corrections/data/EGM/{}/EGM_ScaleUnc.json.gz"
+    EleES_JsonPath_Run3 = "/cvmfs/cms.cern.ch/rsync/cms-nanoAOD/jsonpog-integration/POG/EGM/{}/electronSS.json.gz"
     initialized = False
     ID_sources = ["EleID"]
     working_points = ["wp80iso", "wp80noiso"]
+    energyScaleSources_ele = ["EleES"]
     year = ""
 
     def __init__(self, period):
         EleID_JsonFile = EleCorrProducer.EleID_JsonPath.format(period)
-        EleES_JsonFile = os.path.join(os.environ['ANALYSIS_PATH'],EleCorrProducer.EleES_JsonPath.format(period))
+
+        if ( ('2016' in period) or ('2018' in period) or ('2018' in period)):
+            EleES_JsonFile = os.path.join(os.environ['ANALYSIS_PATH'],EleCorrProducer.EleES_JsonPath.format(period))
+            EleID_JsonFile_key = "UL-Electron-ID-SF"
+            EleES_JsonFile_key = "UL-EGM_ScaleUnc"
+        else:
+            EleES_JsonFile = EleCorrProducer.EleES_JsonPath_Run3.format(period)
+            EleID_JsonFile_key = "Electron-ID-SF"
+            EleES_JsonFile_key = "Scale"
+
 
         if not EleCorrProducer.initialized:
             headers_dir = os.path.dirname(os.path.abspath(__file__))
             header_path = os.path.join(headers_dir, "electron.h")
             ROOT.gInterpreter.Declare(f'#include "{header_path}"')
-            ROOT.gInterpreter.ProcessLine(f'::correction::EleCorrProvider::Initialize("{EleID_JsonFile}", "{EleES_JsonFile}")')
+            ROOT.gInterpreter.ProcessLine(f'::correction::EleCorrProvider::Initialize("{EleID_JsonFile}", "{EleES_JsonFile}","{EleID_JsonFile_key}","{EleES_JsonFile_key}")')
             EleCorrProducer.year = period.split("_")[0]
+            if ('Summer22' in period):  EleCorrProducer.year = period.split("_")[0]+"Re-recoBCD"
             EleCorrProducer.initialized = True
 
+    def getES(self, df, source_dict):
+        for source in EleCorrProducer.energyScaleSources_ele:
+            updateSourceDict(source_dict, source, 'Ele')
+            for scale in getScales(source):
+                syst_name = getSystName(source, scale)
+                df = df.Define(f'Electron_p4_{syst_name}', f'''::correction::EleCorrProvider::getGlobal().getES(
+                               Electron_p4_{nano}, Electron_seedGain, run, Electron_r9,
+                               ::correction::EleCorrProvider::UncSource::{source}, ::correction::UncScale::{scale})''')
+                df = df.Define(f'Electron_p4_{syst_name}_delta', f'Electron_p4_{syst_name} - Electron_p4_{nano}')
 
+        return df, source_dict
 
     def getIDSF(self, df, lepton_legs, isCentral, return_variations):
         sf_sources =EleCorrProducer.ID_sources
@@ -48,8 +70,8 @@ class EleCorrProducer:
                         #print(branch_name)
                         #print(branch_central)
                         df = df.Define(f"{branch_name}_double",
-                                    f'''HttCandidate.leg_type[{leg_idx}] == Leg::e ? ::correction::EleCorrProvider::getGlobal().getID_SF(
-                                HttCandidate.leg_p4[{leg_idx}], Electron_genMatch.at(HttCandidate.leg_index[{leg_idx}]), "{working_point}",
+                                    f'''{leg_name}_type == static_cast<int>(Leg::e) && {leg_name}_pt >= 10 &&  {leg_name}_index >= 0 ? ::correction::EleCorrProvider::getGlobal().getID_SF(
+                                {leg_name}_p4, "{working_point}",
                                 "{EleCorrProducer.year}",::correction::EleCorrProvider::UncSource::{source}, ::correction::UncScale::{scale}) : 1.;''')
                         if scale != central:
                             branch_name_final = branch_name + '_rel'
@@ -60,5 +82,6 @@ class EleCorrProducer:
                             else:
                                 branch_name_final = branch_name
                             df = df.Define(branch_name_final, f"static_cast<float>({branch_name}_double)")
+
                         SF_branches.append(branch_name_final)
         return df,SF_branches

@@ -13,6 +13,7 @@ using RVecF = ROOT::VecOps::RVec<float>;
 using RVecB = ROOT::VecOps::RVec<bool>;
 using RVecVecI = ROOT::VecOps::RVec<RVecI>;
 using RVecLV = ROOT::VecOps::RVec<LorentzVectorM>;
+using RVecUL = ROOT::VecOps::RVec<unsigned long>;
 
 enum class UncScale : int {
     Down = -1,
