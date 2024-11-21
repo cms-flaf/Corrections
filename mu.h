@@ -72,20 +72,17 @@ public:
     {
         const GenLeptonMatch genMatch = static_cast<GenLeptonMatch>(TauMu_genMatch);
         if((genMatch != GenLeptonMatch::Muon && genMatch != GenLeptonMatch::TauMuon)) return false;
-        // if(genMatch == GenLeptonMatch::Muon || genMatch == GenLeptonMatch::TauMuon){
         // RECO
         if(source == UncSource::NUM_TrackerMuons_DEN_genTracks) return true;
-
         // ID
-        bool tightIDandIP_condition = (Muon_TightId && Muon_pfRelIso04_all<0.15);
-        bool highPtIDandIP_condition = (Muon_highPtId && Muon_tkRelIso < 0.15);
         if(source == UncSource::NUM_TightID_DEN_TrackerMuons && Muon_TightId ) return true;
         if(source == UncSource::NUM_TightID_DEN_genTracks && Muon_TightId ) return true;
-
         if(source == UncSource::NUM_HighPtID_DEN_TrackerMuons && Muon_highPtId ) return true;
         if(source == UncSource::NUM_HighPtID_DEN_genTracks && Muon_highPtId ) return true;
 
         // ISO
+        bool tightIDandIP_condition = (Muon_TightId && Muon_pfRelIso04_all<0.15);
+        bool highPtIDandIP_condition = (Muon_highPtId && Muon_tkRelIso < 0.15);
         if(source == UncSource::NUM_TightRelIso_DEN_TightIDandIPCut && tightIDandIP_condition ) return true;
         if(source == UncSource::NUM_TightRelTkIso_DEN_TrkHighPtIDandIPCut && highPtIDandIP_condition ) return true;
         // }
@@ -226,17 +223,14 @@ public:
         const GenLeptonMatch genMatch = static_cast<GenLeptonMatch>(TauMu_genMatch);
         if((genMatch != GenLeptonMatch::Muon && genMatch != GenLeptonMatch::TauMuon)) return false;
 
-        // if(genMatch == GenLeptonMatch::Muon || genMatch == GenLeptonMatch::TauMuon){
         // RECO
         if (source == UncSource::NUM_GlobalMuons_DEN_TrackerMuonProbes) return true;
         // ID
-        bool tightID_condition = (Muon_TightId && Muon_pfRelIso04_all<0.15);
-        bool highPtID_condition = (Muon_highPtId && Muon_tkRelIso < 0.15);
         if(source == UncSource::NUM_TightID_DEN_GlobalMuonProbes && Muon_TightId ) return true;
         if(source == UncSource::NUM_HighPtID_DEN_GlobalMuonProbes && Muon_highPtId ) return true;
         // ISO
+        bool highPtID_condition = (Muon_highPtId && Muon_tkRelIso < 0.15);
         if (source == UncSource::NUM_probe_TightRelTkIso_DEN_HighPtProbes && highPtID_condition ) return true;
-        // }
         return false;
     }
 
