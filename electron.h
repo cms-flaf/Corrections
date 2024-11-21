@@ -41,43 +41,39 @@ public:
         return false;
     }
 
-    EleCorrProvider(const std::string& EleIDFile, const std::string& EleESFile) :
+    EleCorrProvider(const std::string& EleIDFile, const std::string& EleESFile, const std::string& EleIDFile_key, const std::string& EleESFile_key ) :
         corrections_(CorrectionSet::from_file(EleIDFile)),
         correctionsES_(CorrectionSet::from_file(EleESFile)),
-        EleIDSF_(corrections_->at("UL-Electron-ID-SF")),
-        EleES_(correctionsES_->at("UL-EGM_ScaleUnc"))
-    {
-    }
+        EleIDSF_(corrections_->at(EleIDFile_key)),
+        EleES_(correctionsES_->at(EleESFile_key))
+        {
+        }
 
-
-    float getID_SF(const LorentzVectorM& Electron_p4, int TauEle_genMatch, std::string working_point, std::string period, UncSource source, UncScale scale) const
+    float getID_SF(const LorentzVectorM& Electron_p4, std::string working_point, std::string period, UncSource source, UncScale scale) const
     {
-        const GenLeptonMatch genMatch = static_cast<GenLeptonMatch>(TauEle_genMatch);
-        if((genMatch != GenLeptonMatch::Electron && genMatch != GenLeptonMatch::TauElectron)) return 1.;
+        // const GenLeptonMatch genMatch = static_cast<GenLeptonMatch>(TauEle_genMatch);
+        // if((genMatch != GenLeptonMatch::Electron && genMatch != GenLeptonMatch::TauElectron)) return 1.;
+
         const UncScale jet_scale = sourceApplies(source) ? scale : UncScale::Central;
         return EleIDSF_->evaluate({period, getIDScaleStr(jet_scale), working_point, Electron_p4.eta(), Electron_p4.pt()});
 
     }
-    /*
-     RVecLV getES(const RVecLV& Electron_p4, std::string period, UncSource source, UncScale scale) const
-    {
-        RVecLV final_p4 = Tau_p4;
-        for(size_t n = 0; n < Tau_p4.size(); ++n) {
 
-        }
-        const GenLeptonMatch genMatch = static_cast<GenLeptonMatch>(TauEle_genMatch);
-        if((genMatch != GenLeptonMatch::Electron && genMatch != GenLeptonMatch::TauElectron)) return 1.;
+     RVecLV getES(const RVecLV& Electron_p4, const RVecUC& Electron_seedGain, const RVecUL& run, const RVecUC& Electron_r9 , UncSource source, UncScale scale) const
+    {
+        RVecLV final_p4 = Electron_p4;
+        for(size_t n = 0; n < Electron_p4.size(); ++n) {
+        // const GenLeptonMatch genMatch = static_cast<GenLeptonMatch>(TauEle_genMatch);
+        // if((genMatch != GenLeptonMatch::Electron && genMatch != GenLeptonMatch::TauElectron)) return 1.;
         const UncScale jet_scale = sourceApplies(source)
                                            ? scale : UncScale::Central;
-        if(UncSource == UncSource::eleES){
-            return EleIDSF_->evaluate({period, getESScaleStr(source), Electron_p4.eta(), 1});
+            double sf = 1;
+            std::string period = "total_uncertainty";
+             sf = EleES_->evaluate({period, Electron_seedGain.at(n), run.at(n), Electron_p4[n].eta(), Electron_r9.at(n), Electron_p4[n].pt()});
+        final_p4[n] *= sf;
         }
-        else if (UncSource == UncSource::ele_dEsigma){
-
-        }
-        return 1. ;
+    return final_p4;
     }
-    */
 
 private:
     std::unique_ptr<CorrectionSet> corrections_, correctionsES_;

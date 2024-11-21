@@ -5,13 +5,6 @@ import itertools
 from .CorrectionsCore import *
 from RunKit.run_tools import ps_call
 
-period_names = {
-    'Run2_2016_HIPM': '2016preVFP_UL',
-    'Run2_2016': '2016postVFP_UL',
-    'Run2_2017': '2017_UL',
-    'Run2_2018': '2018_UL',
-}
-
 def findRefSample(config, sample_type):
     refSample = []
     for sample, sampleDef in config.items():
@@ -153,10 +146,12 @@ class Corrections:
         source_dict = { central : [] }
         if 'tauES' in self.to_apply:
             df, source_dict = self.tau.getES(df, source_dict)
+        if 'eleES' in self.to_apply:
+            df, source_dict = self.ele.getES(df, source_dict)
         if 'JEC' in self.to_apply or 'JER' in self.to_apply:
             df, source_dict = self.jet.getP4Variations(df, source_dict, 'JER' in self.to_apply, 'JEC' in self.to_apply)
             df, source_dict = self.fatjet.getP4Variations(df, source_dict, 'JER' in self.to_apply, 'JEC' in self.to_apply)
-        if 'tauES' in self.to_apply or 'JEC' in self.to_apply or 'JEC' in self.to_apply:
+        if 'tauES' in self.to_apply or 'JEC' in self.to_apply or 'JEC' in self.to_apply or 'eleES' in self.to_apply:
             df, source_dict = self.met.getPFMET(df, source_dict)
         syst_dict = { }
         for source, source_objs in source_dict.items():
