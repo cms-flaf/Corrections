@@ -1,4 +1,5 @@
 import os
+import sys
 import ROOT
 from .CorrectionsCore import *
 # lumi POG: https://twiki.cern.ch/twiki/bin/view/CMS/TWikiLUM
@@ -16,6 +17,8 @@ class puWeightProducer:
         "2017_UL": "Collisions17_UltraLegacy_goldenJSON",
         "2016preVFP_UL":"Collisions16_UltraLegacy_goldenJSON",
         "2016postVFP_UL":"Collisions16_UltraLegacy_goldenJSON",
+        "2022_Summer22":"Collisions2022_355100_357900_eraBCD_GoldenJson",
+        "2022_Summer22EE":"Collisions2022_359022_362760_eraEFG_GoldenJson",
     }
     def __init__(self, period):
         jsonFile = puWeightProducer.jsonPath.format(period)
