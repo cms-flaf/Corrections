@@ -28,6 +28,8 @@ public:
         if (era == "2022_Summer22" || era == "2022_Summer22EE" || era == "2023_Summer23" || era == "2023_Summer23BPix"){
             muTrgCorrections["Central"]=corrections_->at("NUM_IsoMu24_DEN_CutBasedIdTight_and_PFIsoTight");
             //muTrgCorrections["SourceName"]=corrections_->at("SourceName");
+        } else {
+           throw std::runtime_error("Era not supported");
         }
     }
 
