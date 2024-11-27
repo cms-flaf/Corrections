@@ -139,7 +139,6 @@ class Corrections:
     @property
     def trg(self):
         if self.trg_ is None:
-            print(self.period)
             if self.period.split('_')[0].startswith('Run3'):
                 from .triggersRun3 import TrigCorrProducer
             else:
