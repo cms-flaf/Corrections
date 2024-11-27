@@ -148,8 +148,9 @@ public:
             //const std::string& reco_scale_str = scale==UncScale::Central ? "nominal" : scale_str;
             return (muon_p4.Pt() >= 10 && muon_p4.Pt() < 200)? muIDCorrections.at(getUncSourceName(source))->evaluate({abs(muon_p4.Eta()), 50., scale_str}) : 1.;
         }
-        float pt_low = 15.0;
-        float corr_SF = (muon_p4.Pt() >= pt_low) ? muIDCorrections.at(getUncSourceName(source))->evaluate({ abs(muon_p4.Eta()), muon_p4.Pt(), scale_str}) : muIDCorrections.at(getUncSourceName(source))->evaluate({ abs(muon_p4.Eta()), pt_low, scale_str});
+        static const double pt_low = 15.0;
+        const double muon_pt = std::max(pt_low, muon_p4.pt());
+        const float corr_SF = muIDCorrections.at(getUncSourceName(source))->evaluate({ abs(muon_p4.Eta()), muon_pt, scale_str});
         return source == UncSource::Central ? 1. : corr_SF ;
         //return source == UncSource::Central ? 1. : muIDCorrections.at(getUncSourceName(source))->evaluate({ abs(muon_p4.Eta()), muon_p4.Pt(), scale_str}) ;
     }
