@@ -284,8 +284,9 @@ public:
         if (source == UncSource::NUM_GlobalMuons_DEN_TrackerMuonProbes) {
             return (muon_p4.Pt()>=200)? highPtmuCorrections.at(getUncSourceName(source))->evaluate({abs(muon_p4.Eta()), mu_p, scale_str}) : 1. ;
         }
-        float pt_low = 50.0;
-        float corr_SF = (muon_p4.Pt() >= pt_low) ? highPtmuCorrections.at(getUncSourceName(source))->evaluate({abs(muon_p4.Eta()),muon_p4.Pt(), scale_str}) : highPtmuCorrections.at(getUncSourceName(source))->evaluate({abs(muon_p4.Eta()), pt_low, scale_str});
+        static const double pt_low = 50.0;
+        const double muon_pt = std::max(pt_low, muon_p4.pt())
+        const float corr_SF = highPtmuCorrections.at(getUncSourceName(source))->evaluate({abs(muon_p4.Eta()), muon_pt, scale_str});
         return source == UncSource::Central ? 1. : corr_SF ;
     }
 
