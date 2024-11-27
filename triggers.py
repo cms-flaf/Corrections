@@ -25,7 +25,6 @@ year_singleElefile = {
 }
 
 year_singleMufile = {
-    "2022":"",
     "2018_UL":"Efficiencies_muon_generalTracks_Z_Run2018_UL_SingleMuonTriggers.root",
     "2017_UL":"Efficiencies_muon_generalTracks_Z_Run2017_UL_SingleMuonTriggers.root",
     "2016preVFP_UL":"Efficiencies_muon_generalTracks_Z_Run2016_UL_HIPM_SingleMuonTriggers.root",
