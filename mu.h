@@ -152,7 +152,6 @@ public:
         const double muon_pt = std::max(pt_low, muon_p4.pt());
         const float corr_SF = muIDCorrections.at(getUncSourceName(source))->evaluate({ abs(muon_p4.Eta()), muon_pt, scale_str});
         return source == UncSource::Central ? 1. : corr_SF ;
-        //return source == UncSource::Central ? 1. : muIDCorrections.at(getUncSourceName(source))->evaluate({ abs(muon_p4.Eta()), muon_p4.Pt(), scale_str}) ;
     }
     //Check range, but if it is out of range it is still valid and return 1.
     //Read json for bounds, min/max to be within, use that value
