@@ -18,7 +18,6 @@ import yaml
 # singleTau: 2018 - (HLT_MediumChargedIsoPFTau180HighPtRelaxedIso_Trk50_eta2p1_v) - 	0.87 +/- 0.11
 
 year_singleElefile = {
-    "2022":"",
     "2018_UL":"sf_el_2018_HLTEle32.root",
     "2017_UL":"sf_el_2017_HLTEle32.root",
     "2016preVFP_UL":"sf_el_2016pre_HLTEle25.root",
