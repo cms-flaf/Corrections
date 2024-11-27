@@ -288,7 +288,6 @@ public:
         float pt_low = 50.0;
         float corr_SF = (muon_p4.Pt() >= pt_low) ? highPtmuCorrections.at(getUncSourceName(source))->evaluate({abs(muon_p4.Eta()),muon_p4.Pt(), scale_str}) : highPtmuCorrections.at(getUncSourceName(source))->evaluate({abs(muon_p4.Eta()), pt_low, scale_str});
         return source == UncSource::Central ? 1. : corr_SF ;
-        // return source == UncSource::Central ? 1. : highPtmuCorrections.at(getUncSourceName(source))->evaluate({abs(muon_p4.Eta()),muon_p4.Pt(), scale_str}) ;
     }
 
 private:
