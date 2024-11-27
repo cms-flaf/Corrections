@@ -39,7 +39,6 @@ year_xTrg_eTaufile = {
 }
 
 year_xTrg_muTaufile = {
-    "2022":"",
     "2018_UL":"sf_mu_2018_HLTMu20Tau27.root",
     "2017_UL":"sf_mu_2017_HLTMu20Tau27.root",
     "2016preVFP_UL":"sf_mu_2016pre_HLTMu20Tau27.root",
