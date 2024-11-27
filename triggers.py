@@ -47,7 +47,6 @@ year_xTrg_muTaufile = {
 }
 
 year_METfile = {
-    "2022":"",
     "2018_UL":"150_mumu_fit_2018.root",
     "2017_UL":"150_mumu_fit_2017.root",
     "2016preVFP_UL":"150_mumu_fit_2016APV.root",
