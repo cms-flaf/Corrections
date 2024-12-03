@@ -249,12 +249,15 @@ class Corrections:
             df, bTagShape_SF_branches = self.btag.getBTagShapeSF(df, isCentral, return_variations)
             all_weights.extend(bTagShape_SF_branches)
         if 'mu' in self.to_apply:
-            df, lowPtmuID_SF_branches = self.mu.getLowPtMuonIDSF(df, lepton_legs, isCentral, return_variations)
-            all_weights.extend(lowPtmuID_SF_branches)
-            df, muID_SF_branches = self.mu.getMuonIDSF(df, lepton_legs, isCentral, return_variations)
-            all_weights.extend(muID_SF_branches)
-            df, highPtmuID_SF_branches = self.mu.getHighPtMuonIDSF(df, lepton_legs, isCentral, return_variations)
-            all_weights.extend(highPtmuID_SF_branches)
+            if self.mu.low_available:
+                df, lowPtmuID_SF_branches = self.mu.getLowPtMuonIDSF(df, lepton_legs, isCentral, return_variations)
+                all_weights.extend(lowPtmuID_SF_branches)
+            if self.mu.med_available:
+                df, muID_SF_branches = self.mu.getMuonIDSF(df, lepton_legs, isCentral, return_variations)
+                all_weights.extend(muID_SF_branches)
+            if self.mu.high_available:
+                df, highPtmuID_SF_branches = self.mu.getHighPtMuonIDSF(df, lepton_legs, isCentral, return_variations)
+                all_weights.extend(highPtmuID_SF_branches)
         if 'ele' in self.to_apply:
             df, eleID_SF_branches = self.ele.getIDSF(df, lepton_legs, isCentral, return_variations)
             all_weights.extend(eleID_SF_branches)

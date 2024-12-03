@@ -144,6 +144,10 @@ class MuCorrProducer:
             MuCorrProducer.period = period
             MuCorrProducer.initialized = True
 
+        self.low_available = era.startswith('Run3')
+        self.med_available = True
+        self.high_available = True
+
     def getMuonIDSF(self, df, lepton_legs, isCentral, return_variations):
         SF_branches = []
         #sf_sources = MuCorrProducer.muID_SF_Sources + MuCorrProducer.muReco_SF_sources + MuCorrProducer.muIso_SF_Sources
