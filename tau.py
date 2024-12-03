@@ -6,6 +6,8 @@ from .CorrectionsCore import *
 # https://github.com/cms-tau-pog/TauTriggerSFs/tree/master/data
 # https://github.com/cms-tau-pog/TauTriggerSFs/tree/run2_SFs
 
+#Run3: https://twiki.cern.ch/twiki/bin/view/CMS/TauIDRecommendationForRun3
+
 deepTauVersions = {"2p1":"2017", "2p5":"2018"}
 
 class TauCorrProducer:
