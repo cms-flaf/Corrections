@@ -158,12 +158,12 @@ class MuCorrProducer:
                 for leg_idx, leg_name in enumerate(lepton_legs): #So legname is lep1 or lep2 for bbww, and tau1 or tau2 for bbtautau, can use this instead of a hard hh_bbww = True
                     branch_name = f"weight_{leg_name}_MuonID_SF_{syst_name}"
                     branch_central = f"""weight_{leg_name}_MuonID_SF_{source_name+central}"""
+                    genMatch_bool = f"(({leg_name}_gen_kind == 2) || ({leg_name}_gen_kind == 4))"
                     if source in MuCorrProducer.muReco_SF_sources:
-
-                        df = df.Define(f"{branch_name}_double",f'''{leg_name}_type == static_cast<int>(Leg::mu) && {leg_name}_pt >= 10 && {leg_name}_pt <= 200 && {leg_name}_index >= 0 ? ::correction::MuCorrProvider::getGlobal().getMuonSF({leg_name}_p4, Muon_pfRelIso04_all.at({leg_name}_index), Muon_tightId.at({leg_name}_index),Muon_tkRelIso.at({leg_name}_index),Muon_highPtId.at({leg_name}_index),::correction::MuCorrProvider::UncSource::{source}, ::correction::UncScale::{scale}, "{MuCorrProducer.period}") : 1.''')
+                        df = df.Define(f"{branch_name}_double",f'''{leg_name}_type == static_cast<int>(Leg::mu) && {leg_name}_pt >= 10 && {leg_name}_pt <= 200 && {leg_name}_index >= 0 ? ::correction::MuCorrProvider::getGlobal().getMuonSF({leg_name}_p4, {genMatch_bool}, Muon_pfRelIso04_all.at({leg_name}_index), Muon_tightId.at({leg_name}_index),Muon_tkRelIso.at({leg_name}_index),Muon_highPtId.at({leg_name}_index),::correction::MuCorrProvider::UncSource::{source}, ::correction::UncScale::{scale}, "{MuCorrProducer.period}") : 1.''')
                     else:
-                        default_value = "std::numeric_limits<double>::quiet_NaN()" #Move this later and use everywehre
-                        df = df.Define(f"{branch_name}_double",f'''{leg_name}_type == static_cast<int>(Leg::mu) && {leg_name}_index >= 0 && (({leg_name}_gen_kind == 2) || ({leg_name}_gen_kind == 4)) ? ::correction::MuCorrProvider::getGlobal().getMuonSF({leg_name}_p4, Muon_pfRelIso04_all.at({leg_name}_index), Muon_tightId.at({leg_name}_index),Muon_tkRelIso.at({leg_name}_index),Muon_highPtId.at({leg_name}_index),::correction::MuCorrProvider::UncSource::{source}, ::correction::UncScale::{scale}, "{MuCorrProducer.period}") : {default_value}''')
+                        default_value = "std::numeric_limits<double>::quiet_NaN()" #Move this later and use everywhere
+                        df = df.Define(f"{branch_name}_double",f'''{leg_name}_type == static_cast<int>(Leg::mu) && {leg_name}_index >= 0 && ({genMatch_bool}) ? ::correction::MuCorrProvider::getGlobal().getMuonSF({leg_name}_p4, {genMatch_bool}, Muon_pfRelIso04_all.at({leg_name}_index), Muon_tightId.at({leg_name}_index),Muon_tkRelIso.at({leg_name}_index),Muon_highPtId.at({leg_name}_index),::correction::MuCorrProvider::UncSource::{source}, ::correction::UncScale::{scale}, "{MuCorrProducer.period}") : 1.''')
 
 
                         #Change to this format
@@ -201,9 +201,10 @@ class MuCorrProducer:
                 for leg_idx, leg_name in enumerate(lepton_legs):
                     branch_name = f"weight_{leg_name}_HighPt_MuonID_SF_{syst_name}"
                     branch_central = f"""weight_{leg_name}_HighPt_MuonID_SF_{source_name+central}"""
+                    genMatch_bool = f"(({leg_name}_gen_kind == 2) || ({leg_name}_gen_kind == 4))"
 
                     #df = df.Define(f"{branch_name}_double",f'''{leg_name}_type == static_cast<int>(Leg::mu) && {leg_name}_pt >= 200 && {leg_name}_index >= 0 ? ::correction::HighPtMuCorrProvider::getGlobal().getHighPtMuonSF({leg_name}_p4, Muon_pfRelIso04_all.at({leg_name}_index), Muon_tightId.at({leg_name}_index), Muon_highPtId.at({leg_name}_index), Muon_tkRelIso.at({leg_name}_index),::correction::HighPtMuCorrProvider::UncSource::{source}, ::correction::UncScale::{scale}) : 1.''')
-                    df = df.Define(f"{branch_name}_double",f'''{leg_name}_type == static_cast<int>(Leg::mu) && {leg_name}_index >= 0 && (({leg_name}_gen_kind == 2) || ({leg_name}_gen_kind == 4)) ? ::correction::HighPtMuCorrProvider::getGlobal().getHighPtMuonSF({leg_name}_p4, Muon_pfRelIso04_all.at({leg_name}_index), Muon_tightId.at({leg_name}_index), Muon_highPtId.at({leg_name}_index), Muon_tkRelIso.at({leg_name}_index),::correction::HighPtMuCorrProvider::UncSource::{source}, ::correction::UncScale::{scale}) : 1.''')
+                    df = df.Define(f"{branch_name}_double",f'''{leg_name}_type == static_cast<int>(Leg::mu) && {leg_name}_index >= 0 && ({genMatch_bool}) ? ::correction::HighPtMuCorrProvider::getGlobal().getHighPtMuonSF({leg_name}_p4, {genMatch_bool}, Muon_pfRelIso04_all.at({leg_name}_index), Muon_tightId.at({leg_name}_index), Muon_highPtId.at({leg_name}_index), Muon_tkRelIso.at({leg_name}_index),::correction::HighPtMuCorrProvider::UncSource::{source}, ::correction::UncScale::{scale}) : 1.''')
 
                     #df.Display({f"""{branch_name}_double"""}).Print()
                     #if source in MuCorrProducer.muReco_SF_sources:
@@ -242,7 +243,10 @@ class MuCorrProducer:
                 for leg_idx, leg_name in enumerate(lepton_legs):
                     branch_name = f"weight_{leg_name}_LowPt_MuonID_SF_{syst_name}"
                     branch_central = f"""weight_{leg_name}_LowPt_MuonID_SF_{source_name+central}"""
-                    df = df.Define(f"{branch_name}_double",f'''{leg_name}_type == static_cast<int>(Leg::mu)&& {leg_name}_index >= 0 && (({leg_name}_gen_kind == 2) || ({leg_name}_gen_kind == 4)) ? ::correction::LowPtMuCorrProvider::getGlobal().getLowPtMuonSF({leg_name}_p4, Muon_pfRelIso04_all.at({leg_name}_index), Muon_tightId.at({leg_name}_index), Muon_highPtId.at({leg_name}_index), Muon_tkRelIso.at({leg_name}_index),::correction::LowPtMuCorrProvider::UncSource::{source}, ::correction::UncScale::{scale}) : 1.''')
+
+                    genMatch_bool = f"(({leg_name}_gen_kind == 2) || ({leg_name}_gen_kind == 4))"
+
+                    df = df.Define(f"{branch_name}_double",f'''{leg_name}_type == static_cast<int>(Leg::mu)&& {leg_name}_index >= 0 && (({leg_name}_gen_kind == 2) || ({leg_name}_gen_kind == 4)) ? ::correction::LowPtMuCorrProvider::getGlobal().getLowPtMuonSF({leg_name}_p4, {genMatch_bool}, Muon_pfRelIso04_all.at({leg_name}_index), Muon_tightId.at({leg_name}_index), Muon_highPtId.at({leg_name}_index), Muon_tkRelIso.at({leg_name}_index),::correction::LowPtMuCorrProvider::UncSource::{source}, ::correction::UncScale::{scale}) : 1.''')
 
                     if scale != central:
                         branch_name_final = branch_name + '_rel'
