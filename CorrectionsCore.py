@@ -12,6 +12,7 @@ period_names = {
     'Run2_2017': '2017_UL',
     'Run2_2018': '2018_UL',
     'Run3_2022': '2022_Summer22',
+    'Run3_2022EE': '2022_Summer22EE',
 }
 
 periods = {
@@ -20,6 +21,7 @@ periods = {
     "2016preVFP_UL":"2016",
     "2016postVFP_UL":"2016",
     "2022_Summer22": "2022",
+    "2022_Summer22EE": "2022",
     }
 def getScales(source=None):
     if source is None:
@@ -43,7 +45,6 @@ def updateSourceDict(source_dict, source, obj):
     if obj in source_dict[source]:
         raise RuntimeError(f"addUncSource: dupblicated {source} definition for {obj}")
     source_dict[source].append(obj)
-
 
 def createWPChannelMap(map_wp_python):
     ch_list = []
