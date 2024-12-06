@@ -51,27 +51,23 @@ public:
 
     float getID_SF(const LorentzVectorM& Electron_p4, std::string working_point, std::string period, UncSource source, UncScale scale) const
     {
-        // const GenLeptonMatch genMatch = static_cast<GenLeptonMatch>(TauEle_genMatch);
-        // if((genMatch != GenLeptonMatch::Electron && genMatch != GenLeptonMatch::TauElectron)) return 1.;
 
         const UncScale jet_scale = sourceApplies(source) ? scale : UncScale::Central;
         return EleIDSF_->evaluate({period, getIDScaleStr(jet_scale), working_point, Electron_p4.eta(), Electron_p4.pt()});
 
     }
 
-     RVecLV getES(const RVecLV& Electron_p4, const RVecUC& Electron_seedGain, const RVecUL& run, const RVecUC& Electron_r9 , UncSource source, UncScale scale) const
+     RVecLV getES(const RVecLV& Electron_p4,  const RVecUC& Electron_seedGain, int run, const RVecUC& Electron_r9 , UncSource source, UncScale scale) const
     {
         RVecLV final_p4 = Electron_p4;
+
+        //getESScaleStr(scale):
         for(size_t n = 0; n < Electron_p4.size(); ++n) {
-        // const GenLeptonMatch genMatch = static_cast<GenLeptonMatch>(TauEle_genMatch);
-        // if((genMatch != GenLeptonMatch::Electron && genMatch != GenLeptonMatch::TauElectron)) return 1.;
-        const UncScale jet_scale = sourceApplies(source)
-                                           ? scale : UncScale::Central;
             double sf = 1;
-            std::string period = "total_uncertainty";
-             sf = EleES_->evaluate({period, Electron_seedGain.at(n), run.at(n), Electron_p4[n].eta(), Electron_r9.at(n), Electron_p4[n].pt()});
-        final_p4[n] *= sf;
-        }
+            sf = EleES_->evaluate({"total_uncertainty",static_cast<int>(Electron_seedGain.at(n)), static_cast<double>(run), Electron_p4[n].eta(), static_cast<double>(Electron_r9.at(n)), Electron_p4[n].pt()});
+            if (getESScaleStr(scale) == "scaleup") final_p4[n] *= (1+sf);
+            if (getESScaleStr(scale) == "scaledown") final_p4[n] *= (1-sf);
+            }
     return final_p4;
     }
 
