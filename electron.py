@@ -40,19 +40,20 @@ class EleCorrProducer:
             ROOT.gInterpreter.Declare(f'#include "{header_path}"')
             ROOT.gInterpreter.ProcessLine(f'::correction::EleCorrProvider::Initialize("{EleID_JsonFile}", "{EleES_JsonFile}","{EleID_JsonFile_key}","{EleES_JsonFile_key}")')
             EleCorrProducer.year = period.split("_")[0]
-            if ('Summer22' in period):  EleCorrProducer.year = period.split("_")[0]+"Re-recoBCD"
+            if (period.endswith('Summer22')):  EleCorrProducer.year = period.split("_")[0]+"Re-recoBCD"
+            if (period.endswith('Summer22EE')):  EleCorrProducer.year = period.split("_")[0]+"Re-recoE+PromptFG"
             EleCorrProducer.initialized = True
 
     def getES(self, df, source_dict):
         for source in EleCorrProducer.energyScaleSources_ele:
             updateSourceDict(source_dict, source, 'Ele')
             for scale in getScales(source):
+                print("scale: ", scale)
                 syst_name = getSystName(source, scale)
                 df = df.Define(f'Electron_p4_{syst_name}', f'''::correction::EleCorrProvider::getGlobal().getES(
                                Electron_p4_{nano}, Electron_seedGain, run, Electron_r9,
                                ::correction::EleCorrProvider::UncSource::{source}, ::correction::UncScale::{scale})''')
                 df = df.Define(f'Electron_p4_{syst_name}_delta', f'Electron_p4_{syst_name} - Electron_p4_{nano}')
-
         return df, source_dict
 
     def getIDSF(self, df, lepton_legs, isCentral, return_variations):
@@ -70,7 +71,7 @@ class EleCorrProducer:
                         #print(branch_name)
                         #print(branch_central)
                         df = df.Define(f"{branch_name}_double",
-                                    f'''{leg_name}_type == static_cast<int>(Leg::e) && {leg_name}_pt >= 10 &&  {leg_name}_index >= 0 ? ::correction::EleCorrProvider::getGlobal().getID_SF(
+                                    f'''({leg_name}_type == static_cast<int>(Leg::e) && {leg_name}_pt >= 10 &&  {leg_name}_index >= 0 && (({leg_name}_gen_kind == 1) || ({leg_name}_gen_kind == 3)))  ? ::correction::EleCorrProvider::getGlobal().getID_SF(
                                 {leg_name}_p4, "{working_point}",
                                 "{EleCorrProducer.year}",::correction::EleCorrProvider::UncSource::{source}, ::correction::UncScale::{scale}) : 1.;''')
                         if scale != central:
