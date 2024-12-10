@@ -148,14 +148,9 @@ class FatJetCorrProducer:
                                 GenJetAK8_phi, GenJetAK8_mass, SubGenJetAK8_pt, SubGenJetAK8_eta,
                                 SubGenJetAK8_phi, SubGenJetAK8_mass, event)''')
 
-        #print("size")
-        #df = df.Define("map_size", "FatJet_p4_shifted_map.size()")
-        #df.Display({"map_size"}).Print()
-        #df = df.Define("nano_size", f"FatJet_p4_{nano}.size()")
-        #df.Display("nano_size").Print()
         apply_jer_list = ["JER"] if applyJER else []
         apply_jes_list = FatJetCorrProducer.uncSources_core if apply_JES else []
-        for source in [ central ] + apply_jes_list + apply_jer_list:
+        for source in [ central] + apply_jes_list + apply_jer_list:
             source_eff = source
             if source!=central and source != "JER":
                 source_eff= "JES_" + source_eff

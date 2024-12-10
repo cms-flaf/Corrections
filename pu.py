@@ -1,10 +1,13 @@
 import os
+import sys
 import ROOT
 from .CorrectionsCore import *
 # lumi POG: https://twiki.cern.ch/twiki/bin/view/CMS/TWikiLUM
 # PU scenarios https://twiki.cern.ch/twiki/bin/view/CMS/PileupScenariosRun2
 # https://bamboo-hep.readthedocs.io/en/latest/recipes.html#pileup-reweighting
 # https://twiki.cern.ch/twiki/bin/viewauth/CMS/PileupJSONFileforData
+# https://twiki.cern.ch/twiki/bin/viewauth/CMS/PileupJSONFileforData#Centrally_produced_correctionlib
+# https://bamboo-hep.readthedocs.io/en/latest/recipes.html#pileup-reweighting
 
 class puWeightProducer:
     jsonPath = "/cvmfs/cms.cern.ch/rsync/cms-nanoAOD/jsonpog-integration/POG/LUM/{}/puWeights.json.gz"
@@ -12,10 +15,18 @@ class puWeightProducer:
 
     uncSource = ['pu']
     golden_json_dict = {
+        "2023_Summer23BPix":"Collisions2023_369803_370790_eraD_GoldenJson",
+        "2023_Summer23":"Collisions2023_366403_369802_eraBC_GoldenJson",
+        "2022_Summer22EE":"Collisions2022_359022_362760_eraEFG_GoldenJson",
+        "2022_Summer22":"Collisions2022_355100_357900_eraBCD_GoldenJson",
         "2018_UL":"Collisions18_UltraLegacy_goldenJSON",
         "2017_UL": "Collisions17_UltraLegacy_goldenJSON",
         "2016preVFP_UL":"Collisions16_UltraLegacy_goldenJSON",
         "2016postVFP_UL":"Collisions16_UltraLegacy_goldenJSON",
+        "2022_Summer22":"Collisions2022_355100_357900_eraBCD_GoldenJson",
+        "2022_Summer22EE":"Collisions2022_359022_362760_eraEFG_GoldenJson",
+        "2023_Summer23":"Collisions2023_366403_369802_eraBC_GoldenJson",
+        "2023_Summer23BPix":"Collisions2023_369803_370790_eraD_GoldenJson",
     }
     def __init__(self, period):
         jsonFile = puWeightProducer.jsonPath.format(period)
