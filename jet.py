@@ -79,10 +79,11 @@ class JetCorrProducer:
     period = None
     def __init__(self, period, isData, use_corrlib = True, use_regrouped = False):
         self.use_regrouped = use_regrouped
+        self.use_corrlib = use_corrlib
         self.year = int(period[:4])
         print(f"period: {period}")
         print(f"year: {self.year}")
-        if not use_corrlib:
+        if not self.use_corrlib:
             print("Initializing old JetCorrProducer")
             JEC_SF_path_period = JetCorrProducer.JEC_SF_path.format(period)
             JEC_dir = directories_JEC[period]
@@ -143,7 +144,7 @@ class JetCorrProducer:
                 JetCorrProducer.initialized = True
 
 
-    def getP4Variations_run2(self, df, source_dict, apply_JER, apply_JES):
+    def getP4Variations(self, df, source_dict, apply_JER, apply_JES):
         df = df.Define(f'Jet_p4_shifted_map', f'''::correction::JetCorrProvider::getGlobal().getShiftedP4(
                                 Jet_pt, Jet_eta, Jet_phi, Jet_mass, Jet_rawFactor, Jet_area,
                                 Jet_jetId, Rho_fixedGridRhoFastjetAll, Jet_partonFlavour, 0, GenJet_pt, GenJet_eta,
@@ -167,7 +168,7 @@ class JetCorrProducer:
         return df,source_dict
 
 
-    def getP4Variations_run3(self, df, source_dict, apply_JER, apply_JES):
+    def getP4Variations_corrlib(self, df, source_dict, apply_JER, apply_JES):
         df = df.Define("Jet_p4_shifted_map", f'''::correction::JetCorrectionProvider::getGlobal().getShiftedP4(Jet_pt, Jet_eta, Jet_phi, Jet_mass,
                                                                                                                Jet_rawFactor, Jet_area, Rho_fixedGridRhoFastjetAll,
                                                                                                                GenJet_pt, Jet_genJetIdx, event)''')
@@ -187,10 +188,10 @@ class JetCorrProducer:
 
 
     def getP4Variations(self, df, source_dict, apply_JER=True, apply_JES=True):
-        if self.year < 2022:
-            return self.getP4Variations_run2(df, source_dict, apply_JER, apply_JES)
+        if self.use_corrlib:
+            return self.getP4Variations(df, source_dict, apply_JER, apply_JES)
         else:
-            return self.getP4Variations_run3(df, source_dict, apply_JER, apply_JES)
+            return self.getP4Variations_corrlib(df, source_dict, apply_JER, apply_JES)
 
 
     def getEnergyResolution(self, df):
