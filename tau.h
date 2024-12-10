@@ -287,35 +287,6 @@ public:
         return 1.;
     }
 
-    float getSF_WPStrings(const float tau_pt, const float tau_eta, int Tau_decayMode, int Tau_genMatch,std::string wpVSjet_string) const
-    {
-        const auto wpVSe = "VVLoose";
-        //const auto wpVSe = "Tight";
-        const auto wpVSmu = "Tight";
-        if(isTwoProngDM(Tau_decayMode)) throw std::runtime_error("no SF for two prong tau decay modes");
-        const GenLeptonMatch genMatch = static_cast<GenLeptonMatch>(Tau_genMatch);
-        if(genMatch == GenLeptonMatch::Tau) {
-            const UncScale tau_had_scale = UncScale::Central;
-            const UncSource tau_had_source = UncSource::Central  ;
-            const std::string& scale_str = "default" ;
-            const auto sf = tau_vs_jet_->evaluate({tau_pt,Tau_decayMode, Tau_genMatch, wpVSjet_string, wpVSe, scale_str, "dm"});
-            return sf;
-        }
-        if(genMatch==GenLeptonMatch::Electron || genMatch == GenLeptonMatch::TauElectron){
-            const UncScale tau_ele_scale =  UncScale::Central;
-            const UncSource tau_ele_source = UncSource::Central ;
-            const std::string& scale_str = getScaleStr(tau_ele_source, tau_ele_scale, year_);
-            return tau_vs_e_->evaluate({tau_eta, Tau_genMatch, wpVSe, scale_str});
-        }
-         if(genMatch == GenLeptonMatch::Muon || genMatch == GenLeptonMatch::TauMuon){
-            const UncScale tau_mu_scale = UncScale::Central;
-            const UncSource tau_mu_source = UncSource::Central ;
-            const std::string& scale_str = getScaleStr(tau_mu_source, tau_mu_scale, year_);
-            return tau_vs_mu_->evaluate({tau_eta, Tau_genMatch, wpVSmu, scale_str});
-        }
-        return 1.;
-    }
-
 
 
 
