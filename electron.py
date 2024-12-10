@@ -48,11 +48,9 @@ class EleCorrProducer:
         for source in EleCorrProducer.energyScaleSources_ele:
             updateSourceDict(source_dict, source, 'Ele')
             for scale in getScales(source):
-                print("scale: ", scale)
                 syst_name = getSystName(source, scale)
-                df = df.Define(f'Electron_p4_{syst_name}', f'''::correction::EleCorrProvider::getGlobal().getES(
-                               Electron_p4_{nano}, Electron_seedGain, run, Electron_r9,
-                               ::correction::EleCorrProvider::UncSource::{source}, ::correction::UncScale::{scale})''')
+                df = df.Define(f'Electron_p4_{syst_name}', f'''::correction::EleCorrProvider::getGlobal().getES(Electron_p4_{nano}, Electron_genMatch,  Electron_seedGain, run,
+                Electron_r9,::correction::EleCorrProvider::UncSource::{source}, ::correction::UncScale::{scale})''')
                 df = df.Define(f'Electron_p4_{syst_name}_delta', f'Electron_p4_{syst_name} - Electron_p4_{nano}')
         return df, source_dict
 
