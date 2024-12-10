@@ -50,7 +50,7 @@ public:
     }
 
 
-    float getID_SF(const LorentzVectorM& Electron_p4, int TauEle_genMatch, std::string working_point, std::string period, UncSource source, UncScale scale) const
+    float getID_SF(const LorentzVectorM& Electron_p4, const int TauEle_genMatch, std::string working_point, std::string period, UncSource source, UncScale scale) const
     {
         const GenLeptonMatch genMatch = static_cast<GenLeptonMatch>(TauEle_genMatch);
         if((genMatch != GenLeptonMatch::Electron && genMatch != GenLeptonMatch::TauElectron)) return 1.;
