@@ -53,6 +53,10 @@ public:
     {
 
 
+
+    float getID_SF(const LorentzVectorM& Electron_p4, const int TauEle_genMatch, std::string working_point, std::string period, UncSource source, UncScale scale) const
+    {
+
         const UncScale jet_scale = sourceApplies(source) ? scale : UncScale::Central;
         return EleIDSF_->evaluate({period, getIDScaleStr(jet_scale), working_point, Electron_p4.eta(), Electron_p4.pt()});
 
