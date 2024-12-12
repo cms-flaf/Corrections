@@ -64,17 +64,15 @@ public:
         for(size_t n = 0; n < Electron_p4.size(); ++n) {
             const GenLeptonMatch genMatch = static_cast<GenLeptonMatch>(Electron_genMatch.at(n));
             double sf = 1 ;
-             if(genMatch==GenLeptonMatch::Electron || genMatch == GenLeptonMatch::TauElectron)
+             if( scale != UncScale::Central && (genMatch==GenLeptonMatch::Electron || genMatch == GenLeptonMatch::TauElectron))
              {
             sf = EleES_->evaluate({"total_uncertainty",static_cast<int>(Electron_seedGain.at(n)), static_cast<double>(run), Electron_p4[n].eta(), static_cast<double>(Electron_r9.at(n)), Electron_p4[n].pt()});
-            if (getESScaleStr(scale) == "scaleup") final_p4[n] *= (1+sf);
-            if (getESScaleStr(scale) == "scaledown") final_p4[n] *= (1-sf);
+            final_p4[n] *= 1 + static_cast<int>(scale) * sf;
               }
             final_p4[n] *= sf;
         }
     return final_p4;
     }
-
 private:
     std::unique_ptr<CorrectionSet> corrections_, correctionsES_;
     Correction::Ref EleIDSF_, EleES_;
