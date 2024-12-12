@@ -24,7 +24,7 @@ class EleCorrProducer:
     def __init__(self, period):
         EleID_JsonFile = EleCorrProducer.EleID_JsonPath.format(period)
 
-        if ( ('2016' in period) or ('2018' in period) or ('2018' in period)):
+        if period.startswith('Run2'):
             EleES_JsonFile = os.path.join(os.environ['ANALYSIS_PATH'],EleCorrProducer.EleES_JsonPath.format(period))
             EleID_JsonFile_key = "UL-Electron-ID-SF"
             EleES_JsonFile_key = "UL-EGM_ScaleUnc"
@@ -42,6 +42,8 @@ class EleCorrProducer:
             EleCorrProducer.year = period.split("_")[0]
             if (period.endswith('Summer22')):  EleCorrProducer.year = period.split("_")[0]+"Re-recoBCD"
             if (period.endswith('Summer22EE')):  EleCorrProducer.year = period.split("_")[0]+"Re-recoE+PromptFG"
+            if (period.endswith('Summer23')):  EleCorrProducer.year = period.split("_")[0]+"PromptC"
+            if (period.endswith('Summer23BPix')):  EleCorrProducer.year = period.split("_")[0]+"2023PromptD"
             EleCorrProducer.initialized = True
 
     def getES(self, df, source_dict):
