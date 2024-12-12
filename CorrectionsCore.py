@@ -13,15 +13,24 @@ period_names = {
     'Run2_2018': '2018_UL',
     'Run3_2022': '2022_Summer22',
     'Run3_2022EE': '2022_Summer22EE',
+    'Run3_2023': '2023_Summer23',
+    'Run3_2023BPix': '2023_Summer23BPix',
+
 }
 
 periods = {
+    "2023_Summer23BPix": "2023",
+    "2023_Summer23": "2023",
+    "2022_Summer22EE": "2022",
+    "2022_Summer22": "2022",
     "2018_UL": "2018",
     "2017_UL": "2017",
     "2016preVFP_UL":"2016",
     "2016postVFP_UL":"2016",
     "2022_Summer22": "2022",
     "2022_Summer22EE": "2022",
+    "2023_Summer23": "2023",
+    "2023_Summer23BPix": "2023",
     }
 def getScales(source=None):
     if source is None:
