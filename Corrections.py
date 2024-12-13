@@ -152,9 +152,9 @@ class Corrections:
             df, source_dict = self.tau.getES(df, source_dict)
         if 'JEC' in self.to_apply or 'JER' in self.to_apply:
             df, source_dict = self.jet.getP4Variations(df, source_dict, 'JER' in self.to_apply, 'JEC' in self.to_apply)
-            df, source_dict = self.fatjet.getP4Variations(df, source_dict, 'JER' in self.to_apply, 'JEC' in self.to_apply)
-        if 'tauES' in self.to_apply or 'JEC' in self.to_apply or 'JEC' in self.to_apply:
-            df, source_dict = self.met.getPFMET(df, source_dict)
+            # df, source_dict = self.fatjet.getP4Variations(df, source_dict, 'JER' in self.to_apply, 'JEC' in self.to_apply)
+        # if 'tauES' in self.to_apply or 'JEC' in self.to_apply or 'JEC' in self.to_apply:
+        #     df, source_dict = self.met.getPFMET(df, source_dict)
         syst_dict = { }
         for source, source_objs in source_dict.items():
             for scale in getScales(source):
@@ -162,7 +162,7 @@ class Corrections:
                 syst_dict[syst_name] = source
                 for obj in ana_reco_objects:
                     if obj not in source_objs:
-                        #suffix = 'Central' if f"{obj}_p4_Central" in df.GetColumnNames() else 'nano'
+                        # suffix = 'Central' if f"{obj}_p4_Central" in df.GetColumnNames() else 'nano'
                         suffix = 'nano'
                         if obj=='boostedTau' and '{obj}_p4_{suffix}' not in df.GetColumnNames(): continue
                         df = df.Define(f'{obj}_p4_{syst_name}', f'{obj}_p4_{suffix}')
