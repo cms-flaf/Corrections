@@ -26,8 +26,11 @@ class TauCorrProducer:
         jsonFile = TauCorrProducer.jsonPath.format(period)
         self.deepTauVersion = f"""DeepTau{deepTauVersions[config["deepTauVersion"]]}v{config["deepTauVersion"]}"""
         if self.deepTauVersion=='DeepTau2018v2p5':
-            #tau_DeepTau2018v2p5_2018_UL_101123
-            jsonFile_rel = f"Corrections/data/TAU/{period}/tau_DeepTau2018v2p5_{period}_101123.json"
+            #tau_DeepTau2018v2p5_2018_UL_101123 #Run3: tau_DeepTau2018v2p5_2022_preEE.json
+            if period.startswith('202'):
+                jsonFile_rel = f"Corrections/data/TAU/{period}/tau_DeepTau2018v2p5_{period}.json"
+            else:
+                jsonFile_rel = f"Corrections/data/TAU/{period}/tau_DeepTau2018v2p5_{period}_101123.json"
             jsonFile = os.path.join(os.environ['ANALYSIS_PATH'],jsonFile_rel)
         if not TauCorrProducer.initialized:
             headers_dir = os.path.dirname(os.path.abspath(__file__))
