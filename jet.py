@@ -144,7 +144,7 @@ class JetCorrProducer:
                 JetCorrProducer.initialized = True
 
 
-    def getP4Variations(self, df, source_dict, apply_JER, apply_JES):
+    def getP4Variations_legacy(self, df, source_dict, apply_JER, apply_JES):
         df = df.Define(f'Jet_p4_shifted_map', f'''::correction::JetCorrProvider::getGlobal().getShiftedP4(
                                 Jet_pt, Jet_eta, Jet_phi, Jet_mass, Jet_rawFactor, Jet_area,
                                 Jet_jetId, Rho_fixedGridRhoFastjetAll, Jet_partonFlavour, 0, GenJet_pt, GenJet_eta,
@@ -189,7 +189,7 @@ class JetCorrProducer:
 
     def getP4Variations(self, df, source_dict, apply_JER=True, apply_JES=True):
         if self.use_corrlib:
-            return self.getP4Variations(df, source_dict, apply_JER, apply_JES)
+            return self.getP4Variations_legacy(df, source_dict, apply_JER, apply_JES)
         else:
             return self.getP4Variations_corrlib(df, source_dict, apply_JER, apply_JES)
 
