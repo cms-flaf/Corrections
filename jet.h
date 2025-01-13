@@ -261,6 +261,7 @@ private:
         std::string jer_tag_;
         std::string algo_;
         std::string year_;
+        bool use_regrouped_;
 
         inline static const std::map<UncSource, std::string> unc_map_total = { { UncSource::Total, "Total" },
                                                                                { UncSource::JER, "JER" } };
