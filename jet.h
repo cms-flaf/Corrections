@@ -157,6 +157,9 @@ private:
         ,   jer_tag_(jer_tag)
         ,   algo_(algo)
         ,   year_(year)
+        ,   cmpd_corr_name_(jec_tag_ + "_L1L2L3Res_" + algo_)
+        ,   jer_pt_res_name_(jer_tag_ + "_PtResolution_" + algo_)
+        ,   jer_sf_name_(jer_tag_ + "_ScaleFactor_" + algo_)
         ,   use_regrouped_(use_regrouped)
         {}
 
@@ -170,9 +173,6 @@ private:
 
             size_t sz = Jet_pt.size();
 
-            std::string cmpd_corr_name = jec_tag_ + "_L1L2L3Res_" + algo_;
-            std::string jer_pt_res_name = jer_tag_ + "_PtResolution_" + algo_;
-            std::string jer_sf_name = jer_tag_ + "_ScaleFactor_" + algo_;
             std::vector<double> jer_pt_resolutions;
             RVecLV central_p4(sz);
             for (size_t i = 0; i < sz; ++i)
@@ -182,8 +182,8 @@ private:
                 Jet_mass[i] *= 1.0 - Jet_rawFactor[i];
 
                 // extract jer scale factor and resolution
-                Correction::Ref corr_jer_sf = corrset_->at(jer_sf_name);
-                Correction::Ref corr_jer_res = corrset_->at(jer_pt_res_name);
+                Correction::Ref corr_jer_sf = corrset_->at(jer_sf_name_);
+                Correction::Ref corr_jer_res = corrset_->at(jer_pt_res_name_);
                 double jer_sf = corr_jer_sf->evaluate({Jet_eta[i], Jet_pt[i], "nom"});
                 double jer_pt_res = corr_jer_res->evaluate({Jet_eta[i], Jet_pt[i], rho});
                 jer_pt_resolutions.push_back(jer_pt_res);
@@ -194,7 +194,7 @@ private:
                 double jersmear_factor = jersmear_corr->evaluate({Jet_pt[i], Jet_eta[i], genjet_pt, rho, event, jer_pt_res, jer_sf});
 
                 // extract compound correction
-                CompoundCorrection::Ref cmpd_corr = corrset_->compound().at(cmpd_corr_name);
+                CompoundCorrection::Ref cmpd_corr = corrset_->compound().at(cmpd_corr_name_);
                 double cmpd_sf = cmpd_corr->evaluate({Jet_area[i], Jet_eta[i], Jet_pt[i], rho});
 
                 // apply compound correction
@@ -261,6 +261,9 @@ private:
         std::string jer_tag_;
         std::string algo_;
         std::string year_;
+        std::string cmpd_corr_name_;
+        std::string jer_pt_res_name_;
+        std::string jer_sf_name_;
         bool use_regrouped_;
 
         inline static const std::map<UncSource, std::string> unc_map_total = { { UncSource::Total, "Total" },
