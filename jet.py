@@ -189,9 +189,9 @@ class JetCorrProducer:
 
     def getP4Variations(self, df, source_dict, apply_JER=True, apply_JES=True):
         if self.use_corrlib:
-            return self.getP4Variations_legacy(df, source_dict, apply_JER, apply_JES)
-        else:
             return self.getP4Variations_corrlib(df, source_dict, apply_JER, apply_JES)
+        else:
+            return self.getP4Variations_legacy(df, source_dict, apply_JER, apply_JES)
 
 
     def getEnergyResolution(self, df):
