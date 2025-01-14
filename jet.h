@@ -161,13 +161,29 @@ private:
         ,   jer_pt_res_name_(jer_tag_ + "_PtResolution_" + algo_)
         ,   jer_sf_name_(jer_tag_ + "_ScaleFactor_" + algo_)
         ,   use_regrouped_(use_regrouped)
-        {}
+        {
+            auto const& unc_map = use_regrouped_ ? unc_map_regrouped : unc_map_total;
+            for (auto const& [unc_source, unc_name]: unc_map)
+            {
+                std::string full_name = jec_tag_;
+                full_name += '_';
+                full_name += unc_name;
+                full_name += '_';
+                if (year_dep_map.at(unc_source))
+                {
+                    full_name += year_;
+                    full_name += '_';
+                }
+                full_name += algo_;
+                unc_map_[unc_source] = full_name;
+            }
+        }
 
         std::map<std::pair<UncSource, UncScale>, RVecLV> getShiftedP4(RVecF Jet_pt, const RVecF& Jet_eta, const RVecF& Jet_phi, RVecF Jet_mass,
                                                                       const RVecF& Jet_rawFactor, const RVecF& Jet_area, const float rho,
                                                                       const RVecF& GenJet_pt, const RVecI& Jet_genJetIdx, int event) const
         {
-            auto const& unc_map = use_regrouped_ ? unc_map_regrouped : unc_map_total;
+            // auto const& unc_map = use_regrouped_ ? unc_map_regrouped : unc_map_total;
             std::map<std::pair<UncSource, UncScale>, RVecLV> all_shifted_p4;
             std::vector<UncScale> uncScales = { UncScale::Up, UncScale::Down };
 
@@ -213,7 +229,7 @@ private:
             // apply uncertainties from uncertainty map
             for (auto const& uncScale: uncScales)
             {
-                for (auto const& [unc_source, unc_name]: unc_map)
+                for (auto const& [unc_source, unc_name]: unc_map_)
                 {
                     RVecLV shifted_p4(sz);
 
@@ -231,18 +247,7 @@ private:
                         for (size_t jet_idx = 0 ; jet_idx < sz; ++jet_idx)
                         {
                             double sf = 1.0;
-
-                            std::string full_name = jec_tag_;
-                            full_name += '_';
-                            full_name += unc_name;
-                            full_name += '_';
-                            if (year_dep_map.at(unc_source))
-                            {
-                                full_name += year_;
-                                full_name += '_';
-                            }
-                            full_name += algo_;
-                            Correction::Ref corr = corrset_->at(full_name);
+                            Correction::Ref corr = corrset_->at(unc_name);
                             double unc = corr->evaluate({Jet_eta[jet_idx], Jet_pt[jet_idx]});
                             sf += static_cast<int>(uncScale)*unc;
                             shifted_p4[jet_idx] = LorentzVectorM(sf*Jet_pt[jet_idx], Jet_eta[jet_idx], Jet_phi[jet_idx], sf*Jet_mass[jet_idx]);
@@ -255,6 +260,7 @@ private:
         }
 
         private:
+        std::map<UncSource, std::string> unc_map_;
         std::unique_ptr<CorrectionSet> corrset_;
         std::unique_ptr<CorrectionSet> jersmear_corrset_;
         std::string jec_tag_;
