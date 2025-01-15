@@ -78,35 +78,38 @@ class Corrections:
     def pu(self):
         if self.pu_ is None:
             from .pu import puWeightProducer
-            self.pu_ = puWeightProducer(period=period_names[self.period])
+            self.pu_ = puWeightProducer(period=period_names[self.period][0])
         return self.pu_
 
     @property
     def tau(self):
         if self.tau_ is None:
             from .tau import TauCorrProducer
-            self.tau_ = TauCorrProducer(period_names[self.period], self.config)
+            if self.period.split('_')[0].startswith('Run3'):
+                self.tau_ = TauCorrProducer(period_names[self.period][1], self.config)
+            else:
+                self.tau_ = TauCorrProducer(period_names[self.period][0], self.config)
         return self.tau_
 
     @property
     def jet(self):
         if self.jet_ is None:
             from .jet import JetCorrProducer
-            self.jet_ = JetCorrProducer(period_names[self.period], self.isData)
+            self.jet_ = JetCorrProducer(period_names[self.period][0], self.isData)
         return self.jet_
 
     @property
     def fatjet(self):
         if self.fatjet_ is None:
             from .fatjet import FatJetCorrProducer
-            self.fatjet_ = FatJetCorrProducer(period_names[self.period], self.isData)
+            self.fatjet_ = FatJetCorrProducer(period_names[self.period][0], self.isData)
         return self.fatjet_
 
     @property
     def btag(self):
         if self.btag_ is None:
             from .btag import bTagCorrProducer
-            self.btag_ = bTagCorrProducer(period_names[self.period], True)
+            self.btag_ = bTagCorrProducer(period_names[self.period][0], True)
         return self.btag_
 
     @property
@@ -120,7 +123,7 @@ class Corrections:
     def mu(self):
         if self.mu_ is None:
             from .mu import MuCorrProducer
-            # self.mu_ = MuCorrProducer(period_names[self.period])
+            # self.mu_ = MuCorrProducer(period_names[self.period][0])
             self.mu_ = MuCorrProducer(self.period)
         return self.mu_
 
@@ -128,14 +131,14 @@ class Corrections:
     def ele(self):
         if self.ele_ is None:
             from .electron import EleCorrProducer
-            self.ele_ = EleCorrProducer(period_names[self.period])
+            self.ele_ = EleCorrProducer(period_names[self.period][0])
         return self.ele_
 
     @property
     def puJetID(self):
         if self.puJetID_ is None:
             from .puJetID import puJetIDCorrProducer
-            self.puJetID_ = puJetIDCorrProducer(period_names[self.period])
+            self.puJetID_ = puJetIDCorrProducer(period_names[self.period][0])
         return self.puJetID_
 
     @property
@@ -145,7 +148,7 @@ class Corrections:
                 from .triggersRun3 import TrigCorrProducer
             else:
                 from .triggers import TrigCorrProducer
-            self.trg_ = TrigCorrProducer(period_names[self.period], self.config)
+            self.trg_ = TrigCorrProducer(period_names[self.period][0], self.config)
         return self.trg_
 
     def applyScaleUncertainties(self, df, ana_reco_objects):

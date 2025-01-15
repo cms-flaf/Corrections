@@ -7,14 +7,14 @@ down = 'Down'
 nano = 'nano'
 
 period_names = {
-    'Run2_2016_HIPM': '2016preVFP_UL',
-    'Run2_2016': '2016postVFP_UL',
-    'Run2_2017': '2017_UL',
-    'Run2_2018': '2018_UL',
-    'Run3_2022': '2022_Summer22',
-    'Run3_2022EE': '2022_Summer22EE',
-    'Run3_2023': '2023_Summer23',
-    'Run3_2023BPix': '2023_Summer23BPix',
+    'Run2_2016_HIPM': ['2016preVFP_UL'],
+    'Run2_2016': ['2016postVFP_UL'],
+    'Run2_2017': ['2017_UL'],
+    'Run2_2018': ['2018_UL'],
+    'Run3_2022': ['2022_Summer22', '2022_preEE'],
+    'Run3_2022EE': ['2022_Summer22EE', '2022_postEE'],
+    'Run3_2023': ['2023_Summer23', '2023_preBPix'],
+    'Run3_2023BPix': ['2023_Summer23BPix', '2023_postBPix'],
 
 }
 
