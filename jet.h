@@ -182,8 +182,7 @@ private:
             std::vector<UncScale> uncScales = { UncScale::Up, UncScale::Down };
 
             size_t sz = Jet_pt.size();
-
-            std::vector<double> jer_pt_resolutions;
+            std::vector<float> jer_pt_resolutions(sz);
             RVecLV central_p4(sz);
             for (size_t i = 0; i < sz; ++i)
             {
@@ -192,16 +191,16 @@ private:
                 Jet_mass[i] *= 1.0 - Jet_rawFactor[i];
 
                 // extract jer scale factor and resolution
-                double jer_sf = corr_jer_sf_->evaluate({Jet_eta[i], Jet_pt[i], "nom"});
-                double jer_pt_res = corr_jer_res_->evaluate({Jet_eta[i], Jet_pt[i], rho});
-                jer_pt_resolutions.push_back(jer_pt_res);
+                float jer_sf = corr_jer_sf_->evaluate({Jet_eta[i], Jet_pt[i], "nom"});
+                float jer_pt_res = corr_jer_res_->evaluate({Jet_eta[i], Jet_pt[i], rho});
+                jer_pt_resolutions[i] = jer_pt_res;
 
                 int genjet_idx = Jet_genJetIdx[i];
-                double genjet_pt = genjet_idx != -1 ? GenJet_pt[genjet_idx] : -1.0;
-                double jersmear_factor = jersmear_corr_->evaluate({Jet_pt[i], Jet_eta[i], genjet_pt, rho, event, jer_pt_res, jer_sf});
+                float genjet_pt = genjet_idx != -1 ? GenJet_pt[genjet_idx] : -1.0;
+                float jersmear_factor = jersmear_corr_->evaluate({Jet_pt[i], Jet_eta[i], genjet_pt, rho, event, jer_pt_res, jer_sf});
 
                 // evaluate and apply compound correction
-                double cmpd_sf = cmpd_corr_->evaluate({Jet_area[i], Jet_eta[i], Jet_pt[i], rho});
+                float cmpd_sf = cmpd_corr_->evaluate({Jet_area[i], Jet_eta[i], Jet_pt[i], rho});
                 Jet_pt[i] *= cmpd_sf;
                 Jet_mass[i] *= cmpd_sf;
 
@@ -225,7 +224,7 @@ private:
                     {
                         for (size_t jet_idx = 0; jet_idx < sz; ++jet_idx)
                         {
-                            double sf = 1.0;
+                            float sf = 1.0;
                             sf += static_cast<int>(uncScale)*jer_pt_resolutions[jet_idx];
                             shifted_p4[jet_idx] = LorentzVectorM(sf*Jet_pt[jet_idx], Jet_eta[jet_idx], Jet_phi[jet_idx], sf*Jet_mass[jet_idx]);
                         }
@@ -234,9 +233,9 @@ private:
                     {
                         for (size_t jet_idx = 0 ; jet_idx < sz; ++jet_idx)
                         {
-                            double sf = 1.0;
+                            float sf = 1.0;
                             Correction::Ref corr = corrset_->at(unc_name);
-                            double unc = corr->evaluate({Jet_eta[jet_idx], Jet_pt[jet_idx]});
+                            float unc = corr->evaluate({Jet_eta[jet_idx], Jet_pt[jet_idx]});
                             sf += static_cast<int>(uncScale)*unc;
                             shifted_p4[jet_idx] = LorentzVectorM(sf*Jet_pt[jet_idx], Jet_eta[jet_idx], Jet_phi[jet_idx], sf*Jet_mass[jet_idx]);
                         }
@@ -247,10 +246,25 @@ private:
             return all_shifted_p4;
         }
 
+        RVecF GetResolutions(RVecF pt, RVecF mass, RVecF const& raw_factor, RVecF const& eta, float rho)
+        {
+            size_t sz = pt.size();
+            RVecF res(sz);
+            for (size_t i = 0; i < sz; ++i)
+            {
+                pt[i] *= 1.0 - raw_factor[i];
+                mass[i] *= 1.0 - raw_factor[i];
+                float jer_sf = corr_jer_sf_->evaluate({eta[i], pt[i], "nom"});
+                float jer_pt_res = corr_jer_res_->evaluate({eta[i], pt[i], rho});
+                res.push_back(jer_pt_res);
+            }
+            return res;
+        }
+
         private:
         std::map<UncSource, std::string> unc_map_;
         std::unique_ptr<CorrectionSet> corrset_;
-        Correction::Ref jersmear_corr_;
+        Correction::Ref jersmear_corr_; // aka shared_ptr<Correction const>, sizeof = 8
         Correction::Ref corr_jer_sf_;
         Correction::Ref corr_jer_res_;
         CompoundCorrection::Ref cmpd_corr_;
