@@ -152,10 +152,10 @@ private:
         // e.g. AK4PFPuppi
         JetCorrectionProvider(std::string const& json_file_name, std::string const& jetsmear_file_name, std::string const& jec_tag, std::string const& jer_tag, std::string const& algo, std::string const& year, bool use_regrouped = false)
         :   corrset_(CorrectionSet::from_file(json_file_name))
-        ,   jersmear_corrset_(CorrectionSet::from_file(jetsmear_file_name))
-        ,   cmpd_corr_name_(jec_tag + "_L1L2L3Res_" + algo) // find out what are names of these corrections for data
-        ,   jer_pt_res_name_(jer_tag + "_PtResolution_" + algo)
-        ,   jer_sf_name_(jer_tag + "_ScaleFactor_" + algo)
+        ,   jersmear_corr_(CorrectionSet::from_file(jetsmear_file_name)->at("JERSmear"))
+        ,   corr_jer_sf_(corrset_->at(jer_tag + "_ScaleFactor_" + algo))
+        ,   corr_jer_res_(corrset_->at(jer_tag + "_PtResolution_" + algo))
+        ,   cmpd_corr_(corrset_->compound().at(jec_tag + "_L1L2L3Res_" + algo))
         {
             auto const& unc_map = use_regrouped ? unc_map_regrouped : unc_map_total;
             for (auto const& [unc_source, unc_name]: unc_map)
@@ -192,22 +192,16 @@ private:
                 Jet_mass[i] *= 1.0 - Jet_rawFactor[i];
 
                 // extract jer scale factor and resolution
-                Correction::Ref corr_jer_sf = corrset_->at(jer_sf_name_);
-                Correction::Ref corr_jer_res = corrset_->at(jer_pt_res_name_);
-                double jer_sf = corr_jer_sf->evaluate({Jet_eta[i], Jet_pt[i], "nom"});
-                double jer_pt_res = corr_jer_res->evaluate({Jet_eta[i], Jet_pt[i], rho});
+                double jer_sf = corr_jer_sf_->evaluate({Jet_eta[i], Jet_pt[i], "nom"});
+                double jer_pt_res = corr_jer_res_->evaluate({Jet_eta[i], Jet_pt[i], rho});
                 jer_pt_resolutions.push_back(jer_pt_res);
 
-                Correction::Ref jersmear_corr = jersmear_corrset_->at("JERSmear");
                 int genjet_idx = Jet_genJetIdx[i];
                 double genjet_pt = genjet_idx != -1 ? GenJet_pt[genjet_idx] : -1.0;
-                double jersmear_factor = jersmear_corr->evaluate({Jet_pt[i], Jet_eta[i], genjet_pt, rho, event, jer_pt_res, jer_sf});
+                double jersmear_factor = jersmear_corr_->evaluate({Jet_pt[i], Jet_eta[i], genjet_pt, rho, event, jer_pt_res, jer_sf});
 
-                // extract compound correction
-                CompoundCorrection::Ref cmpd_corr = corrset_->compound().at(cmpd_corr_name_);
-                double cmpd_sf = cmpd_corr->evaluate({Jet_area[i], Jet_eta[i], Jet_pt[i], rho});
-
-                // apply compound correction
+                // evaluate and apply compound correction
+                double cmpd_sf = cmpd_corr_->evaluate({Jet_area[i], Jet_eta[i], Jet_pt[i], rho});
                 Jet_pt[i] *= cmpd_sf;
                 Jet_mass[i] *= cmpd_sf;
 
@@ -256,11 +250,11 @@ private:
         private:
         std::map<UncSource, std::string> unc_map_;
         std::unique_ptr<CorrectionSet> corrset_;
-        std::unique_ptr<CorrectionSet> jersmear_corrset_;
-        std::string cmpd_corr_name_;
-        std::string jer_pt_res_name_;
-        std::string jer_sf_name_;
-
+        Correction::Ref jersmear_corr_;
+        Correction::Ref corr_jer_sf_;
+        Correction::Ref corr_jer_res_;
+        CompoundCorrection::Ref cmpd_corr_;
+    
         inline static const std::map<UncSource, std::string> unc_map_total = { { UncSource::Total, "Total" },
                                                                                { UncSource::JER, "JER" } };
 
