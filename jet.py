@@ -53,20 +53,20 @@ class JetCorrProducer:
     jsonPath_btag = "/cvmfs/cms.cern.ch/rsync/cms-nanoAOD/jsonpog-integration/POG/BTV/{}/btagging.json.gz"
 
     initialized = False
-    uncSources_core = [ "Central",
-                        "Total",
-                        "JER",
-                        "FlavorQCD",
-                        "RelativeBal",
-                        "HF",
-                        "BBEC1",
-                        "EC2",
-                        "Absolute",
-                        "BBEC1_",
-                        "Absolute_",
-                        "EC2_",
-                        "HF_",
-                        "RelativeSample_" ]
+    
+    uncSources_regrouped = [ "FlavorQCD",
+                             "RelativeBal",
+                             "HF",
+                             "BBEC1",
+                             "EC2",
+                             "Absolute",
+                             "BBEC1_",
+                             "Absolute_",
+                             "EC2_",
+                             "HF_",
+                             "RelativeSample_" ]
+
+    uncSources_minimal = ["Total"]
 
     jet_jsonPath = "/cvmfs/cms.cern.ch/rsync/cms-nanoAOD/jsonpog-integration/POG/JME/{}/jet_jerc.json.gz"
     # fatjet_jsonPath = "/cvmfs/cms.cern.ch/rsync/cms-nanoAOD/jsonpog-integration/POG/JME/{}/fatJet_jerc.json.gz"
@@ -80,6 +80,11 @@ class JetCorrProducer:
     def __init__(self, period, isData, use_corrlib = True, use_regrouped = False):
         self.use_regrouped = use_regrouped
         self.use_corrlib = use_corrlib
+        self.uncSources_toUse = []
+        if self.use_regrouped:
+            self.uncSources_toUse = JetCorrProducer.uncSources_regrouped
+        else:
+            self.uncSources_toUse = JetCorrProducer.uncSources_minimal
         self.year = int(period[:4])
         print(f"period: {period}")
         print(f"year: {self.year}")
@@ -144,71 +149,47 @@ class JetCorrProducer:
                 JetCorrProducer.initialized = True
 
 
-    def getP4Variations_legacy(self, df, source_dict, apply_JER, apply_JES):
-        df = df.Define(f'Jet_p4_shifted_map', f'''::correction::JetCorrProvider::getGlobal().getShiftedP4(
-                                Jet_pt, Jet_eta, Jet_phi, Jet_mass, Jet_rawFactor, Jet_area,
-                                Jet_jetId, Rho_fixedGridRhoFastjetAll, Jet_partonFlavour, 0, GenJet_pt, GenJet_eta,
-                                GenJet_phi, GenJet_mass, event)''')
+    def getP4Variations(self, df, source_dict, apply_JER, apply_JES):
+        class_name = ""
+        if self.use_corrlib:
+            df = df.Define("Jet_p4_shifted_map", '''::correction::JetCorrectionProvider::getGlobal().getShiftedP4(Jet_pt, Jet_eta, Jet_phi, Jet_mass,
+                                                                                                                  Jet_rawFactor, Jet_area, Rho_fixedGridRhoFastjetAll,
+                                                                                                                  GenJet_pt, Jet_genJetIdx, event)''')
+            class_name = "JetCorrectionProvider"
+        else:
+            df = df.Define('Jet_p4_shifted_map', f'''::correction::JetCorrProvider::getGlobal().getShiftedP4(
+                            Jet_pt, Jet_eta, Jet_phi, Jet_mass, Jet_rawFactor, Jet_area,
+                            Jet_jetId, Rho_fixedGridRhoFastjetAll, Jet_partonFlavour, 0, GenJet_pt, GenJet_eta,
+                            GenJet_phi, GenJet_mass, event)''')       
+            class_name = "JetCorrProvider"     
+
         apply_jer_list = []
         if apply_JER:
             apply_jer_list.append("JER")
-        apply_jes_list = JetCorrProducer.uncSources_core if apply_JES else []
+        apply_jes_list = self.uncSources_toUse if apply_JES else []
+        # central variable is imported from CorrectionsCore.p, where it is defined
         for source in [ central ] + apply_jes_list + apply_jer_list:
             source_eff = source
             if source in apply_jes_list: # source!=central and source != "JER":
-                source_eff= "JES_" + source_eff
+                source_eff = "JES_" + source_eff
             if source.endswith("_") :
-                source_eff = source_eff+ JetCorrProducer.period.split("_")[0]
-                source+="year"
+                source_eff = source_eff + JetCorrProducer.period.split("_")[0]
+                source += "year"
             updateSourceDict(source_dict, source_eff, 'Jet')
             for scale in getScales(source):
                 syst_name = getSystName(source_eff, scale)
-                df = df.Define(f'Jet_p4_{syst_name}', f'''Jet_p4_shifted_map.at({{::correction::JetCorrProvider::UncSource::{source}, ::correction::UncScale::{scale}}})''')
-                df = df.Define(f'Jet_p4_{syst_name}_delta', f'Jet_p4_{syst_name} - Jet_p4_{nano}')
-        return df,source_dict
-
-
-    def getP4Variations_corrlib(self, df, source_dict, apply_JER, apply_JES):
-        df = df.Define("Jet_p4_shifted_map", f'''::correction::JetCorrectionProvider::getGlobal().getShiftedP4(Jet_pt, Jet_eta, Jet_phi, Jet_mass,
-                                                                                                               Jet_rawFactor, Jet_area, Rho_fixedGridRhoFastjetAll,
-                                                                                                               GenJet_pt, Jet_genJetIdx, event)''')
-
-        for source in JetCorrProducer.uncSources_core:
-            if source not in ["Central", "Total", "JER"]:
-                continue
-
-            updateSourceDict(source_dict, source, 'Jet')
-            for scale in getScales(source):
-                syst_name = getSystName(source, scale)
-
-                df = df.Define(f"Jet_p4_{syst_name}", f"Jet_p4_shifted_map.at({{::correction::JetCorrectionProvider::UncSource::{source}, ::correction::UncScale::{scale}}})")
+                df = df.Define(f"Jet_p4_{syst_name}", f"Jet_p4_shifted_map.at({{::correction::{class_name}::UncSource::{source}, ::correction::UncScale::{scale}}})")
                 df = df.Define(f"Jet_p4_{syst_name}_delta", f"Jet_p4_{syst_name} - Jet_p4_{nano}")
 
         return df, source_dict
 
 
-    def getP4Variations(self, df, source_dict, apply_JER=True, apply_JES=True):
-        if self.use_corrlib:
-            return self.getP4Variations_corrlib(df, source_dict, apply_JER, apply_JES)
-        else:
-            return self.getP4Variations_legacy(df, source_dict, apply_JER, apply_JES)
-
-
-    def getEnergyResolution_legacy(self, df):
-        df = df.Define(f"Jet_ptRes", f""" ::correction::JetCorrProvider::getGlobal().getResolution(Jet_pt, Jet_eta, Rho_fixedGridRhoFastjetAll ) """)
-        return df
-
-
-    def getEnergyResolution_corrlib(self, df):
-        df = df.Define(f"Jet_ptRes", "::correction::JetCorrProvider::getGlobal().GetResolutions(Jet_pt, Jet_mass, Jet_rawFactor, Jet_eta, Rho_fixedGridRhoFastjetAll)")
-        return df
-
-
     def getEnergyResolution(self, df):
         if self.use_corrlib:
-            return self.getP4Variations_corrlib(df)
+            df = df.Define("Jet_ptRes", "::correction::JetCorrectionProvider::getGlobal().GetResolutions(Jet_pt, Jet_mass, Jet_rawFactor, Jet_eta, Rho_fixedGridRhoFastjetAll)")
         else:
-            return self.getEnergyResolution_legacy(df)
+            df = df.Define("Jet_ptRes", "::correction::JetCorrProvider::getGlobal().getResolution(Jet_pt, Jet_eta, Rho_fixedGridRhoFastjetAll)")
+        return df
 
     #def getVetoMap(self, df):
     #    df = df.Define(f"vetoMapLooseRegion", "Jet_pt > 15 && ( Jet_jetId & 2 ) && (Jet_puId > 0 || Jet_pt >50) ")
