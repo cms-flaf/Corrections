@@ -194,9 +194,21 @@ class JetCorrProducer:
             return self.getP4Variations_legacy(df, source_dict, apply_JER, apply_JES)
 
 
-    def getEnergyResolution(self, df):
-        df= df.Define(f"Jet_ptRes", f""" ::correction::JetCorrProvider::getGlobal().getResolution(Jet_pt, Jet_eta, Rho_fixedGridRhoFastjetAll ) """)
+    def getEnergyResolution_legacy(self, df):
+        df = df.Define(f"Jet_ptRes", f""" ::correction::JetCorrProvider::getGlobal().getResolution(Jet_pt, Jet_eta, Rho_fixedGridRhoFastjetAll ) """)
         return df
+
+
+    def getEnergyResolution_corrlib(self, df):
+        df = df.Define(f"Jet_ptRes", "::correction::JetCorrProvider::getGlobal().GetResolutions(Jet_pt, Jet_mass, Jet_rawFactor, Jet_eta, Rho_fixedGridRhoFastjetAll)")
+        return df
+
+
+    def getEnergyResolution(self, df):
+        if self.use_corrlib:
+            return self.getP4Variations_corrlib(df)
+        else:
+            return self.getEnergyResolution_legacy(df)
 
     #def getVetoMap(self, df):
     #    df = df.Define(f"vetoMapLooseRegion", "Jet_pt > 15 && ( Jet_jetId & 2 ) && (Jet_puId > 0 || Jet_pt >50) ")
