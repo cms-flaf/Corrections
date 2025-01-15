@@ -153,28 +153,23 @@ private:
         JetCorrectionProvider(std::string const& json_file_name, std::string const& jetsmear_file_name, std::string const& jec_tag, std::string const& jer_tag, std::string const& algo, std::string const& year, bool use_regrouped = false)
         :   corrset_(CorrectionSet::from_file(json_file_name))
         ,   jersmear_corrset_(CorrectionSet::from_file(jetsmear_file_name))
-        ,   jec_tag_(jec_tag)
-        ,   jer_tag_(jer_tag)
-        ,   algo_(algo)
-        ,   year_(year)
-        ,   cmpd_corr_name_(jec_tag_ + "_L1L2L3Res_" + algo_)
-        ,   jer_pt_res_name_(jer_tag_ + "_PtResolution_" + algo_)
-        ,   jer_sf_name_(jer_tag_ + "_ScaleFactor_" + algo_)
-        ,   use_regrouped_(use_regrouped)
+        ,   cmpd_corr_name_(jec_tag + "_L1L2L3Res_" + algo) // find out what are names of these corrections for data
+        ,   jer_pt_res_name_(jer_tag + "_PtResolution_" + algo)
+        ,   jer_sf_name_(jer_tag + "_ScaleFactor_" + algo)
         {
-            auto const& unc_map = use_regrouped_ ? unc_map_regrouped : unc_map_total;
+            auto const& unc_map = use_regrouped ? unc_map_regrouped : unc_map_total;
             for (auto const& [unc_source, unc_name]: unc_map)
             {
-                std::string full_name = jec_tag_;
+                std::string full_name = jec_tag;
                 full_name += '_';
                 full_name += unc_name;
                 full_name += '_';
                 if (year_dep_map.at(unc_source))
                 {
-                    full_name += year_;
+                    full_name += year;
                     full_name += '_';
                 }
-                full_name += algo_;
+                full_name += algo;
                 unc_map_[unc_source] = full_name;
             }
         }
@@ -183,7 +178,6 @@ private:
                                                                       const RVecF& Jet_rawFactor, const RVecF& Jet_area, const float rho,
                                                                       const RVecF& GenJet_pt, const RVecI& Jet_genJetIdx, int event) const
         {
-            // auto const& unc_map = use_regrouped_ ? unc_map_regrouped : unc_map_total;
             std::map<std::pair<UncSource, UncScale>, RVecLV> all_shifted_p4;
             std::vector<UncScale> uncScales = { UncScale::Up, UncScale::Down };
 
@@ -263,14 +257,9 @@ private:
         std::map<UncSource, std::string> unc_map_;
         std::unique_ptr<CorrectionSet> corrset_;
         std::unique_ptr<CorrectionSet> jersmear_corrset_;
-        std::string jec_tag_;
-        std::string jer_tag_;
-        std::string algo_;
-        std::string year_;
         std::string cmpd_corr_name_;
         std::string jer_pt_res_name_;
         std::string jer_sf_name_;
-        bool use_regrouped_;
 
         inline static const std::map<UncSource, std::string> unc_map_total = { { UncSource::Total, "Total" },
                                                                                { UncSource::JER, "JER" } };
