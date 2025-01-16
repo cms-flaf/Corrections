@@ -150,15 +150,23 @@ private:
 
         // algo - type of jet algorithm
         // e.g. AK4PFPuppi
-        JetCorrectionProvider(std::string const& json_file_name, std::string const& jetsmear_file_name, std::string const& jec_tag, std::string const& jer_tag, std::string const& algo, std::string const& year, bool use_regrouped = false)
+        JetCorrectionProvider(std::string const& json_file_name, 
+                              std::string const& jetsmear_file_name, 
+                              std::string const& jec_tag, 
+                              std::string const& jer_tag, 
+                              std::string const& algo, 
+                              std::string const& year, 
+                              bool is_data, 
+                              bool use_regrouped)
         :   corrset_(CorrectionSet::from_file(json_file_name))
         ,   jersmear_corr_(CorrectionSet::from_file(jetsmear_file_name)->at("JERSmear"))
         ,   corr_jer_sf_(corrset_->at(jer_tag + "_ScaleFactor_" + algo))
         ,   corr_jer_res_(corrset_->at(jer_tag + "_PtResolution_" + algo))
         ,   cmpd_corr_(corrset_->compound().at(jec_tag + "_L1L2L3Res_" + algo))
+        ,   is_data_(is_data)
         {
-            auto const& unc_map = use_regrouped ? unc_map_regrouped : unc_map_total;
-            for (auto const& [unc_source, unc_name]: unc_map)
+            auto const& unc_map_ref = use_regrouped ? unc_map_regrouped : unc_map_total;
+            for (auto const& [unc_source, unc_name]: unc_map_ref)
             {
                 std::string full_name = jec_tag;
                 full_name += '_';
@@ -195,18 +203,21 @@ private:
                 float jer_pt_res = corr_jer_res_->evaluate({Jet_eta[i], Jet_pt[i], rho});
                 jer_pt_resolutions[i] = jer_pt_res;
 
-                int genjet_idx = Jet_genJetIdx[i];
-                float genjet_pt = genjet_idx != -1 ? GenJet_pt[genjet_idx] : -1.0;
-                float jersmear_factor = jersmear_corr_->evaluate({Jet_pt[i], Jet_eta[i], genjet_pt, rho, event, jer_pt_res, jer_sf});
+                if (!is_data_)
+                {
+                    int genjet_idx = Jet_genJetIdx[i];
+                    float genjet_pt = genjet_idx != -1 ? GenJet_pt[genjet_idx] : -1.0;
+                    float jersmear_factor = jersmear_corr_->evaluate({Jet_pt[i], Jet_eta[i], genjet_pt, rho, event, jer_pt_res, jer_sf});
+
+                    // apply jer smearing (only for MC)
+                    Jet_pt[i] *= jersmear_factor;
+                    Jet_mass[i] *= jersmear_factor;
+                }
 
                 // evaluate and apply compound correction
                 float cmpd_sf = cmpd_corr_->evaluate({Jet_area[i], Jet_eta[i], Jet_pt[i], rho});
                 Jet_pt[i] *= cmpd_sf;
                 Jet_mass[i] *= cmpd_sf;
-
-                // apply jer smearing
-                Jet_pt[i] *= jersmear_factor;
-                Jet_mass[i] *= jersmear_factor;
 
                 central_p4[i] = LorentzVectorM(Jet_pt[i], Jet_eta[i], Jet_phi[i], Jet_mass[i]);
             }
@@ -268,6 +279,7 @@ private:
         Correction::Ref corr_jer_sf_;
         Correction::Ref corr_jer_res_;
         CompoundCorrection::Ref cmpd_corr_;
+        bool is_data_;
     
         inline static const std::map<UncSource, std::string> unc_map_total = { { UncSource::Total, "Total" },
                                                                                { UncSource::JER, "JER" } };
