@@ -153,7 +153,16 @@ class JetCorrProducer:
                 headers_dir = os.path.dirname(os.path.abspath(__file__))
                 header_path = os.path.join(headers_dir, "jet.h")
                 ROOT.gInterpreter.Declare(f'#include "{header_path}"')
-                ROOT.gInterpreter.ProcessLine(f'::correction::JetCorrectionProvider::Initialize("{jet_jsonFile}", "{jetsmear_jsonFile}", "{jec_tag}", "{jer_tag}", "{algo}", "{year}, {self.use_regrouped}")')
+                is_data = "true" if self.isData else "false"
+                regrouped = "true" if self.use_regrouped else "false"
+                ROOT.gInterpreter.ProcessLine(f"""::correction::JetCorrectionProvider::Initialize("{jet_jsonFile}", 
+                                                                                                  "{jetsmear_jsonFile}", 
+                                                                                                  "{jec_tag}", 
+                                                                                                  "{jer_tag}", 
+                                                                                                  "{algo}", 
+                                                                                                  "{year}", 
+                                                                                                   {is_data}, 
+                                                                                                   {regrouped})""")
                 JetCorrProducer.initialized = True
 
 
