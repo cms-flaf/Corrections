@@ -53,6 +53,8 @@ class JetCorrProducer:
     jsonPath_btag = "/cvmfs/cms.cern.ch/rsync/cms-nanoAOD/jsonpog-integration/POG/BTV/{}/btagging.json.gz"
 
     initialized = False
+
+    jet_algorithm = "AK4PFPuppi"
     
     uncSources_regrouped = [ "FlavorQCD",
                              "RelativeBal",
@@ -73,11 +75,19 @@ class JetCorrProducer:
     jersmear_jsonPath = "/cvmfs/cms.cern.ch/rsync/cms-nanoAOD/jsonpog-integration/POG/JME/jer_smear.json.gz"
 
     # format: key = period, value = (JEC tag, JER tag)
-    run3_period_map = { "2022_Summer22": ("Summer22_22Sep2023_V2_MC", "Summer22_22Sep2023_JRV1_MC") }
+    run3_period_map_mc = { "2022_Summer22": ("Summer22_22Sep2023_V2_MC", "Summer22_22Sep2023_JRV1_MC"),
+                           "2022_Prompt": ("Winter22Run3_V2_MC", "JR_Winter22Run3_V1_MC"),
+                           "2022_Summer22EE": ("Summer22EE_22Sep2023_V2_MC", "Summer22EE_22Sep2023_JRV1_MC"),
+                           "2023_Summer23BPix": ("Summer23BPixPrompt23_V1_MC", "Summer23BPixPrompt23_RunD_JRV1_MC"),
+                           "2024_Winter24": ("Winter24Prompt24_V2_MC", "Summer23BPixPrompt23_RunD_JRV1_MC") }
+
+    run3_period_map_data = { "2022_Summer22": ("Summer22_22Sep2023_RunCD_V2_DATA", "Summer22_22Sep2023_JRV1_MC"),
+                             "2023_Summer23BPix": ("Summer23BPixPrompt23_RunD_V1_DATA", "Summer23BPixPrompt23_RunD_JRV1_MC") }
 
     #Sources = []
     period = None
     def __init__(self, period, isData, use_corrlib = True, use_regrouped = False):
+        self.isData = isData
         self.use_regrouped = use_regrouped
         self.use_corrlib = use_corrlib
         self.uncSources_toUse = []
@@ -109,12 +119,10 @@ class JetCorrProducer:
 
             JEC_Regouped_txtPath_MC = f"{JEC_SF_db}/{JEC_dir}/{regrouped_files_names[period]}"
 
-            JetCorrProducer.isData = isData
-
             ptResolution = os.path.join(os.environ['ANALYSIS_PATH'],JER_PtRes_txtPath_MC.format(period))
             ptResolutionSF = os.path.join(os.environ['ANALYSIS_PATH'],JER_SF_txtPath_MC.format(period))
             JEC_Regrouped = os.path.join(os.environ['ANALYSIS_PATH'], JEC_Regouped_txtPath_MC.format(period))
-            if JetCorrProducer.isData:
+            if self.isData:
                 ptResolution = os.path.join(os.environ['ANALYSIS_PATH'],JER_PtRes_txtPath_data.format(period))
                 ptResolutionSF = os.path.join(os.environ['ANALYSIS_PATH'],JER_SF_txtPath_data.format(period))
             if not JetCorrProducer.initialized:
@@ -137,10 +145,10 @@ class JetCorrProducer:
             jet_jsonFile = os.path.join(os.environ['ANALYSIS_PATH'], jet_path)
             jersmear_path = JetCorrProducer.jersmear_jsonPath
             jetsmear_jsonFile = os.path.join(os.environ['ANALYSIS_PATH'], jersmear_path)
-            run3_period_map = JetCorrProducer.run3_period_map
+            run3_period_map = JetCorrProducer.run3_period_map_data if self.isData else JetCorrProducer.run3_period_map_mc
             jec_tag, jer_tag = run3_period_map[period]
             year = period.split('_')[0]
-            algo = "AK4PFPuppi"
+            algo = JetCorrProducer.jet_algorithm
             if not JetCorrProducer.initialized:
                 headers_dir = os.path.dirname(os.path.abspath(__file__))
                 header_path = os.path.join(headers_dir, "jet.h")
