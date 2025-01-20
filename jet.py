@@ -48,6 +48,15 @@ regrouped_files_names = {
     "2016postVFP_UL":"RegroupedV2_Summer19UL16_V7_MC_UncertaintySources_AK4PFchs.txt"
     }
 
+
+def MakeJEStagForData(base_tag, letters, version):
+    return f"{base_tag}_Run{letters}_V{version}_DATA"
+
+
+def GetRunInfo(cfg):
+    pass
+
+
 class JetCorrProducer:
     JEC_SF_path = 'Corrections/data/JME/{}'
     jsonPath_btag = "/cvmfs/cms.cern.ch/rsync/cms-nanoAOD/jsonpog-integration/POG/BTV/{}/btagging.json.gz"
@@ -55,7 +64,7 @@ class JetCorrProducer:
     initialized = False
 
     jet_algorithm = "AK4PFPuppi"
-    
+
     uncSources_regrouped = [ "FlavorQCD",
                              "RelativeBal",
                              "HF",
@@ -79,10 +88,29 @@ class JetCorrProducer:
                            "2022_Prompt": ("Winter22Run3_V2_MC", "JR_Winter22Run3_V1_MC"),
                            "2022_Summer22EE": ("Summer22EE_22Sep2023_V2_MC", "Summer22EE_22Sep2023_JRV1_MC"),
                            "2023_Summer23BPix": ("Summer23BPixPrompt23_V1_MC", "Summer23BPixPrompt23_RunD_JRV1_MC"),
-                           "2024_Winter24": ("Winter24Prompt24_V2_MC", "Summer23BPixPrompt23_RunD_JRV1_MC") }
+                           "2023_Summer23": ("Summer23Prompt23_V1_MC", "Summer23Prompt23_RunCv1234_JRV1_MC") }
 
-    run3_period_map_data = { "2022_Summer22": ("Summer22_22Sep2023_RunCD_V2_DATA", "Summer22_22Sep2023_JRV1_MC"),
-                             "2023_Summer23BPix": ("Summer23BPixPrompt23_RunD_V1_DATA", "Summer23BPixPrompt23_RunD_JRV1_MC") }
+    # maps period to JER tag (only for MC!)
+    jer_tag_map = { "2022_Summer22": "Summer22_22Sep2023_JRV1_MC",
+                    "2022_Prompt": "JR_Winter22Run3_V1_MC",
+                    "2022_Summer22EE": "Summer22EE_22Sep2023_JRV1_MC",
+                    "2023_Summer23BPix": "Summer23BPixPrompt23_RunD_JRV1_MC",
+                    "2023_Summer23": "Summer23Prompt23_RunCv1234_JRV1_MC" }
+
+    # maps period to JEC tag
+    jec_tag_map_mc = { "2022_Summer22": "Summer22_22Sep2023_V2_MC",
+                       "2022_Prompt": "Winter22Run3_V2_MC",
+                       "2022_Summer22EE": "Summer22EE_22Sep2023_V2_MC",
+                       "2023_Summer23BPix": "Summer23BPixPrompt23_V1_MC",
+                       "2023_Summer23": "Summer23Prompt23_V1_MC" }
+
+    # maps period to base tag
+    # for DATA: jec_tag = {base_tag}_Run{letter}_V{version}_DATA
+    jec_tag_map_data = { "2022_Summer22": "Summer22_22Sep2023",
+                         "2023_Summer23BPix": "Summer23BPixPrompt23",
+                         "2022_Prompt": "Winter22Run3",
+                         "2023_Summer23": "Summer23Prompt23",
+                         "2022_Summer22EE": "Summer22EE_22Sep2023" }
 
     #Sources = []
     period = None
@@ -145,23 +173,31 @@ class JetCorrProducer:
             jet_jsonFile = os.path.join(os.environ['ANALYSIS_PATH'], jet_path)
             jersmear_path = JetCorrProducer.jersmear_jsonPath
             jetsmear_jsonFile = os.path.join(os.environ['ANALYSIS_PATH'], jersmear_path)
-            run3_period_map = JetCorrProducer.run3_period_map_data if self.isData else JetCorrProducer.run3_period_map_mc
-            jec_tag, jer_tag = run3_period_map[period]
+
+            jec_tag_map = JetCorrProducer.jec_tag_map_data if self.isData else JetCorrProducer.jec_tag_map_mc
+            jec_tag = jec_tag_map[period]
+            if self.isData:
+                letter = "CD"
+                version = 2
+                # letter, version = GetRunInfo(cfg)
+                jec_tag = MakeJEStagForData(jec_tag, letter, version)
+            jer_tag = JetCorrProducer.jer_tag_map[period]
             year = period.split('_')[0]
             algo = JetCorrProducer.jet_algorithm
+
             if not JetCorrProducer.initialized:
                 headers_dir = os.path.dirname(os.path.abspath(__file__))
                 header_path = os.path.join(headers_dir, "jet.h")
                 ROOT.gInterpreter.Declare(f'#include "{header_path}"')
                 is_data = "true" if self.isData else "false"
                 regrouped = "true" if self.use_regrouped else "false"
-                ROOT.gInterpreter.ProcessLine(f"""::correction::JetCorrectionProvider::Initialize("{jet_jsonFile}", 
-                                                                                                  "{jetsmear_jsonFile}", 
-                                                                                                  "{jec_tag}", 
-                                                                                                  "{jer_tag}", 
-                                                                                                  "{algo}", 
-                                                                                                  "{year}", 
-                                                                                                   {is_data}, 
+                ROOT.gInterpreter.ProcessLine(f"""::correction::JetCorrectionProvider::Initialize("{jet_jsonFile}",
+                                                                                                  "{jetsmear_jsonFile}",
+                                                                                                  "{jec_tag}",
+                                                                                                  "{jer_tag}",
+                                                                                                  "{algo}",
+                                                                                                  "{year}",
+                                                                                                   {is_data},
                                                                                                    {regrouped})""")
                 JetCorrProducer.initialized = True
 
@@ -177,14 +213,14 @@ class JetCorrProducer:
             df = df.Define('Jet_p4_shifted_map', f'''::correction::JetCorrProvider::getGlobal().getShiftedP4(
                             Jet_pt, Jet_eta, Jet_phi, Jet_mass, Jet_rawFactor, Jet_area,
                             Jet_jetId, Rho_fixedGridRhoFastjetAll, Jet_partonFlavour, 0, GenJet_pt, GenJet_eta,
-                            GenJet_phi, GenJet_mass, event)''')       
-            class_name = "JetCorrProvider"     
+                            GenJet_phi, GenJet_mass, event)''')
+            class_name = "JetCorrProvider"
 
         apply_jer_list = []
         if apply_JER:
             apply_jer_list.append("JER")
         apply_jes_list = self.uncSources_toUse if apply_JES else []
-        # central variable is imported from CorrectionsCore.p, where it is defined
+        # central variable is imported from CorrectionsCore.py, where it is defined
         for source in [ central ] + apply_jes_list + apply_jer_list:
             source_eff = source
             if source in apply_jes_list: # source!=central and source != "JER":
