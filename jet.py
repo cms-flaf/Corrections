@@ -49,14 +49,6 @@ regrouped_files_names = {
     }
 
 
-def MakeJEStagForData(base_tag, letters, version):
-    return f"{base_tag}_Run{letters}_V{version}_DATA"
-
-
-def GetRunInfo(cfg):
-    pass
-
-
 class JetCorrProducer:
     JEC_SF_path = 'Corrections/data/JME/{}'
     jsonPath_btag = "/cvmfs/cms.cern.ch/rsync/cms-nanoAOD/jsonpog-integration/POG/BTV/{}/btagging.json.gz"
@@ -83,13 +75,6 @@ class JetCorrProducer:
     # fatjet_jsonPath = "/cvmfs/cms.cern.ch/rsync/cms-nanoAOD/jsonpog-integration/POG/JME/{}/fatJet_jerc.json.gz"
     jersmear_jsonPath = "/cvmfs/cms.cern.ch/rsync/cms-nanoAOD/jsonpog-integration/POG/JME/jer_smear.json.gz"
 
-    # format: key = period, value = (JEC tag, JER tag)
-    run3_period_map_mc = { "2022_Summer22": ("Summer22_22Sep2023_V2_MC", "Summer22_22Sep2023_JRV1_MC"),
-                           "2022_Prompt": ("Winter22Run3_V2_MC", "JR_Winter22Run3_V1_MC"),
-                           "2022_Summer22EE": ("Summer22EE_22Sep2023_V2_MC", "Summer22EE_22Sep2023_JRV1_MC"),
-                           "2023_Summer23BPix": ("Summer23BPixPrompt23_V1_MC", "Summer23BPixPrompt23_RunD_JRV1_MC"),
-                           "2023_Summer23": ("Summer23Prompt23_V1_MC", "Summer23Prompt23_RunCv1234_JRV1_MC") }
-
     # maps period to JER tag (only for MC!)
     jer_tag_map = { "2022_Summer22": "Summer22_22Sep2023_JRV1_MC",
                     "2022_Prompt": "JR_Winter22Run3_V1_MC",
@@ -105,17 +90,22 @@ class JetCorrProducer:
                        "2023_Summer23": "Summer23Prompt23_V1_MC" }
 
     # maps period to base tag
-    # for DATA: jec_tag = {base_tag}_Run{letter}_V{version}_DATA
-    jec_tag_map_data = { "2022_Summer22": "Summer22_22Sep2023",
-                         "2023_Summer23BPix": "Summer23BPixPrompt23",
-                         "2022_Prompt": "Winter22Run3",
-                         "2023_Summer23": "Summer23Prompt23",
-                         "2022_Summer22EE": "Summer22EE_22Sep2023" }
+    # for DATA: jec_tag = {base_tag}_Run{letters}_V{version}_DATA
+    jec_tag_map_data = { "2022_Summer22": "Summer22_22Sep2023_Run{}_V2_DATA",
+                         "2023_Summer23BPix": "Summer23BPixPrompt23_Run{}_V2_DATA",
+                         "2022_Prompt": "Winter22Run3_Run{}_V2_DATA",
+                         "2023_Summer23": "Summer23Prompt23_Run{}_V1_DATA",
+                         "2022_Summer22EE": "Summer22EE_22Sep2023_Run{}_V2_DATA" }
+
+    run_versions = { 2022: [],
+                     2023: ["v123", "v4"],
+                     2024: [] }
 
     #Sources = []
     period = None
-    def __init__(self, period, isData, use_corrlib = True, use_regrouped = False):
+    def __init__(self, period, isData, sample_name, use_corrlib = True, use_regrouped = False):
         self.isData = isData
+        self.sample_name = sample_name
         self.use_regrouped = use_regrouped
         self.use_corrlib = use_corrlib
         self.uncSources_toUse = []
@@ -174,15 +164,40 @@ class JetCorrProducer:
             jersmear_path = JetCorrProducer.jersmear_jsonPath
             jetsmear_jsonFile = os.path.join(os.environ['ANALYSIS_PATH'], jersmear_path)
 
+            year = period.split('_')[0]
             jec_tag_map = JetCorrProducer.jec_tag_map_data if self.isData else JetCorrProducer.jec_tag_map_mc
             jec_tag = jec_tag_map[period]
             if self.isData:
-                letter = "CD"
-                version = 2
-                # letter, version = GetRunInfo(cfg)
-                jec_tag = MakeJEStagForData(jec_tag, letter, version)
+                letters = ""
+                if not JetCorrProducer.run_versions[year]:
+                    # before 2023 only run letter matters, there is no version
+                    # can be multiple letters (e.g. in 2024_Winter24 -> exists RunBCD)
+                    start = -1
+                    while not self.sample_name[start].isnumeric():
+                        start -= 1
+                    letters = self.sample_name[start + 1:]
+                else:
+                    # after 2023 there is run letter and run version
+                    # e.g. sample_name = EGamma0_Run2023C_v2
+                    tokens = self.sample_name.split('_')
+
+                    run_year_and_letter_tokens = [t for t in tokens if "Run" in t]
+                    if len(run_year_and_letter_tokens) != 1:
+                        raise RuntimeError(f"Impossible run year and letter for sample {sample_name}: got {run_year_and_letter_tokens}")
+                    run_year_and_letter = run_year_and_letter_tokens[0]
+
+                    version = tokens[-1]
+                    matching_run_versions = [v for v in JetCorrProducer.run_versions[year] if version in v]
+                    if len(matching_run_versions) != 1:
+                        raise RuntimeError(f"Impossible run versions for sample {sample_name}: got {matching_run_versions}")
+
+                    letters = run_year_and_letter[-1] + matching_run_versions[0]
+
+                if not letters:
+                    raise RuntimeError("Got empty string for run letters")
+                jec_tag = jec_tag.format(letters)
+
             jer_tag = JetCorrProducer.jer_tag_map[period]
-            year = period.split('_')[0]
             algo = JetCorrProducer.jet_algorithm
 
             if not JetCorrProducer.initialized:
