@@ -150,13 +150,13 @@ private:
 
         // algo - type of jet algorithm
         // e.g. AK4PFPuppi
-        JetCorrectionProvider(std::string const& json_file_name, 
-                              std::string const& jetsmear_file_name, 
-                              std::string const& jec_tag, 
-                              std::string const& jer_tag, 
-                              std::string const& algo, 
-                              std::string const& year, 
-                              bool is_data, 
+        JetCorrectionProvider(std::string const& json_file_name,
+                              std::string const& jetsmear_file_name,
+                              std::string const& jec_tag,
+                              std::string const& jer_tag,
+                              std::string const& algo,
+                              std::string const& year,
+                              bool is_data,
                               bool use_regrouped)
         :   corrset_(CorrectionSet::from_file(json_file_name))
         ,   jersmear_corr_(CorrectionSet::from_file(jetsmear_file_name)->at("JERSmear"))
@@ -280,7 +280,7 @@ private:
         Correction::Ref corr_jer_res_;
         CompoundCorrection::Ref cmpd_corr_;
         bool is_data_;
-    
+
         inline static const std::map<UncSource, std::string> unc_map_total = { { UncSource::Total, "Total" },
                                                                                { UncSource::JER, "JER" } };
 
