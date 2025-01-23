@@ -17,14 +17,15 @@ class EleCorrProducer:
     EleES_JsonPath_Run3 = "/cvmfs/cms.cern.ch/rsync/cms-nanoAOD/jsonpog-integration/POG/EGM/{}/electronSS.json.gz"
     initialized = False
     ID_sources = ["EleID"]
+    EleCorrrecoWPs = ["RecoAbove20","RecoBelow20"]
     working_points = ["wp80iso", "wp80noiso"]
     energyScaleSources_ele = ["EleES"]
     year = ""
 
     def __init__(self, period):
         EleID_JsonFile = EleCorrProducer.EleID_JsonPath.format(period)
-
-        if period.startswith('Run2'):
+        print(period )
+        if period.endswith('UL') or period.startswith("Run2"):
             EleES_JsonFile = os.path.join(os.environ['ANALYSIS_PATH'],EleCorrProducer.EleES_JsonPath.format(period))
             EleID_JsonFile_key = "UL-Electron-ID-SF"
             EleES_JsonFile_key = "UL-EGM_ScaleUnc"
@@ -33,7 +34,7 @@ class EleCorrProducer:
             EleID_JsonFile_key = "Electron-ID-SF"
             EleES_JsonFile_key = "Scale"
 
-
+        print(f'"{EleID_JsonFile}", "{EleES_JsonFile}","{EleID_JsonFile_key}","{EleES_JsonFile_key}')
         if not EleCorrProducer.initialized:
             headers_dir = os.path.dirname(os.path.abspath(__file__))
             header_path = os.path.join(headers_dir, "electron.h")
@@ -60,7 +61,7 @@ class EleCorrProducer:
         sf_sources =EleCorrProducer.ID_sources
         SF_branches = []
         sf_scales = [up, down] if return_variations else []
-        for working_point in EleCorrProducer.working_points:
+        for working_point in EleCorrProducer.working_points + EleCorrProducer.EleCorrrecoWPs:
             for source in sf_sources:
                 for scale in [central]+sf_scales:
                     if not isCentral and scale!= central: continue
@@ -70,10 +71,21 @@ class EleCorrProducer:
                         branch_central = f"""weight_{leg_name}_EleSF_{working_point}_{source+central}"""
                         #print(branch_name)
                         #print(branch_central)
-                        df = df.Define(f"{branch_name}_double",
-                                    f'''({leg_name}_type == static_cast<int>(Leg::e) && {leg_name}_pt >= 10 &&  {leg_name}_index >= 0 && (({leg_name}_gen_kind == 1) || ({leg_name}_gen_kind == 3)))  ? ::correction::EleCorrProvider::getGlobal().getID_SF(
-                                {leg_name}_p4, "{working_point}",
-                                "{EleCorrProducer.year}",::correction::EleCorrProvider::UncSource::{source}, ::correction::UncScale::{scale}) : 1.;''')
+                        if working_point in EleCorrProducer.working_points:
+                            df = df.Define(f"{branch_name}_double",
+                                        f'''({leg_name}_type == static_cast<int>(Leg::e) && {leg_name}_pt >= 10 &&  {leg_name}_index >= 0 && (({leg_name}_gen_kind == 1) || ({leg_name}_gen_kind == 3)))  ? ::correction::EleCorrProvider::getGlobal().getID_SF(
+                                    {leg_name}_p4, "{working_point}",
+                                    "{EleCorrProducer.year}",::correction::EleCorrProvider::UncSource::{source}, ::correction::UncScale::{scale}) : 1.;''')
+                        elif working_point == 'RecoBelow20':
+                            df = df.Define(f"{branch_name}_double",
+                                        f'''({leg_name}_type == static_cast<int>(Leg::e) && {leg_name}_pt < 20 &&  {leg_name}_index >= 0 && (({leg_name}_gen_kind == 1) || ({leg_name}_gen_kind == 3)))  ? ::correction::EleCorrProvider::getGlobal().getID_SF(
+                                    {leg_name}_p4, "{working_point}",
+                                    "{EleCorrProducer.year}",::correction::EleCorrProvider::UncSource::{source}, ::correction::UncScale::{scale}) : 1.;''')
+                        elif working_point == 'RecoAbove20':
+                            df = df.Define(f"{branch_name}_double",
+                                        f'''({leg_name}_type == static_cast<int>(Leg::e) && {leg_name}_pt >= 20 &&  {leg_name}_index >= 0 && (({leg_name}_gen_kind == 1) || ({leg_name}_gen_kind == 3)))  ? ::correction::EleCorrProvider::getGlobal().getID_SF(
+                                    {leg_name}_p4, "{working_point}",
+                                    "{EleCorrProducer.year}",::correction::EleCorrProvider::UncSource::{source}, ::correction::UncScale::{scale}) : 1.;''')
                         if scale != central:
                             branch_name_final = branch_name + '_rel'
                             df = df.Define(branch_name_final, f"static_cast<float>({branch_name}_double/{branch_central})")
@@ -83,6 +95,5 @@ class EleCorrProducer:
                             else:
                                 branch_name_final = branch_name
                             df = df.Define(branch_name_final, f"static_cast<float>({branch_name}_double)")
-
                         SF_branches.append(branch_name_final)
         return df,SF_branches
