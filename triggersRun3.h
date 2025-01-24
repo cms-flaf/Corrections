@@ -43,14 +43,14 @@ public:
         }
     }
 
-    float getSF_e(const LorentzVectorM & part_p4, std::string year, UncSource source, UncScale scale) const {
+    float getSF_singleEleWpTight(const LorentzVectorM & part_p4, std::string year, UncSource source, UncScale scale) const {
         float corr_SF = 1;
         const std::string& scale_str = getEleScaleStr(scale);
         std::string Working_Point = "HLT_SF_Ele30_MVAiso80ID";
         corr_SF = eleTrgCorrections.at(getUncSourceName(source))->evaluate({year, scale_str, Working_Point, part_p4.Eta(), part_p4.Pt()});
         return corr_SF ;
     }
-    float getSF_mu(const LorentzVectorM & part_p4, UncSource source, UncScale scale) const {
+    float getSF_singleIsoMu(const LorentzVectorM & part_p4, std::string year, UncSource source, UncScale scale) const {
         float corr_SF = 1;
         const std::string& scale_str = getMuScaleStr(scale);
         corr_SF = muTrgCorrections.at(getUncSourceName(source))->evaluate({ abs(part_p4.Eta()), part_p4.Pt(), scale_str});
