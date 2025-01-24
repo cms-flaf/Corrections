@@ -62,6 +62,7 @@ class TauCorrProducer:
 
     def getSF(self, df, lepton_legs, isCentral, return_variations):
         sf_sources =TauCorrProducer.SFSources_tau+TauCorrProducer.SFSources_genuineLep
+        print(f"getSF sf_source {sf_sources}")
         sf_scales = [up, down] if return_variations else []
         SF_branches = []
         for source in [central] + sf_sources:
