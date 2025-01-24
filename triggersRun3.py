@@ -66,19 +66,12 @@ class TrigCorrProducer:
                         if source == central and scale != central: continue
                         if not isCentral and scale!= central: continue
                         syst_name = getSystName(source, scale)
-                        suffix = syst_name
-                        if scale == central:
-                            suffix = f"{trg_name}_{syst_name}"
+                        suffix = f"{trg_name}_{syst_name}"
                         branch_name = f"weight_{leg_name}_TrgSF_{suffix}"
                         branch_central = f"weight_{leg_name}_TrgSF_{trg_name}_{getSystName(central,central)}"
-                        if ('Ele' in trg_name):
-                            df = df.Define(f"{branch_name}_double",
-                                        f'''{applyTrgBranch_name} ? ::correction::TrigCorrProvider::getGlobal().getSF_e(
-                                    {leg_name}_p4,"{TrigCorrProducer.year}",::correction::TrigCorrProvider::UncSource::{source}, ::correction::UncScale::{scale} ) : 1.f''')
-                        if ('Mu' in trg_name):
-                            df = df.Define(f"{branch_name}_double",
-                                        f'''{applyTrgBranch_name} ? ::correction::TrigCorrProvider::getGlobal().getSF_mu(
-                                    {leg_name}_p4,::correction::TrigCorrProvider::UncSource::{source}, ::correction::UncScale::{scale} ) : 1.f''')
+                        df = df.Define(f"{branch_name}_double",
+                                    f'''{applyTrgBranch_name} ? ::correction::TrigCorrProvider::getGlobal().getSF_{trg_name}(
+                                {leg_name}_p4,"{TrigCorrProducer.year}",::correction::TrigCorrProvider::UncSource::{source}, ::correction::UncScale::{scale} ) : 1.f''')
                         if scale != central:
                             df = df.Define(f"{branch_name}_rel", f"static_cast<float>({branch_name}_double/{branch_central})")
                             branch_name += '_rel'
