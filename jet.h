@@ -233,6 +233,11 @@ private:
 
                     if (unc_source == UncSource::JER)
                     {
+                        if (is_data_)
+                        {
+                            continue;
+                        }
+
                         for (size_t jet_idx = 0; jet_idx < sz; ++jet_idx)
                         {
                             float sf = 1.0;
