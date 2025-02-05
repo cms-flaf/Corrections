@@ -152,7 +152,7 @@ class Corrections:
         if 'tauES' in self.to_apply and not self.isData:
             df, source_dict = self.tau.getES(df, source_dict)
         if 'JEC' in self.to_apply or 'JER' in self.to_apply:
-            apply_jes = 'JEC' in self.to_apply
+            apply_jes = 'JEC' in self.to_apply and not self.isData
             apply_jer = 'JER' in self.to_apply and not self.isData
             df, source_dict = self.jet.getP4Variations(df, source_dict, apply_jer, apply_jes)
             # df, source_dict = self.fatjet.getP4Variations(df, source_dict, 'JER' in self.to_apply, 'JEC' in self.to_apply)
