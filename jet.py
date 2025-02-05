@@ -169,13 +169,14 @@ class JetCorrProducer:
             jec_tag = jec_tag_map[period]
             if self.isData:
                 letters = ""
-                if not JetCorrProducer.run_versions[year]:
+                if not JetCorrProducer.run_versions[self.year]:
                     # before 2023 only run letter matters, there is no version
                     # can be multiple letters (e.g. in 2024_Winter24 -> exists RunBCD)
                     start = -1
                     while not self.sample_name[start].isnumeric():
                         start -= 1
                     letters = self.sample_name[start + 1:]
+                    # letters = "CD"
                 else:
                     # after 2023 there is run letter and run version
                     # e.g. sample_name = EGamma0_Run2023C_v2
@@ -187,7 +188,7 @@ class JetCorrProducer:
                     run_year_and_letter = run_year_and_letter_tokens[0]
 
                     version = tokens[-1]
-                    matching_run_versions = [v for v in JetCorrProducer.run_versions[year] if version in v]
+                    matching_run_versions = [v for v in JetCorrProducer.run_versions[self.year] if version in v]
                     if len(matching_run_versions) != 1:
                         raise RuntimeError(f"Impossible run versions for sample {sample_name}: got {matching_run_versions}")
 
