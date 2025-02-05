@@ -176,7 +176,7 @@ class JetCorrProducer:
                     while not self.sample_name[start].isnumeric():
                         start -= 1
                     letters = self.sample_name[start + 1:]
-                    # letters = "CD"
+                    letters = "CD"
                 else:
                     # after 2023 there is run letter and run version
                     # e.g. sample_name = EGamma0_Run2023C_v2
@@ -221,9 +221,13 @@ class JetCorrProducer:
     def getP4Variations(self, df, source_dict, apply_JER, apply_JES):
         class_name = ""
         if self.use_corrlib:
-            df = df.Define("Jet_p4_shifted_map", '''::correction::JetCorrectionProvider::getGlobal().getShiftedP4(Jet_pt, Jet_eta, Jet_phi, Jet_mass,
-                                                                                                                  Jet_rawFactor, Jet_area, Rho_fixedGridRhoFastjetAll,
-                                                                                                                  GenJet_pt, Jet_genJetIdx, event)''')
+            if not self.isData:
+                df = df.Define("Jet_p4_shifted_map", '''::correction::JetCorrectionProvider::getGlobal().getShiftedP4(Jet_pt, Jet_eta, Jet_phi, Jet_mass,
+                                                                                                                      Jet_rawFactor, Jet_area, Rho_fixedGridRhoFastjetAll, event,
+                                                                                                                      GenJet_pt, Jet_genJetIdx)''')
+            else:
+                df = df.Define("Jet_p4_shifted_map", '''::correction::JetCorrectionProvider::getGlobal().getShiftedP4(Jet_pt, Jet_eta, Jet_phi, Jet_mass,
+                                                                                                                      Jet_rawFactor, Jet_area, Rho_fixedGridRhoFastjetAll, event)''')
             class_name = "JetCorrectionProvider"
         else:
             df = df.Define('Jet_p4_shifted_map', f'''::correction::JetCorrProvider::getGlobal().getShiftedP4(
