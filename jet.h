@@ -165,26 +165,30 @@ private:
         ,   cmpd_corr_(corrset_->compound().at(jec_tag + "_L1L2L3Res_" + algo))
         ,   is_data_(is_data)
         {
-            auto const& unc_map_ref = use_regrouped ? unc_map_regrouped : unc_map_total;
-            for (auto const& [unc_source, unc_name]: unc_map_ref)
+            // map with uncertainty sources should only be filled for MC
+            if (!is_data_)
             {
-                std::string full_name = jec_tag;
-                full_name += '_';
-                full_name += unc_name;
-                full_name += '_';
-                if (year_dep_map.at(unc_source))
+                auto const& unc_map_ref = use_regrouped ? unc_map_regrouped : unc_map_total;
+                for (auto const& [unc_source, unc_name]: unc_map_ref)
                 {
-                    full_name += year;
+                    std::string full_name = jec_tag;
                     full_name += '_';
+                    full_name += unc_name;
+                    full_name += '_';
+                    if (year_dep_map.at(unc_source))
+                    {
+                        full_name += year;
+                        full_name += '_';
+                    }
+                    full_name += algo;
+                    unc_map_[unc_source] = full_name;
                 }
-                full_name += algo;
-                unc_map_[unc_source] = full_name;
             }
         }
 
         std::map<std::pair<UncSource, UncScale>, RVecLV> getShiftedP4(RVecF Jet_pt, const RVecF& Jet_eta, const RVecF& Jet_phi, RVecF Jet_mass,
-                                                                      const RVecF& Jet_rawFactor, const RVecF& Jet_area, const float rho,
-                                                                      const RVecF& GenJet_pt, const RVecI& Jet_genJetIdx, int event) const
+                                                                      const RVecF& Jet_rawFactor, const RVecF& Jet_area, const float rho, int event,
+                                                                      const RVecF& GenJet_pt = {}, const RVecI& Jet_genJetIdx = {}) const
         {
             std::map<std::pair<UncSource, UncScale>, RVecLV> all_shifted_p4;
             std::vector<UncScale> uncScales = { UncScale::Up, UncScale::Down };
@@ -198,13 +202,13 @@ private:
                 Jet_pt[i] *= 1.0 - Jet_rawFactor[i];
                 Jet_mass[i] *= 1.0 - Jet_rawFactor[i];
 
-                // extract jer scale factor and resolution
-                float jer_sf = corr_jer_sf_->evaluate({Jet_eta[i], Jet_pt[i], "nom"});
-                float jer_pt_res = corr_jer_res_->evaluate({Jet_eta[i], Jet_pt[i], rho});
-                jer_pt_resolutions[i] = jer_pt_res;
-
                 if (!is_data_)
                 {
+                    // extract jer scale factor and resolution
+                    float jer_sf = corr_jer_sf_->evaluate({Jet_eta[i], Jet_pt[i], "nom"});
+                    float jer_pt_res = corr_jer_res_->evaluate({Jet_eta[i], Jet_pt[i], rho});
+                    jer_pt_resolutions[i] = jer_pt_res;
+
                     int genjet_idx = Jet_genJetIdx[i];
                     float genjet_pt = genjet_idx != -1 ? GenJet_pt[genjet_idx] : -1.0;
                     float jersmear_factor = jersmear_corr_->evaluate({Jet_pt[i], Jet_eta[i], genjet_pt, rho, event, jer_pt_res, jer_sf});
@@ -225,38 +229,36 @@ private:
             all_shifted_p4.insert({{UncSource::Central, UncScale::Central}, central_p4});
 
             // apply uncertainties from uncertainty map
-            for (auto const& uncScale: uncScales)
+            // this part should not be executed for data
+            if (!is_data_)
             {
-                for (auto const& [unc_source, unc_name]: unc_map_)
+                for (auto const& uncScale: uncScales)
                 {
-                    RVecLV shifted_p4(sz);
-
-                    if (unc_source == UncSource::JER)
+                    for (auto const& [unc_source, unc_name]: unc_map_)
                     {
-                        if (is_data_)
+                        RVecLV shifted_p4(sz);
+                        if (unc_source == UncSource::JER)
                         {
-                            continue;
+                            for (size_t jet_idx = 0; jet_idx < sz; ++jet_idx)
+                            {
+                                float sf = 1.0;
+                                sf += static_cast<int>(uncScale)*jer_pt_resolutions[jet_idx];
+                                shifted_p4[jet_idx] = LorentzVectorM(sf*Jet_pt[jet_idx], Jet_eta[jet_idx], Jet_phi[jet_idx], sf*Jet_mass[jet_idx]);
+                            }
                         }
-
-                        for (size_t jet_idx = 0; jet_idx < sz; ++jet_idx)
+                        else
                         {
-                            float sf = 1.0;
-                            sf += static_cast<int>(uncScale)*jer_pt_resolutions[jet_idx];
-                            shifted_p4[jet_idx] = LorentzVectorM(sf*Jet_pt[jet_idx], Jet_eta[jet_idx], Jet_phi[jet_idx], sf*Jet_mass[jet_idx]);
+                            for (size_t jet_idx = 0 ; jet_idx < sz; ++jet_idx)
+                            {
+                                float sf = 1.0;
+                                Correction::Ref corr = corrset_->at(unc_name);
+                                float unc = corr->evaluate({Jet_eta[jet_idx], Jet_pt[jet_idx]});
+                                sf += static_cast<int>(uncScale)*unc;
+                                shifted_p4[jet_idx] = LorentzVectorM(sf*Jet_pt[jet_idx], Jet_eta[jet_idx], Jet_phi[jet_idx], sf*Jet_mass[jet_idx]);
+                            }
                         }
+                        all_shifted_p4.insert({{unc_source, uncScale}, shifted_p4});
                     }
-                    else
-                    {
-                        for (size_t jet_idx = 0 ; jet_idx < sz; ++jet_idx)
-                        {
-                            float sf = 1.0;
-                            Correction::Ref corr = corrset_->at(unc_name);
-                            float unc = corr->evaluate({Jet_eta[jet_idx], Jet_pt[jet_idx]});
-                            sf += static_cast<int>(uncScale)*unc;
-                            shifted_p4[jet_idx] = LorentzVectorM(sf*Jet_pt[jet_idx], Jet_eta[jet_idx], Jet_phi[jet_idx], sf*Jet_mass[jet_idx]);
-                        }
-                    }
-                    all_shifted_p4.insert({{unc_source, uncScale}, shifted_p4});
                 }
             }
             return all_shifted_p4;
