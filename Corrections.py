@@ -29,7 +29,7 @@ class Corrections:
     _global_instance = None
 
     @staticmethod
-    def initializeGlobal(config, sample_name, isData=False, load_corr_lib=True):
+    def initializeGlobal(config, sample_name=None, isData=False, load_corr_lib=True):
         if Corrections._global_instance is not None:
             raise RuntimeError('Global instance is already initialized')
         Corrections._global_instance = Corrections(config, isData, sample_name)
