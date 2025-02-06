@@ -65,13 +65,10 @@ def createWPChannelMap(map_wp_python):
             wp_value = getattr(wp_class, wp_name).value
             wp_entry = f'{{ "{wp_name}", {wp_value} }} '
             wp_list.append(wp_entry)
-            print(f"createWPChannelMap {wp_class}, {wp_name}, {wp_value}, {wp_entry}")
         wp_str = ', '.join(wp_list)
         ch_str = f'{{ Channel::{ch}, {{ {wp_str} }} }}'
         ch_list.append(ch_str)
-        print(wp_str, ch_list)
     map_str = '::correction::TauCorrProvider::wpsMapType({' + ', '.join(ch_list) + '})'
-    print(map_str)
     return map_str
 
 def createTauSFTypeMap(map_sf_python):
@@ -79,6 +76,5 @@ def createTauSFTypeMap(map_sf_python):
     for ch, ch_data in map_sf_python.items():
         map_sf_cpp += f'{{ Channel::{ch}, "{ch_data}" }}, '
     map_sf_cpp += '})'
-    print(f"createTauSFTypeMap {map_sf_cpp}")
     return map_sf_cpp
 

@@ -253,7 +253,6 @@ class Corrections:
         if 'tauID' in self.to_apply:
             df, tau_SF_branches = self.tau.getSF(df, lepton_legs, isCentral, return_variations)
             all_weights.extend(tau_SF_branches)
-            print(f"all_weights {all_weights}")
         if 'btagShape' in self.to_apply:
             df, bTagShape_SF_branches = self.btag.getBTagShapeSF(df, isCentral, return_variations)
             all_weights.extend(bTagShape_SF_branches)

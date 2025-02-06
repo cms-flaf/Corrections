@@ -40,19 +40,15 @@ class TauCorrProducer:
             ROOT.gInterpreter.Declare(f'#include "{header_path}"')
             wp_map_cpp = createWPChannelMap(config["deepTauWPs"])
             tauType_map = createTauSFTypeMap(config["genuineTau_SFtype"])
-            print(f"bunch of stuff {jsonFile} {self.deepTauVersion} {period} {period_era}")
             ROOT.gInterpreter.ProcessLine(f'::correction::TauCorrProvider::Initialize("{jsonFile}", "{self.deepTauVersion}", {wp_map_cpp}, {tauType_map} , "{period.split("_")[0]}", "{period_era}")')
             TauCorrProducer.initialized = True
             #deepTauVersion = f"""DeepTau{deepTauVersions[config["deepTauVersion"]]}{config["deepTauVersion"]}"""
 
     def getES(self, df, source_dict):
-        print(f"getEs {source_dict} nano:{nano}")
         for source in [ central ] + TauCorrProducer.energyScaleSources_tau + TauCorrProducer.energyScaleSources_lep:
             updateSourceDict(source_dict, source, 'Tau')
-            print(f"source {source}")
             for scale in getScales(source):
                 syst_name = getSystName(source, scale)
-                print(f"scale {scale}, syst_name {syst_name}")
                 df = df.Define(f'Tau_p4_{syst_name}', f'''::correction::TauCorrProvider::getGlobal().getES(
                                Tau_p4_{nano}, Tau_decayMode, Tau_genMatch,
                                ::correction::TauCorrProvider::UncSource::{source}, ::correction::UncScale::{scale})''')
@@ -62,7 +58,6 @@ class TauCorrProducer:
 
     def getSF(self, df, lepton_legs, isCentral, return_variations):
         sf_sources =TauCorrProducer.SFSources_tau+TauCorrProducer.SFSources_genuineLep
-        print(f"getSF sf_source {sf_sources}")
         sf_scales = [up, down] if return_variations else []
         SF_branches = []
         for source in [central] + sf_sources:
