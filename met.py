@@ -2,7 +2,6 @@ import copy
 import os
 import ROOT
 from .CorrectionsCore import *
-
 class METCorrProducer:
     initialized = False
 
@@ -13,8 +12,9 @@ class METCorrProducer:
             ROOT.gInterpreter.Declare(f'#include "{header_path}"')
             METCorrProducer.initialized = True
 
-    def getPFMET(self, df, source_dict):
+    def getPFMET(self, df, source_dict,MET_type):
         pfMET_objs = { 'Electron', 'Muon', 'Tau', 'Jet' }
+        pf_str = MET_type
         source_dict_upd = copy.deepcopy(source_dict)
         for source, all_source_objs in source_dict.items():
             source_objs = set(all_source_objs).intersection(pfMET_objs)
@@ -30,7 +30,7 @@ class METCorrProducer:
                     p4_delta_list = [ f'{obj}_p4_{syst_name}_delta' for obj in source_objs ]
                     p4_delta_str = ', '.join(p4_delta_list)
                     df = df.Define(f'MET_p4_{syst_name}',
-                                   f'::correction::ShiftMet(MET_p4_{nano}, {{ {p4_original_str} }}, {{ {p4_shifted_str} }}, false)')
-                    df = df.Define(f'MET_p4_{syst_name}_delta', f'MET_p4_{syst_name} - MET_p4_{nano}')
+                                   f'::correction::ShiftMet({pf_str}_p4_{nano}, {{ {p4_original_str} }}, {{ {p4_shifted_str} }}, false)')
+                    df = df.Define(f'MET_p4_{syst_name}_delta', f'MET_p4_{syst_name} - {pf_str}_p4_{nano}')
 
         return df, source_dict_upd

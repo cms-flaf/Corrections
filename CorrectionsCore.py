@@ -15,6 +15,7 @@ period_names = {
     'Run3_2022EE': '2022_Summer22EE',
     'Run3_2023': '2023_Summer23',
     'Run3_2023BPix': '2023_Summer23BPix',
+
 }
 
 periods = {
@@ -54,7 +55,6 @@ def updateSourceDict(source_dict, source, obj):
     if obj in source_dict[source]:
         raise RuntimeError(f"addUncSource: dupblicated {source} definition for {obj}")
     source_dict[source].append(obj)
-
 
 def createWPChannelMap(map_wp_python):
     ch_list = []

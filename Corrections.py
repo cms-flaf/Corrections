@@ -6,6 +6,7 @@ from .CorrectionsCore import *
 from RunKit.run_tools import ps_call
 
 
+
 def findRefSample(config, sample_type):
     refSample = []
     for sample, sampleDef in config.items():
@@ -61,6 +62,7 @@ class Corrections:
         self.to_apply = config.get('corrections', [])
         self.config = config
         self.sample_name = sample_name
+        self.MET_type = config['met_type']
 
         self.tau_ = None
         self.met_ = None
@@ -151,6 +153,8 @@ class Corrections:
         source_dict = { central : [] }
         if 'tauES' in self.to_apply and not self.isData:
             df, source_dict = self.tau.getES(df, source_dict)
+        if 'eleES' in self.to_apply:
+            df, source_dict = self.ele.getES(df, source_dict)
         if 'JEC' in self.to_apply or 'JER' in self.to_apply:
             apply_jes = 'JEC' in self.to_apply and not self.isData
             apply_jer = 'JER' in self.to_apply and not self.isData
@@ -168,7 +172,8 @@ class Corrections:
                         # suffix = 'Central' if f"{obj}_p4_Central" in df.GetColumnNames() else 'nano'
                         suffix = 'nano'
                         if obj=='boostedTau' and '{obj}_p4_{suffix}' not in df.GetColumnNames(): continue
-                        df = df.Define(f'{obj}_p4_{syst_name}', f'{obj}_p4_{suffix}')
+                        if f'{obj}_p4_{syst_name}' not in  df.GetColumnNames():
+                            df = df.Define(f'{obj}_p4_{syst_name}', f'{obj}_p4_{suffix}')
         return df, syst_dict
 
     def getNormalisationCorrections(self, df, global_params, samples, sample, lepton_legs, trigger_names, ana_cache=None,
