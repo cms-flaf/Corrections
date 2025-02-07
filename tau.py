@@ -9,6 +9,12 @@ from .CorrectionsCore import *
 #Run3: https://twiki.cern.ch/twiki/bin/view/CMS/TauIDRecommendationForRun3
 
 deepTauVersions = {"2p1":"2017", "2p5":"2018"}
+period_dict = {
+    "2023_Summer23BPix": "2023_postBPix",
+    "2023_Summer23": "2023_preBPix",
+    "2022_Summer22EE": "2022_postEE",
+    "2022_Summer22": "2022_preEE",
+}
 
 class TauCorrProducer:
     jsonPath = "/cvmfs/cms.cern.ch/rsync/cms-nanoAOD/jsonpog-integration/POG/TAU/{}/tau.json.gz"
@@ -23,14 +29,14 @@ class TauCorrProducer:
 
 
     def __init__(self, period, config):
-        jsonFile = TauCorrProducer.jsonPath.format(period)
+        jsonFile = TauCorrProducer.jsonPath.format(period_dict[period])
         self.deepTauVersion = f"""DeepTau{deepTauVersions[config["deepTauVersion"]]}v{config["deepTauVersion"]}"""
         period_era = ''
         if self.deepTauVersion=='DeepTau2018v2p5':
             #tau_DeepTau2018v2p5_2018_UL_101123 #Run3: tau_DeepTau2018v2p5_2022_preEE.json
             if period.startswith('202'):
-                jsonFile_rel = f"Corrections/data/TAU/{period}/tau_DeepTau2018v2p5_{period}.json"
-                period_era = '_'+period.split("_")[1]
+                jsonFile_rel = f"Corrections/data/TAU/{period_dict[period]}/tau_DeepTau2018v2p5_{period_dict[period]}.json"
+                period_era = '_'+period_dict[period].split("_")[1]
             else:
                 jsonFile_rel = f"Corrections/data/TAU/{period}/tau_DeepTau2018v2p5_{period}_101123.json"
             jsonFile = os.path.join(os.environ['ANALYSIS_PATH'],jsonFile_rel)
