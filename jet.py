@@ -129,6 +129,10 @@ class JetCorrProducer:
             Jet_pt, Jet_eta, Rho_fixedGridRhoFastjetAll ) """)
         return df
 
+    def getSubJetEnergyResolution(self, df):
+        df= df.Define(f"SubJet_ptRes", f""" ::correction::JetCorrProvider::getGlobal().getResolution(
+            SubJet_pt, SubJet_eta, Rho_fixedGridRhoFastjetAll ) """)
+        return df
     #def getVetoMap(self, df):
     #    df = df.Define(f"vetoMapLooseRegion", "Jet_pt > 15 && ( Jet_jetId & 2 ) && (Jet_puId > 0 || Jet_pt >50) ")
 
