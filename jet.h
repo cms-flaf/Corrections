@@ -245,15 +245,18 @@ private:
                     for (auto const& [unc_source, unc_name]: unc_map_)
                     {
                         RVecLV shifted_p4(sz);
-                        if (unc_source == UncSource::JER && apply_jer)
+                        if (unc_source == UncSource::JER)
                         {
-                            for (size_t jet_idx = 0; jet_idx < sz; ++jet_idx)
+                            if (apply_jer)
                             {
-                                float sf = 1.0;
-                                sf += static_cast<int>(uncScale)*jer_pt_resolutions[jet_idx];
-                                shifted_p4[jet_idx] = LorentzVectorM(sf*Jet_pt[jet_idx], Jet_eta[jet_idx], Jet_phi[jet_idx], sf*Jet_mass[jet_idx]);
+                                for (size_t jet_idx = 0; jet_idx < sz; ++jet_idx)
+                                {
+                                    float sf = 1.0;
+                                    sf += static_cast<int>(uncScale)*jer_pt_resolutions[jet_idx];
+                                    shifted_p4[jet_idx] = LorentzVectorM(sf*Jet_pt[jet_idx], Jet_eta[jet_idx], Jet_phi[jet_idx], sf*Jet_mass[jet_idx]);
+                                }
+                                all_shifted_p4.insert({{unc_source, uncScale}, shifted_p4});
                             }
-                            all_shifted_p4.insert({{unc_source, uncScale}, shifted_p4});
                         }
                         else
                         {
