@@ -169,8 +169,8 @@ class Corrections:
                 syst_dict[syst_name] = source
                 for obj in ana_reco_objects:
                     if obj not in source_objs:
-                        # suffix = 'Central' if f"{obj}_p4_Central" in df.GetColumnNames() else 'nano'
-                        suffix = 'nano'
+                        suffix = 'Central' if f"{obj}_p4_Central" in df.GetColumnNames() else 'nano'
+                        # suffix = 'nano'
                         if obj=='boostedTau' and '{obj}_p4_{suffix}' not in df.GetColumnNames(): continue
                         if f'{obj}_p4_{syst_name}' not in  df.GetColumnNames():
                             df = df.Define(f'{obj}_p4_{syst_name}', f'{obj}_p4_{suffix}')
