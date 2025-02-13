@@ -101,14 +101,14 @@ class JetCorrProducer:
                     "2023_Summer23BPix": [],
                     "2022_Prompt": [],
                     "2023_Summer23": ["v123", "v4"],
-                    "2022_Summer22EE": [], 
+                    "2022_Summer22EE": [],
                     "2024_Winter24": []}
 
     run_letters = {"2022_Summer22": ["CD"],
                    "2023_Summer23BPix": ["D"],
                    "2022_Prompt": ["C", "D"],
                    "2023_Summer23": ["C"],
-                   "2022_Summer22EE": ["E", "F", "G"], 
+                   "2022_Summer22EE": ["E", "F", "G"],
                    "2024_Winter24": ["BCD", "E", "F", "G", "H"]}
 
     #Sources = []
@@ -180,37 +180,37 @@ class JetCorrProducer:
             if self.isData:
                 letter_list = JetCorrProducer.run_letters[period]
                 version_list = JetCorrProducer.run_versions[period]
-            
+
                 sample_letter = ""
                 sample_version = ""
                 if sample_name[-1].isalpha():
-                    letter = sample_name[-1] 
+                    letter = sample_name[-1]
                 elif sample_name[-1].isnumeric():
                     tokens = sample_name.split('_')
                     version = tokens[-1]
-                    letter = tokens[-2][-1] 
+                    letter = tokens[-2][-1]
 
-                # in some cases, sample letter can be compound: 
+                # in some cases, sample letter can be compound:
                 # e.g. for 2022_Summer22 run letter is CD
-                # if there is no exact match, take compound letter 
+                # if there is no exact match, take compound letter
                 if sample_letter not in letter_list:
                     matches = [let for let in letter_list if sample_letter in let]
                     if len(matches) != 1:
-                        raise RuntimeError(f"ambiguous deduction of sample letter for {sample_name}: got letter options {matches}") 
+                        raise RuntimeError(f"ambiguous deduction of sample letter for {sample_name}: got letter options {matches}")
                     sample_letter = matches[0]
 
                 # same for run version:
-                # e.g. for 2023_Summer23 run version is v123 or v4 
+                # e.g. for 2023_Summer23 run version is v123 or v4
                 # if there is no exact match, take compound version
                 if version_list and sample_version not in version_list:
                     matches = [v for v in version_list if sample_version in v]
                     if len(matches) != 1:
-                        raise RuntimeError(f"ambiguous deduction of sample version for {sample_name}: got version options {matches}") 
+                        raise RuntimeError(f"ambiguous deduction of sample version for {sample_name}: got version options {matches}")
                     sample_version = matches[0]
 
                 letters = sample_letter + sample_version
                 if not sample_letter and not sample_version:
-                    raise RuntimeError(f"sample name {sample_name} doesn't follow expected pattern base_letter_version") 
+                    raise RuntimeError(f"sample name {sample_name} doesn't follow expected pattern base_letter_version")
                 jec_tag = jec_tag.format(letters)
 
             jer_tag = JetCorrProducer.jer_tag_map[period]
@@ -222,6 +222,7 @@ class JetCorrProducer:
                 ROOT.gInterpreter.Declare(f'#include "{header_path}"')
                 is_data = "true" if self.isData else "false"
                 regrouped = "true" if self.use_regrouped else "false"
+                apply_compound = "true"
                 ROOT.gInterpreter.ProcessLine(f"""::correction::JetCorrectionProvider::Initialize("{jet_jsonFile}",
                                                                                                   "{jetsmear_jsonFile}",
                                                                                                   "{jec_tag}",
@@ -229,20 +230,22 @@ class JetCorrProducer:
                                                                                                   "{algo}",
                                                                                                   "{year}",
                                                                                                    {is_data},
-                                                                                                   {regrouped})""")
+                                                                                                   {regrouped},
+                                                                                                   {apply_compound})""")
                 JetCorrProducer.initialized = True
 
 
     def getP4Variations(self, df, source_dict, apply_JER, apply_JES):
         class_name = ""
         if self.use_corrlib:
+            apply_jer = "true" if apply_JER and not self.isData else "false"
             if not self.isData:
-                df = df.Define("Jet_p4_shifted_map", '''::correction::JetCorrectionProvider::getGlobal().getShiftedP4(Jet_pt, Jet_eta, Jet_phi, Jet_mass,
-                                                                                                                      Jet_rawFactor, Jet_area, Rho_fixedGridRhoFastjetAll, event,
-                                                                                                                      GenJet_pt, Jet_genJetIdx)''')
+                df = df.Define("Jet_p4_shifted_map", f'''::correction::JetCorrectionProvider::getGlobal().getShiftedP4(Jet_pt, Jet_eta, Jet_phi, Jet_mass,
+                                                                                                                       Jet_rawFactor, Jet_area, Rho_fixedGridRhoFastjetAll, event, {apply_jer},
+                                                                                                                       GenJet_pt, Jet_genJetIdx)''')
             else:
-                df = df.Define("Jet_p4_shifted_map", '''::correction::JetCorrectionProvider::getGlobal().getShiftedP4(Jet_pt, Jet_eta, Jet_phi, Jet_mass,
-                                                                                                                      Jet_rawFactor, Jet_area, Rho_fixedGridRhoFastjetAll, event)''')
+                df = df.Define("Jet_p4_shifted_map", f'''::correction::JetCorrectionProvider::getGlobal().getShiftedP4(Jet_pt, Jet_eta, Jet_phi, Jet_mass,
+                                                                                                                       Jet_rawFactor, Jet_area, Rho_fixedGridRhoFastjetAll, event, {apply_jer})''')
             class_name = "JetCorrectionProvider"
         else:
             df = df.Define('Jet_p4_shifted_map', f'''::correction::JetCorrProvider::getGlobal().getShiftedP4(

@@ -157,13 +157,15 @@ private:
                               std::string const& algo,
                               std::string const& year,
                               bool is_data,
-                              bool use_regrouped)
+                              bool use_regrouped,
+                              bool apply_compound)
         :   corrset_(CorrectionSet::from_file(json_file_name))
         ,   jersmear_corr_(CorrectionSet::from_file(jetsmear_file_name)->at("JERSmear"))
         ,   corr_jer_sf_(corrset_->at(jer_tag + "_ScaleFactor_" + algo))
         ,   corr_jer_res_(corrset_->at(jer_tag + "_PtResolution_" + algo))
         ,   cmpd_corr_(corrset_->compound().at(jec_tag + "_L1L2L3Res_" + algo))
         ,   is_data_(is_data)
+        ,   apply_cmpd_(apply_compound)
         {
             // map with uncertainty sources should only be filled for MC
             if (!is_data_)
@@ -187,7 +189,7 @@ private:
         }
 
         std::map<std::pair<UncSource, UncScale>, RVecLV> getShiftedP4(RVecF Jet_pt, const RVecF& Jet_eta, const RVecF& Jet_phi, RVecF Jet_mass,
-                                                                      const RVecF& Jet_rawFactor, const RVecF& Jet_area, const float rho, int event,
+                                                                      const RVecF& Jet_rawFactor, const RVecF& Jet_area, const float rho, int event, bool apply_jer,
                                                                       const RVecF& GenJet_pt = {}, const RVecI& Jet_genJetIdx = {}) const
         {
             std::map<std::pair<UncSource, UncScale>, RVecLV> all_shifted_p4;
@@ -199,10 +201,13 @@ private:
             for (size_t i = 0; i < sz; ++i)
             {
                 // uscaling
-                Jet_pt[i] *= 1.0 - Jet_rawFactor[i];
-                Jet_mass[i] *= 1.0 - Jet_rawFactor[i];
+                if (apply_cmpd_)
+                {
+                    Jet_pt[i] *= 1.0 - Jet_rawFactor[i];
+                    Jet_mass[i] *= 1.0 - Jet_rawFactor[i];
+                }
 
-                if (!is_data_)
+                if (!is_data_ && apply_jer)
                 {
                     // extract jer scale factor and resolution
                     float jer_sf = corr_jer_sf_->evaluate({Jet_eta[i], Jet_pt[i], "nom"});
@@ -219,9 +224,12 @@ private:
                 }
 
                 // evaluate and apply compound correction
-                float cmpd_sf = cmpd_corr_->evaluate({Jet_area[i], Jet_eta[i], Jet_pt[i], rho});
-                Jet_pt[i] *= cmpd_sf;
-                Jet_mass[i] *= cmpd_sf;
+                if (apply_cmpd_)
+                {
+                    float cmpd_sf = cmpd_corr_->evaluate({Jet_area[i], Jet_eta[i], Jet_pt[i], rho});
+                    Jet_pt[i] *= cmpd_sf;
+                    Jet_mass[i] *= cmpd_sf;
+                }
 
                 central_p4[i] = LorentzVectorM(Jet_pt[i], Jet_eta[i], Jet_phi[i], Jet_mass[i]);
             }
@@ -237,7 +245,7 @@ private:
                     for (auto const& [unc_source, unc_name]: unc_map_)
                     {
                         RVecLV shifted_p4(sz);
-                        if (unc_source == UncSource::JER)
+                        if (unc_source == UncSource::JER && apply_jer)
                         {
                             for (size_t jet_idx = 0; jet_idx < sz; ++jet_idx)
                             {
@@ -245,6 +253,7 @@ private:
                                 sf += static_cast<int>(uncScale)*jer_pt_resolutions[jet_idx];
                                 shifted_p4[jet_idx] = LorentzVectorM(sf*Jet_pt[jet_idx], Jet_eta[jet_idx], Jet_phi[jet_idx], sf*Jet_mass[jet_idx]);
                             }
+                            all_shifted_p4.insert({{unc_source, uncScale}, shifted_p4});
                         }
                         else
                         {
@@ -256,8 +265,8 @@ private:
                                 sf += static_cast<int>(uncScale)*unc;
                                 shifted_p4[jet_idx] = LorentzVectorM(sf*Jet_pt[jet_idx], Jet_eta[jet_idx], Jet_phi[jet_idx], sf*Jet_mass[jet_idx]);
                             }
+                            all_shifted_p4.insert({{unc_source, uncScale}, shifted_p4});
                         }
-                        all_shifted_p4.insert({{unc_source, uncScale}, shifted_p4});
                     }
                 }
             }
@@ -287,6 +296,7 @@ private:
         Correction::Ref corr_jer_res_;
         CompoundCorrection::Ref cmpd_corr_;
         bool is_data_;
+        bool apply_cmpd_;
 
         inline static const std::map<UncSource, std::string> unc_map_total = { { UncSource::Total, "Total" },
                                                                                { UncSource::JER, "JER" } };
