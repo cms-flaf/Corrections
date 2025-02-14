@@ -30,10 +30,10 @@ class Corrections:
     _global_instance = None
 
     @staticmethod
-    def initializeGlobal(config, isData=False, load_corr_lib=True):
+    def initializeGlobal(config, sample_name=None, isData=False, load_corr_lib=True):
         if Corrections._global_instance is not None:
             raise RuntimeError('Global instance is already initialized')
-        Corrections._global_instance = Corrections(config, isData)
+        Corrections._global_instance = Corrections(config, isData, sample_name)
         if load_corr_lib:
             returncode, output, err= ps_call(['correction', 'config', '--cflags', '--ldflags'],
                                             catch_stdout=True, decode=True, verbose=0)
@@ -56,11 +56,12 @@ class Corrections:
             raise RuntimeError('Global instance is not initialized')
         return Corrections._global_instance
 
-    def __init__(self, config, isData):
+    def __init__(self, config, isData, sample_name):
         self.isData = isData
         self.period = config['era']
         self.to_apply = config.get('corrections', [])
         self.config = config
+        self.sample_name = sample_name
         self.MET_type = config['met_type']
 
         self.tau_ = None
@@ -92,7 +93,7 @@ class Corrections:
     def jet(self):
         if self.jet_ is None:
             from .jet import JetCorrProducer
-            self.jet_ = JetCorrProducer(period_names[self.period], self.isData)
+            self.jet_ = JetCorrProducer(period_names[self.period], self.isData, self.sample_name)
         return self.jet_
 
     @property
@@ -150,15 +151,17 @@ class Corrections:
 
     def applyScaleUncertainties(self, df, ana_reco_objects):
         source_dict = { central : [] }
-        if 'tauES' in self.to_apply:
+        if 'tauES' in self.to_apply and not self.isData:
             df, source_dict = self.tau.getES(df, source_dict)
         if 'eleES' in self.to_apply:
             df, source_dict = self.ele.getES(df, source_dict)
         if 'JEC' in self.to_apply or 'JER' in self.to_apply:
-            df, source_dict = self.jet.getP4Variations(df, source_dict, 'JER' in self.to_apply, 'JEC' in self.to_apply)
-            df, source_dict = self.fatjet.getP4Variations(df, source_dict, 'JER' in self.to_apply, 'JEC' in self.to_apply)
-        if 'tauES' in self.to_apply or 'JEC' in self.to_apply or 'eleES' in self.to_apply:
-            df, source_dict = self.met.getPFMET(df, source_dict, self.MET_type)
+            apply_jes = 'JEC' in self.to_apply and not self.isData
+            apply_jer = 'JER' in self.to_apply and not self.isData
+            df, source_dict = self.jet.getP4Variations(df, source_dict, apply_jer, apply_jes)
+            # df, source_dict = self.fatjet.getP4Variations(df, source_dict, 'JER' in self.to_apply, 'JEC' in self.to_apply)
+        # if 'tauES' in self.to_apply or 'JEC' in self.to_apply or 'JEC' in self.to_apply:
+        #     df, source_dict = self.met.getPFMET(df, source_dict)
         syst_dict = { }
         for source, source_objs in source_dict.items():
             for scale in getScales(source):
@@ -167,7 +170,7 @@ class Corrections:
                 for obj in ana_reco_objects:
                     if obj not in source_objs:
                         suffix = 'Central' if f"{obj}_p4_Central" in df.GetColumnNames() else 'nano'
-                        #suffix = 'nano'
+                        # suffix = 'nano'
                         if obj=='boostedTau' and '{obj}_p4_{suffix}' not in df.GetColumnNames(): continue
                         if f'{obj}_p4_{syst_name}' not in  df.GetColumnNames():
                             df = df.Define(f'{obj}_p4_{syst_name}', f'{obj}_p4_{suffix}')
