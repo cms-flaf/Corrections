@@ -274,14 +274,20 @@ public:
                                            ? scale : UncScale::Central;
             const UncSource tau_ele_source = tau_ele_scale == UncScale::Central ? UncSource::Central : source ;
             const std::string& scale_str = getScaleStr(tau_ele_source, tau_ele_scale, year_, year_era_);
-            const auto sf = tau_vs_e_->evaluate({Tau_p4.eta(), Tau_decayMode, Tau_genMatch, wpVSe, scale_str});
-            return sf;
+            if (year_.starts_with("202"s) == 1){
+                const auto sf = tau_vs_e_->evaluate({Tau_p4.eta(), Tau_decayMode, Tau_genMatch, wpVSe, scale_str});
+                return sf;
+            }
+            else {
+                const auto sf = tau_vs_e_->evaluate({Tau_p4.eta(), Tau_genMatch, wpVSe, scale_str});
+                return sf;
+            }
         }
          if(genMatch == GenLeptonMatch::Muon || genMatch == GenLeptonMatch::TauMuon){
             const UncScale tau_mu_scale = sourceApplies(source, Tau_p4, Tau_decayMode, genMatch)
                                            ? scale : UncScale::Central;
             const UncSource tau_mu_source = tau_mu_scale == UncScale::Central ? UncSource::Central : source ;
-            const std::string& scale_str = getScaleStr(tau_mu_source, tau_mu_scale, year_, year_era_);
+            const std::string& scale_str = getScaleStr(tau_mu_source, tau_mu_scale, year_);
             const auto sf= tau_vs_mu_->evaluate({Tau_p4.eta(), Tau_genMatch, wpVSmu, scale_str});
             return sf;
         }
@@ -298,7 +304,6 @@ private:
     const wpsMapType wps_map_;
     const std::map<Channel, std::string> tauType_map_;
     const std::string year_;
-    const std::string year_era_;
 
 };
 

@@ -14,6 +14,10 @@ period_dict = {
     "2023_Summer23": "2023_preBPix",
     "2022_Summer22EE": "2022_postEE",
     "2022_Summer22": "2022_preEE",
+    "2018_UL": "2018_UL",
+    "2017_UL": "2017_UL",
+    "2016preVFP_UL":"2016preVFP_UL",
+    "2016postVFP_UL":"2016postVFP_UL",
 }
 
 class TauCorrProducer:
@@ -31,12 +35,12 @@ class TauCorrProducer:
     def __init__(self, period, config):
         jsonFile = TauCorrProducer.jsonPath.format(period_dict[period])
         self.deepTauVersion = f"""DeepTau{deepTauVersions[config["deepTauVersion"]]}v{config["deepTauVersion"]}"""
-        period_era = ''
+        #period_era = ''
         if self.deepTauVersion=='DeepTau2018v2p5':
             #tau_DeepTau2018v2p5_2018_UL_101123 #Run3: tau_DeepTau2018v2p5_2022_preEE.json
             if period.startswith('202'):
                 jsonFile_rel = f"Corrections/data/TAU/{period_dict[period]}/tau_DeepTau2018v2p5_{period_dict[period]}.json"
-                period_era = '_'+period_dict[period].split("_")[1]
+            #period_era = '_'+period_dict[period].split("_")[1]
             else:
                 jsonFile_rel = f"Corrections/data/TAU/{period}/tau_DeepTau2018v2p5_{period}_101123.json"
             jsonFile = os.path.join(os.environ['ANALYSIS_PATH'],jsonFile_rel)
@@ -46,7 +50,10 @@ class TauCorrProducer:
             ROOT.gInterpreter.Declare(f'#include "{header_path}"')
             wp_map_cpp = createWPChannelMap(config["deepTauWPs"])
             tauType_map = createTauSFTypeMap(config["genuineTau_SFtype"])
-            ROOT.gInterpreter.ProcessLine(f'::correction::TauCorrProvider::Initialize("{jsonFile}", "{self.deepTauVersion}", {wp_map_cpp}, {tauType_map} , "{period.split("_")[0]}", "{period_era}")')
+            if period.startswith('202'):
+                ROOT.gInterpreter.ProcessLine(f'::correction::TauCorrProvider::Initialize("{jsonFile}", "{self.deepTauVersion}", {wp_map_cpp}, {tauType_map} , "{period_dict[period]}")')
+            else:
+                ROOT.gInterpreter.ProcessLine(f'::correction::TauCorrProvider::Initialize("{jsonFile}", "{self.deepTauVersion}", {wp_map_cpp}, {tauType_map} , "{period.split("_")[0]}")')
             TauCorrProducer.initialized = True
             #deepTauVersion = f"""DeepTau{deepTauVersions[config["deepTauVersion"]]}{config["deepTauVersion"]}"""
 
