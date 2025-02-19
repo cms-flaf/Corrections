@@ -21,52 +21,57 @@ import yaml
 
 class TrigCorrProducer:
     MuTRG_jsonPath = "/cvmfs/cms.cern.ch/rsync/cms-nanoAOD/jsonpog-integration/POG/MUO/{}/muon_Z.json.gz"
+    eTRG_jsonPath = "/cvmfs/cms.cern.ch/rsync/cms-nanoAOD/jsonpog-integration/POG/EGM/{}/electronHlt.json.gz"
     initialized = False
-    SFSources = { 'singleIsoMu':['IsoMu24'] }
-
-    muon_trg_dict = {
-        "2022_Summer22": ROOT.std.vector('std::string')({"NUM_IsoMu24_DEN_CutBasedIdTight_and_PFIsoTight"}),
-    }
-
+    SFSources = { 'singleIsoMu':['IsoMu24'],'singleEleWpTight':['singleEle'] }
+    muon_trg_dict = {"2022_Summer22":"NUM_IsoMu24_DEN_CutBasedIdTight_and_PFIsoTight"}
+    ele_trg_dict = {"2022_Summer22":"Electron-HLT-SF"}
+    year = ""
 
     def __init__(self, period, config):
         jsonFile_Mu = os.path.join(os.environ['ANALYSIS_PATH'],TrigCorrProducer.MuTRG_jsonPath.format(period))
+        jsonFile_e = os.path.join(os.environ['ANALYSIS_PATH'],TrigCorrProducer.eTRG_jsonPath.format(period))
 
         self.period = period
-        self.year = period.split('_')[0]
 
 
         if not TrigCorrProducer.initialized:
             headers_dir = os.path.dirname(os.path.abspath(__file__))
             header_path = os.path.join(headers_dir, "triggersRun3.h")
             ROOT.gInterpreter.Declare(f'#include "{header_path}"')
-            #print(wp_map_cpp)
-            # "{self.muon_trg_dict[period]}",
+            TrigCorrProducer.year = period.split("_")[0]
             year = period.split('_')[0]
-            ROOT.gInterpreter.ProcessLine(f"""::correction::TrigCorrProvider::Initialize("{jsonFile_Mu}", "{period}")""")
+            if (period.endswith('Summer22')):  TrigCorrProducer.year = period.split("_")[0]+"Re-recoBCD"
+            if (period.endswith('Summer22EE')):  TrigCorrProducer.year = period.split("_")[0]+"Re-recoE+PromptFG"
+            if (period.endswith('Summer23')):  TrigCorrProducer.year = period.split("_")[0]+"PromptC"
+            if (period.endswith('Summer23BPix')):  TrigCorrProducer.year = period.split("_")[0]+"2023PromptD"
+            ROOT.gInterpreter.ProcessLine(f"""::correction::TrigCorrProvider::Initialize("{jsonFile_Mu}","{jsonFile_e}", "{self.muon_trg_dict[period]}","{self.ele_trg_dict[period]}","{period}")""")
             TrigCorrProducer.initialized = True
 
     def getSF(self, df, trigger_names, lepton_legs, return_variations, isCentral):
         SF_branches = []
-        trg_name = 'singleIsoMu'
-        if trg_name in trigger_names:
+        legs_to_be ={
+        'singleIsoMu' : ['mu','mu'],
+        'singleEleWpTight':['e','e']
+        }
+        for trg_name in ['singleEleWpTight','singleIsoMu']:
+            if trg_name not in trigger_names: continue
             sf_sources = TrigCorrProducer.SFSources[trg_name] if return_variations else []
             for leg_idx, leg_name in enumerate(lepton_legs):
                 applyTrgBranch_name = f"{trg_name}_{leg_name}_ApplyTrgSF"
-                df = df.Define(applyTrgBranch_name, f"""{leg_name}_type == static_cast<int>(Leg::mu) && {leg_name}_index >= 0 && HLT_{trg_name} && {leg_name}_HasMatching_{trg_name}""")
+                leg_to_be = legs_to_be[trg_name][leg_idx]
+                df = df.Define(applyTrgBranch_name, f"""{leg_name}_type == static_cast<int>(Leg::{leg_to_be}) && {leg_name}_index >= 0 && HLT_{trg_name} && {leg_name}_HasMatching_{trg_name}""")
                 for source in [ central ] + sf_sources:
                     for scale in getScales(source):
                         if source == central and scale != central: continue
                         if not isCentral and scale!= central: continue
                         syst_name = getSystName(source, scale)
-                        suffix = syst_name
-                        if scale == central:
-                            suffix = f"{trg_name}_{syst_name}"
+                        suffix = f"{trg_name}_{syst_name}"
                         branch_name = f"weight_{leg_name}_TrgSF_{suffix}"
                         branch_central = f"weight_{leg_name}_TrgSF_{trg_name}_{getSystName(central,central)}"
                         df = df.Define(f"{branch_name}_double",
-                                    f'''{applyTrgBranch_name} ? ::correction::TrigCorrProvider::getGlobal().getSF(
-                                 {leg_name}_p4,::correction::TrigCorrProvider::UncSource::{source}, ::correction::UncScale::{scale} ) : 1.f''')
+                                    f'''{applyTrgBranch_name} ? ::correction::TrigCorrProvider::getGlobal().getSF_{trg_name}(
+                                {leg_name}_p4,"{TrigCorrProducer.year}",::correction::TrigCorrProvider::UncSource::{source}, ::correction::UncScale::{scale} ) : 1.f''')
                         if scale != central:
                             df = df.Define(f"{branch_name}_rel", f"static_cast<float>({branch_name}_double/{branch_central})")
                             branch_name += '_rel'
