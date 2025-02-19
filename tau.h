@@ -76,7 +76,7 @@ public:
         return wpnames.at(wp_value);
 
     }
-    static const std::string& getScaleStr(UncSource source, UncScale scale, const std::string year, const std::string year_era)
+    static const std::string& getScaleStr(UncSource source, UncScale scale, const std::string year)
     {
         static const std::map<std::pair<UncSource, UncScale>, std::string> names = {
             {{UncSource::Central, UncScale::Central}, "nom"},
@@ -110,16 +110,16 @@ public:
             {{UncSource::stat2_dm11, UncScale::Up},"stat2_dm11_up"},
             {{UncSource::syst_alleras, UncScale::Down},"syst_alleras_down"},
             {{UncSource::syst_alleras, UncScale::Up},"syst_alleras_up"},
-            {{UncSource::syst_year, UncScale::Down},"syst_"+year+year_era+"_down"},
-            {{UncSource::syst_year, UncScale::Up},"syst_"+year+year_era+"_up"},
-            {{UncSource::syst_year_dm0, UncScale::Down},"syst_"+year+year_era+"_dm0_down"},
-            {{UncSource::syst_year_dm0, UncScale::Up},"syst_"+year+year_era+"_dm0_up"},
-            {{UncSource::syst_year_dm1, UncScale::Down},"syst_"+year+year_era+"_dm1_down"},
-            {{UncSource::syst_year_dm1, UncScale::Up},"syst_"+year+year_era+"_dm1_up"},
-            {{UncSource::syst_year_dm10, UncScale::Down},"syst_"+year+year_era+"_dm10_down"},
-            {{UncSource::syst_year_dm10, UncScale::Up},"syst_"+year+year_era+"_dm10_up"},
-            {{UncSource::syst_year_dm11, UncScale::Down},"syst_"+year+year_era+"_dm11_down"},
-            {{UncSource::syst_year_dm11, UncScale::Up},"syst_"+year+year_era+"_dm11_up"},
+            {{UncSource::syst_year, UncScale::Down},"syst_"+year+"_down"},
+            {{UncSource::syst_year, UncScale::Up},"syst_"+year+"_up"},
+            {{UncSource::syst_year_dm0, UncScale::Down},"syst_"+year+"_dm0_down"},
+            {{UncSource::syst_year_dm0, UncScale::Up},"syst_"+year+"_dm0_up"},
+            {{UncSource::syst_year_dm1, UncScale::Down},"syst_"+year+"_dm1_down"},
+            {{UncSource::syst_year_dm1, UncScale::Up},"syst_"+year+"_dm1_up"},
+            {{UncSource::syst_year_dm10, UncScale::Down},"syst_"+year+"_dm10_down"},
+            {{UncSource::syst_year_dm10, UncScale::Up},"syst_"+year+"_dm10_up"},
+            {{UncSource::syst_year_dm11, UncScale::Down},"syst_"+year+"_dm11_down"},
+            {{UncSource::syst_year_dm11, UncScale::Up},"syst_"+year+"_dm11_up"},
             {{UncSource::total, UncScale::Down},"total_down"},
             {{UncSource::total, UncScale::Up},"total_up"},
             {{UncSource::genuineElectron_barrel, UncScale::Down}, "down"},
@@ -203,7 +203,7 @@ public:
         return false;
     }
 
-    TauCorrProvider(const std::string& fileName, const std::string& deepTauVersion, const wpsMapType& wps_map,const std::map<Channel, std::string>& tauType_map, const std::string& year, const std::string& year_era) :
+    TauCorrProvider(const std::string& fileName, const std::string& deepTauVersion, const wpsMapType& wps_map,const std::map<Channel, std::string>& tauType_map, const std::string& year) :
         corrections_(CorrectionSet::from_file(fileName)),
         tau_es_(corrections_->at("tau_energy_scale")),
         tau_vs_e_(corrections_->at(deepTauVersion + "VSe")),
@@ -212,8 +212,7 @@ public:
         deepTauVersion_(deepTauVersion),
         wps_map_(wps_map),
         tauType_map_(tauType_map),
-        year_(year),
-        year_era_(year_era)
+        year_(year)
     {
     }
 
@@ -231,7 +230,7 @@ public:
                 const UncScale tau_scale = sourceApplies(source, Tau_p4[n], Tau_decayMode.at(n), genMatch)
                                            ? scale : UncScale::Central;
                 const UncSource tau_source = tau_scale == UncScale::Central ? UncSource::Central : source ;
-                const std::string& scale_str =  getScaleStr(tau_source, tau_scale, year_, year_era_);
+                const std::string& scale_str =  getScaleStr(tau_source, tau_scale, year_);
                 double sf = 1;
                 if (deepTauVersion_ == "DeepTau2017v2p1"){
                     sf = tau_es_->evaluate({Tau_p4[n].pt(), Tau_p4[n].eta(), Tau_decayMode.at(n),
@@ -265,7 +264,7 @@ public:
             const UncScale tau_had_scale = sourceApplies(source, Tau_p4, Tau_decayMode, genMatch)
                                            ? scale : UncScale::Central;
             const UncSource tau_had_source = tau_had_scale == UncScale::Central ? UncSource::Central : source ;
-            const std::string& scale_str = scale != UncScale::Central  ? getScaleStr(tau_had_source, tau_had_scale, year_, year_era_) : "default" ;
+            const std::string& scale_str = scale != UncScale::Central  ? getScaleStr(tau_had_source, tau_had_scale, year_) : "default" ;
             const auto sf = tau_vs_jet_->evaluate({Tau_p4.pt(),Tau_decayMode, Tau_genMatch, wpVSjet, wpVSe, scale_str, genuineTau_SFtype});
             return sf;
         }
@@ -273,7 +272,7 @@ public:
             const UncScale tau_ele_scale = sourceApplies(source, Tau_p4, Tau_decayMode, genMatch)
                                            ? scale : UncScale::Central;
             const UncSource tau_ele_source = tau_ele_scale == UncScale::Central ? UncSource::Central : source ;
-            const std::string& scale_str = getScaleStr(tau_ele_source, tau_ele_scale, year_, year_era_);
+            const std::string& scale_str = getScaleStr(tau_ele_source, tau_ele_scale, year_);
             if (year_.starts_with("202"s) == 1){
                 const auto sf = tau_vs_e_->evaluate({Tau_p4.eta(), Tau_decayMode, Tau_genMatch, wpVSe, scale_str});
                 return sf;
