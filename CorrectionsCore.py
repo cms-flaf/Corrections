@@ -27,7 +27,8 @@ periods = {
     "2017_UL": "2017",
     "2016preVFP_UL":"2016",
     "2016postVFP_UL":"2016",
-    }
+}
+
 def getScales(source=None):
     if source is None:
         return [ central, up, down ]
