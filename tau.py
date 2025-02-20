@@ -10,14 +10,14 @@ from .CorrectionsCore import *
 
 deepTauVersions = {"2p1":"2017", "2p5":"2018"}
 syst_period_dict = {
-    "2023_Summer23BPix": "2023_postBPix",
-    "2023_Summer23": "2023_preBPix",
-    "2022_Summer22EE": "2022_postEE",
-    "2022_Summer22": "2022_preEE",
-    "2018_UL": "2018",
-    "2017_UL": "2017",
-    "2016preVFP_UL":"2016_preVFP",
-    "2016postVFP_UL":"2016_postVFP",
+    'Run2_2016_HIPM': '2016_postVFP',
+    'Run2_2016': '2016_preVFP',
+    'Run2_2017': '2017',
+    'Run2_2018': '2018',
+    'Run3_2022': '2022_preEE',
+    'Run3_2022EE': '2022_postEE',
+    'Run3_2023': '2023_preBPix',
+    'Run3_2023BPix': '2023_postBPix',
 }
 
 class TauCorrProducer:
@@ -33,14 +33,17 @@ class TauCorrProducer:
 
 
     def __init__(self, period, config):
-        jsonFile = TauCorrProducer.jsonPath.format(period)
+        if period.startswith('Run2'):
+            jsonFile = TauCorrProducer.jsonPath.format(period_names[period])
+        else:
+            jsonFile = TauCorrProducer.jsonPath.format(syst_period_dict[period])
         self.deepTauVersion = f"""DeepTau{deepTauVersions[config["deepTauVersion"]]}v{config["deepTauVersion"]}"""
         if self.deepTauVersion=='DeepTau2018v2p5':
             #tau_DeepTau2018v2p5_2018_UL_101123 #Run3: tau_DeepTau2018v2p5_2022_preEE.json
-            if period.startswith('202'):
+            if period.startswith('Run3'):
                 jsonFile_rel = f"Corrections/data/TAU/{syst_period_dict[period]}/tau_DeepTau2018v2p5_{syst_period_dict[period]}.json"
             else:
-                jsonFile_rel = f"Corrections/data/TAU/{period}/tau_DeepTau2018v2p5_{period}_101123.json"
+                jsonFile_rel = f"Corrections/data/TAU/{period_names[period]}/tau_DeepTau2018v2p5_{period_names[period]}_101123.json"
             jsonFile = os.path.join(os.environ['ANALYSIS_PATH'],jsonFile_rel)
         if not TauCorrProducer.initialized:
             headers_dir = os.path.dirname(os.path.abspath(__file__))
