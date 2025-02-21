@@ -86,7 +86,7 @@ class Corrections:
     def tau(self):
         if self.tau_ is None:
             from .tau import TauCorrProducer
-            self.tau_ = TauCorrProducer(period_names[self.period], self.config)
+            self.tau_ = TauCorrProducer(self.period, self.config)
         return self.tau_
 
     @property
