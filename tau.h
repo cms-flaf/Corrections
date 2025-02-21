@@ -274,10 +274,10 @@ public:
                                            ? scale : UncScale::Central;
             const UncSource tau_ele_source = tau_ele_scale == UncScale::Central ? UncSource::Central : source ;
             const std::string& scale_str = getScaleStr(tau_ele_source, tau_ele_scale, year_);
-            const auto sf = use_decayMode_==1 ? tau_vs_e_->evaluate({Tau_p4.eta(), Tau_decayMode, Tau_genMatch, wpVSe, scale_str}) : tau_vs_e_->evaluate({Tau_p4.eta(), Tau_genMatch, wpVSe, scale_str});
+            const auto sf = use_decayMode_ ? tau_vs_e_->evaluate({Tau_p4.eta(), Tau_decayMode, Tau_genMatch, wpVSe, scale_str}) : tau_vs_e_->evaluate({Tau_p4.eta(), Tau_genMatch, wpVSe, scale_str});
             return sf;
         }
-         if(genMatch == GenLeptonMatch::Muon || genMatch == GenLeptonMatch::TauMuon){
+        if(genMatch == GenLeptonMatch::Muon || genMatch == GenLeptonMatch::TauMuon){
             const UncScale tau_mu_scale = sourceApplies(source, Tau_p4, Tau_decayMode, genMatch)
                                            ? scale : UncScale::Central;
             const UncSource tau_mu_source = tau_mu_scale == UncScale::Central ? UncSource::Central : source ;
