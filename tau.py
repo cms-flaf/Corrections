@@ -6,7 +6,30 @@ from .CorrectionsCore import *
 # https://github.com/cms-tau-pog/TauTriggerSFs/tree/master/data
 # https://github.com/cms-tau-pog/TauTriggerSFs/tree/run2_SFs
 
+#Run3: https://twiki.cern.ch/twiki/bin/view/CMS/TauIDRecommendationForRun3
+
 deepTauVersions = {"2p1":"2017", "2p5":"2018"}
+period_in_tau_json = {
+    'Run2_2016_HIPM': '2016_postVFP',
+    'Run2_2016': '2016_preVFP',
+    'Run2_2017': '2017',
+    'Run2_2018': '2018',
+    'Run3_2022': '2022_preEE',
+    'Run3_2022EE': '2022_postEE',
+    'Run3_2023': '2023_preBPix',
+    'Run3_2023BPix': '2023_postBPix',
+}
+
+period_in_tau_file_name = {
+    'Run2_2016_HIPM': period_names['Run2_2016_HIPM'],
+    'Run2_2016': period_names['Run2_2016'],
+    'Run2_2017': period_names['Run2_2017'],
+    'Run2_2018': period_names['Run2_2018'],
+    'Run3_2022': period_in_tau_json['Run3_2022'],
+    'Run3_2022EE': period_in_tau_json['Run3_2022EE'],
+    'Run3_2023': period_in_tau_json['Run3_2023'],
+    'Run3_2023BPix': period_in_tau_json['Run3_2023BPix'],
+}
 
 class TauCorrProducer:
     jsonPath = "/cvmfs/cms.cern.ch/rsync/cms-nanoAOD/jsonpog-integration/POG/TAU/{}/tau.json.gz"
@@ -21,11 +44,14 @@ class TauCorrProducer:
 
 
     def __init__(self, period, config):
-        jsonFile = TauCorrProducer.jsonPath.format(period)
+        jsonFile = TauCorrProducer.jsonPath.format(period_in_tau_file_name[period])
         self.deepTauVersion = f"""DeepTau{deepTauVersions[config["deepTauVersion"]]}v{config["deepTauVersion"]}"""
         if self.deepTauVersion=='DeepTau2018v2p5':
-            #tau_DeepTau2018v2p5_2018_UL_101123
-            jsonFile_rel = f"Corrections/data/TAU/{period}/tau_DeepTau2018v2p5_{period}_101123.json"
+            #tau_DeepTau2018v2p5_2018_UL_101123 #Run3: tau_DeepTau2018v2p5_2022_preEE.json
+            if period.startswith('Run3'):
+                jsonFile_rel = f"Corrections/data/TAU/{period_in_tau_file_name[period]}/tau_DeepTau2018v2p5_{period_in_tau_file_name[period]}.json"
+            else:
+                jsonFile_rel = f"Corrections/data/TAU/{period_in_tau_file_name[period]}/tau_DeepTau2018v2p5_{period_in_tau_file_name[period]}_101123.json"
             jsonFile = os.path.join(os.environ['ANALYSIS_PATH'],jsonFile_rel)
         if not TauCorrProducer.initialized:
             headers_dir = os.path.dirname(os.path.abspath(__file__))
@@ -33,7 +59,7 @@ class TauCorrProducer:
             ROOT.gInterpreter.Declare(f'#include "{header_path}"')
             wp_map_cpp = createWPChannelMap(config["deepTauWPs"])
             tauType_map = createTauSFTypeMap(config["genuineTau_SFtype"])
-            ROOT.gInterpreter.ProcessLine(f'::correction::TauCorrProvider::Initialize("{jsonFile}", "{self.deepTauVersion}", {wp_map_cpp}, {tauType_map} , "{period.split("_")[0]}")')
+            ROOT.gInterpreter.ProcessLine(f'::correction::TauCorrProvider::Initialize("{jsonFile}", "{self.deepTauVersion}", {wp_map_cpp}, {tauType_map} , "{period_in_tau_json[period]}")')
             TauCorrProducer.initialized = True
             #deepTauVersion = f"""DeepTau{deepTauVersions[config["deepTauVersion"]]}{config["deepTauVersion"]}"""
 

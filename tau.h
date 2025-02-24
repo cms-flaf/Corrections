@@ -212,7 +212,8 @@ public:
         deepTauVersion_(deepTauVersion),
         wps_map_(wps_map),
         tauType_map_(tauType_map),
-        year_(year)
+        year_(year),
+        use_decayMode_(year_.starts_with("202"s))
     {
     }
 
@@ -273,10 +274,10 @@ public:
                                            ? scale : UncScale::Central;
             const UncSource tau_ele_source = tau_ele_scale == UncScale::Central ? UncSource::Central : source ;
             const std::string& scale_str = getScaleStr(tau_ele_source, tau_ele_scale, year_);
-            const auto sf = tau_vs_e_->evaluate({Tau_p4.eta(), Tau_genMatch, wpVSe, scale_str});
+            const auto sf = use_decayMode_ ? tau_vs_e_->evaluate({Tau_p4.eta(), Tau_decayMode, Tau_genMatch, wpVSe, scale_str}) : tau_vs_e_->evaluate({Tau_p4.eta(), Tau_genMatch, wpVSe, scale_str});
             return sf;
         }
-         if(genMatch == GenLeptonMatch::Muon || genMatch == GenLeptonMatch::TauMuon){
+        if(genMatch == GenLeptonMatch::Muon || genMatch == GenLeptonMatch::TauMuon){
             const UncScale tau_mu_scale = sourceApplies(source, Tau_p4, Tau_decayMode, genMatch)
                                            ? scale : UncScale::Central;
             const UncSource tau_mu_source = tau_mu_scale == UncScale::Central ? UncSource::Central : source ;
@@ -297,7 +298,7 @@ private:
     const wpsMapType wps_map_;
     const std::map<Channel, std::string> tauType_map_;
     const std::string year_;
-
+    const bool use_decayMode_;
 };
 
 } // namespace correction
