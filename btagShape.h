@@ -26,8 +26,8 @@ public:
         jesAbsolute_year = 15,
         jesEC2_year = 16,
         jesHF_year = 17,
-        jesRelativeSample_year = 18
-
+        jesRelativeSample_year = 18,
+        jesTotal = 19
     };
     static bool needYear(UncSource source){
         if (source == UncSource::jesBBEC1_year || source==UncSource::jesAbsolute_year ||
@@ -57,6 +57,7 @@ public:
             {UncSource::jesEC2_year, "jesEC2_"},
             {UncSource::jesHF_year, "jesHF_"},
             {UncSource::jesRelativeSample_year, "jesRelativeSample_"}
+            {UncSource::jesTotal, "jes"}
         };
         return UncMapNames;
     }
@@ -107,15 +108,15 @@ public:
         if (source==UncSource::jesEC2_year && (Jet_Flavour == 5 || Jet_Flavour==0)  ) return true;
         if (source==UncSource::jesHF_year && (Jet_Flavour == 5 || Jet_Flavour==0)  ) return true;
         if (source==UncSource::jesRelativeSample_year && (Jet_Flavour == 5 || Jet_Flavour==0) ) return true;
+        if (source==UncSource::jesTotal && (Jet_Flavour == 5 || Jet_Flavour==0) ) return true;
         return false;
     }
 
-    bTagShapeCorrProvider(const std::string& fileName, const std::string& year)  :
-    corrections_(CorrectionSet::from_file(fileName)),
-    deepJet_shape_(corrections_->at("deepJet_shape")),
-    _year(year)
-    {
-    }
+    bTagShapeCorrProvider(const std::string& fileName, const std::string& year, std::string const& tagger_name)
+    :   corrections_(CorrectionSet::from_file(fileName))
+    ,   shape_corr_(corrections_->at(tagger_name + "_shape"))
+    ,   _year(year)
+    {}
 
 
     float getBTagShapeSF(const RVecLV& Jet_p4, const RVecB& pre_sel, const RVecI& Jet_Flavour,const RVecF& Jet_bTag_score, UncSource source, UncScale scale) const
@@ -130,7 +131,7 @@ public:
             bool isCentral = jet_tag_scale == UncScale::Central;
             bool need_year = needYear(source);
             const std::string& unc_name = getFullNameUnc(scale_str, source_str,_year, need_year, isCentral);
-            const auto sf = deepJet_shape_->evaluate({unc_name, Jet_Flavour[jet_idx], std::abs(Jet_p4[jet_idx].eta()),Jet_p4[jet_idx].pt(),Jet_bTag_score[jet_idx]});
+            const auto sf = shape_corr_->evaluate({unc_name, Jet_Flavour[jet_idx], std::abs(Jet_p4[jet_idx].eta()),Jet_p4[jet_idx].pt(),Jet_bTag_score[jet_idx]});
             sf_product*=sf;
         }
         return sf_product;
@@ -141,7 +142,7 @@ private:
 
 private:
     std::unique_ptr<CorrectionSet> corrections_;
-    Correction::Ref deepJet_shape_;
+    Correction::Ref shape_corr_;
     std::string _year;
 
 
