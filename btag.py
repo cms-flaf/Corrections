@@ -23,7 +23,8 @@ class bTagCorrProducer:
     uncSources_bTagShape_shape = ["FlavorQCD","RelativeBal", "HF", "BBEC1", "EC2", "Absolute", "BBEC1_", "Absolute_", "EC2_", "HF_", "RelativeSample_" ]
     uncSources_bTagShape_norm = ["lf", "hf", "lfstats1", "lfstats2", "hfstats1", "hfstats2", "cferr1", "cferr2"]
 
-    def __init__(self, period, loadEfficiency=True):
+    def __init__(self, period, loadEfficiency=True, tagger_name="PNetB"):
+        self.tagger_name = tagger_name
         jsonFile = bTagCorrProducer.jsonPath.format(period)
         jsonFile_eff = os.path.join(os.environ['ANALYSIS_PATH'],bTagCorrProducer.bTagEff_JsonPath.format(period))
         if not loadEfficiency:
@@ -34,7 +35,7 @@ class bTagCorrProducer:
             headershape_path = os.path.join(headers_dir, "btagShape.h")
             ROOT.gInterpreter.Declare(f'#include "{header_path}"')
             ROOT.gInterpreter.Declare(f'#include "{headershape_path}"')
-            ROOT.gInterpreter.ProcessLine(f'::correction::bTagCorrProvider::Initialize("{jsonFile}", "{jsonFile_eff}")')
+            # ROOT.gInterpreter.ProcessLine(f'::correction::bTagCorrProvider::Initialize("{jsonFile}", "{jsonFile_eff}")')
             ROOT.gInterpreter.ProcessLine(f"""::correction::bTagShapeCorrProvider::Initialize("{jsonFile}", "{periods[period]}")""")
             bTagCorrProducer.initialized = True
 
@@ -47,7 +48,7 @@ class bTagCorrProducer:
 
     def getWPid(self, df):
         wp_values = self.getWPValues()
-        df = df.Define("Jet_idbtagDeepFlavB", f"::correction::bTagCorrProvider::getGlobal().getWPBranch(Jet_btagDeepFlavB)")
+        df = df.Define(f"Jet_idbtag{self.tagger_name}", f"::correction::bTagCorrProvider::getGlobal().getWPBranch(Jet_btag{self.tagger_name})")
         return df
 
     def getBTagWPSF(self, df, return_variations=True, isCentral=True):
@@ -67,7 +68,7 @@ class bTagCorrProducer:
                     #branch_central = f"""weight_bTagSF_{wp.name}_{getSystName(central, central)}"""
                     df = df.Define(f"{branch_name}_double",
                                 f''' ::correction::bTagCorrProvider::getGlobal().getSF(
-                                Jet_p4, Jet_bCand, Jet_hadronFlavour, Jet_btagDeepFlavB, WorkingPointsbTag::{wp.name},
+                                Jet_p4, Jet_bCand, Jet_hadronFlavour, Jet_btag{self.tagger_name}, WorkingPointsbTag::{wp.name},
                                 ::correction::bTagCorrProvider::UncSource::{source}, ::correction::UncScale::{scale}) ''')
                     if scale != central:
                         branch_name_final = branch_name + '_rel'
@@ -96,7 +97,7 @@ class bTagCorrProducer:
 
                 df = df.Define(f"{branch_name}_double",
                     f'''::correction::bTagShapeCorrProvider::getGlobal().getBTagShapeSF(
-                    Jet_p4, Jet_bCand, Jet_hadronFlavour, Jet_btagDeepFlavB,
+                    Jet_p4, Jet_sel, Jet_hadronFlavour, Jet_btag{self.tagger_name},
                     ::correction::bTagShapeCorrProvider::UncSource::{source},
                     ::correction::UncScale::{scale}
                     ) ''')
