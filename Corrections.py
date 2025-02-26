@@ -176,8 +176,9 @@ class Corrections:
                             df = df.Define(f'{obj}_p4_{syst_name}', f'{obj}_p4_{suffix}')
         return df, syst_dict
 
-    def getNormalisationCorrections(self, df, global_params, samples, sample, lepton_legs, trigger_names, ana_cache=None,
-                                    return_variations=True, isCentral=True):
+    # scale_name for getBTagShapeSF is contained in syst_name
+    def getNormalisationCorrections(self, df, global_params, samples, sample, lepton_legs, trigger_names, syst_name, source_name,
+                                    ana_cache=None, return_variations=True, isCentral=True):
         lumi = global_params['luminosity']
         sampleType = samples[sample]['sampleType']
         generator = samples[sample]['generator']
@@ -189,6 +190,25 @@ class Corrections:
         xs_stitching_incl = 1.
         xs_inclusive = 1.
         stitch_str = '1.f'
+
+        scale_name = None
+        # syst name is only needed to determine scale (only it contains up/down/cetnral)
+        if "Up" in syst_name:
+            scale_name = up
+        elif "Down" in syst_name:
+            scale_name = down
+        elif "Central" in syst_name:
+            scale_name = central
+        else:
+            pass
+
+        if scale_name is None:
+            raise RuntimeError("Obtained scale not Central, Up or Down")
+
+        # source_name is needed to determine source and it doesn't contain up/down/cetnral
+        # in case if source_name contains underscores we want to keep everything after the first occurence of the underscore
+        start = source_name.find('_')
+        src_name = source_name[start + 1:]
 
         if sampleType in [ 'DY', 'W' ] and global_params.get('use_stitching', True):
             xs_stitching_name = samples[sample]['crossSectionStitch']
@@ -253,8 +273,8 @@ class Corrections:
         if 'tauID' in self.to_apply:
             df, tau_SF_branches = self.tau.getSF(df, lepton_legs, isCentral, return_variations)
             all_weights.extend(tau_SF_branches)
-        if 'btagShape' in self.to_apply:
-            df, bTagShape_SF_branches = self.btag.getBTagShapeSF(df, isCentral, return_variations)
+        if 'btagShape' in self.to_apply and not self.isData:
+            df, bTagShape_SF_branches = self.btag.getBTagShapeSF(df, src_name, scale_name, isCentral, return_variations)
             all_weights.extend(bTagShape_SF_branches)
         if 'mu' in self.to_apply:
             if self.mu.low_available:
