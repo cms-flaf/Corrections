@@ -57,7 +57,10 @@ public:
     {
         const auto& corr = _getGlobal();
         if(!corr)
+        {
+            std::cerr << "Didn't initialize " << typeid(CorrectionClass).name() << "\n";
             throw std::runtime_error("Class not initialized.");
+        }
         return *corr;
     }
 
