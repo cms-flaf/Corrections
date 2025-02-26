@@ -56,7 +56,7 @@ public:
             {UncSource::jesAbsolute_year, "jesAbsolute_"},
             {UncSource::jesEC2_year, "jesEC2_"},
             {UncSource::jesHF_year, "jesHF_"},
-            {UncSource::jesRelativeSample_year, "jesRelativeSample_"}
+            {UncSource::jesRelativeSample_year, "jesRelativeSample_"},
             {UncSource::jesTotal, "jes"}
         };
         return UncMapNames;
@@ -124,15 +124,37 @@ public:
         double sf_product = 1.;
         std::string source_str = getUncName().at(source);
         for(size_t jet_idx = 0; jet_idx < Jet_p4.size(); jet_idx++){
-            if(!pre_sel[jet_idx]) continue;
+            if(!(pre_sel[jet_idx] && Jet_bTag_score[jet_idx] >= 0.0))
+            {
+                continue;
+            }
             const UncScale jet_tag_scale = sourceApplies(source, Jet_Flavour[jet_idx])
                                            ? scale : UncScale::Central;
             const std::string& scale_str = getScaleStr(jet_tag_scale);
             bool isCentral = jet_tag_scale == UncScale::Central;
             bool need_year = needYear(source);
             const std::string& unc_name = getFullNameUnc(scale_str, source_str,_year, need_year, isCentral);
-            const auto sf = shape_corr_->evaluate({unc_name, Jet_Flavour[jet_idx], std::abs(Jet_p4[jet_idx].eta()),Jet_p4[jet_idx].pt(),Jet_bTag_score[jet_idx]});
-            sf_product*=sf;
+            try
+            {
+                const auto sf = shape_corr_->evaluate({unc_name, Jet_Flavour[jet_idx], std::abs(Jet_p4[jet_idx].eta()), Jet_p4[jet_idx].pt(), Jet_bTag_score[jet_idx]});
+                sf_product *= sf;
+            }
+            catch (std::runtime_error& e)
+            {
+                std::cerr << "Error in shape_corr_->evaluate() called with following arguments:\n";
+                std::cerr << "\tunc_name=" << unc_name << "\n"
+                          << "\tjet_idx=" << jet_idx << "\n"
+                          << "\tJet_Flavour=" <<  Jet_Flavour[jet_idx] << "\n"
+                          << "\tabs(Jet_eta)=" <<  std::abs(Jet_p4[jet_idx].eta()) << "\n"
+                          << "\tJet_pt=" <<  Jet_p4[jet_idx].pt() << "\n"
+                          << "\tJetbtag_score=" <<  Jet_bTag_score[jet_idx] << "\n";
+                throw;
+            }
+            catch (...)
+            {
+                std::cerr << "Unknown error occurred when evaluating correction\n";
+                throw;
+            }
         }
         return sf_product;
     }
@@ -144,8 +166,7 @@ private:
     std::unique_ptr<CorrectionSet> corrections_;
     Correction::Ref shape_corr_;
     std::string _year;
-
-
+    std::string tagger_name_;
 };
 
 } //namespace correction
