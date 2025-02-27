@@ -63,6 +63,7 @@ class Corrections:
         self.config = config
         self.sample_name = sample_name
         self.MET_type = config['met_type']
+        self.tagger_name = config['tagger_name']
 
         self.tau_ = None
         self.met_ = None
@@ -107,7 +108,7 @@ class Corrections:
     def btag(self):
         if self.btag_ is None:
             from .btag import bTagCorrProducer
-            self.btag_ = bTagCorrProducer(period_names[self.period], True)
+            self.btag_ = bTagCorrProducer(period_names[self.period], tagger_name=self.tagger_name, loadEfficiency=False, use_split_jes=False)
         return self.btag_
 
     @property
