@@ -57,6 +57,8 @@ class bTagCorrProducer:
             ROOT.gInterpreter.Declare(f'#include "{headershape_path}"')
             # ROOT.gInterpreter.ProcessLine(f'::correction::bTagCorrProvider::Initialize("{jsonFile}", "{jsonFile_eff}")')
             # ROOT.gInterpreter.ProcessLine(f"""::correction::bTagShapeCorrProvider::Initialize("{jsonFile}", "{periods[period]}, "{self.tagger_name}")""")
+            ROOT.correction.bTagCorrProvider.Initialize(jsonFile, jsonFile_eff, self.tagger_name)
+            ROOT.correction.bTagCorrProvider.getGlobal()
             ROOT.correction.bTagShapeCorrProvider.Initialize(jsonFile, periods[period], self.tagger_name)
             ROOT.correction.bTagShapeCorrProvider.getGlobal()
             bTagCorrProducer.initialized = True
