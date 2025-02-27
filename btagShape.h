@@ -141,7 +141,7 @@ public:
             }
             catch (std::runtime_error& e)
             {
-                std::cerr << "Error in shape_corr_->evaluate() called with following arguments:\n";
+                std::cerr << "bTagShapeCorrProvider::getBTagShapeSF : Error in shape_corr_->evaluate() called with following arguments:\n";
                 std::cerr << "\tunc_name=" << unc_name << "\n"
                           << "\tjet_idx=" << jet_idx << "\n"
                           << "\tJet_Flavour=" <<  Jet_Flavour[jet_idx] << "\n"
@@ -152,7 +152,7 @@ public:
             }
             catch (...)
             {
-                std::cerr << "Unknown error occurred when evaluating correction\n";
+                std::cerr << "bTagShapeCorrProvider::getBTagShapeSF : Unknown error occurred when evaluating correction\n";
                 throw;
             }
         }
@@ -166,7 +166,6 @@ private:
     std::unique_ptr<CorrectionSet> corrections_;
     Correction::Ref shape_corr_;
     std::string _year;
-    std::string tagger_name_;
 };
 
 } //namespace correction
