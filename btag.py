@@ -40,7 +40,8 @@ class bTagCorrProducer:
     tagger_to_brag_branch = {"particleNet": "PNetB",
                              "deepJet": "DeepFlavB"}
 
-    def __init__(self, period, loadEfficiency=True, tagger_name="particleNet", use_split_jes=False):
+    def __init__(self, period, loadEfficiency=False, tagger_name="deepJet", use_split_jes=False):
+        print(f"tagger_name={tagger_name}")
         self.tagger_name = tagger_name
         self.btag_branch = bTagCorrProducer.tagger_to_brag_branch[tagger_name]
         self.use_split_jes = use_split_jes
