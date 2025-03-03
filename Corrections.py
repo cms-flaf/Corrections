@@ -109,7 +109,7 @@ class Corrections:
     def btag(self):
         if self.btag_ is None:
             from .btag import bTagCorrProducer
-            self.btag_ = bTagCorrProducer(period_names[self.period], self.channel, tagger_name=self.tagger_name, loadEfficiency=False, use_split_jes=False)
+            self.btag_ = bTagCorrProducer(period_names[self.period], self.presel_jet_branch_name, tagger_name=self.tagger_name, loadEfficiency=False, use_split_jes=False)
         return self.btag_
 
     @property
