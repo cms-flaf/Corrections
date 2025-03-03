@@ -64,7 +64,7 @@ class Corrections:
         self.sample_name = sample_name
         self.MET_type = config['met_type']
         self.tagger_name = config['tagger_name']
-        self.channel = config['analysis_import'].split('.')[-1]
+        self.presel_jet_branch_name = config['presel_jet_branch_name']
 
         self.tau_ = None
         self.met_ = None

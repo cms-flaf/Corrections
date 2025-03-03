@@ -40,14 +40,11 @@ class bTagCorrProducer:
     tagger_to_brag_branch = {"particleNet": "PNetB",
                              "deepJet": "DeepFlavB"}
 
-    channel_to_presel_jet_name = {"hh_bbww": "Jet_sel",
-                                  "hh_bbtautau": "Jet_bCand"}
-
-    def __init__(self, period, channel, loadEfficiency=False, tagger_name="deepJet", use_split_jes=False):
+    def __init__(self, period, presel_jet_branch_name, loadEfficiency=False, tagger_name="deepJet", use_split_jes=False):
         print(f"tagger_name={tagger_name}")
         self.tagger_name = tagger_name
         self.btag_branch = bTagCorrProducer.tagger_to_brag_branch[tagger_name]
-        self.presel_branch_name = bTagCorrProducer.channel_to_presel_jet_name[channel]
+        self.presel_branch_name = presel_jet_branch_name
         self.use_split_jes = use_split_jes
         jsonFile = bTagCorrProducer.jsonPath.format(period)
         jsonFile_eff = os.path.join(os.environ['ANALYSIS_PATH'],bTagCorrProducer.bTagEff_JsonPath.format(period))
