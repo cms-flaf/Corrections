@@ -20,6 +20,25 @@ enum class UncScale : int {
     Up = +1,
 };
 
+inline std::ostream& operator<<(std::ostream& os, const std::map<Channel, std::string>& ch_map)
+{
+    for(const auto& [key, value] : ch_map)
+        os << '\t' << static_cast<int>(key) << " : " << value << '\n';
+    return os;
+}
+
+inline std::ostream& operator<<(std::ostream& os,
+                                const std::map<Channel, std::vector<std::pair<std::string, int>>>& ch_map)
+{
+    for(const auto& [key, value] : ch_map) {
+        os << '\t' << static_cast<int>(key) << " : ";
+        for (const auto& [name, v] : value)
+            os << "(" << name << ", " << v << ") ";
+        os << '\n';
+    }
+    return os;
+}
+
 
 template<typename ...Args>
 void print_args(Args&&... args) noexcept
@@ -41,7 +60,7 @@ public:
         {
             std::cerr << "Erorr while initializing " << typeid(CorrectionClass).name() << " with arguments:" << "\n";
             print_args(std::forward<Args>(args)...);
-            std::cerr << "exception category: " << e.what() << "\n";
+            std::cerr << "exception message: " << e.what() << "\n";
             throw;
         }
         catch (...)
