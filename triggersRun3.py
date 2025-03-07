@@ -1,7 +1,7 @@
 import os
 import ROOT
 from .CorrectionsCore import *
-from Common.Utilities import *
+from FLAF.Common.Utilities import *
 import yaml
 # Tau JSON POG integration for tau legs in eTau, muTau, diTau:
 # # https://gitlab.cern.ch/cms-nanoAOD/jsonpog-integration/-/tree/master/POG/TAU?ref_type=heads

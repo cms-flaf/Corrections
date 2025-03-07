@@ -1,7 +1,7 @@
 import os
 import ROOT
 from .CorrectionsCore import *
-from Common.Utilities import WorkingPointsbTag
+from FLAF.Common.Utilities import WorkingPointsbTag
 import yaml
 # https://twiki.cern.ch/twiki/bin/viewauth/CMS/BTagShapeCalibration
 # https://twiki.cern.ch/twiki/bin/view/CMS/BTagCalibration
