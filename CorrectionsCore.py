@@ -1,5 +1,5 @@
 
-from Common.Utilities import *
+from FLAF.Common.Utilities import *
 
 central = 'Central'
 up = 'Up'
