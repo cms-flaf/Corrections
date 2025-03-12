@@ -24,21 +24,26 @@ class TrigCorrProducer:
     eTRG_jsonPath = "/cvmfs/cms.cern.ch/rsync/cms-nanoAOD/jsonpog-integration/POG/EGM/{}/electronHlt.json.gz"
     TauTRG_jsonPath = "/cvmfs/cms.cern.ch/rsync/cms-nanoAOD/jsonpog-integration/POG/TAU/{}/tau.json.gz"
     initialized = False
-    SFSources = { 'singleIsoMu':['IsoMu24'],'singleEleWpTight':['singleEle'] }
+    SFSources = { 'singleIsoMu':['IsoMu24'],'singleEleWpTight':['singleEle'], 
+                'singleMu':['IsoMu24'], 'singleEle':['singleEle'], 'ditau':['ditau'], 'ditaujet':['ditaujet']}
     muon_trg_dict = {"2022_Summer22":"NUM_IsoMu24_DEN_CutBasedIdTight_and_PFIsoTight"}
     ele_trg_dict = {"2022_Summer22":"Electron-HLT-SF"}
-    tau_file_name = {
-        
-    }
+    tau_trg_dict = {
+        '2022_Summer22': 'tau_trigger', 
+        '2022_Summer22EE': 'tau_trigger',}
     year = ""
-
     def __init__(self, period, config):
         jsonFile_Mu = os.path.join(os.environ['ANALYSIS_PATH'],TrigCorrProducer.MuTRG_jsonPath.format(period))
         jsonFile_e = os.path.join(os.environ['ANALYSIS_PATH'],TrigCorrProducer.eTRG_jsonPath.format(period))
-        #jsonFile_Tau = os.path.join(os.environ['ANALYSIS_PATH'],TrigCorrProducer.TauTRG_jsonPath.format(period))        
-        jsonFile_Tau = os.path.join(os.environ['ANALYSIS_PATH'],f"Corrections/data/TAU/{period_in_tau_file_name[period]}/tau_DeepTau2018v2p5_{period_in_tau_file_name[period]}.json")
+        #jsonFile_Tau = os.path.join(os.environ['ANALYSIS_PATH'],TrigCorrProducer.TauTRG_jsonPath.format(period))  #uncomment this line when central path is available       
         self.period = period
-
+        tau_filename_dict = {'2022_Summer22': '2022_preEE',
+                            '2022_Summer22EE': '2022_postEE',
+                            '2023_Summer23': '2023_preBPix',
+                            '2023_Summer23BPix': '2023_postBPix'}
+        jsonFile_Tau = os.path.join(os.environ['ANALYSIS_PATH'],f"Corrections/data/TAU/{tau_filename_dict[period]}/tau_DeepTau2018v2p5_{tau_filename_dict[period]}.json")
+        print(f'trg:period {period} jsonfile tau {jsonFile_Tau}')
+        
 
         if not TrigCorrProducer.initialized:
             headers_dir = os.path.dirname(os.path.abspath(__file__))
@@ -50,30 +55,46 @@ class TrigCorrProducer:
             if (period.endswith('Summer22EE')):  TrigCorrProducer.year = period.split("_")[0]+"Re-recoE+PromptFG"
             if (period.endswith('Summer23')):  TrigCorrProducer.year = period.split("_")[0]+"PromptC"
             if (period.endswith('Summer23BPix')):  TrigCorrProducer.year = period.split("_")[0]+"2023PromptD"
-            ROOT.gInterpreter.ProcessLine(f"""::correction::TrigCorrProvider::Initialize("{jsonFile_Mu}","{jsonFile_e}", "{self.muon_trg_dict[period]}","{self.ele_trg_dict[period]}","{period}")""")
+            print(f'trg: before init {jsonFile_Tau} \n {self.tau_trg_dict[period]}')
+            ROOT.gInterpreter.ProcessLine(f"""::correction::TrigCorrProvider::Initialize("{jsonFile_Mu}","{jsonFile_e}", "{jsonFile_Tau}", "{self.muon_trg_dict[period]}","{self.ele_trg_dict[period]}", "{self.tau_trg_dict[period]}", "{period}")""")
+            # ROOT.gInterpreter.ProcessLine(f"""::correction::TrigCorrProvider::Initialize("{jsonFile_Mu}","{jsonFile_e}", "{self.muon_trg_dict[period]}","{self.ele_trg_dict[period]}", "{period}")""")
             TrigCorrProducer.initialized = True
 
     def getSF(self, df, trigger_names, lepton_legs, return_variations, isCentral):
         SF_branches = []
         legs_to_be ={
         'singleIsoMu' : ['mu','mu'],
-        'singleEleWpTight':['e','e']
+        'singleEleWpTight' : ['e','e'],
+        'ditau' : ['tau','tau'],
+        'ditaujet' : ['tau','tau'],
+        'singleMu' : ['mu','mu'],
+        'singleEle' : ['e','e']
         }
-        for trg_name in ['singleEleWpTight','singleIsoMu']:
+        print(f'trg:trigger_names {trigger_names}')
+        for trg_name in ['singleEleWpTight','singleIsoMu','singleEle', 'singleMu', 'ditau', 'ditaujet']:
             if trg_name not in trigger_names: continue
             sf_sources = TrigCorrProducer.SFSources[trg_name] if return_variations else []
+            print(f'trg: sf_sources {sf_sources}')
             for leg_idx, leg_name in enumerate(lepton_legs):
                 applyTrgBranch_name = f"{trg_name}_{leg_name}_ApplyTrgSF"
+                print(f'trg: applyTrgBranch_name {applyTrgBranch_name}')
                 leg_to_be = legs_to_be[trg_name][leg_idx]
+                print(f'trg: leg_to_be {leg_to_be}, leg_name {leg_name}')
                 df = df.Define(applyTrgBranch_name, f"""{leg_name}_type == static_cast<int>(Leg::{leg_to_be}) && {leg_name}_index >= 0 && HLT_{trg_name} && {leg_name}_HasMatching_{trg_name}""")
                 for source in [ central ] + sf_sources:
                     for scale in getScales(source):
+                        print(f'trg: scale in getScales(source) : scale {scale} source {source}')
                         if source == central and scale != central: continue
                         if not isCentral and scale!= central: continue
                         syst_name = getSystName(source, scale)
+                        print(f'trg: source, scale, syst_name: {source}, {scale}, {syst_name}')
                         suffix = f"{trg_name}_{syst_name}"
                         branch_name = f"weight_{leg_name}_TrgSF_{suffix}"
                         branch_central = f"weight_{leg_name}_TrgSF_{trg_name}_{getSystName(central,central)}"
+                        print(f'trg: {applyTrgBranch_name}, {branch_name}_double, UncSource::{source}, UncScale::{scale} ')
+                        if trg_name=='singleEle': trg_name='singleEleWpTight'
+                        if trg_name=='singleMu': trg_name='singleIsoMu'
+                        print(f'trgtest: {applyTrgBranch_name}, {branch_name}_double, UncSource::{source}, UncScale::{scale} ')
                         df = df.Define(f"{branch_name}_double",
                                     f'''{applyTrgBranch_name} ? ::correction::TrigCorrProvider::getGlobal().getSF_{trg_name}(
                                 {leg_name}_p4,"{TrigCorrProducer.year}",::correction::TrigCorrProvider::UncSource::{source}, ::correction::UncScale::{scale} ) : 1.f''')
