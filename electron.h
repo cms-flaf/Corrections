@@ -52,10 +52,11 @@ public:
     float getID_SF(const LorentzVectorM& Electron_p4, std::string working_point, std::string period, UncSource source, UncScale scale) const
     {
 
-        const UncScale jet_scale = sourceApplies(source) ? scale : UncScale::Central;
-        return EleIDSF_->evaluate({period, getIDScaleStr(jet_scale), working_point, Electron_p4.eta(), Electron_p4.pt()});
+        const UncScale ele_scale = sourceApplies(source) ? scale : UncScale::Central;
+        return EleIDSF_->evaluate({period, getIDScaleStr(ele_scale), working_point, Electron_p4.eta(), Electron_p4.pt()});
 
     }
+
 
      RVecLV getES(const RVecLV& Electron_p4, const RVecI& Electron_genMatch, const RVecUC& Electron_seedGain, int run, const RVecUC& Electron_r9 , UncSource source, UncScale scale) const
     {
