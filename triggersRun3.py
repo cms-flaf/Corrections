@@ -25,7 +25,7 @@ class TrigCorrProducer:
     TauTRG_jsonPath = "/cvmfs/cms.cern.ch/rsync/cms-nanoAOD/jsonpog-integration/POG/TAU/{}/tau.json.gz"
     initialized = False
     SFSources = { 'singleIsoMu':['IsoMu24'],'singleEleWpTight':['singleEle'], 
-                'singleMu':['IsoMu24'], 'singleEle':['singleEle'], 'ditau':['ditau_DM0', 'ditau_DM1', 'ditau_3Prong'], 'ditaujet':['ditaujet_DM0', 'ditaujet_DM1', 'ditaujet_3Prong']}
+                'singleMu':['IsoMu24'], 'singleEle':['singleEle'], 'ditau':['ditau_DM0', 'ditau_DM1', 'ditau_3Prong']}
     muon_trg_dict = {"2022_Summer22":"NUM_IsoMu24_DEN_CutBasedIdTight_and_PFIsoTight"}
     ele_trg_dict = {"2022_Summer22":"Electron-HLT-SF"}
     tau_trg_dict = {
@@ -63,11 +63,10 @@ class TrigCorrProducer:
         'singleIsoMu' : ['mu','mu'],
         'singleEleWpTight' : ['e','e'],
         'ditau' : ['tau','tau'],
-        'ditaujet' : ['tau','tau'], #check the jet requirements
         'singleMu' : ['mu','mu'],
         'singleEle' : ['e','e']
         }
-        for trg_name in ['singleEleWpTight','singleIsoMu','singleEle', 'singleMu', 'ditau', 'ditaujet']:
+        for trg_name in ['singleEleWpTight','singleIsoMu','singleEle', 'singleMu', 'ditau']:
             if trg_name not in trigger_names: continue
             sf_sources = TrigCorrProducer.SFSources[trg_name] if return_variations else []
             for leg_idx, leg_name in enumerate(lepton_legs):
@@ -86,11 +85,10 @@ class TrigCorrProducer:
                         trigCorr_dict = {'singleIsoMu' : 'singleIsoMu',
                                         'singleEleWpTight' : 'singleEleWpTight',
                                         'ditau' : 'ditau',
-                                        'ditaujet' : 'ditaujet',
                                         'singleMu' : 'singleIsoMu',
                                         'singleEle' : 'singleEleWpTight'} 
                         #for tau trigger sf, selecting SF for the time being as a corrtype, rather than eff_data/eff_mc
-                        if trg_name in ['ditau', 'ditaujet']:
+                        if trg_name == 'ditau':
                             df = df.Define(f"{branch_name}_double",
                                         f'''{applyTrgBranch_name} ? ::correction::TrigCorrProvider::getGlobal().getSF_{trigCorr_dict[trg_name]}(
                                         {leg_name}_p4,"{TrigCorrProducer.year}",Tau_decayMode.at(HttCandidate.leg_index[{leg_idx}]), "{trigCorr_dict[trg_name]}", "Medium", "sf", ::correction::TrigCorrProvider::UncSource::{source}, ::correction::UncScale::{scale} ) : 1.f''')

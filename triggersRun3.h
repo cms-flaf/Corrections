@@ -14,9 +14,6 @@ public:
         ditau_DM0 = 2,
         ditau_DM1 = 3,
         ditau_3Prong = 4,
-        ditaujet_DM0 = 5,
-        ditaujet_DM1 = 6,
-        ditaujet_3Prong = 7,
     };
     static const std::string& getMuScaleStr(UncScale scale)
     {
@@ -46,17 +43,10 @@ public:
         return tau_names.at(scale);
     }
 
-    static bool sourceApplies_tau(UncSource source, int Tau_decayMode, const std::string& trigtype){
-        if (trigtype=="ditau"){
-            if(source == UncSource::ditau_DM0 && Tau_decayMode == 0) return true;
-            if(source == UncSource::ditau_DM1 && Tau_decayMode == 1 ) return true;
-            if(source == UncSource::ditau_3Prong && (Tau_decayMode == 10 || Tau_decayMode == 11) ) return true;
-        }
-        if (trigtype=="ditaujet"){
-            if(source == UncSource::ditaujet_DM0 && Tau_decayMode == 0) return true;
-            if(source == UncSource::ditaujet_DM1 && Tau_decayMode == 1) return true;
-            if(source == UncSource::ditaujet_3Prong && (Tau_decayMode == 10 || Tau_decayMode == 11) ) return true;
-        }
+    static bool sourceApplies_tau(UncSource source, int Tau_decayMode){
+        if(source == UncSource::ditau_DM0 && Tau_decayMode == 0) return true;
+        if(source == UncSource::ditau_DM1 && Tau_decayMode == 1 ) return true;
+        if(source == UncSource::ditau_3Prong && (Tau_decayMode == 10 || Tau_decayMode == 11) ) return true;
         return false;
     }
 
@@ -96,16 +86,9 @@ public:
     }
     float getSF_ditau(const LorentzVectorM & part_p4, std::string year, int Tau_decayMode, std::string trigtype, std::string wp, std::string corrtype, UncSource source, UncScale scale) const {
         float corr_SF = 1;
-        const UncScale tau_scale = sourceApplies_tau(source, Tau_decayMode, trigtype) ? scale : UncScale::Central;
+        const UncScale tau_scale = sourceApplies_tau(source, Tau_decayMode) ? scale : UncScale::Central;
         const std::string& scale_str = getTauScaleStr(tau_scale);
         corr_SF = tauTrgCorrections.at(getUncSourceName(source))->evaluate({ part_p4.Pt(), Tau_decayMode, trigtype, wp, corrtype, scale_str });
-        return corr_SF ;
-    }
-    float getSF_ditaujet(const LorentzVectorM & part_p4, std::string year, int Tau_decayMode, std::string trigtype, std::string wp, std::string corrtype, UncSource source, UncScale scale) const {
-        float corr_SF = 1;
-        const UncScale tau_scale = sourceApplies_tau(source, Tau_decayMode, trigtype) ? scale : UncScale::Central;
-        const std::string& scale_str = getTauScaleStr(tau_scale);
-        corr_SF = tauTrgCorrections.at(getUncSourceName(source))->evaluate({ part_p4.Pt(), Tau_decayMode, trigtype, wp, corrtype, scale_str});
         return corr_SF ;
     }
 private:
@@ -116,9 +99,6 @@ private:
         if (source==UncSource::ditau_DM0) sourcename = "Central"; //Still get from the central Key, maybe rename later
         if (source==UncSource::ditau_DM1) sourcename = "Central"; //Still get from the central Key, maybe rename later
         if (source==UncSource::ditau_3Prong) sourcename = "Central"; //Still get from the central Key, maybe rename later
-        if (source==UncSource::ditaujet_DM0) sourcename = "Central"; //Still get from the central Key, maybe rename later
-        if (source==UncSource::ditaujet_DM1) sourcename = "Central"; //Still get from the central Key, maybe rename later
-        if (source==UncSource::ditaujet_3Prong) sourcename = "Central"; //Still get from the central Key, maybe rename later
 
         //(if source==SourceName) sourcename = SourceName
         return sourcename;
