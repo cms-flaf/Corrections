@@ -22,18 +22,27 @@ import yaml
 class TrigCorrProducer:
     MuTRG_jsonPath = "/cvmfs/cms.cern.ch/rsync/cms-nanoAOD/jsonpog-integration/POG/MUO/{}/muon_Z.json.gz"
     eTRG_jsonPath = "/cvmfs/cms.cern.ch/rsync/cms-nanoAOD/jsonpog-integration/POG/EGM/{}/electronHlt.json.gz"
+    TauTRG_jsonPath = "/cvmfs/cms.cern.ch/rsync/cms-nanoAOD/jsonpog-integration/POG/TAU/{}/tau.json.gz"
     initialized = False
-    SFSources = { 'singleIsoMu':['IsoMu24'],'singleEleWpTight':['singleEle'] }
+    SFSources = { 'singleIsoMu':['IsoMu24'],'singleEleWpTight':['singleEle'], 
+                'singleMu':['IsoMu24'], 'singleEle':['singleEle'], 'ditau':['ditau_DM0', 'ditau_DM1', 'ditau_3Prong']}
     muon_trg_dict = {"2022_Summer22":"NUM_IsoMu24_DEN_CutBasedIdTight_and_PFIsoTight"}
     ele_trg_dict = {"2022_Summer22":"Electron-HLT-SF"}
+    tau_trg_dict = {
+        '2022_Summer22': 'tau_trigger', 
+        '2022_Summer22EE': 'tau_trigger',}
     year = ""
-
     def __init__(self, period, config):
         jsonFile_Mu = os.path.join(os.environ['ANALYSIS_PATH'],TrigCorrProducer.MuTRG_jsonPath.format(period))
         jsonFile_e = os.path.join(os.environ['ANALYSIS_PATH'],TrigCorrProducer.eTRG_jsonPath.format(period))
-
+        #jsonFile_Tau = os.path.join(os.environ['ANALYSIS_PATH'],TrigCorrProducer.TauTRG_jsonPath.format(period))  #uncomment this line when central path is available       
         self.period = period
-
+        tau_filename_dict = {'2022_Summer22': '2022_preEE',
+                            '2022_Summer22EE': '2022_postEE',
+                            '2023_Summer23': '2023_preBPix',
+                            '2023_Summer23BPix': '2023_postBPix'}
+        jsonFile_Tau = os.path.join(os.environ['ANALYSIS_PATH'],f"Corrections/data/TAU/{tau_filename_dict[period]}/tau_DeepTau2018v2p5_{tau_filename_dict[period]}.json")
+        
 
         if not TrigCorrProducer.initialized:
             headers_dir = os.path.dirname(os.path.abspath(__file__))
@@ -45,16 +54,19 @@ class TrigCorrProducer:
             if (period.endswith('Summer22EE')):  TrigCorrProducer.year = period.split("_")[0]+"Re-recoE+PromptFG"
             if (period.endswith('Summer23')):  TrigCorrProducer.year = period.split("_")[0]+"PromptC"
             if (period.endswith('Summer23BPix')):  TrigCorrProducer.year = period.split("_")[0]+"2023PromptD"
-            ROOT.gInterpreter.ProcessLine(f"""::correction::TrigCorrProvider::Initialize("{jsonFile_Mu}","{jsonFile_e}", "{self.muon_trg_dict[period]}","{self.ele_trg_dict[period]}","{period}")""")
+            ROOT.gInterpreter.ProcessLine(f"""::correction::TrigCorrProvider::Initialize("{jsonFile_Mu}","{jsonFile_e}", "{jsonFile_Tau}", "{self.muon_trg_dict[period]}","{self.ele_trg_dict[period]}", "{self.tau_trg_dict[period]}", "{period}")""")
             TrigCorrProducer.initialized = True
 
     def getSF(self, df, trigger_names, lepton_legs, return_variations, isCentral):
         SF_branches = []
         legs_to_be ={
         'singleIsoMu' : ['mu','mu'],
-        'singleEleWpTight':['e','e']
+        'singleEleWpTight' : ['e','e'],
+        'ditau' : ['tau','tau'],
+        'singleMu' : ['mu','mu'],
+        'singleEle' : ['e','e']
         }
-        for trg_name in ['singleEleWpTight','singleIsoMu']:
+        for trg_name in ['singleEleWpTight','singleIsoMu','singleEle', 'singleMu', 'ditau']:
             if trg_name not in trigger_names: continue
             sf_sources = TrigCorrProducer.SFSources[trg_name] if return_variations else []
             for leg_idx, leg_name in enumerate(lepton_legs):
@@ -69,9 +81,21 @@ class TrigCorrProducer:
                         suffix = f"{trg_name}_{syst_name}"
                         branch_name = f"weight_{leg_name}_TrgSF_{suffix}"
                         branch_central = f"weight_{leg_name}_TrgSF_{trg_name}_{getSystName(central,central)}"
-                        df = df.Define(f"{branch_name}_double",
-                                    f'''{applyTrgBranch_name} ? ::correction::TrigCorrProvider::getGlobal().getSF_{trg_name}(
-                                {leg_name}_p4,"{TrigCorrProducer.year}",::correction::TrigCorrProvider::UncSource::{source}, ::correction::UncScale::{scale} ) : 1.f''')
+                        #the trigCorr dictionary below is due to different analysis having different trigger names for muon and electron.
+                        trigCorr_dict = {'singleIsoMu' : 'singleIsoMu',
+                                        'singleEleWpTight' : 'singleEleWpTight',
+                                        'ditau' : 'ditau',
+                                        'singleMu' : 'singleIsoMu',
+                                        'singleEle' : 'singleEleWpTight'} 
+                        #for tau trigger sf, selecting SF for the time being as a corrtype, rather than eff_data/eff_mc
+                        if trg_name == 'ditau':
+                            df = df.Define(f"{branch_name}_double",
+                                        f'''{applyTrgBranch_name} ? ::correction::TrigCorrProvider::getGlobal().getSF_{trigCorr_dict[trg_name]}(
+                                        {leg_name}_p4,"{TrigCorrProducer.year}",Tau_decayMode.at(HttCandidate.leg_index[{leg_idx}]), "{trigCorr_dict[trg_name]}", "Medium", "sf", ::correction::TrigCorrProvider::UncSource::{source}, ::correction::UncScale::{scale} ) : 1.f''')
+                        else:
+                            df = df.Define(f"{branch_name}_double",
+                                        f'''{applyTrgBranch_name} ? ::correction::TrigCorrProvider::getGlobal().getSF_{trigCorr_dict[trg_name]}(
+                                        {leg_name}_p4,"{TrigCorrProducer.year}", ::correction::TrigCorrProvider::UncSource::{source}, ::correction::UncScale::{scale} ) : 1.f''')
                         if scale != central:
                             df = df.Define(f"{branch_name}_rel", f"static_cast<float>({branch_name}_double/{branch_central})")
                             branch_name += '_rel'
