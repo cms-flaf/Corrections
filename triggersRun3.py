@@ -24,25 +24,25 @@ class TrigCorrProducer:
     eTRG_jsonPath = "/cvmfs/cms.cern.ch/rsync/cms-nanoAOD/jsonpog-integration/POG/EGM/{}/electronHlt.json.gz"
     TauTRG_jsonPath = "/cvmfs/cms.cern.ch/rsync/cms-nanoAOD/jsonpog-integration/POG/TAU/{}/tau.json.gz"
     initialized = False
-    SFSources = { 'singleIsoMu':['IsoMu24'],'singleEleWpTight':['singleEle'], 
+    SFSources = { 'singleIsoMu':['IsoMu24'],'singleEleWpTight':['singleEle'],
                 'singleMu':['IsoMu24'], 'singleEle':['singleEle'], 'ditau':['ditau_DM0', 'ditau_DM1', 'ditau_3Prong']}
-    muon_trg_dict = {"2022_Summer22":"NUM_IsoMu24_DEN_CutBasedIdTight_and_PFIsoTight"}
-    ele_trg_dict = {"2022_Summer22":"Electron-HLT-SF"}
+    muon_trg_dict = {"2022_Summer22":"NUM_IsoMu24_DEN_CutBasedIdTight_and_PFIsoTight","2022_Summer22EE":"NUM_IsoMu24_DEN_CutBasedIdTight_and_PFIsoTight"}
+    ele_trg_dict = {"2022_Summer22":"Electron-HLT-SF","2022_Summer22EE":"Electron-HLT-SF"}
     tau_trg_dict = {
-        '2022_Summer22': 'tau_trigger', 
+        '2022_Summer22': 'tau_trigger',
         '2022_Summer22EE': 'tau_trigger',}
     year = ""
     def __init__(self, period, config):
         jsonFile_Mu = os.path.join(os.environ['ANALYSIS_PATH'],TrigCorrProducer.MuTRG_jsonPath.format(period))
         jsonFile_e = os.path.join(os.environ['ANALYSIS_PATH'],TrigCorrProducer.eTRG_jsonPath.format(period))
-        #jsonFile_Tau = os.path.join(os.environ['ANALYSIS_PATH'],TrigCorrProducer.TauTRG_jsonPath.format(period))  #uncomment this line when central path is available       
+        #jsonFile_Tau = os.path.join(os.environ['ANALYSIS_PATH'],TrigCorrProducer.TauTRG_jsonPath.format(period))  #uncomment this line when central path is available
         self.period = period
         tau_filename_dict = {'2022_Summer22': '2022_preEE',
                             '2022_Summer22EE': '2022_postEE',
                             '2023_Summer23': '2023_preBPix',
                             '2023_Summer23BPix': '2023_postBPix'}
         jsonFile_Tau = os.path.join(os.environ['ANALYSIS_PATH'],f"Corrections/data/TAU/{tau_filename_dict[period]}/tau_DeepTau2018v2p5_{tau_filename_dict[period]}.json")
-        
+
 
         if not TrigCorrProducer.initialized:
             headers_dir = os.path.dirname(os.path.abspath(__file__))
@@ -86,7 +86,7 @@ class TrigCorrProducer:
                                         'singleEleWpTight' : 'singleEleWpTight',
                                         'ditau' : 'ditau',
                                         'singleMu' : 'singleIsoMu',
-                                        'singleEle' : 'singleEleWpTight'} 
+                                        'singleEle' : 'singleEleWpTight'}
                         #for tau trigger sf, selecting SF for the time being as a corrtype, rather than eff_data/eff_mc
                         if trg_name == 'ditau':
                             df = df.Define(f"{branch_name}_double",
