@@ -20,26 +20,6 @@ enum class UncScale : int {
     Up = +1,
 };
 
-inline std::ostream& operator<<(std::ostream& os, const std::map<Channel, std::string>& ch_map)
-{
-    for(const auto& [key, value] : ch_map)
-        os << '\t' << static_cast<int>(key) << " : " << value << '\n';
-    return os;
-}
-
-inline std::ostream& operator<<(std::ostream& os,
-                                const std::map<Channel, std::vector<std::pair<std::string, int>>>& ch_map)
-{
-    for(const auto& [key, value] : ch_map) {
-        os << '\t' << static_cast<int>(key) << " : ";
-        for (const auto& [name, v] : value)
-            os << "(" << name << ", " << v << ") ";
-        os << '\n';
-    }
-    return os;
-}
-
-
 template<typename ...Args>
 void print_args(Args&&... args) noexcept
 {
