@@ -20,7 +20,6 @@ enum class UncScale : int {
     Up = +1,
 };
 
-
 template<typename ...Args>
 void print_args(Args&&... args) noexcept
 {
@@ -41,7 +40,7 @@ public:
         {
             std::cerr << "Erorr while initializing " << typeid(CorrectionClass).name() << " with arguments:" << "\n";
             print_args(std::forward<Args>(args)...);
-            std::cerr << "exception category: " << e.what() << "\n";
+            std::cerr << "exception message: " << e.what() << "\n";
             throw;
         }
         catch (...)
