@@ -78,11 +78,11 @@ class FatJetCorrProducer:
         type_suffix = "DATA" if isData else "MC"
         JER_SF_txt = f"{JER_dir}_{type_suffix}/{JER_dir}_{type_suffix}_SF_AK4PFchs.txt"
         JER_PtRes_txt = f"{JER_dir}_{type_suffix}/{JER_dir}_{type_suffix}_PtResolution_AK4PFchs.txt"
-        JEC_Regouped_txt = f"{JEC_dir}/{regrouped_files_names[period]}"
+        JEC_Regrouped_txt = f"{JEC_dir}/{regrouped_files_names[period]}"
 
         ptResolution = getJMEFile("JRDatabase", JER_PtRes_txt)
         ptResolutionSF = getJMEFile("JRDatabase", JER_SF_txt)
-        JEC_Regrouped = getJMEFile("JECDatabase", JEC_Regouped_txt)
+        JEC_Regrouped = getJMEFile("JECDatabase", JEC_Regrouped_txt)
 
         if not FatJetCorrProducer.initialized:
             ROOT.gSystem.Load("libJetMETCorrectionsModules.so")
