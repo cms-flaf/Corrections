@@ -1,6 +1,8 @@
 import os
 import ROOT
 from .CorrectionsCore import *
+from .jet import getJMEFile
+
 # https://docs.google.com/spreadsheets/d/1JZfk78_9SD225bcUuTWVo4i02vwI5FfeVKH-dwzUdhM/edit#gid=1345121349
 
 # MET corrections
@@ -64,45 +66,24 @@ regrouped_files_names = {
     }
 
 class FatJetCorrProducer:
-    JEC_SF_path = 'Corrections/data/JME/{}'
-
-    #jsonPath_btag = "/cvmfs/cms.cern.ch/rsync/cms-nanoAOD/jsonpog-integration/POG/BTV/{}/btagging.json.gz"
-
     initialized = False
     uncSources_core = ["FlavorQCD","RelativeBal", "HF", "BBEC1", "EC2", "Absolute", "BBEC1_", "Absolute_", "EC2_", "HF_", "RelativeSample_" ]
 
     #Sources = []
     period = None
     def __init__(self, period,isData):
-        JEC_dir = directories_JEC[period]
-        JEC_SF_db = "Corrections/data/JECDatabase/textFiles/"
-
-        JER_dir = directories_JER[period]
-        JER_SF_db = "Corrections/data/JRDatabase/textFiles/"
-
+        self.isData = isData
         JEC_dir = directories_JEC[period]
         JER_dir = directories_JER[period]
-        suffix =  "AK4PFchs" if period == "2017_UL" else "AK8PFPuppi"
-        JEC_SF_txtPath_MC = f"{JER_SF_db}/{JER_dir}_MC/{JER_dir}_MC_SF_{suffix}.txt"
-        JEC_PtRes_txtPath_MC = f"{JER_SF_db}/{JER_dir}_MC/{JER_dir}_MC_PtResolution_{suffix}.txt"
-        JEC_PhiRes_txtPath_MC = f"{JER_SF_db}/{JER_dir}_MC/{JER_dir}_MC_PhiResolution_{suffix}.txt"
-        JEC_EtaRes_txtPath_MC = f"{JER_SF_db}/{JER_dir}_MC/{JER_dir}_MC_EtaResolution_{suffix}.txt"
+        type_suffix = "DATA" if isData else "MC"
+        JER_SF_txt = f"{JER_dir}_{type_suffix}/{JER_dir}_{type_suffix}_SF_AK4PFchs.txt"
+        JER_PtRes_txt = f"{JER_dir}_{type_suffix}/{JER_dir}_{type_suffix}_PtResolution_AK4PFchs.txt"
+        JEC_Regouped_txt = f"{JEC_dir}/{regrouped_files_names[period]}"
 
-        JES_Regouped_txtPath_MC = f"{JEC_SF_db}/{JEC_dir}/{regrouped_files_names[period]}"
+        ptResolution = getJMEFile("JRDatabase", JER_PtRes_txt)
+        ptResolutionSF = getJMEFile("JRDatabase", JER_SF_txt)
+        JEC_Regrouped = getJMEFile("JECDatabase", JEC_Regouped_txt)
 
-        JEC_SF_txtPath_data = f"{JER_SF_db}/{JER_dir}_DATA/{JER_dir}_DATA_SF_{suffix}.txt"
-        JEC_PtRes_txtPath_data = f"{JER_SF_db}/{JER_dir}_DATA/{JER_dir}_DATA_PtResolution_{suffix}.txt"
-        JEC_PhiRes_txtPath_data = f"{JER_SF_db}/{JER_dir}_DATA/{JER_dir}_DATA_PhiResolution_{suffix}.txt"
-        JEC_EtaRes_txtPath_data = f"{JER_SF_db}/{JER_dir}_DATA/{JER_dir}_DATA_EtaResolution_{suffix}.txt"
-
-        FatJetCorrProducer.isData = isData
-        #jsonFile_btag = FatJetCorrProducer.jsonPath_btag.format(period)
-        ptResolution = os.path.join(os.environ['ANALYSIS_PATH'],JEC_PtRes_txtPath_MC.format(period))
-        ptResolutionSF = os.path.join(os.environ['ANALYSIS_PATH'],JEC_SF_txtPath_MC.format(period))
-        JEC_Regrouped = os.path.join(os.environ['ANALYSIS_PATH'], JES_Regouped_txtPath_MC.format(period))
-        if FatJetCorrProducer.isData:
-            ptResolution = os.path.join(os.environ['ANALYSIS_PATH'],JEC_PtRes_txtPath_data.format(period))
-            ptResolutionSF = os.path.join(os.environ['ANALYSIS_PATH'],JEC_SF_txtPath_data.format(period))
         if not FatJetCorrProducer.initialized:
             ROOT.gSystem.Load("libJetMETCorrectionsModules.so")
             ROOT.gSystem.Load("libCondFormatsJetMETObjects.so")

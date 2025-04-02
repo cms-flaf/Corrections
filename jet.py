@@ -1,4 +1,5 @@
 import os
+import urllib.request
 import ROOT
 from .CorrectionsCore import *
 # https://docs.google.com/spreadsheets/d/1JZfk78_9SD225bcUuTWVo4i02vwI5FfeVKH-dwzUdhM/edit#gid=1345121349
@@ -27,6 +28,33 @@ Note: The RunIISummer19UL16(APV) samples have a bug in the beamspot position aff
 
 '''
 
+def getJMEFile(jme_repo, jme_file):
+    repo_dict = {
+        'JRDatabase': {
+            'url':  'https://raw.githubusercontent.com/cms-jet/JRDatabase/refs/heads/master/textFiles/',
+            'path': 'data/JRDatabase/textFiles/'
+        },
+        'JECDatabase': {
+            'url': 'https://raw.githubusercontent.com/cms-jet/JECDatabase/refs/heads/master/textFiles/',
+            'path': 'data/JECDatabase/textFiles/'
+        }
+    }
+
+    if jme_repo not in repo_dict:
+        raise RuntimeError(f"JME repository {jme_repo} not found in available repositories: {repo_dict.keys()}")
+    repo_entry = repo_dict[jme_repo]
+    this_file_dir = os.path.dirname(os.path.abspath(__file__))
+    jme_file_dir = os.path.join(this_file_dir, repo_entry['path'])
+    jme_file_path = os.path.join(jme_file_dir, jme_file)
+    if not os.path.exists(jme_file_path):
+        if not os.path.exists(jme_file_dir):
+            os.makedirs(jme_file_dir)
+        url = repo_entry['url'] + jme_file
+        print(f"Downloading {jme_file} from {url}")
+        urllib.request.urlretrieve(url, jme_file_path)
+    return jme_file_path
+
+
 
 directories_JER = {
     "2018_UL":"Summer19UL18_JRV2",
@@ -50,7 +78,6 @@ regrouped_files_names = {
 
 
 class JetCorrProducer:
-    JEC_SF_path = 'Corrections/data/JME/{}'
     jsonPath_btag = "/cvmfs/cms.cern.ch/rsync/cms-nanoAOD/jsonpog-integration/POG/BTV/{}/btagging.json.gz"
 
     initialized = False
@@ -128,31 +155,17 @@ class JetCorrProducer:
         print(f"year: {self.year}")
         if not self.use_corrlib:
             print("Initializing old JetCorrProducer")
-            JEC_SF_path_period = JetCorrProducer.JEC_SF_path.format(period)
             JEC_dir = directories_JEC[period]
-            JEC_SF_db = "Corrections/data/JECDatabase/textFiles/"
-
             JER_dir = directories_JER[period]
-            JER_SF_db = "Corrections/data/JRDatabase/textFiles/"
+            type_suffix = "DATA" if isData else "MC"
+            JER_SF_txt = f"{JER_dir}_{type_suffix}/{JER_dir}_{type_suffix}_SF_AK4PFchs.txt"
+            JER_PtRes_txt = f"{JER_dir}_{type_suffix}/{JER_dir}_{type_suffix}_PtResolution_AK4PFchs.txt"
+            JEC_Regouped_txt = f"{JEC_dir}/{regrouped_files_names[period]}"
 
-            JER_SF_txtPath_MC = f"{JER_SF_db}/{JER_dir}_MC/{JER_dir}_MC_SF_AK4PFchs.txt"
-            JER_PtRes_txtPath_MC = f"{JER_SF_db}/{JER_dir}_MC/{JER_dir}_MC_PtResolution_AK4PFchs.txt"
-            JER_PhiRes_txtPath_MC = f"{JER_SF_db}/{JER_dir}_MC/{JER_dir}_MC_PhiResolution_AK4PFchs.txt"
-            JER_EtaRes_txtPath_MC = f"{JER_SF_db}/{JER_dir}_MC/{JER_dir}_MC_EtaResolution_AK4PFchs.txt"
+            ptResolution = getJMEFile("JRDatabase", JER_PtRes_txt)
+            ptResolutionSF = getJMEFile("JRDatabase", JER_SF_txt)
+            JEC_Regrouped = getJMEFile("JECDatabase", JEC_Regouped_txt)
 
-            JER_SF_txtPath_data = f"{JER_SF_db}/{JER_dir}_DATA/{JER_dir}_DATA_SF_AK4PFchs.txt"
-            JER_PtRes_txtPath_data = f"{JER_SF_db}/{JER_dir}_DATA/{JER_dir}_DATA_PtResolution_AK4PFchs.txt"
-            JER_PhiRes_txtPath_data = f"{JER_SF_db}/{JER_dir}_DATA/{JER_dir}_DATA_PhiResolution_AK4PFchs.txt"
-            JER_EtaRes_txtPath_data = f"{JER_SF_db}/{JER_dir}_DATA/{JER_dir}_DATA_EtaResolution_AK4PFchs.txt"
-
-            JEC_Regouped_txtPath_MC = f"{JEC_SF_db}/{JEC_dir}/{regrouped_files_names[period]}"
-
-            ptResolution = os.path.join(os.environ['ANALYSIS_PATH'],JER_PtRes_txtPath_MC.format(period))
-            ptResolutionSF = os.path.join(os.environ['ANALYSIS_PATH'],JER_SF_txtPath_MC.format(period))
-            JEC_Regrouped = os.path.join(os.environ['ANALYSIS_PATH'], JEC_Regouped_txtPath_MC.format(period))
-            if self.isData:
-                ptResolution = os.path.join(os.environ['ANALYSIS_PATH'],JER_PtRes_txtPath_data.format(period))
-                ptResolutionSF = os.path.join(os.environ['ANALYSIS_PATH'],JER_SF_txtPath_data.format(period))
             if not JetCorrProducer.initialized:
                 ROOT.gSystem.Load("libJetMETCorrectionsModules.so")
                 ROOT.gSystem.Load("libCondFormatsJetMETObjects.so")

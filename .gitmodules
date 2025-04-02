@@ -1,6 +1,0 @@
-[submodule "data/JRDatabase"]
-	path = data/JRDatabase
-	url = git@github.com:cms-jet/JRDatabase.git
-[submodule "data/JECDatabase"]
-	path = data/JECDatabase
-	url = git@github.com:cms-jet/JECDatabase.git
