@@ -56,19 +56,54 @@ public:
         return twoProngDMs.count(dm);
     }
 
-    TrigCorrProvider(const std::string& muon_trg_file, const std::string& ele_trg_file, const std::string& tau_trg_file, const std::string& muon_trg_key, const std::string& ele_trg_key, const std::string& tau_trg_key, const std::string& era) :
-    // TrigCorrProvider(const std::string& muon_trg_file, const std::string& ele_trg_file, const std::string& muon_trg_key, const std::string& ele_trg_key, const std::string& era) :
+    // TrigCorrProvider(const std::string& muon_trg_file, const std::string& ele_trg_file, const std::string& tau_trg_file, const std::string& muon_trg_key, const std::string& ele_trg_key, const std::string& tau_trg_key, const std::string& era) :
+    // // TrigCorrProvider(const std::string& muon_trg_file, const std::string& ele_trg_file, const std::string& muon_trg_key, const std::string& ele_trg_key, const std::string& era) :
+    //     mutrgcorrections_(CorrectionSet::from_file(muon_trg_file)),
+    //     etrgcorrections_(CorrectionSet::from_file(ele_trg_file)),
+    //     tautrgcorrections_(CorrectionSet::from_file(tau_trg_file))
+    // {
+        //     if (era == "2022_Summer22" || era == "2022_Summer22EE" || era == "2023_Summer23" || era == "2023_Summer23BPix"){
+            //         muTrgCorrections["Central"]=mutrgcorrections_->at(muon_trg_key);
+            //         eleTrgCorrections["Central"]=etrgcorrections_->at(ele_trg_key);
+    //         tauTrgCorrections["Central"]=tautrgcorrections_->at(tau_trg_key);
+    //     } else {
+        //        throw std::runtime_error("Era not supported");
+        //     }
+        // }
+        
+        TrigCorrProvider(const std::string& muon_trg_file, const std::string& ele_trg_file, const std::string& tau_trg_file, const std::string& ditauJet_trg_file, const std::string& etau_trg_file, const std::string& mutau_trg_file, const std::string& muon_trg_key, const std::string& ele_trg_key, const std::string& tau_trg_key,  const std::string& era) :
+        // TrigCorrProvider(const std::string& muon_trg_file, const std::string& ele_trg_file, const std::string& muon_trg_key, const std::string& ele_trg_key, const std::string& era) :
         mutrgcorrections_(CorrectionSet::from_file(muon_trg_file)),
         etrgcorrections_(CorrectionSet::from_file(ele_trg_file)),
-        tautrgcorrections_(CorrectionSet::from_file(tau_trg_file))
-    {
-        if (era == "2022_Summer22" || era == "2022_Summer22EE" || era == "2023_Summer23" || era == "2023_Summer23BPix"){
+        tautrgcorrections_(CorrectionSet::from_file(tau_trg_file)),
+        ditauJet_trgcorrections_(CorrectionSet::from_file(ditauJet_trg_file)),
+        etau_trgcorrections_(CorrectionSet::from_file(etau_trg_file)),
+        mutau_trgcorrections_(CorrectionSet::from_file(mutau_trg_file))
+        {
+            if (era == "2022_Summer22"){// || era == "2022_Summer22EE" || era == "2023_Summer23" || era == "2023_Summer23BPix"){
+                // muTrgCorrections["Central"]=mutrgcorrections_->at(muon_trg_key);
             muTrgCorrections["Central"]=mutrgcorrections_->at(muon_trg_key);
             eleTrgCorrections["Central"]=etrgcorrections_->at(ele_trg_key);
             tauTrgCorrections["Central"]=tautrgcorrections_->at(tau_trg_key);
+            eleTrgCorrections_Mc["Central"]=etrgcorrections_->at("Electron-HLT-McEff");
+            eleTrgCorrections_Data["Central"]=etrgcorrections_->at("Electron-HLT-DataEff");
+            tauTrgCorrections["Central"]=tautrgcorrections_->at("tau_trigger");
+            ditauJet_trgCorrections["Central"]=ditauJet_trgcorrections_->at("jetlegSFs");
+            etau_trgCorrections_Mc["Central"]=etau_trgcorrections_->at("Electron-HLT-McEff");
+            etau_trgCorrections_Data["Central"]=etau_trgcorrections_->at("Electron-HLT-DataEff");
+            mutau_trgCorrections_Mc["Central"]=mutau_trgcorrections_->at("NUM_IsoMu20_DEN_CutBasedIdTight_and_PFIsoTight_MCeff");
+            mutau_trgCorrections_Data["Central"]=mutau_trgcorrections_->at("NUM_IsoMu20_DEN_CutBasedIdTight_and_PFIsoTight_DATAeff");
         } else {
            throw std::runtime_error("Era not supported");
         }
+    }
+
+    float getEff_singleEle(const LorentzVectorM & part_p4, std::string year, UncSource source, UncScale scale) const {
+        float eff = 1;
+        const std::string& scale_str = getEleScaleStr(scale);
+        std::string Working_Point = "HLT_SF_Ele30_TightID";
+        eff = eleTrgCorrections_Mc.at("Central")->evaluate({year, "nom", Working_Point, part_p4.Eta(), part_p4.Pt()});
+        return eff ;
     }
 
     float getSF_singleEleWpTight(const LorentzVectorM & part_p4, std::string year, UncSource source, UncScale scale) const {
@@ -105,8 +140,8 @@ private:
     }
 
 private:
-    std::unique_ptr<CorrectionSet> mutrgcorrections_, etrgcorrections_, tautrgcorrections_ ;
-    std::map<std::string, Correction::Ref> muTrgCorrections, eleTrgCorrections, tauTrgCorrections;
+    std::unique_ptr<CorrectionSet> mutrgcorrections_, etrgcorrections_, tautrgcorrections_, ditauJet_trgcorrections_, etau_trgcorrections_, mutau_trgcorrections_;
+    std::map<std::string, Correction::Ref> muTrgCorrections, eleTrgCorrections, eleTrgCorrections_Mc, eleTrgCorrections_Data, tauTrgCorrections, ditauJet_trgCorrections, etau_trgCorrections_Mc, etau_trgCorrections_Data, mutau_trgCorrections_Mc, mutau_trgCorrections_Data;
     const std::string period_;
 } ;
 
