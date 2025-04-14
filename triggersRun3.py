@@ -156,12 +156,12 @@ class TrigCorrProducer:
             query = f"""{leg_name}_type == static_cast<int>(Leg::{leg_to_be}) && {leg_name}_index >= 0 && HLT_{trg_name} && {leg_name}_HasMatching_{trg_name}"""
             print(f"query: {query}") 
             df = df.Define(applyTrgBranch_name, f"""{query}""")
-            # df.Display(f"HLT_{trg_name}").Print()
-            # df.Display(f"{leg_name}_HasMatching_{trg_name}").Print()
-            # df.Display(f"{applyTrgBranch_name}").Print()
-            df = df.Define(f"eff_MC_{leg_name}_{trg_name}", f"""{applyTrgBranch_name} ? ::correction::TrigCorrProvider::getGlobal().getEff_singleEle({leg_name}_p4, "{TrigCorrProducer.year}", ::correction::TrigCorrProvider::UncSource::{central}, ::correction::UncScale::{central})  : 1.f """)
-            df.Display([f"eff_MC_{leg_name}_{trg_name}", "tau1_pt", "tau2_pt"],10).Print()
-            # SF_branches.append(f"eff_MC_{leg_name}_{trg_name}")
+            for mc_or_data in ["data", "mc"]:
+                eff = f"eff_{mc_or_data}_{leg_name}_{trg_name}"
+                df = df.Define(eff , f"""{applyTrgBranch_name} ? ::correction::TrigCorrProvider::getGlobal().getEff_singleEle({leg_name}_p4, "{TrigCorrProducer.year}", ::correction::TrigCorrProvider::UncSource::{central}, ::correction::UncScale::{central}, "{mc_or_data}")  : 1.f """)
+                df.Display(f"{eff}").Print()
+            SF_branches.append(eff)
+
 
 
         # for leg_idx, leg_name in enumerate(offline_legs):

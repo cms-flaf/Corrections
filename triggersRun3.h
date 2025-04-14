@@ -33,6 +33,15 @@ public:
         };
         return ele_names.at(scale);
     }
+    static const std::string& getEleEffScaleStr(UncScale scale)
+    {
+        static const std::map<UncScale, std::string> ele_names = {
+            { UncScale::Down, "down" },
+            { UncScale::Central, "nom" },
+            { UncScale::Up, "up" },
+        };
+        return ele_names.at(scale);
+    }
     static const std::string& getTauScaleStr(UncScale scale)
     {
         static const std::map<UncScale, std::string> tau_names = {
@@ -98,11 +107,18 @@ public:
         }
     }
 
-    float getEff_singleEle(const LorentzVectorM & part_p4, std::string year, UncSource source, UncScale scale) const {
+    float getEff_singleEle(const LorentzVectorM & part_p4, std::string year, UncSource source, UncScale scale, std::string datatype) const {
         float eff = 1;
         const std::string& scale_str = getEleScaleStr(scale);
         std::string Working_Point = "HLT_SF_Ele30_TightID";
-        eff = eleTrgCorrections_Mc.at("Central")->evaluate({year, "nom", Working_Point, part_p4.Eta(), part_p4.Pt()});
+        if (datatype == "data") {
+            eff = eleTrgCorrections_Data.at(getUncSourceName(source))->evaluate({year, scale_str, Working_Point, part_p4.Eta(), part_p4.Pt()});
+        } else if (datatype == "mc") {
+            eff = eleTrgCorrections_Mc.at(getUncSourceName(source))->evaluate({year, scale_str, Working_Point, part_p4.Eta(), part_p4.Pt()});
+        } else {
+            throw std::runtime_error("Unknown datatype");
+        }
+        // eff = eleTrgCorrections_Mc.at(getUncSourceName(source))->evaluate({year, scale_str, Working_Point, part_p4.Eta(), part_p4.Pt()});
         return eff ;
     }
 
