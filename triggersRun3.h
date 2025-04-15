@@ -107,14 +107,29 @@ public:
         }
     }
 
-    float getEff_singleEle(const LorentzVectorM & part_p4, std::string year, UncSource source, UncScale scale, std::string datatype) const {
+    float getEff_singleEle(const LorentzVectorM & part_p4, std::string year, std::string Working_Point, UncSource source, UncScale scale,  std::string datatype) const {
         float eff = 1;
-        const std::string& scale_str = getEleScaleStr(scale);
-        std::string Working_Point = "HLT_SF_Ele30_TightID";
+        const std::string& scale_str = "nom";
+        // std::string Working_Point = "HLT_SF_Ele30_TightID";
         if (datatype == "data") {
             eff = eleTrgCorrections_Data.at(getUncSourceName(source))->evaluate({year, scale_str, Working_Point, part_p4.Eta(), part_p4.Pt()});
         } else if (datatype == "mc") {
             eff = eleTrgCorrections_Mc.at(getUncSourceName(source))->evaluate({year, scale_str, Working_Point, part_p4.Eta(), part_p4.Pt()});
+        } else {
+            throw std::runtime_error("Unknown datatype");
+        }
+        // eff = eleTrgCorrections_Mc.at(getUncSourceName(source))->evaluate({year, scale_str, Working_Point, part_p4.Eta(), part_p4.Pt()});
+        return eff ;
+    }
+
+    float getEff_ditau(const LorentzVectorM & part_p4, const int & part_decayMode, std::string year, std::string trg_name, std::string Working_Point, UncSource source, UncScale scale,  std::string datatype) const {
+        float eff = 1;
+        const std::string& scale_str = "nom";
+        // std::string Working_Point = "HLT_SF_Ele30_TightID";
+        if (datatype == "data") {
+            eff = tauTrgCorrections.at(getUncSourceName(source))->evaluate({part_p4.Pt(), part_decayMode, trg_name, Working_Point, "eff_data", scale_str});
+        } else if (datatype == "mc") {
+            eff = tauTrgCorrections.at(getUncSourceName(source))->evaluate({part_p4.Pt(), part_decayMode, trg_name, Working_Point, "eff_mc", scale_str});
         } else {
             throw std::runtime_error("Unknown datatype");
         }

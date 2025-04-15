@@ -147,21 +147,26 @@ class TrigCorrProducer:
     def getEff(self, df, trigger_names, offline_legs, return_variations, isCentral):
         offline_legs =["tau1","tau2"]
         SF_branches = []
-        trg_name = "singleEle"
-        leg_to_be = 'e'
-        trg_path = "HLT_Ele30_WPTight_Gsf"
-        # sf_sources = TrigCorrProducer.SFSources[trg_name] if return_variations else []
-        for leg_idx, leg_name in enumerate(offline_legs):
-            applyTrgBranch_name = f"{trg_name}_{leg_name}_ApplyTrgSF"
-            query = f"""{leg_name}_type == static_cast<int>(Leg::{leg_to_be}) && {leg_name}_index >= 0 && HLT_{trg_name} && {leg_name}_HasMatching_{trg_name}"""
-            print(f"query: {query}") 
-            df = df.Define(applyTrgBranch_name, f"""{query}""")
-            for mc_or_data in ["data", "mc"]:
-                eff = f"eff_{mc_or_data}_{leg_name}_{trg_name}"
-                df = df.Define(eff , f"""{applyTrgBranch_name} ? ::correction::TrigCorrProvider::getGlobal().getEff_singleEle({leg_name}_p4, "{TrigCorrProducer.year}", ::correction::TrigCorrProvider::UncSource::{central}, ::correction::UncScale::{central}, "{mc_or_data}")  : 1.f """)
-                df.Display(f"{eff}").Print()
-            SF_branches.append(eff)
-
+        trg_names = [t for t in trigger_names]
+        print(f"trigger_names: {trg_names}")
+        trg_names = ["singleEle","ditau"]
+        leg_to_be = {'singleEle': 'e',
+                     'singleMu': 'mu',
+                     'ditau': 'tau'}
+        wpstr ={"singleEle": "HLT_SF_Ele30_TightID",
+                "ditau": "Medium"}
+        for trg_name in trg_names:
+            for leg_idx, leg_name in enumerate(offline_legs):
+                applyTrgBranch_name = f"{trg_name}_{leg_name}_ApplyTrgSF"
+                query = f"""{leg_name}_type == static_cast<int>(Leg::{leg_to_be[trg_name]}) && {leg_name}_index >= 0 && HLT_{trg_name} && {leg_name}_HasMatching_{trg_name}"""
+                df = df.Define(applyTrgBranch_name, f"""{query}""")
+                for mc_or_data in ["data", "mc"]:
+                    eff = f"eff_{mc_or_data}_{leg_name}_{trg_name}"
+                    if trg_name == "ditau":
+                        df = df.Define(eff, f"""{applyTrgBranch_name} ? ::correction::TrigCorrProvider::getGlobal().getEff_ditau({leg_name}_p4, {leg_name}_decayMode,"{TrigCorrProducer.year}", "{trg_name}", "{wpstr[trg_name]}", ::correction::TrigCorrProvider::UncSource::{central}, ::correction::UncScale::{central}, "{mc_or_data}")  : 1.f """)
+                    else:
+                        df = df.Define(eff , f"""{applyTrgBranch_name} ? ::correction::TrigCorrProvider::getGlobal().getEff_{trg_name}({leg_name}_p4, "{TrigCorrProducer.year}", "{wpstr[trg_name]}", ::correction::TrigCorrProvider::UncSource::{central}, ::correction::UncScale::{central}, "{mc_or_data}")  : 1.f """)
+                SF_branches.append(eff)
 
 
         # for leg_idx, leg_name in enumerate(offline_legs):
