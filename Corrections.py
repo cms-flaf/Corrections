@@ -30,10 +30,10 @@ class Corrections:
     _global_instance = None
 
     @staticmethod
-    def initializeGlobal(config, sample_name=None, isData=False, load_corr_lib=True):
+    def initializeGlobal(config, sample_name=None, sample_type=None, isData=False, load_corr_lib=True):
         if Corrections._global_instance is not None:
             raise RuntimeError('Global instance is already initialized')
-        Corrections._global_instance = Corrections(config, isData, sample_name)
+        Corrections._global_instance = Corrections(config, isData, sample_name, sample_type)
         if load_corr_lib:
             returncode, output, err= ps_call(['correction', 'config', '--cflags', '--ldflags'],
                                             catch_stdout=True, decode=True, verbose=0)
@@ -56,16 +56,18 @@ class Corrections:
             raise RuntimeError('Global instance is not initialized')
         return Corrections._global_instance
 
-    def __init__(self, config, isData, sample_name):
+    def __init__(self, config, isData, sample_name,sample_type):
         self.isData = isData
         self.period = config['era']
         self.to_apply = config.get('corrections', [])
         self.config = config
         self.sample_name = sample_name
+        self.sample_type = sample_type
         self.MET_type = config['met_type']
         self.tagger_name = config['tagger_name']
         self.bjet_preselection_branch = config['bjet_preselection_branch']
 
+        self.Vpt_ = None
         self.tau_ = None
         self.met_ = None
         self.trg_ = None
@@ -83,6 +85,13 @@ class Corrections:
             from .pu import puWeightProducer
             self.pu_ = puWeightProducer(period=period_names[self.period])
         return self.pu_
+
+    @property
+    def Vpt(self):
+        if self.Vpt_ is None:
+            from .Vpt import VptCorrProducer
+            self.Vpt_ = VptCorrProducer(self.sample_type)
+        return self.Vpt_
 
     @property
     def tau(self):
@@ -272,6 +281,9 @@ class Corrections:
                 for scale in ['Up','Down']:
                     if syst_name == f'pu{scale}' and return_variations:
                         all_weights.append(weight_out_name)
+        if 'Vpt' in self.to_apply:
+            df, Vpt_SF_branches = self.Vpt.getSF(df,isCentral,return_variations)
+            all_weights.extend(Vpt_SF_branches)
         if 'tauID' in self.to_apply:
             df, tau_SF_branches = self.tau.getSF(df, lepton_legs, isCentral, return_variations)
             all_weights.extend(tau_SF_branches)
