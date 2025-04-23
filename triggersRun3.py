@@ -28,9 +28,10 @@ import yaml
 
 
 class TrigCorrProducer:
-    MuTRG_jsonPath = "/cvmfs/cms.cern.ch/rsync/cms-nanoAOD/jsonpog-integration/POG/MUO/{}/muon_Z.json.gz"
+    # MuTRG_jsonPath = "/cvmfs/cms.cern.ch/rsync/cms-nanoAOD/jsonpog-integration/POG/MUO/{}/muon_Z.json.gz"
     eTRG_jsonPath = "/cvmfs/cms.cern.ch/rsync/cms-nanoAOD/jsonpog-integration/POG/EGM/{}/electronHlt.json.gz"
     # TauTRG_jsonPath = "/cvmfs/cms.cern.ch/rsync/cms-nanoAOD/jsonpog-integration/POG/TAU/{}/tau.json.gz"
+    MuTRG_jsonPath = os.path.join(os.environ['ANALYSIS_PATH'], "Corrections/data/TRG/{}/MuHlt_abseta_pt_wEff.json")
     TauTRG_jsonPath = os.path.join(os.environ['ANALYSIS_PATH'], "Corrections/data/TRG/{}/tau_DeepTau2018v2p5_{}.json")
     muTauTRG_jsonPath = os.path.join(os.environ['ANALYSIS_PATH'], "Corrections/data/TRG/{}/CrossMuTauHlt_MuLeg_v1.json")
     eTauTRG_jsonPath = os.path.join(os.environ['ANALYSIS_PATH'], "Corrections/data/TRG/{}/CrossEleTauHlt_EleLeg_v1.json")
@@ -53,12 +54,12 @@ class TrigCorrProducer:
     
     year = ""
     def __init__(self, period, config):
-        jsonFile_Mu = os.path.join(os.environ['ANALYSIS_PATH'],TrigCorrProducer.MuTRG_jsonPath.format(period))
         jsonFile_e = os.path.join(os.environ['ANALYSIS_PATH'],TrigCorrProducer.eTRG_jsonPath.format(period))
         tau_filename_dict = {'2022_Summer22': '2022_preEE',
                             '2022_Summer22EE': '2022_postEE',
                             '2023_Summer23': '2023_preBPix',
                             '2023_Summer23BPix': '2023_postBPix'}
+        jsonFile_Mu = os.path.join(os.environ['ANALYSIS_PATH'],TrigCorrProducer.MuTRG_jsonPath.format(tau_filename_dict[period]))
         jsonFile_Tau = os.path.join(os.environ['ANALYSIS_PATH'],TrigCorrProducer.TauTRG_jsonPath.format(tau_filename_dict[period],tau_filename_dict[period]))  
         #jsonFile_Tau = os.path.join(os.environ['ANALYSIS_PATH'],TrigCorrProducer.TauTRG_jsonPath.format(period))  #uncomment this line when central path is available
         jsonFile_TauJet = os.path.join(os.environ['ANALYSIS_PATH'],TrigCorrProducer.TaujetTRG_jsonPath.format(tau_filename_dict[period]))  
@@ -157,8 +158,11 @@ class TrigCorrProducer:
                 "ditau": "Medium"}
         for trg_name in trg_names:
             for leg_idx, leg_name in enumerate(offline_legs):
+                # questo è probabilmente da cancellare perchè  HLT_{path} dovrebbero non essere definito nello step precedente
+                # quindi si dovrebbero calcolare le efficienze richiedendo la leg e il matching
                 applyTrgBranch_name = f"{trg_name}_{leg_name}_ApplyTrgSF"
                 query = f"""{leg_name}_type == static_cast<int>(Leg::{leg_to_be[trg_name]}) && {leg_name}_index >= 0 && HLT_{trg_name} && {leg_name}_HasMatching_{trg_name}"""
+                # query = f"""{leg_name}_type == static_cast<int>(Leg::{leg_to_be[trg_name]}) && {leg_name}_index >= 0 && {leg_name}_HasMatching_{trg_name}"""
                 df = df.Define(applyTrgBranch_name, f"""{query}""")
                 for mc_or_data in ["data", "mc"]:
                     eff = f"eff_{mc_or_data}_{leg_name}_{trg_name}"
