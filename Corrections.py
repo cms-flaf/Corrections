@@ -36,16 +36,22 @@ class Corrections:
         Corrections._global_instance = Corrections(config, isData, sample_name, sample_type)
         if load_corr_lib:
             returncode, output, err= ps_call(['correction', 'config', '--cflags', '--ldflags'],
-                                            catch_stdout=True, decode=True, verbose=0)
+                                            catch_stdout=True, decode=True, verbose=1)
             params = output.split(' ')
+            # print(params)
             for param in params:
                 if param.startswith('-I'):
+                    # print(param)
+                    # print(param[2:].strip())
+                    # ROOT.gInterpreter.AddIncludePath(os.environ['FLAF_ENVIRONMENT_PATH']+"/include")#param[2:].strip())
                     ROOT.gInterpreter.AddIncludePath(param[2:].strip())
                 elif param.startswith('-L'):
                     lib_path = param[2:].strip()
                 elif param.startswith('-l'):
                     lib_name = param[2:].strip()
+            # lib_path = os.environ['FLAF_ENVIRONMENT_PATH']+"/lib/python3.11/site-packages" #
             corr_lib = f"{lib_path}/lib{lib_name}.so"
+
             if not os.path.exists(corr_lib):
                 raise RuntimeError("Correction library is not found.")
             ROOT.gSystem.Load(corr_lib)
@@ -221,22 +227,23 @@ class Corrections:
         start = source_name.find('_')
         src_name = source_name[start + 1:]
 
-        if sampleType in [ 'DY', 'W' ] and global_params.get('use_stitching', True):
-            xs_stitching_name = samples[sample]['crossSectionStitch']
-            inclusive_sample_name = findRefSample(samples, sampleType)
-            xs_name = samples[inclusive_sample_name]['crossSection']
-            xs_stitching = xs_dict[xs_stitching_name]['crossSec']
-            xs_stitching_incl = xs_dict[samples[inclusive_sample_name]['crossSectionStitch']]['crossSec']
-            if sampleType == 'DY':
-                if generator == 'amcatnlo':
-                    stitch_str = 'if(LHE_Vpt==0.) return 1/2.f; return 1/3.f;'
-                elif generator == 'madgraph':
-                    stitch_str = '1/2.f'
-            elif sampleType == 'W':
-                if generator == 'madgraph':
-                    stitch_str= "if(LHE_Njets==0) return 1.f; if(LHE_HT < 70) return 1/2.f; return 1/3.f;"
-        else:
-            xs_name = samples[sample]['crossSection']
+        # if sampleType in [ 'DY', 'W' ] and global_params.get('use_stitching', True):
+        #     xs_stitching_name = samples[sample]['crossSectionStitch']
+        #     inclusive_sample_name = findRefSample(samples, sampleType)
+        #     xs_name = samples[inclusive_sample_name]['crossSection']
+        #     xs_stitching = xs_dict[xs_stitching_name]['crossSec']
+        #     xs_stitching_incl = xs_dict[samples[inclusive_sample_name]['crossSectionStitch']]['crossSec']
+        #     if sampleType == 'DY':
+        #         if generator == 'amcatnlo':
+        #             stitch_str = 'if(LHE_Vpt==0.) return 1/2.f; return 1/3.f;'
+        #         elif generator == 'madgraph':
+        #             stitch_str = '1/2.f'
+        #     elif sampleType == 'W':
+        #         if generator == 'madgraph':
+        #             stitch_str= "if(LHE_Njets==0) return 1.f; if(LHE_HT < 70) return 1/2.f; return 1/3.f;"
+        # else:
+        #     xs_name = samples[sample]['crossSection']
+        xs_name = samples[sample]['crossSection']
         df = df.Define("stitching_weight", stitch_str)
         xs_inclusive = xs_dict[xs_name]['crossSec']
 
