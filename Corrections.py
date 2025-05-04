@@ -36,13 +36,10 @@ class Corrections:
         Corrections._global_instance = Corrections(config, isData, sample_name, sample_type)
         if load_corr_lib:
             returncode, output, err= ps_call(['correction', 'config', '--cflags', '--ldflags'],
-                                            catch_stdout=True, decode=True, verbose=1)
+                                            catch_stdout=True, decode=True, verbose=0)
             params = output.split(' ')
-            # print(params)
             for param in params:
                 if param.startswith('-I'):
-                    # print(param)
-                    # print(param[2:].strip())
                     # ROOT.gInterpreter.AddIncludePath(os.environ['FLAF_ENVIRONMENT_PATH']+"/include")#param[2:].strip())
                     ROOT.gInterpreter.AddIncludePath(param[2:].strip())
                 elif param.startswith('-L'):
