@@ -30,7 +30,9 @@ class TrigCorrProducer:
     ele_trg_dict = {"2022_Summer22":"Electron-HLT-SF","2022_Summer22EE":"Electron-HLT-SF"}
     tau_trg_dict = {
         '2022_Summer22': 'tau_trigger',
-        '2022_Summer22EE': 'tau_trigger',}
+        '2022_Summer22EE': 'tau_trigger',
+        '2023_Summer23': 'tau_trigger',
+        '2023_Summer23BPix': 'tau_trigger'}
     year = ""
     def __init__(self, period, config):
         jsonFile_Mu = os.path.join(os.environ['ANALYSIS_PATH'],TrigCorrProducer.MuTRG_jsonPath.format(period))
