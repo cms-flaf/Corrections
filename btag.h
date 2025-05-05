@@ -55,7 +55,7 @@ public:
     bTagCorrProvider(const std::string& fileName, const std::string& efficiencyFileName, std::string const& tagger_name) 
     :   corrections_(CorrectionSet::from_file(fileName))
     // ,   tagger_incl_(corrections_->at(tagger_name + "_incl")) // keys *_incl are not available in 2022 json file
-    ,   tagger_comb_(corrections_->at(tagger_name + "_comb"))
+    // ,   tagger_comb_(corrections_->at(tagger_name + "_comb"))  // keys *_comb are not available in 2023 json file
     ,   tagger_wp_values_(corrections_->at(tagger_name + "_wp_values"))
     {
         if (efficiencyFileName.size() > 0)
