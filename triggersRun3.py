@@ -3,6 +3,7 @@ import ROOT
 from .CorrectionsCore import *
 from FLAF.Common.Utilities import *
 import yaml
+import re
 # Tau JSON POG integration for tau legs in eTau, muTau, diTau:
 # # https://gitlab.cern.ch/cms-nanoAOD/jsonpog-integration/-/tree/master/POG/TAU?ref_type=heads
 
@@ -66,6 +67,7 @@ class TrigCorrProducer:
         jsonFile_muTau = os.path.join(os.environ['ANALYSIS_PATH'],TrigCorrProducer.muTauTRG_jsonPath.format(tau_filename_dict[period]))  
         jsonFile_eTau = os.path.join(os.environ['ANALYSIS_PATH'],TrigCorrProducer.eTauTRG_jsonPath.format(tau_filename_dict[period]))  
         self.period = period
+
         print(f"jsonFile_Mu: {jsonFile_Mu}")
         print(f"jsonFile_e: {jsonFile_e}")
         print(f"jsonFile_Tau: {jsonFile_Tau}")
@@ -97,7 +99,7 @@ class TrigCorrProducer:
             ROOT.gInterpreter.ProcessLine(f"""::correction::TrigCorrProvider::Initialize("{jsonFile_Mu}","{jsonFile_e}", "{jsonFile_Tau}", "{jsonFile_TauJet}", "{jsonFile_eTau}", "{jsonFile_muTau}", "{self.muon_trg_dict[period]}","{self.ele_trg_dict['McEff'][period]}", "{self.tau_trg_dict[period]}","{period}")""")
             print("TriggCorrProducer initialized")
             TrigCorrProducer.initialized = True
-
+            
     def getSF(self, df, trigger_names, lepton_legs, return_variations, isCentral):
         SF_branches = []
         legs_to_be ={
@@ -145,32 +147,46 @@ class TrigCorrProducer:
                         SF_branches.append(f"{branch_name}")
         return df,SF_branches
     
-    def getEff(self, df, trigger_names, offline_legs, return_variations, isCentral):
+    def getEff(self, df, trigger_names, offline_legs, return_variations, isCentral, trigger_dict):
+        # print(trigger_dict)
         offline_legs =["tau1","tau2"]
         SF_branches = []
         trg_names = [t for t in trigger_names]
         print(f"trigger_names: {trg_names}")
-        trg_names = ["singleEle","ditau"]
+        trg_names = ["singleEle","ditau","singleMu"]
         leg_to_be = {'singleEle': 'e',
                      'singleMu': 'mu',
                      'ditau': 'tau'}
         wpstr ={"singleEle": "HLT_SF_Ele30_TightID",
                 "ditau": "Medium"}
         for trg_name in trg_names:
-            for leg_idx, leg_name in enumerate(offline_legs):
-                # questo è probabilmente da cancellare perchè  HLT_{path} dovrebbero non essere definito nello step precedente
-                # quindi si dovrebbero calcolare le efficienze richiedendo la leg e il matching
-                applyTrgBranch_name = f"{trg_name}_{leg_name}_ApplyTrgSF"
-                query = f"""{leg_name}_type == static_cast<int>(Leg::{leg_to_be[trg_name]}) && {leg_name}_index >= 0 && HLT_{trg_name} && {leg_name}_HasMatching_{trg_name}"""
-                # query = f"""{leg_name}_type == static_cast<int>(Leg::{leg_to_be[trg_name]}) && {leg_name}_index >= 0 && {leg_name}_HasMatching_{trg_name}"""
-                df = df.Define(applyTrgBranch_name, f"""{query}""")
-                for mc_or_data in ["data", "mc"]:
-                    eff = f"eff_{mc_or_data}_{leg_name}_{trg_name}"
-                    if trg_name == "ditau":
-                        df = df.Define(eff, f"""{applyTrgBranch_name} ? ::correction::TrigCorrProvider::getGlobal().getEff_ditau({leg_name}_p4, {leg_name}_decayMode,"{TrigCorrProducer.year}", "{trg_name}", "{wpstr[trg_name]}", ::correction::TrigCorrProvider::UncSource::{central}, ::correction::UncScale::{central}, "{mc_or_data}")  : 1.f """)
-                    else:
-                        df = df.Define(eff , f"""{applyTrgBranch_name} ? ::correction::TrigCorrProvider::getGlobal().getEff_{trg_name}({leg_name}_p4, "{TrigCorrProducer.year}", "{wpstr[trg_name]}", ::correction::TrigCorrProvider::UncSource::{central}, ::correction::UncScale::{central}, "{mc_or_data}")  : 1.f """)
-                SF_branches.append(eff)
+            trigger_legs = trigger_dict[trg_name]['legs']
+            print(f"trigger_legs: {trigger_legs}")
+            for trg_leg_idx, trg_leg in enumerate(trigger_legs):
+                legtype_query = re.search(r"{obj}_legType == Leg::\w+", trg_leg["offline_obj"]['cut'])
+                legtype_query = legtype_query.group(0) if legtype_query else ""
+                legtype_query = re.sub(r"(Leg::\w+)", r"static_cast<int>(\1)", legtype_query)
+                print(f"legtype_query: {legtype_query}")
+                for leg_idx, leg_name in enumerate(offline_legs):
+                    applyTrgBranch_name = f"{trg_name}_{leg_name}_ApplyTrgSF"
+                    query = legtype_query.format(obj=leg_name)
+                    query += f""" && {leg_name}_index >= 0 && HLT_{trg_name} && {leg_name}_HasMatching_{trg_name}"""
+                    df = df.Define(applyTrgBranch_name, f"""{query}""")
+                    print(f"central: {central}, trg_name: {trg_name}, leg_name: {leg_name}")
+                    for mc_or_data in ["data", "mc"]:
+                        eff = f"eff_{mc_or_data}_{leg_name}_{trg_name}_triggerleg{trg_leg_idx+1}"
+                        func_name = "getEff_"+trg_name
+                        if trg_name == "ditau":
+                            argmunts = f""" {leg_name}_p4, {leg_name}_decayMode,"{TrigCorrProducer.year}", "{trg_name}", "{wpstr[trg_name]}", ::correction::TrigCorrProvider::UncSource::{central}, ::correction::UncScale::{central}, "{mc_or_data}" """
+                        if trg_name == "singleMu":
+                            argmunts = f""" {leg_name}_p4,"{TrigCorrProducer.year}", ::correction::TrigCorrProvider::UncSource::{central}, ::correction::UncScale::{central}, "{mc_or_data}" """
+                        if trg_name == "singleEle":
+                            argmunts = f""" {leg_name}_p4, "{TrigCorrProducer.year}", "{wpstr[trg_name]}", ::correction::TrigCorrProvider::UncSource::{central}, ::correction::UncScale::{central}, "{mc_or_data}" """
+                        # if trg_name == "etau":
+                        # da aggiungere le efficiency per legs dei cross-triggers
+                        # caricare il trigger file yaml per avere un loop sulle offline legs del trigger
+                        df = df.Define(eff, f"""{applyTrgBranch_name} ? ::correction::TrigCorrProvider::getGlobal().{func_name}({argmunts})  : 1.f """)
+                        SF_branches.append(eff) 
 
 
         # for leg_idx, leg_name in enumerate(offline_legs):
