@@ -288,6 +288,8 @@ class Corrections:
         if 'Vpt' in self.to_apply:
             df, Vpt_SF_branches = self.Vpt.getSF(df,isCentral,return_variations)
             all_weights.extend(Vpt_SF_branches)
+            df, Vpt_DYw_branches = self.Vpt.getDYSF(df,isCentral,return_variations)
+            all_weights.extend(Vpt_DYw_branches)
         if 'tauID' in self.to_apply:
             df, tau_SF_branches = self.tau.getSF(df, lepton_legs, isCentral, return_variations)
             all_weights.extend(tau_SF_branches)
