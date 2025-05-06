@@ -26,7 +26,9 @@ class TrigCorrProducer:
     initialized = False
     SFSources = { 'singleIsoMu':['IsoMu24'],'singleEleWpTight':['singleEle'],
                 'singleMu':['IsoMu24'], 'singleEle':['singleEle'], 'ditau':['ditau_DM0', 'ditau_DM1', 'ditau_3Prong']}
-    muon_trg_dict = {"2022_Summer22":"NUM_IsoMu24_DEN_CutBasedIdTight_and_PFIsoTight","2022_Summer22EE":"NUM_IsoMu24_DEN_CutBasedIdTight_and_PFIsoTight"}
+    muon_trg_dict = {"2022_Summer22":"NUM_IsoMu24_DEN_CutBasedIdTight_and_PFIsoTight",
+                    "2022_Summer22EE":"NUM_IsoMu24_DEN_CutBasedIdTight_and_PFIsoTight"}
+                    #  "2022_Summer22EE":"NUM_IsoMu24_DEN_CutBasedIdMedium_and_PFIsoMedium"}
     ele_trg_dict = {"2022_Summer22":"Electron-HLT-SF","2022_Summer22EE":"Electron-HLT-SF"}
     tau_trg_dict = {
         '2022_Summer22': 'tau_trigger',

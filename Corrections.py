@@ -30,22 +30,25 @@ class Corrections:
     _global_instance = None
 
     @staticmethod
-    def initializeGlobal(config, sample_name=None, isData=False, load_corr_lib=True):
+    def initializeGlobal(config, sample_name=None, sample_type=None, isData=False, load_corr_lib=True):
         if Corrections._global_instance is not None:
             raise RuntimeError('Global instance is already initialized')
-        Corrections._global_instance = Corrections(config, isData, sample_name)
+        Corrections._global_instance = Corrections(config, isData, sample_name, sample_type)
         if load_corr_lib:
             returncode, output, err= ps_call(['correction', 'config', '--cflags', '--ldflags'],
                                             catch_stdout=True, decode=True, verbose=0)
             params = output.split(' ')
             for param in params:
                 if param.startswith('-I'):
+                    # ROOT.gInterpreter.AddIncludePath(os.environ['FLAF_ENVIRONMENT_PATH']+"/include")#param[2:].strip())
                     ROOT.gInterpreter.AddIncludePath(param[2:].strip())
                 elif param.startswith('-L'):
                     lib_path = param[2:].strip()
                 elif param.startswith('-l'):
                     lib_name = param[2:].strip()
+            # lib_path = os.environ['FLAF_ENVIRONMENT_PATH']+"/lib/python3.11/site-packages" #
             corr_lib = f"{lib_path}/lib{lib_name}.so"
+
             if not os.path.exists(corr_lib):
                 raise RuntimeError("Correction library is not found.")
             ROOT.gSystem.Load(corr_lib)
@@ -56,16 +59,18 @@ class Corrections:
             raise RuntimeError('Global instance is not initialized')
         return Corrections._global_instance
 
-    def __init__(self, config, isData, sample_name):
+    def __init__(self, config, isData, sample_name,sample_type):
         self.isData = isData
         self.period = config['era']
         self.to_apply = config.get('corrections', [])
         self.config = config
         self.sample_name = sample_name
+        self.sample_type = sample_type
         self.MET_type = config['met_type']
         self.tagger_name = config['tagger_name']
         self.bjet_preselection_branch = config['bjet_preselection_branch']
 
+        self.Vpt_ = None
         self.tau_ = None
         self.met_ = None
         self.trg_ = None
@@ -83,6 +88,13 @@ class Corrections:
             from .pu import puWeightProducer
             self.pu_ = puWeightProducer(period=period_names[self.period])
         return self.pu_
+
+    @property
+    def Vpt(self):
+        if self.Vpt_ is None:
+            from .Vpt import VptCorrProducer
+            self.Vpt_ = VptCorrProducer(self.sample_type)
+        return self.Vpt_
 
     @property
     def tau(self):
@@ -212,22 +224,23 @@ class Corrections:
         start = source_name.find('_')
         src_name = source_name[start + 1:]
 
-        if sampleType in [ 'DY', 'W' ] and global_params.get('use_stitching', True):
-            xs_stitching_name = samples[sample]['crossSectionStitch']
-            inclusive_sample_name = findRefSample(samples, sampleType)
-            xs_name = samples[inclusive_sample_name]['crossSection']
-            xs_stitching = xs_dict[xs_stitching_name]['crossSec']
-            xs_stitching_incl = xs_dict[samples[inclusive_sample_name]['crossSectionStitch']]['crossSec']
-            if sampleType == 'DY':
-                if generator == 'amcatnlo':
-                    stitch_str = 'if(LHE_Vpt==0.) return 1/2.f; return 1/3.f;'
-                elif generator == 'madgraph':
-                    stitch_str = '1/2.f'
-            elif sampleType == 'W':
-                if generator == 'madgraph':
-                    stitch_str= "if(LHE_Njets==0) return 1.f; if(LHE_HT < 70) return 1/2.f; return 1/3.f;"
-        else:
-            xs_name = samples[sample]['crossSection']
+        # if sampleType in [ 'DY', 'W' ] and global_params.get('use_stitching', True):
+        #     xs_stitching_name = samples[sample]['crossSectionStitch']
+        #     inclusive_sample_name = findRefSample(samples, sampleType)
+        #     xs_name = samples[inclusive_sample_name]['crossSection']
+        #     xs_stitching = xs_dict[xs_stitching_name]['crossSec']
+        #     xs_stitching_incl = xs_dict[samples[inclusive_sample_name]['crossSectionStitch']]['crossSec']
+        #     if sampleType == 'DY':
+        #         if generator == 'amcatnlo':
+        #             stitch_str = 'if(LHE_Vpt==0.) return 1/2.f; return 1/3.f;'
+        #         elif generator == 'madgraph':
+        #             stitch_str = '1/2.f'
+        #     elif sampleType == 'W':
+        #         if generator == 'madgraph':
+        #             stitch_str= "if(LHE_Njets==0) return 1.f; if(LHE_HT < 70) return 1/2.f; return 1/3.f;"
+        # else:
+        #     xs_name = samples[sample]['crossSection']
+        xs_name = samples[sample]['crossSection']
         df = df.Define("stitching_weight", stitch_str)
         xs_inclusive = xs_dict[xs_name]['crossSec']
 
@@ -272,6 +285,11 @@ class Corrections:
                 for scale in ['Up','Down']:
                     if syst_name == f'pu{scale}' and return_variations:
                         all_weights.append(weight_out_name)
+        if 'Vpt' in self.to_apply:
+            df, Vpt_SF_branches = self.Vpt.getSF(df,isCentral,return_variations)
+            all_weights.extend(Vpt_SF_branches)
+            df, Vpt_DYw_branches = self.Vpt.getDYSF(df,isCentral,return_variations)
+            all_weights.extend(Vpt_DYw_branches)
         if 'tauID' in self.to_apply:
             df, tau_SF_branches = self.tau.getSF(df, lepton_legs, isCentral, return_variations)
             all_weights.extend(tau_SF_branches)

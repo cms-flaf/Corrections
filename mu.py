@@ -19,13 +19,14 @@ class MuCorrProducer:
 
     ##### dictionaries containing ALL uncertainties ######
 
-    #### low pt ID (NO MORE NEEDED) ####
+    #### low pt ####
     lowPtMu_SF_Sources_dict = {
         # ID SF - with tracker muons - RECOMMENDED
         "NUM_TightID_DEN_TrackerMuons": "TightID",
+        "NUM_MediumID_DEN_TrackerMuons": "MediumID"
     }
 
-    #### high pt ID (NO MORE NEEDED) ####
+    #### high pt ####
     highPtMu_SF_Sources_dict = {
         # reco SF
         "NUM_GlobalMuons_DEN_TrackerMuonProbes":"Reco", # --> This is the recommended one for RECO!!
@@ -34,30 +35,36 @@ class MuCorrProducer:
         "NUM_HighPtID_DEN_GlobalMuonProbes": "HighPtID",
         # Iso SF
         "NUM_probe_TightRelTkIso_DEN_HighPtProbes": "HighPtIdRelTkIso",
+
     }
 
     ##### ID + trigger ####
     muID_SF_Sources_dict = {
         # reco SF
         "NUM_TrackerMuons_DEN_genTracks":"Reco", # --> This is the recommended one for RECO!!
-        # ID SF - with genTracks - NOT RECOMMENDED --> WE DO NOT USE THIS
-        "NUM_MediumPromptID_DEN_genTracks":"MediumID", # medium ID - NOT NEEDED NOW BECAUSE WE DON'T USE MEDIUM ID
-        "NUM_TightID_DEN_genTracks":"TightID", # tight ID
-        "NUM_HighPtID_DEN_genTracks": "HighPtID",# HighPtID
+
+        # # ID SF - with genTracks - NOT RECOMMENDED --> WE DO NOT USE THIS
+        # "NUM_MediumPromptID_DEN_genTracks":"MediumID", # medium ID
+        # "NUM_TightID_DEN_genTracks":"TightID", # tight ID
+        # "NUM_HighPtID_DEN_genTracks": "HighPtID",# HighPtID
 
         # ID SF - with tracker muons - RECOMMENDED
-        "NUM_MediumPromptID_DEN_TrackerMuons":"MediumID_Trk", # medium ID - NOT NEEDED NOW BECAUSE WE DON'T USE MEDIUM ID
+        # "NUM_MediumPromptID_DEN_TrackerMuons":"MediumID_Trk",
+        "NUM_MediumID_DEN_TrackerMuons": "MediumID_Trk", # medium ID
         "NUM_TightID_DEN_TrackerMuons":"TightID_Trk", # tight ID
         "NUM_HighPtID_DEN_TrackerMuons": "HighPtID_Trk",# HighPtID ID
 
         # Iso SF
-        "NUM_TightRelIso_DEN_MediumPromptID":"MediumRelIso", # medium ID, tight iso # NOT NEEDED NOW BECAUSE WE DON'T USE MEDIUM ID
+        "NUM_LoosePFIso_DEN_MediumID":"MediumIDLooseIso", # medium ID, loose  iso
+        "NUM_TightRelIso_DEN_MediumPromptID":"MediumRelIso", # medium ID, tight iso
         "NUM_TightRelIso_DEN_TightIDandIPCut":"TightRelIso", # tight ID, tight iso
         "NUM_TightRelTkIso_DEN_TrkHighPtIDandIPCut" :"HighPtIdRelTkIso",  # highPtID, tight tkRelIso
         "NUM_LoosePFIso_DEN_TightID":"LoosePFIso", # tight ID, tight PF Iso
 
+
         # Trigger
         "NUM_IsoMu24_DEN_CutBasedIdTight_and_PFIsoTight":"TightIso24", # trg --> FOR ALL PT RANGE!!
+        "NUM_IsoMu24_DEN_CutBasedIdMedium_and_PFIsoMedium":"MediumIso24", # trg for medium muons
         "NUM_IsoMu27_DEN_CutBasedIdTight_and_PFIsoTight":"TightIso27", # trg --> FOR ALL PT RANGE!!
         "NUM_Mu50_or_OldMu100_or_TkMu100_DEN_CutBasedIdGlobalHighPt_and_TkIsoLoose":"Mu50", # trg --> FOR ALL PT RANGE!!
         "NUM_Mu50_or_TkMu50_DEN_CutBasedIdGlobalHighPt_and_TkIsoLoose":"Mu50_tkMu50", # trg --> FOR ALL PT RANGE!!
@@ -67,7 +74,7 @@ class MuCorrProducer:
     #muID_SF_Sources = []
     ####### in these lists there are the uncertainties we will consider #######
 
-    # for muon ID --> we consider only sources related to TightID
+    # for muon ID --> we consider only sources related to TiID
     #muReco_SF_sources = ["NUM_TrackerMuons_DEN_genTracks"]
     #muID_SF_Sources = ["NUM_TightID_DEN_TrackerMuons"]
     #muIso_SF_Sources = ["NUM_TightRelIso_DEN_TightIDandIPCut"]
@@ -89,7 +96,7 @@ class MuCorrProducer:
         "2017_UL": ["NUM_TightID_DEN_TrackerMuons"],
         "2018_UL": ["NUM_TightID_DEN_TrackerMuons"],
         "2022_Summer22": ["NUM_TightID_DEN_TrackerMuons"],
-        "2022_Summer22EE": ["NUM_TightID_DEN_TrackerMuons"],
+        "2022_Summer22EE": ["NUM_TightID_DEN_TrackerMuons","NUM_MediumID_DEN_TrackerMuons"],
         "2023_Summer23": ["NUM_TightID_DEN_TrackerMuons"],
         "2023_Summer23BPix": ["NUM_TightID_DEN_TrackerMuons"],
         }
@@ -99,7 +106,7 @@ class MuCorrProducer:
         "2017_UL": ["NUM_TightRelIso_DEN_TightIDandIPCut"],
         "2018_UL": ["NUM_TightRelIso_DEN_TightIDandIPCut"],
         "2022_Summer22": ["NUM_LoosePFIso_DEN_TightID"],
-        "2022_Summer22EE": ["NUM_LoosePFIso_DEN_TightID"],
+        "2022_Summer22EE": ["NUM_LoosePFIso_DEN_TightID",  "NUM_LoosePFIso_DEN_MediumID"],
         "2023_Summer23": ["NUM_LoosePFIso_DEN_TightID"],
         "2023_Summer23BPix": ["NUM_LoosePFIso_DEN_TightID"],
         }
@@ -109,6 +116,11 @@ class MuCorrProducer:
     highPtmuID_SF_Sources = ["NUM_TightID_DEN_GlobalMuonProbes", "NUM_HighPtID_DEN_GlobalMuonProbes"]
     highPtmuIso_SF_Sources = ["NUM_probe_TightRelTkIso_DEN_HighPtProbes"] # not find the tightID with tight PF iso
 
+    # NUM_LoosePFIso_DEN_MediumID
+    # NUM_TightPFIso_DEN_MediumID
+    # NUM_LooseMiniIso_DEN_MediumID
+    # NUM_MediumMiniIso_DEN_MediumID
+    # NUM_TightMiniIso_DEN_MediumID
     # for low pt id
     lowPtmuReco_SF_sources = []
     lowPtmuID_SF_Sources = ["NUM_TightID_DEN_TrackerMuons"]
@@ -117,12 +129,12 @@ class MuCorrProducer:
 
     # trigger
     year_unc_dict= {
-        "2018_UL": ["NUM_IsoMu24_DEN_CutBasedIdTight_and_PFIsoTight"], #,"NUM_Mu50_or_OldMu100_or_TkMu100_DEN_CutBasedIdGlobalHighPt_and_TkIsoLoose"], # for HLT_mu50
-        "2017_UL": ["NUM_IsoMu27_DEN_CutBasedIdTight_and_PFIsoTight"], #, "NUM_Mu50_or_OldMu100_or_TkMu100_DEN_CutBasedIdGlobalHighPt_and_TkIsoLoose"], # for HLT_mu50
-        "2016preVFP_UL": ["NUM_IsoMu24_or_IsoTkMu24_DEN_CutBasedIdTight_and_PFIsoTight" ], #,"NUM_Mu50_or_TkMu50_DEN_CutBasedIdGlobalHighPt_and_TkIsoLoose"], # for HLT_mu50
-        "2016postVFP_UL":["NUM_IsoMu24_or_IsoTkMu24_DEN_CutBasedIdTight_and_PFIsoTight" ], #,"NUM_Mu50_or_TkMu50_DEN_CutBasedIdGlobalHighPt_and_TkIsoLoose"], # for HLT_mu50
+        "2018_UL": ["NUM_IsoMu24_DEN_CutBasedIdTight_and_PFIsoTight"],
+        "2017_UL": ["NUM_IsoMu27_DEN_CutBasedIdTight_and_PFIsoTight"],
+        "2016preVFP_UL": ["NUM_IsoMu24_or_IsoTkMu24_DEN_CutBasedIdTight_and_PFIsoTight" ],
+        "2016postVFP_UL":["NUM_IsoMu24_or_IsoTkMu24_DEN_CutBasedIdTight_and_PFIsoTight" ],
         "2022_Summer22": ["NUM_IsoMu24_DEN_CutBasedIdTight_and_PFIsoTight"],
-        "2022_Summer22EE": ["NUM_IsoMu24_DEN_CutBasedIdTight_and_PFIsoTight"],
+        "2022_Summer22EE": ["NUM_IsoMu24_DEN_CutBasedIdTight_and_PFIsoTight", "NUM_IsoMu24_DEN_CutBasedIdMedium_and_PFIsoMedium"],
         "2023_Summer23": ["NUM_IsoMu24_DEN_CutBasedIdTight_and_PFIsoTight"],
         "2023_Summer23BPix": ["NUM_IsoMu24_DEN_CutBasedIdTight_and_PFIsoTight"],
     }
@@ -163,9 +175,11 @@ class MuCorrProducer:
                     branch_name = f"weight_{leg_name}_MuonID_SF_{syst_name}"
                     branch_central = f"""weight_{leg_name}_MuonID_SF_{source_name+central}"""
                     genMatch_bool = f"(({leg_name}_gen_kind == 2) || ({leg_name}_gen_kind == 4))"
-
-                    df = df.Define(f"{branch_name}_double",f'''{leg_name}_type == static_cast<int>(Leg::mu) && {leg_name}_index >= 0 && ({genMatch_bool}) ? ::correction::MuCorrProvider::getGlobal().getMuonSF({leg_name}_p4, Muon_pfRelIso04_all.at({leg_name}_index), Muon_tightId.at({leg_name}_index),Muon_tkRelIso.at({leg_name}_index),Muon_highPtId.at({leg_name}_index),::correction::MuCorrProvider::UncSource::{source}, ::correction::UncScale::{scale}) : 1.''')
-
+                    genMatch_bool = f"(({leg_name}_gen_kind == 2) || ({leg_name}_gen_kind == 4))"
+                    if "medium" not in syst_name or "Medium" not in syst_name:
+                        df = df.Define(f"{branch_name}_double",f'''{leg_name}_type == static_cast<int>(Leg::mu) && {leg_name}_index >= 0 && ({genMatch_bool}) ? ::correction::MuCorrProvider::getGlobal().getMuonSF({leg_name}_p4, Muon_pfRelIso04_all.at({leg_name}_index), Muon_tightId.at({leg_name}_index),Muon_tkRelIso.at({leg_name}_index),Muon_highPtId.at({leg_name}_index),::correction::MuCorrProvider::UncSource::{source}, ::correction::UncScale::{scale}) : 1.''')
+                    else:
+                        df = df.Define(f"{branch_name}_double",f'''{leg_name}_type == static_cast<int>(Leg::mu)&& {leg_name}_index >= 0 && ({genMatch_bool}) ? ::correction::MuCorrProvider::getGlobal().getMuonSFMedium({leg_name}_p4, Muon_pfRelIso04_all.at({leg_name}_index),Muon_mediumId.at({leg_name}_index),::correction::LowPtMMuCorrProvideruCorrProvider::UncSource::{source}, ::correction::UncScale::{scale}) : 1.''')
 
                     #Change to this format
                     #df = df.Define(pair_name, vector<val1,val2>)
@@ -249,6 +263,7 @@ class MuCorrProducer:
                     genMatch_bool = f"(({leg_name}_gen_kind == 2) || ({leg_name}_gen_kind == 4))"
 
                     df = df.Define(f"{branch_name}_double",f'''{leg_name}_type == static_cast<int>(Leg::mu)&& {leg_name}_index >= 0 && ({genMatch_bool}) ? ::correction::LowPtMuCorrProvider::getGlobal().getLowPtMuonSF({leg_name}_p4, Muon_pfRelIso04_all.at({leg_name}_index), Muon_tightId.at({leg_name}_index), Muon_highPtId.at({leg_name}_index), Muon_tkRelIso.at({leg_name}_index),::correction::LowPtMuCorrProvider::UncSource::{source}, ::correction::UncScale::{scale}) : 1.''')
+
 
                     if scale != central:
                         branch_name_final = branch_name + '_rel'
