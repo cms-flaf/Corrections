@@ -29,18 +29,17 @@ import re
 
 
 class TrigCorrProducer:
-    # MuTRG_jsonPath = "/cvmfs/cms.cern.ch/rsync/cms-nanoAOD/jsonpog-integration/POG/MUO/{}/muon_Z.json.gz"
     eTRG_jsonPath = "/cvmfs/cms.cern.ch/rsync/cms-nanoAOD/jsonpog-integration/POG/EGM/{}/electronHlt.json.gz"
-    # TauTRG_jsonPath = "/cvmfs/cms.cern.ch/rsync/cms-nanoAOD/jsonpog-integration/POG/TAU/{}/tau.json.gz"
     MuTRG_jsonPath = os.path.join(os.environ['ANALYSIS_PATH'], "Corrections/data/TRG/{}/MuHlt_abseta_pt_wEff.json")
-    TauTRG_jsonPath = os.path.join(os.environ['ANALYSIS_PATH'], "Corrections/data/TRG/{}/tau_DeepTau2018v2p5_{}.json")
+    TauTRG_jsonPath = "/cvmfs/cms.cern.ch/rsync/cms-nanoAOD/jsonpog-integration/POG/TAU/{}/tau_DeepTau2018v2p5_{}.json.gz"
     muTauTRG_jsonPath = os.path.join(os.environ['ANALYSIS_PATH'], "Corrections/data/TRG/{}/CrossMuTauHlt_MuLeg_v1.json")
     eTauTRG_jsonPath = os.path.join(os.environ['ANALYSIS_PATH'], "Corrections/data/TRG/{}/CrossEleTauHlt_EleLeg_v1.json")
     TaujetTRG_jsonPath = os.path.join(os.environ['ANALYSIS_PATH'], "Corrections/data/TRG/{}/DiTauJetHlt_JetLeg_v1.json")
-    #"/cvmfs/cms.cern.ch/rsync/cms-nanoAOD/jsonpog-integration/POG/TAU/{}/tau.json.gz"
+
     initialized = False
     SFSources = { 'singleIsoMu':['IsoMu24'],'singleEleWpTight':['singleEle'],
                 'singleMu':['IsoMu24'], 'singleEle':['singleEle'], 'ditau':['ditau_DM0', 'ditau_DM1', 'ditau_3Prong']}
+    
     muon_trg_dict = {"2022_Summer22":"NUM_IsoMu24_DEN_CutBasedIdTight_and_PFIsoTight","2022_Summer22EE":"NUM_IsoMu24_DEN_CutBasedIdTight_and_PFIsoTight"}
     ele_trg_dict = {
         "SF" :{"2022_Summer22":"Electron-HLT-SF",
@@ -55,28 +54,18 @@ class TrigCorrProducer:
     
     year = ""
     def __init__(self, period, config):
-        jsonFile_e = os.path.join(os.environ['ANALYSIS_PATH'],TrigCorrProducer.eTRG_jsonPath.format(period))
         tau_filename_dict = {'2022_Summer22': '2022_preEE',
                             '2022_Summer22EE': '2022_postEE',
                             '2023_Summer23': '2023_preBPix',
                             '2023_Summer23BPix': '2023_postBPix'}
+        jsonFile_e = os.path.join(os.environ['ANALYSIS_PATH'],TrigCorrProducer.eTRG_jsonPath.format(period))
+        jsonFile_Tau = os.path.join(os.environ['ANALYSIS_PATH'],TrigCorrProducer.TauTRG_jsonPath.format(period,tau_filename_dict[period]))  
         jsonFile_Mu = os.path.join(os.environ['ANALYSIS_PATH'],TrigCorrProducer.MuTRG_jsonPath.format(tau_filename_dict[period]))
-        jsonFile_Tau = os.path.join(os.environ['ANALYSIS_PATH'],TrigCorrProducer.TauTRG_jsonPath.format(tau_filename_dict[period],tau_filename_dict[period]))  
-        #jsonFile_Tau = os.path.join(os.environ['ANALYSIS_PATH'],TrigCorrProducer.TauTRG_jsonPath.format(period))  #uncomment this line when central path is available
         jsonFile_TauJet = os.path.join(os.environ['ANALYSIS_PATH'],TrigCorrProducer.TaujetTRG_jsonPath.format(tau_filename_dict[period]))  
         jsonFile_muTau = os.path.join(os.environ['ANALYSIS_PATH'],TrigCorrProducer.muTauTRG_jsonPath.format(tau_filename_dict[period]))  
         jsonFile_eTau = os.path.join(os.environ['ANALYSIS_PATH'],TrigCorrProducer.eTauTRG_jsonPath.format(tau_filename_dict[period]))  
         self.period = period
-
-        print(f"jsonFile_Mu: {jsonFile_Mu}")
-        print(f"jsonFile_e: {jsonFile_e}")
-        print(f"jsonFile_Tau: {jsonFile_Tau}")
-        print(f"jsonFile_TauJet: {jsonFile_TauJet}")
-        print(f"jsonFile_muTau: {jsonFile_muTau}")
-        print(f"jsonFile_eTau: {jsonFile_eTau}")
-
-        # jsonFile_Tau = os.path.join(os.environ['ANALYSIS_PATH'],f"Corrections/data/TAU/{tau_filename_dict[period]}/tau_DeepTau2018v2p5_{tau_filename_dict[period]}.json")
-
+        self.config = config
 
         if not TrigCorrProducer.initialized:
             headers_dir = os.path.dirname(os.path.abspath(__file__))
@@ -148,54 +137,47 @@ class TrigCorrProducer:
         return df,SF_branches
     
     def getEff(self, df, trigger_names, offline_legs, return_variations, isCentral, trigger_dict):
-        # print(trigger_dict)
-        offline_legs =["tau1","tau2"]
+        # trigger_names = ["singleMu", "ditau", "mutau", "ditaujet"]
+        ch_trg = self.config.get('triggers', [])
+        tauwps = self.config.get('deepTauWPs', [])
+        VSjetWP = {}
+        for ch in ch_trg:
+            for trg in ch_trg[ch]:
+                if ch in tauwps.keys():
+                    VSjetWP[trg] = tauwps[ch]["VSjet"]
+                else:
+                    VSjetWP[trg] = "placeholder"
         SF_branches = []
-        trg_names = [t for t in trigger_names]
-        print(f"trigger_names: {trg_names}")
-        trg_names = ["singleEle","ditau","singleMu"]
-        leg_to_be = {'singleEle': 'e',
-                     'singleMu': 'mu',
-                     'ditau': 'tau'}
-        wpstr ={"singleEle": "HLT_SF_Ele30_TightID",
-                "ditau": "Medium"}
-        for trg_name in trg_names:
+        electron_input  ={
+                "singleEle": "HLT_SF_Ele30_TightID",
+                "ditau": "placeholder",
+                "singleMu":"placeholder",
+                "etau": "HLT_SF_Ele24_TightID",
+                "mutau":"placeholder",
+                "ditaujet":"placeder"
+                }
+        for trg_name in trigger_names:
             trigger_legs = trigger_dict[trg_name]['legs']
-            print(f"trigger_legs: {trigger_legs}")
+            # print(f"trigger_legs: {trigger_legs}")
             for trg_leg_idx, trg_leg in enumerate(trigger_legs):
                 legtype_query = re.search(r"{obj}_legType == Leg::\w+", trg_leg["offline_obj"]['cut'])
                 legtype_query = legtype_query.group(0) if legtype_query else ""
                 legtype_query = re.sub(r"(Leg::\w+)", r"static_cast<int>(\1)", legtype_query)
-                print(f"legtype_query: {legtype_query}")
+                # print(f"legtype_query: {legtype_query}")
                 for leg_idx, leg_name in enumerate(offline_legs):
-                    applyTrgBranch_name = f"{trg_name}_{leg_name}_ApplyTrgSF"
+                    applyTrgBranch_name = f"{trg_name}_{leg_name}_triggerleg{trg_leg_idx+1}_ApplyTrgSF"
                     query = legtype_query.format(obj=leg_name)
                     query += f""" && {leg_name}_index >= 0 && HLT_{trg_name} && {leg_name}_HasMatching_{trg_name}"""
                     df = df.Define(applyTrgBranch_name, f"""{query}""")
-                    print(f"central: {central}, trg_name: {trg_name}, leg_name: {leg_name}")
                     for mc_or_data in ["data", "mc"]:
                         eff = f"eff_{mc_or_data}_{leg_name}_{trg_name}_triggerleg{trg_leg_idx+1}"
                         func_name = "getEff_"+trg_name
-                        if trg_name == "ditau":
-                            argmunts = f""" {leg_name}_p4, {leg_name}_decayMode,"{TrigCorrProducer.year}", "{trg_name}", "{wpstr[trg_name]}", ::correction::TrigCorrProvider::UncSource::{central}, ::correction::UncScale::{central}, "{mc_or_data}" """
-                        if trg_name == "singleMu":
-                            argmunts = f""" {leg_name}_p4,"{TrigCorrProducer.year}", ::correction::TrigCorrProvider::UncSource::{central}, ::correction::UncScale::{central}, "{mc_or_data}" """
-                        if trg_name == "singleEle":
-                            argmunts = f""" {leg_name}_p4, "{TrigCorrProducer.year}", "{wpstr[trg_name]}", ::correction::TrigCorrProvider::UncSource::{central}, ::correction::UncScale::{central}, "{mc_or_data}" """
-                        # if trg_name == "etau":
-                        # da aggiungere le efficiency per legs dei cross-triggers
-                        # caricare il trigger file yaml per avere un loop sulle offline legs del trigger
-                        df = df.Define(eff, f"""{applyTrgBranch_name} ? ::correction::TrigCorrProvider::getGlobal().{func_name}({argmunts})  : 1.f """)
+                        if len(trigger_legs)>1: func_name += f"_leg{trg_leg_idx+1}"
+                        args = f""" {leg_name}_p4, {leg_name}_decayMode, "{TrigCorrProducer.year}", "{trg_name}", "{electron_input[trg_name]}", "{VSjetWP[trg_name]}", ::correction::TrigCorrProvider::UncSource::{central}, ::correction::UncScale::{central}, "{mc_or_data}" """
+                        df = df.Define(eff, f"""{applyTrgBranch_name} ? ::correction::TrigCorrProvider::getGlobal().{func_name}({args})  : 1.f """)
                         SF_branches.append(eff) 
 
 
-        # for leg_idx, leg_name in enumerate(offline_legs):
-        #     branch_name = f"{trg_name}_{leg_name}_MCEff_"
-        #     branch_central = f"weight_{leg_name}_MCEff_{trg_name}_{getSystName(central,central)}"
-        #     #the trigCorr dictionary below is due to different analysis having different trigger names for muon and electron.
-        #     df = df.Define(f"{branch_name}_double",
-        #                                 f'''{applyTrgBranch_name} ? ::correction::TrigCorrProvider::getGlobal().getSF_{trigCorr_dict[trg_name]}(
-        #                                 {leg_name}_p4,"{TrigCorrProducer.year}", ::correction::TrigCorrProvider::UncSource::{source}, ::correction::UncScale::{scale} ) : 1.f''')
             
 
 

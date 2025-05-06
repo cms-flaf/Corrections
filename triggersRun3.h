@@ -118,20 +118,20 @@ public:
         }
     }
 
-    float getEff_singleEle(const LorentzVectorM & part_p4, std::string year, std::string Working_Point, UncSource source, UncScale scale,  std::string datatype) const {
+    float getEff_singleEle(const LorentzVectorM & part_p4, const int & part_decayMode, std::string year, std::string trg_name, std::string ele_input, std::string Working_Point, UncSource source, UncScale scale,  std::string datatype) const {
         float eff = 1;
         const std::string& scale_str = getEleEffScaleStr(scale);
         if (datatype == "data") {
-            eff = eleTrgCorrections_Data.at(getUncSourceName(source))->evaluate({year, scale_str, Working_Point, part_p4.Eta(), part_p4.Pt()});
+            eff = eleTrgCorrections_Data.at(getUncSourceName(source))->evaluate({year, scale_str, ele_input, part_p4.Eta(), part_p4.Pt()});
         } else if (datatype == "mc") {
-            eff = eleTrgCorrections_Mc.at(getUncSourceName(source))->evaluate({year, scale_str, Working_Point, part_p4.Eta(), part_p4.Pt()});
+            eff = eleTrgCorrections_Mc.at(getUncSourceName(source))->evaluate({year, scale_str, ele_input, part_p4.Eta(), part_p4.Pt()});
         } else {
             throw std::runtime_error("Unknown datatype");
         }
         return eff ;
     }
 
-    float getEff_ditau(const LorentzVectorM & part_p4, const int & part_decayMode, std::string year, std::string trg_name, std::string Working_Point, UncSource source, UncScale scale,  std::string datatype) const {
+    float getEff_ditau(const LorentzVectorM & part_p4, const int & part_decayMode, std::string year, std::string trg_name, std::string ele_input, std::string Working_Point, UncSource source, UncScale scale,  std::string datatype) const {
         float eff = 1;
         const std::string& scale_str = getDiTauScaleStr(scale);
         if (datatype == "data") {
@@ -144,7 +144,7 @@ public:
         return eff ;
     }
     
-    float getEff_singleMu(const LorentzVectorM & part_p4, std::string year, UncSource source, UncScale scale,  std::string datatype) const {
+    float getEff_singleMu(const LorentzVectorM & part_p4, const int & part_decayMode, std::string year, std::string trg_name, std::string ele_input, std::string Working_Point, UncSource source, UncScale scale,  std::string datatype) const {
         float eff = 1;
         const std::string& scale_str = getMuScaleStr(scale);
         if (datatype == "data") {
@@ -156,6 +156,87 @@ public:
         }
         return eff ;
     }
+    
+    float getEff_etau_leg1(const LorentzVectorM & part_p4, const int & part_decayMode, std::string year, std::string trg_name, std::string ele_input, std::string Working_Point, UncSource source, UncScale scale,  std::string datatype) const {
+        float eff = 1;
+        const std::string& scale_str = getEleEffScaleStr(scale);
+        Working_Point = "HLT_SF_Ele24_TightID";
+        if (datatype == "data") {
+            eff = etau_trgCorrections_Data.at(getUncSourceName(source))->evaluate({year, scale_str, ele_input, part_p4.Eta(), part_p4.Pt()});
+        } else if (datatype == "mc") {
+            eff = etau_trgCorrections_Mc.at(getUncSourceName(source))->evaluate({year, scale_str, ele_input, part_p4.Eta(), part_p4.Pt()});
+        } else {
+            throw std::runtime_error("Unknown datatype");
+        }
+        return eff ;
+    }
+
+    float getEff_etau_leg2(const LorentzVectorM & part_p4, const int & part_decayMode, std::string year, std::string trg_name, std::string ele_input, std::string Working_Point, UncSource source, UncScale scale,  std::string datatype) const {
+        float eff = 1;
+        const std::string& scale_str = getDiTauScaleStr(scale);
+        if (datatype == "data") {
+            eff = tauTrgCorrections.at(getUncSourceName(source))->evaluate({part_p4.Pt(), part_decayMode, trg_name, Working_Point, "eff_data", scale_str});
+        } else if (datatype == "mc") {
+            eff = tauTrgCorrections.at(getUncSourceName(source))->evaluate({part_p4.Pt(), part_decayMode, trg_name, Working_Point, "eff_mc", scale_str});
+        } else {
+            throw std::runtime_error("Unknown datatype");
+        }
+        return eff ;
+    }
+
+    float getEff_mutau_leg1(const LorentzVectorM & part_p4, const int & part_decayMode, std::string year, std::string trg_name, std::string ele_input, std::string Working_Point, UncSource source, UncScale scale,  std::string datatype) const {
+        float eff = 1;
+        const std::string& scale_str = getMuScaleStr(scale);
+        if (datatype == "data") {
+            eff = mutau_trgCorrections_Data.at(getUncSourceName(source))->evaluate({abs(part_p4.Eta()), part_p4.Pt(), scale_str});
+        } else if (datatype == "mc") {
+            eff = mutau_trgCorrections_Mc.at(getUncSourceName(source))->evaluate({abs(part_p4.Eta()), part_p4.Pt(), scale_str});
+        } else {
+            throw std::runtime_error("Unknown datatype");
+        }
+        return eff ;
+    }
+
+    float getEff_mutau_leg2(const LorentzVectorM & part_p4, const int & part_decayMode, std::string year, std::string trg_name, std::string ele_input, std::string Working_Point, UncSource source, UncScale scale,  std::string datatype) const {
+        float eff = 1;
+        const std::string& scale_str = getDiTauScaleStr(scale);
+        if (datatype == "data") {
+            eff = tauTrgCorrections.at(getUncSourceName(source))->evaluate({part_p4.Pt(), part_decayMode, trg_name, Working_Point, "eff_data", scale_str});
+        } else if (datatype == "mc") {
+            eff = tauTrgCorrections.at(getUncSourceName(source))->evaluate({part_p4.Pt(), part_decayMode, trg_name, Working_Point, "eff_mc", scale_str});
+        } else {
+            throw std::runtime_error("Unknown datatype");
+        }
+        return eff ;
+    }
+    
+    float getEff_ditaujet_leg1(const LorentzVectorM & part_p4, const int & part_decayMode, std::string year, std::string trg_name, std::string ele_input, std::string Working_Point, UncSource source, UncScale scale,  std::string datatype) const {
+        float eff = 1;
+        const std::string& scale_str = getDiTauScaleStr(scale);
+        if (datatype == "data") {
+            eff = ditauJet_trgCorrections.at(getUncSourceName(source))->evaluate({part_p4.Pt(), abs(part_p4.Eta()), scale_str, "data"});
+        } else if (datatype == "mc") {
+            eff = ditauJet_trgCorrections.at(getUncSourceName(source))->evaluate({part_p4.Pt(), abs(part_p4.Eta()), scale_str, "mc"});
+        } else {
+            throw std::runtime_error("Unknown datatype");
+        }
+        return eff ;
+    }
+
+    float getEff_ditaujet_leg2(const LorentzVectorM & part_p4, const int & part_decayMode, std::string year, std::string trg_name, std::string ele_input, std::string Working_Point, UncSource source, UncScale scale,  std::string datatype) const {
+        float eff = 1;
+        const std::string& scale_str = getDiTauScaleStr(scale);
+        if (datatype == "data") {
+            eff = tauTrgCorrections.at(getUncSourceName(source))->evaluate({part_p4.Pt(), part_decayMode, trg_name, Working_Point, "eff_data", scale_str});
+        } else if (datatype == "mc") {
+            eff = tauTrgCorrections.at(getUncSourceName(source))->evaluate({part_p4.Pt(), part_decayMode, trg_name, Working_Point, "eff_mc", scale_str});
+        } else {
+            throw std::runtime_error("Unknown datatype");
+        }
+        return eff ;
+    }
+
+
 
     float getSF_singleEleWpTight(const LorentzVectorM & part_p4, std::string year, UncSource source, UncScale scale) const {
         float corr_SF = 1;

@@ -179,7 +179,7 @@ class Corrections:
         return df, syst_dict
 
     # scale_name for getBTagShapeSF is contained in syst_name
-    def getNormalisationCorrections(self, df, global_params, samples, sample, lepton_legs, trigger_names, trigger_class, syst_name, source_name,
+    def getNormalisationCorrections(self, df, global_params, samples, sample, lepton_legs, offline_legs, trigger_names, trigger_class, syst_name, source_name,
                                     ana_cache=None, return_variations=True, isCentral=True):
         lumi = global_params['luminosity']
         sampleType = samples[sample]['sampleType']
@@ -301,7 +301,7 @@ class Corrections:
             all_weights.extend(bTagWP_SF_branches)
         if 'trg' in self.to_apply:
             # df, trg_SF_branches = self.trg.getSF(df, trigger_names, lepton_legs, isCentral and return_variations, isCentral)
-            df, trg_SF_branches = self.trg.getEff(df, trigger_names, lepton_legs, isCentral and return_variations, isCentral, trigger_dict)
+            df, trg_SF_branches = self.trg.getEff(df, trigger_names, offline_legs, isCentral and return_variations, isCentral, trigger_dict)
             all_weights.extend(trg_SF_branches)
         return df, all_weights
 
