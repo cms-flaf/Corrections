@@ -89,7 +89,7 @@ public:
         //     }
         // }
         
-        TrigCorrProvider(const std::string& muon_trg_file, const std::string& ele_trg_file, const std::string& tau_trg_file, const std::string& ditauJet_trg_file, const std::string& etau_trg_file, const std::string& mutau_trg_file, const std::string& muon_trg_key, const std::string& ele_trg_key, const std::string& tau_trg_key,  const std::string& era) :
+        TrigCorrProvider(const std::string& muon_trg_file, const std::string& ele_trg_file, const std::string& tau_trg_file, const std::string& ditauJet_trg_file, const std::string& etau_trg_file, const std::string& mutau_trg_file, const std::string& muon_trg_key_mc, const std::string& muon_trg_key_data, const std::string& mutau_trg_key_mc, const std::string& mutau_trg_key_data,  const std::string& ele_trg_key_mc, const std::string& ele_trg_key_data, const std::string& tau_trg_key, const std::string& jet_trg_key, const std::string& era) :
         // TrigCorrProvider(const std::string& muon_trg_file, const std::string& ele_trg_file, const std::string& muon_trg_key, const std::string& ele_trg_key, const std::string& era) :
         mutrgcorrections_(CorrectionSet::from_file(muon_trg_file)),
         etrgcorrections_(CorrectionSet::from_file(ele_trg_file)),
@@ -100,19 +100,20 @@ public:
         {
             if (era == "2022_Summer22"){// || era == "2022_Summer22EE" || era == "2023_Summer23" || era == "2023_Summer23BPix"){
                 // muTrgCorrections["Central"]=mutrgcorrections_->at(muon_trg_key);
-            muTrgCorrections["Central"]=mutrgcorrections_->at(muon_trg_key);
-            muTrgCorrections_Mc["Central"]=mutrgcorrections_->at("NUM_IsoMu24_DEN_CutBasedIdTight_and_PFIsoTight_MCeff");
-            muTrgCorrections_Data["Central"]=mutrgcorrections_->at("NUM_IsoMu24_DEN_CutBasedIdTight_and_PFIsoTight_DATAeff");
-            eleTrgCorrections["Central"]=etrgcorrections_->at(ele_trg_key);
+            // muTrgCorrections["Central"]=mutrgcorrections_->at(muon_trg_key);
+            muTrgCorrections_Mc["Central"]=mutrgcorrections_->at(muon_trg_key_mc);
+            muTrgCorrections_Data["Central"]=mutrgcorrections_->at(muon_trg_key_data);
+            // muTrgCorrections_Mc["Central"]=mutrgcorrections_->at("NUM_IsoMu24_DEN_CutBasedIdTight_and_PFIsoTight_MCeff");
+            // muTrgCorrections_Data["Central"]=mutrgcorrections_->at("NUM_IsoMu24_DEN_CutBasedIdTight_and_PFIsoTight_DATAeff");
+            // eleTrgCorrections["Central"]=etrgcorrections_->at(ele_trg_key);
             tauTrgCorrections["Central"]=tautrgcorrections_->at(tau_trg_key);
-            eleTrgCorrections_Mc["Central"]=etrgcorrections_->at("Electron-HLT-McEff");
-            eleTrgCorrections_Data["Central"]=etrgcorrections_->at("Electron-HLT-DataEff");
-            tauTrgCorrections["Central"]=tautrgcorrections_->at("tau_trigger");
-            ditauJet_trgCorrections["Central"]=ditauJet_trgcorrections_->at("jetlegSFs");
-            etau_trgCorrections_Mc["Central"]=etau_trgcorrections_->at("Electron-HLT-McEff");
-            etau_trgCorrections_Data["Central"]=etau_trgcorrections_->at("Electron-HLT-DataEff");
-            mutau_trgCorrections_Mc["Central"]=mutau_trgcorrections_->at("NUM_IsoMu20_DEN_CutBasedIdTight_and_PFIsoTight_MCeff");
-            mutau_trgCorrections_Data["Central"]=mutau_trgcorrections_->at("NUM_IsoMu20_DEN_CutBasedIdTight_and_PFIsoTight_DATAeff");
+            eleTrgCorrections_Mc["Central"]=etrgcorrections_->at(ele_trg_key_mc);
+            eleTrgCorrections_Data["Central"]=etrgcorrections_->at(ele_trg_key_data);
+            ditauJet_trgCorrections["Central"]=ditauJet_trgcorrections_->at(jet_trg_key);
+            etau_trgCorrections_Mc["Central"]=etau_trgcorrections_->at(ele_trg_key_mc);
+            etau_trgCorrections_Data["Central"]=etau_trgcorrections_->at(ele_trg_key_data);
+            mutau_trgCorrections_Mc["Central"]=mutau_trgcorrections_->at(mutau_trg_key_mc);
+            mutau_trgCorrections_Data["Central"]=mutau_trgcorrections_->at(mutau_trg_key_mc);
         } else {
            throw std::runtime_error("Era not supported");
         }

@@ -30,10 +30,10 @@ class Corrections:
     _global_instance = None
 
     @staticmethod
-    def initializeGlobal(config, sample_name=None, isData=False, load_corr_lib=True):
+    def initializeGlobal(config, sample_name=None, isData=False, load_corr_lib=True, trigger_class=None):
         if Corrections._global_instance is not None:
             raise RuntimeError('Global instance is already initialized')
-        Corrections._global_instance = Corrections(config, isData, sample_name)
+        Corrections._global_instance = Corrections(config, isData, sample_name, trigger_class)
         if load_corr_lib:
             returncode, output, err= ps_call(['correction', 'config', '--cflags', '--ldflags'],
                                             catch_stdout=True, decode=True, verbose=0)
@@ -56,7 +56,7 @@ class Corrections:
             raise RuntimeError('Global instance is not initialized')
         return Corrections._global_instance
 
-    def __init__(self, config, isData, sample_name):
+    def __init__(self, config, isData, sample_name, trigger_class):
         self.isData = isData
         self.period = config['era']
         self.to_apply = config.get('corrections', [])
@@ -65,6 +65,7 @@ class Corrections:
         self.MET_type = config['met_type']
         self.tagger_name = config['tagger_name']
         self.bjet_preselection_branch = config['bjet_preselection_branch']
+        self.trigger_dict = trigger_class.trigger_dict
 
         self.tau_ = None
         self.met_ = None
@@ -148,7 +149,7 @@ class Corrections:
                 from .triggersRun3 import TrigCorrProducer
             else:
                 from .triggers import TrigCorrProducer
-            self.trg_ = TrigCorrProducer(period_names[self.period], self.config)
+            self.trg_ = TrigCorrProducer(period_names[self.period], self.config, self.trigger_dict)
         return self.trg_
 
     def applyScaleUncertainties(self, df, ana_reco_objects):
@@ -179,7 +180,7 @@ class Corrections:
         return df, syst_dict
 
     # scale_name for getBTagShapeSF is contained in syst_name
-    def getNormalisationCorrections(self, df, global_params, samples, sample, lepton_legs, offline_legs, trigger_names, trigger_class, syst_name, source_name,
+    def getNormalisationCorrections(self, df, global_params, samples, sample, lepton_legs, offline_legs, trigger_names, syst_name, source_name,
                                     ana_cache=None, return_variations=True, isCentral=True):
         lumi = global_params['luminosity']
         sampleType = samples[sample]['sampleType']
@@ -193,7 +194,6 @@ class Corrections:
         xs_inclusive = 1.
         stitch_str = '1.f'
 
-        trigger_dict = trigger_class.trigger_dict
 
         scale_name = None
         # syst name is only needed to determine scale (only it contains up/down/cetnral)
@@ -301,7 +301,7 @@ class Corrections:
             all_weights.extend(bTagWP_SF_branches)
         if 'trg' in self.to_apply:
             # df, trg_SF_branches = self.trg.getSF(df, trigger_names, lepton_legs, isCentral and return_variations, isCentral)
-            df, trg_SF_branches = self.trg.getEff(df, trigger_names, offline_legs, isCentral and return_variations, isCentral, trigger_dict)
+            df, trg_SF_branches = self.trg.getEff(df, trigger_names, offline_legs, isCentral and return_variations, isCentral, self.trigger_dict)
             all_weights.extend(trg_SF_branches)
         return df, all_weights
 
