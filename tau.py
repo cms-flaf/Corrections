@@ -49,7 +49,8 @@ class TauCorrProducer:
         if self.deepTauVersion=='DeepTau2018v2p5':
             #tau_DeepTau2018v2p5_2018_UL_101123 #Run3: tau_DeepTau2018v2p5_2022_preEE.json
             if period.startswith('Run3'):
-                jsonFile_rel = f"Corrections/data/TAU/{period_in_tau_file_name[period]}/tau_DeepTau2018v2p5_{period_in_tau_file_name[period]}.json"
+                jsonFile_rel = f"/cvmfs/cms.cern.ch/rsync/cms-nanoAOD/jsonpog-integration/POG/TAU/{period_names[period]}/tau_DeepTau2018v2p5_{period_in_tau_file_name[period]}.json.gz"
+                # jsonFile_rel = f"Corrections/data/TAU/{period_in_tau_file_name[period]}/tau_DeepTau2018v2p5_{period_in_tau_file_name[period]}.json"
             else:
                 jsonFile_rel = f"Corrections/data/TAU/{period_in_tau_file_name[period]}/tau_DeepTau2018v2p5_{period_in_tau_file_name[period]}_101123.json"
             jsonFile = os.path.join(os.environ['ANALYSIS_PATH'],jsonFile_rel)
