@@ -98,7 +98,7 @@ public:
         etau_trgcorrections_(CorrectionSet::from_file(etau_trg_file)),
         mutau_trgcorrections_(CorrectionSet::from_file(mutau_trg_file))
         {
-            if (era == "2022_Summer22"){// || era == "2022_Summer22EE" || era == "2023_Summer23" || era == "2023_Summer23BPix"){
+            if (era == "2022_Summer22" || era == "2022_Summer22EE"){// || era == "2023_Summer23" || era == "2023_Summer23BPix"){
                 // muTrgCorrections["Central"]=mutrgcorrections_->at(muon_trg_key);
             // muTrgCorrections["Central"]=mutrgcorrections_->at(muon_trg_key);
             muTrgCorrections_Mc["Central"]=mutrgcorrections_->at(muon_trg_key_mc);
