@@ -113,7 +113,7 @@ public:
             etau_trgCorrections_Mc["Central"]=etau_trgcorrections_->at(ele_trg_key_mc);
             etau_trgCorrections_Data["Central"]=etau_trgcorrections_->at(ele_trg_key_data);
             mutau_trgCorrections_Mc["Central"]=mutau_trgcorrections_->at(mutau_trg_key_mc);
-            mutau_trgCorrections_Data["Central"]=mutau_trgcorrections_->at(mutau_trg_key_mc);
+            mutau_trgCorrections_Data["Central"]=mutau_trgcorrections_->at(mutau_trg_key_data);
         } else {
            throw std::runtime_error("Era not supported");
         }
