@@ -15,6 +15,24 @@ public:
         ditau_DM1 = 3,
         ditau_3Prong = 4,
     };
+    static const std::string& getDiTauScaleStr(UncScale scale)
+    {
+        static const std::map<UncScale, std::string> diTau_names = {
+            { UncScale::Down, "down" },
+            { UncScale::Central, "nom" },
+            { UncScale::Up, "up" },
+        };
+        return diTau_names.at(scale);
+    }
+    static const std::string& getEleEffScaleStr(UncScale scale)
+    {
+        static const std::map<UncScale, std::string> ele_names = {
+            { UncScale::Down, "down" },
+            { UncScale::Central, "nom" },
+            { UncScale::Up, "up" },
+        };
+        return ele_names.at(scale);
+    }
     static const std::string& getMuScaleStr(UncScale scale)
     {
         static const std::map<UncScale, std::string> mu_names = {
@@ -56,20 +74,170 @@ public:
         return twoProngDMs.count(dm);
     }
 
-    TrigCorrProvider(const std::string& muon_trg_file, const std::string& ele_trg_file, const std::string& tau_trg_file, const std::string& muon_trg_key, const std::string& ele_trg_key, const std::string& tau_trg_key, const std::string& era) :
-    // TrigCorrProvider(const std::string& muon_trg_file, const std::string& ele_trg_file, const std::string& muon_trg_key, const std::string& ele_trg_key, const std::string& era) :
+    // TrigCorrProvider(const std::string& muon_trg_file, const std::string& ele_trg_file, const std::string& tau_trg_file, const std::string& muon_trg_key, const std::string& ele_trg_key, const std::string& tau_trg_key, const std::string& era) :
+    // // TrigCorrProvider(const std::string& muon_trg_file, const std::string& ele_trg_file, const std::string& muon_trg_key, const std::string& ele_trg_key, const std::string& era) :
+    //     mutrgcorrections_(CorrectionSet::from_file(muon_trg_file)),
+    //     etrgcorrections_(CorrectionSet::from_file(ele_trg_file)),
+    //     tautrgcorrections_(CorrectionSet::from_file(tau_trg_file))
+    // {
+        //     if (era == "2022_Summer22" || era == "2022_Summer22EE" || era == "2023_Summer23" || era == "2023_Summer23BPix"){
+            //         muTrgCorrections["Central"]=mutrgcorrections_->at(muon_trg_key);
+            //         eleTrgCorrections["Central"]=etrgcorrections_->at(ele_trg_key);
+    //         tauTrgCorrections["Central"]=tautrgcorrections_->at(tau_trg_key);
+    //     } else {
+        //        throw std::runtime_error("Era not supported");
+        //     }
+        // }
+        
+        TrigCorrProvider(const std::string& muon_trg_file, const std::string& ele_trg_file, const std::string& tau_trg_file, const std::string& ditauJet_trg_file, const std::string& etau_trg_file, const std::string& mutau_trg_file, const std::string& muon_trg_key_mc, const std::string& muon_trg_key_data, const std::string& mutau_trg_key_mc, const std::string& mutau_trg_key_data,  const std::string& ele_trg_key_mc, const std::string& ele_trg_key_data, const std::string& tau_trg_key, const std::string& jet_trg_key, const std::string& era) :
+        // TrigCorrProvider(const std::string& muon_trg_file, const std::string& ele_trg_file, const std::string& muon_trg_key, const std::string& ele_trg_key, const std::string& era) :
         mutrgcorrections_(CorrectionSet::from_file(muon_trg_file)),
         etrgcorrections_(CorrectionSet::from_file(ele_trg_file)),
-        tautrgcorrections_(CorrectionSet::from_file(tau_trg_file))
-    {
-        if (era == "2022_Summer22" || era == "2022_Summer22EE" || era == "2023_Summer23" || era == "2023_Summer23BPix"){
-            muTrgCorrections["Central"]=mutrgcorrections_->at(muon_trg_key);
-            eleTrgCorrections["Central"]=etrgcorrections_->at(ele_trg_key);
+        tautrgcorrections_(CorrectionSet::from_file(tau_trg_file)),
+        ditauJet_trgcorrections_(CorrectionSet::from_file(ditauJet_trg_file)),
+        etau_trgcorrections_(CorrectionSet::from_file(etau_trg_file)),
+        mutau_trgcorrections_(CorrectionSet::from_file(mutau_trg_file))
+        {
+            if (era == "2022_Summer22" || era == "2022_Summer22EE"){// || era == "2023_Summer23" || era == "2023_Summer23BPix"){
+                // muTrgCorrections["Central"]=mutrgcorrections_->at(muon_trg_key);
+            // muTrgCorrections["Central"]=mutrgcorrections_->at(muon_trg_key);
+            muTrgCorrections_Mc["Central"]=mutrgcorrections_->at(muon_trg_key_mc);
+            muTrgCorrections_Data["Central"]=mutrgcorrections_->at(muon_trg_key_data);
+            // muTrgCorrections_Mc["Central"]=mutrgcorrections_->at("NUM_IsoMu24_DEN_CutBasedIdTight_and_PFIsoTight_MCeff");
+            // muTrgCorrections_Data["Central"]=mutrgcorrections_->at("NUM_IsoMu24_DEN_CutBasedIdTight_and_PFIsoTight_DATAeff");
+            // eleTrgCorrections["Central"]=etrgcorrections_->at(ele_trg_key);
             tauTrgCorrections["Central"]=tautrgcorrections_->at(tau_trg_key);
+            eleTrgCorrections_Mc["Central"]=etrgcorrections_->at(ele_trg_key_mc);
+            eleTrgCorrections_Data["Central"]=etrgcorrections_->at(ele_trg_key_data);
+            ditauJet_trgCorrections["Central"]=ditauJet_trgcorrections_->at(jet_trg_key);
+            etau_trgCorrections_Mc["Central"]=etau_trgcorrections_->at(ele_trg_key_mc);
+            etau_trgCorrections_Data["Central"]=etau_trgcorrections_->at(ele_trg_key_data);
+            mutau_trgCorrections_Mc["Central"]=mutau_trgcorrections_->at(mutau_trg_key_mc);
+            mutau_trgCorrections_Data["Central"]=mutau_trgcorrections_->at(mutau_trg_key_data);
         } else {
            throw std::runtime_error("Era not supported");
         }
     }
+
+    float getEff_singleEle(const LorentzVectorM & part_p4, const int & part_decayMode, std::string year, std::string trg_name, std::string ele_input, std::string Working_Point, UncSource source, UncScale scale,  std::string datatype) const {
+        float eff = 1;
+        const std::string& scale_str = getEleEffScaleStr(scale);
+        if (datatype == "data") {
+            eff = eleTrgCorrections_Data.at(getUncSourceName(source))->evaluate({year, scale_str, ele_input, part_p4.Eta(), part_p4.Pt()});
+        } else if (datatype == "mc") {
+            eff = eleTrgCorrections_Mc.at(getUncSourceName(source))->evaluate({year, scale_str, ele_input, part_p4.Eta(), part_p4.Pt()});
+        } else {
+            throw std::runtime_error("Unknown datatype");
+        }
+        return eff ;
+    }
+
+    float getEff_ditau(const LorentzVectorM & part_p4, const int & part_decayMode, std::string year, std::string trg_name, std::string ele_input, std::string Working_Point, UncSource source, UncScale scale,  std::string datatype) const {
+        float eff = 1;
+        const std::string& scale_str = getDiTauScaleStr(scale);
+        if (datatype == "data") {
+            eff = tauTrgCorrections.at(getUncSourceName(source))->evaluate({part_p4.Pt(), part_decayMode, trg_name, Working_Point, "eff_data", scale_str});
+        } else if (datatype == "mc") {
+            eff = tauTrgCorrections.at(getUncSourceName(source))->evaluate({part_p4.Pt(), part_decayMode, trg_name, Working_Point, "eff_mc", scale_str});
+        } else {
+            throw std::runtime_error("Unknown datatype");
+        }
+        return eff ;
+    }
+    
+    float getEff_singleMu(const LorentzVectorM & part_p4, const int & part_decayMode, std::string year, std::string trg_name, std::string ele_input, std::string Working_Point, UncSource source, UncScale scale,  std::string datatype) const {
+        float eff = 1;
+        const std::string& scale_str = getMuScaleStr(scale);
+        if (datatype == "data") {
+            eff = muTrgCorrections_Data.at(getUncSourceName(source))->evaluate({abs(part_p4.Eta()), part_p4.Pt(), scale_str});
+        } else if (datatype == "mc") {
+            eff = muTrgCorrections_Mc.at(getUncSourceName(source))->evaluate({abs(part_p4.Eta()), part_p4.Pt(), scale_str});
+        } else {
+            throw std::runtime_error("Unknown datatype");
+        }
+        return eff ;
+    }
+    
+    float getEff_etau_leg_e(const LorentzVectorM & part_p4, const int & part_decayMode, std::string year, std::string trg_name, std::string ele_input, std::string Working_Point, UncSource source, UncScale scale,  std::string datatype) const {
+        float eff = 1;
+        const std::string& scale_str = getEleEffScaleStr(scale);
+        Working_Point = "HLT_SF_Ele24_TightID";
+        if (datatype == "data") {
+            eff = etau_trgCorrections_Data.at(getUncSourceName(source))->evaluate({year, scale_str, ele_input, part_p4.Eta(), part_p4.Pt()});
+        } else if (datatype == "mc") {
+            eff = etau_trgCorrections_Mc.at(getUncSourceName(source))->evaluate({year, scale_str, ele_input, part_p4.Eta(), part_p4.Pt()});
+        } else {
+            throw std::runtime_error("Unknown datatype");
+        }
+        return eff ;
+    }
+
+    float getEff_etau_leg_tau(const LorentzVectorM & part_p4, const int & part_decayMode, std::string year, std::string trg_name, std::string ele_input, std::string Working_Point, UncSource source, UncScale scale,  std::string datatype) const {
+        float eff = 1;
+        const std::string& scale_str = getDiTauScaleStr(scale);
+        if (datatype == "data") {
+            eff = tauTrgCorrections.at(getUncSourceName(source))->evaluate({part_p4.Pt(), part_decayMode, trg_name, Working_Point, "eff_data", scale_str});
+        } else if (datatype == "mc") {
+            eff = tauTrgCorrections.at(getUncSourceName(source))->evaluate({part_p4.Pt(), part_decayMode, trg_name, Working_Point, "eff_mc", scale_str});
+        } else {
+            throw std::runtime_error("Unknown datatype");
+        }
+        return eff ;
+    }
+
+    float getEff_mutau_leg_mu(const LorentzVectorM & part_p4, const int & part_decayMode, std::string year, std::string trg_name, std::string ele_input, std::string Working_Point, UncSource source, UncScale scale,  std::string datatype) const {
+        float eff = 1;
+        const std::string& scale_str = getMuScaleStr(scale);
+        if (datatype == "data") {
+            eff = mutau_trgCorrections_Data.at(getUncSourceName(source))->evaluate({abs(part_p4.Eta()), part_p4.Pt(), scale_str});
+        } else if (datatype == "mc") {
+            eff = mutau_trgCorrections_Mc.at(getUncSourceName(source))->evaluate({abs(part_p4.Eta()), part_p4.Pt(), scale_str});
+        } else {
+            throw std::runtime_error("Unknown datatype");
+        }
+        return eff ;
+    }
+
+    float getEff_mutau_leg_tau(const LorentzVectorM & part_p4, const int & part_decayMode, std::string year, std::string trg_name, std::string ele_input, std::string Working_Point, UncSource source, UncScale scale,  std::string datatype) const {
+        float eff = 1;
+        const std::string& scale_str = getDiTauScaleStr(scale);
+        if (datatype == "data") {
+            eff = tauTrgCorrections.at(getUncSourceName(source))->evaluate({part_p4.Pt(), part_decayMode, trg_name, Working_Point, "eff_data", scale_str});
+        } else if (datatype == "mc") {
+            eff = tauTrgCorrections.at(getUncSourceName(source))->evaluate({part_p4.Pt(), part_decayMode, trg_name, Working_Point, "eff_mc", scale_str});
+        } else {
+            throw std::runtime_error("Unknown datatype");
+        }
+        return eff ;
+    }
+    
+    float getEff_ditaujet_leg_jet(const LorentzVectorM & part_p4, const int & part_decayMode, std::string year, std::string trg_name, std::string ele_input, std::string Working_Point, UncSource source, UncScale scale,  std::string datatype) const {
+        float eff = 1;
+        const std::string& scale_str = getDiTauScaleStr(scale);
+        if (datatype == "data") {
+            eff = ditauJet_trgCorrections.at(getUncSourceName(source))->evaluate({part_p4.Pt(), abs(part_p4.Eta()), scale_str, "data"});
+        } else if (datatype == "mc") {
+            eff = ditauJet_trgCorrections.at(getUncSourceName(source))->evaluate({part_p4.Pt(), abs(part_p4.Eta()), scale_str, "mc"});
+        } else {
+            throw std::runtime_error("Unknown datatype");
+        }
+        return eff ;
+    }
+
+    float getEff_ditaujet_leg_tau(const LorentzVectorM & part_p4, const int & part_decayMode, std::string year, std::string trg_name, std::string ele_input, std::string Working_Point, UncSource source, UncScale scale,  std::string datatype) const {
+        float eff = 1;
+        const std::string& scale_str = getDiTauScaleStr(scale);
+        if (datatype == "data") {
+            eff = tauTrgCorrections.at(getUncSourceName(source))->evaluate({part_p4.Pt(), part_decayMode, trg_name, Working_Point, "eff_data", scale_str});
+        } else if (datatype == "mc") {
+            eff = tauTrgCorrections.at(getUncSourceName(source))->evaluate({part_p4.Pt(), part_decayMode, trg_name, Working_Point, "eff_mc", scale_str});
+        } else {
+            throw std::runtime_error("Unknown datatype");
+        }
+        return eff ;
+    }
+
+
 
     float getSF_singleEleWpTight(const LorentzVectorM & part_p4, std::string year, UncSource source, UncScale scale) const {
         float corr_SF = 1;
@@ -105,8 +273,8 @@ private:
     }
 
 private:
-    std::unique_ptr<CorrectionSet> mutrgcorrections_, etrgcorrections_, tautrgcorrections_ ;
-    std::map<std::string, Correction::Ref> muTrgCorrections, eleTrgCorrections, tauTrgCorrections;
+    std::unique_ptr<CorrectionSet> mutrgcorrections_, etrgcorrections_, tautrgcorrections_, ditauJet_trgcorrections_, etau_trgcorrections_, mutau_trgcorrections_;
+    std::map<std::string, Correction::Ref> muTrgCorrections, eleTrgCorrections, eleTrgCorrections_Mc, eleTrgCorrections_Data, tauTrgCorrections, ditauJet_trgCorrections, etau_trgCorrections_Mc, etau_trgCorrections_Data, mutau_trgCorrections_Mc, mutau_trgCorrections_Data, muTrgCorrections_Mc,    muTrgCorrections_Data;
     const std::string period_;
 } ;
 
