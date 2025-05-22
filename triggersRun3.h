@@ -158,7 +158,7 @@ public:
         return eff ;
     }
     
-    float getEff_etau_leg1(const LorentzVectorM & part_p4, const int & part_decayMode, std::string year, std::string trg_name, std::string ele_input, std::string Working_Point, UncSource source, UncScale scale,  std::string datatype) const {
+    float getEff_etau_leg_e(const LorentzVectorM & part_p4, const int & part_decayMode, std::string year, std::string trg_name, std::string ele_input, std::string Working_Point, UncSource source, UncScale scale,  std::string datatype) const {
         float eff = 1;
         const std::string& scale_str = getEleEffScaleStr(scale);
         Working_Point = "HLT_SF_Ele24_TightID";
@@ -172,7 +172,7 @@ public:
         return eff ;
     }
 
-    float getEff_etau_leg2(const LorentzVectorM & part_p4, const int & part_decayMode, std::string year, std::string trg_name, std::string ele_input, std::string Working_Point, UncSource source, UncScale scale,  std::string datatype) const {
+    float getEff_etau_leg_tau(const LorentzVectorM & part_p4, const int & part_decayMode, std::string year, std::string trg_name, std::string ele_input, std::string Working_Point, UncSource source, UncScale scale,  std::string datatype) const {
         float eff = 1;
         const std::string& scale_str = getDiTauScaleStr(scale);
         if (datatype == "data") {
@@ -185,7 +185,7 @@ public:
         return eff ;
     }
 
-    float getEff_mutau_leg1(const LorentzVectorM & part_p4, const int & part_decayMode, std::string year, std::string trg_name, std::string ele_input, std::string Working_Point, UncSource source, UncScale scale,  std::string datatype) const {
+    float getEff_mutau_leg_mu(const LorentzVectorM & part_p4, const int & part_decayMode, std::string year, std::string trg_name, std::string ele_input, std::string Working_Point, UncSource source, UncScale scale,  std::string datatype) const {
         float eff = 1;
         const std::string& scale_str = getMuScaleStr(scale);
         if (datatype == "data") {
@@ -198,7 +198,7 @@ public:
         return eff ;
     }
 
-    float getEff_mutau_leg2(const LorentzVectorM & part_p4, const int & part_decayMode, std::string year, std::string trg_name, std::string ele_input, std::string Working_Point, UncSource source, UncScale scale,  std::string datatype) const {
+    float getEff_mutau_leg_tau(const LorentzVectorM & part_p4, const int & part_decayMode, std::string year, std::string trg_name, std::string ele_input, std::string Working_Point, UncSource source, UncScale scale,  std::string datatype) const {
         float eff = 1;
         const std::string& scale_str = getDiTauScaleStr(scale);
         if (datatype == "data") {
@@ -211,7 +211,7 @@ public:
         return eff ;
     }
     
-    float getEff_ditaujet_leg1(const LorentzVectorM & part_p4, const int & part_decayMode, std::string year, std::string trg_name, std::string ele_input, std::string Working_Point, UncSource source, UncScale scale,  std::string datatype) const {
+    float getEff_ditaujet_leg_jet(const LorentzVectorM & part_p4, const int & part_decayMode, std::string year, std::string trg_name, std::string ele_input, std::string Working_Point, UncSource source, UncScale scale,  std::string datatype) const {
         float eff = 1;
         const std::string& scale_str = getDiTauScaleStr(scale);
         if (datatype == "data") {
@@ -224,7 +224,7 @@ public:
         return eff ;
     }
 
-    float getEff_ditaujet_leg2(const LorentzVectorM & part_p4, const int & part_decayMode, std::string year, std::string trg_name, std::string ele_input, std::string Working_Point, UncSource source, UncScale scale,  std::string datatype) const {
+    float getEff_ditaujet_leg_tau(const LorentzVectorM & part_p4, const int & part_decayMode, std::string year, std::string trg_name, std::string ele_input, std::string Working_Point, UncSource source, UncScale scale,  std::string datatype) const {
         float eff = 1;
         const std::string& scale_str = getDiTauScaleStr(scale);
         if (datatype == "data") {

@@ -65,8 +65,8 @@ class Corrections:
         self.MET_type = config['met_type']
         self.tagger_name = config['tagger_name']
         self.bjet_preselection_branch = config['bjet_preselection_branch']
-        if (not trigger_class==None) : self.trigger_dict = trigger_class.trigger_dict
-
+        self.trigger_dict = trigger_class.trigger_dict if trigger_class else {}
+        
         self.tau_ = None
         self.met_ = None
         self.trg_ = None
@@ -300,7 +300,6 @@ class Corrections:
             df, bTagWP_SF_branches = self.btag.getBTagWPSF(df, isCentral and return_variations, isCentral)
             all_weights.extend(bTagWP_SF_branches)
         if 'trg' in self.to_apply:
-            # df, trg_SF_branches = self.trg.getSF(df, trigger_names, lepton_legs, isCentral and return_variations, isCentral)
             df, trg_SF_branches = self.trg.getEff(df, trigger_names, offline_legs, self.trigger_dict)
             all_weights.extend(trg_SF_branches)
         return df, all_weights
