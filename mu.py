@@ -164,7 +164,7 @@ class MuCorrProducer:
                     branch_central = f"""weight_{leg_name}_MuonID_SF_{source_name+central}"""
                     genMatch_bool = f"(({leg_name}_gen_kind == 2) || ({leg_name}_gen_kind == 4))"
 
-                    df = df.Define(f"{branch_name}_double",f'''{leg_name}_legType == static_cast<int>(Leg::mu) && {leg_name}_index >= 0 && ({genMatch_bool}) ? ::correction::MuCorrProvider::getGlobal().getMuonSF({leg_name}_p4, Muon_pfRelIso04_all.at({leg_name}_index), Muon_tightId.at({leg_name}_index),Muon_tkRelIso.at({leg_name}_index),Muon_highPtId.at({leg_name}_index),::correction::MuCorrProvider::UncSource::{source}, ::correction::UncScale::{scale}) : 1.''')
+                    df = df.Define(f"{branch_name}_double",f'''{leg_name}_legType == Leg::mu && {leg_name}_index >= 0 && ({genMatch_bool}) ? ::correction::MuCorrProvider::getGlobal().getMuonSF({leg_name}_p4, Muon_pfRelIso04_all.at({leg_name}_index), Muon_tightId.at({leg_name}_index),Muon_tkRelIso.at({leg_name}_index),Muon_highPtId.at({leg_name}_index),::correction::MuCorrProvider::UncSource::{source}, ::correction::UncScale::{scale}) : 1.''')
 
 
                     #Change to this format
@@ -205,7 +205,7 @@ class MuCorrProducer:
                     branch_central = f"""weight_{leg_name}_HighPt_MuonID_SF_{source_name+central}"""
                     genMatch_bool = f"(({leg_name}_gen_kind == 2) || ({leg_name}_gen_kind == 4))"
 
-                    df = df.Define(f"{branch_name}_double",f'''{leg_name}_legType == static_cast<int>(Leg::mu) && {leg_name}_index >= 0 && ({genMatch_bool}) ? ::correction::HighPtMuCorrProvider::getGlobal().getHighPtMuonSF({leg_name}_p4, Muon_pfRelIso04_all.at({leg_name}_index), Muon_tightId.at({leg_name}_index), Muon_highPtId.at({leg_name}_index), Muon_tkRelIso.at({leg_name}_index),::correction::HighPtMuCorrProvider::UncSource::{source}, ::correction::UncScale::{scale}) : 1.''')
+                    df = df.Define(f"{branch_name}_double",f'''{leg_name}_legType == Leg::mu && {leg_name}_index >= 0 && ({genMatch_bool}) ? ::correction::HighPtMuCorrProvider::getGlobal().getHighPtMuonSF({leg_name}_p4, Muon_pfRelIso04_all.at({leg_name}_index), Muon_tightId.at({leg_name}_index), Muon_highPtId.at({leg_name}_index), Muon_tkRelIso.at({leg_name}_index),::correction::HighPtMuCorrProvider::UncSource::{source}, ::correction::UncScale::{scale}) : 1.''')
 
                     #df.Display({f"""{branch_name}_double"""}).Print()
                     #if source in MuCorrProducer.muReco_SF_sources:
@@ -247,7 +247,7 @@ class MuCorrProducer:
 
                     genMatch_bool = f"(({leg_name}_gen_kind == 2) || ({leg_name}_gen_kind == 4))"
 
-                    df = df.Define(f"{branch_name}_double",f'''{leg_name}_legType == static_cast<int>(Leg::mu)&& {leg_name}_index >= 0 && ({genMatch_bool}) ? ::correction::LowPtMuCorrProvider::getGlobal().getLowPtMuonSF({leg_name}_p4, Muon_pfRelIso04_all.at({leg_name}_index), Muon_tightId.at({leg_name}_index), Muon_highPtId.at({leg_name}_index), Muon_tkRelIso.at({leg_name}_index),::correction::LowPtMuCorrProvider::UncSource::{source}, ::correction::UncScale::{scale}) : 1.''')
+                    df = df.Define(f"{branch_name}_double",f'''{leg_name}_legType == Leg::mu && {leg_name}_index >= 0 && ({genMatch_bool}) ? ::correction::LowPtMuCorrProvider::getGlobal().getLowPtMuonSF({leg_name}_p4, Muon_pfRelIso04_all.at({leg_name}_index), Muon_tightId.at({leg_name}_index), Muon_highPtId.at({leg_name}_index), Muon_tkRelIso.at({leg_name}_index),::correction::LowPtMuCorrProvider::UncSource::{source}, ::correction::UncScale::{scale}) : 1.''')
 
                     if scale != central:
                         branch_name_final = branch_name + '_rel'

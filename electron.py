@@ -71,7 +71,7 @@ class EleCorrProducer:
                         #print(branch_name)
                         #print(branch_central)
                         df = df.Define(f"{branch_name}_double",
-                                    f'''({leg_name}_legType == static_cast<int>(Leg::e) && {leg_name}_pt >= 10 &&  {leg_name}_index >= 0 && (({leg_name}_gen_kind == 1) || ({leg_name}_gen_kind == 3)))  ? ::correction::EleCorrProvider::getGlobal().getID_SF(
+                                    f'''({leg_name}_legType == Leg::e && {leg_name}_pt >= 10 &&  {leg_name}_index >= 0 && (({leg_name}_gen_kind == 1) || ({leg_name}_gen_kind == 3)))  ? ::correction::EleCorrProvider::getGlobal().getID_SF(
                                 {leg_name}_p4, "{working_point}",
                                 "{EleCorrProducer.year}",::correction::EleCorrProvider::UncSource::{source}, ::correction::UncScale::{scale}) : 1.;''')
                         

@@ -72,7 +72,7 @@ class TrigCorrProducer:
             for leg_idx, leg_name in enumerate(lepton_legs):
                 applyTrgBranch_name = f"{trg_name}_{leg_name}_ApplyTrgSF"
                 leg_to_be = legs_to_be[trg_name][leg_idx]
-                df = df.Define(applyTrgBranch_name, f"""{leg_name}_legType == static_cast<int>(Leg::{leg_to_be}) && {leg_name}_index >= 0 && HLT_{trg_name} && {leg_name}_HasMatching_{trg_name}""")
+                df = df.Define(applyTrgBranch_name, f"""{leg_name}_legType == Leg::{leg_to_be} && {leg_name}_index >= 0 && HLT_{trg_name} && {leg_name}_HasMatching_{trg_name}""")
                 for source in [ central ] + sf_sources:
                     for scale in getScales(source):
                         if source == central and scale != central: continue
