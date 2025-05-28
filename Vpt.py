@@ -106,29 +106,12 @@ class VptCorrProducer:
                 branch_SF_name = f"weight_EWKCorr_{syst_name}"
                 branch_name_central = f"weight_EWKCorr_{source}Central"
                 if self.sampleType == "W" or self.sampleType == "DY":
-                    df = df.Define(f"{branch_SF_name}_double",
+                    df = df.Define(f"{branch_SF_name}_double_sc",
                                     f'''::correction::VptCorrProvider::getGlobal().getSF_fromRootFile(
                                         LHE_Vpt, ::correction::VptCorrProvider::UncSource::{source}, ::correction::UncScale::{scale} )''')
-                # if self.sampleType == "DY":
-                #     order = "NLO"
-                #     print(f"weightCorrLib_map_{scale}")
-                #     df = df.Define(f"weightCorrLib_map_{scale}",
-                #                     f'''::correction::VptCorrProvider::getGlobal().getDY_weight(LHE_Vpt, "{order}",
-                #                     ::correction::VptCorrProvider::UncSource::{source}, ::correction::UncScale::{scale} )''')
-                #     print(df.Count().GetValue())
-                #     for scale_def in scale_defs[order][scale]:
-                #         print(scale_def)
-                #         if scale_def != "nom":
-                #             branch_SF_name += f"weight_DYReweight__{scale_def}"
-                #         df = df.Define(f"{branch_SF_name}_weightCorrLib_double", f"""weightCorrLib_map_{scale}.at("{scale_def}")""")
-
-                # else:
-                #     for scale_def in scale_defs[order][scale]:
-                #         if scale_def != "nom":
-                #             branch_SF_name += f"_{scale_def}"
-                #         df = df.Define(f"{branch_SF_name}_weightCorrLib_double", f"1.f")
-
-                # to fix because there are ultiple scales
+                    df = df.Define(f"{branch_SF_name}_double", f"1+{branch_SF_name}_double_sc")
+                else:
+                    df = df.Define(f"{branch_SF_name}_double", f"1.f")
                 if scale != central:
                     branch_name_final = branch_SF_name + '_rel'
                     df = df.Define(branch_name_final, f"static_cast<float>({branch_SF_name}_double/{branch_name_central})")
