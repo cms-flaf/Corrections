@@ -150,11 +150,9 @@ class TrigCorrProducer:
                 legtype_value = None
                 match = re.search(r"Leg::(\w+)", legtype_query.group(0)) if legtype_query else None
                 legtype_value = match.group(1) if match else None
-                legtype_query = legtype_query.group(0) if legtype_query else ""
-                legtype_query = re.sub(r"(Leg::\w+)", r"static_cast<int>(\1)", legtype_query)
                 for leg_idx, leg_name in enumerate(offline_legs):
                     applyTrgBranch_name = f"{trg_name}_{leg_name}_triggerleg{trg_leg_idx+1}_ApplyTrgSF"
-                    query = legtype_query.format(obj=leg_name)
+                    query = trg_leg["offline_obj"]['cut'].format(obj=leg_name)
                     query += f""" && {leg_name}_index >= 0 && HLT_{trg_name} && {leg_name}_HasMatching_{trg_name}"""
                     df = df.Define(applyTrgBranch_name, f"""{query}""")
                     for scale in getScales(None):
