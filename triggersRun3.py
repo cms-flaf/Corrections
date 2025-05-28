@@ -159,7 +159,7 @@ class TrigCorrProducer:
                     df = df.Define(applyTrgBranch_name, f"""{query}""")
                     for scale in getScales(None):
                         for mc_or_data in ["data", "mc"]:
-                            eff = f"eff_{mc_or_data}_{leg_name}_{trg_name}_triggerleg{trg_leg_idx+1}_{scale}"
+                            eff = f"eff_{mc_or_data}_{leg_name}_{trg_name}_triggerleg_{legtype_value}_{scale}"
                             func_name = "getEff_"+trg_name
                             # if len(trigger_legs)>1: func_name += f"_leg{trg_leg_idx+1}"
                             if len(trigger_legs)>1 and legtype_value!=None: func_name += f"_leg_{legtype_value}"
