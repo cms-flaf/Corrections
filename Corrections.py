@@ -59,7 +59,7 @@ class Corrections:
             raise RuntimeError('Global instance is not initialized')
         return Corrections._global_instance
 
-    def __init__(self, config, isData, sample_name, trigger_class):
+    def __init__(self, config, isData, sample_name, sample_type, trigger_class):
         self.isData = isData
         self.period = config['era']
         self.to_apply = config.get('corrections', [])
