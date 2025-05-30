@@ -101,19 +101,25 @@ public:
             if (era == "2022_Summer22" || era == "2022_Summer22EE"){// || era == "2023_Summer23" || era == "2023_Summer23BPix"){
                 // muTrgCorrections["Central"]=mutrgcorrections_->at(muon_trg_key);
             // muTrgCorrections["Central"]=mutrgcorrections_->at(muon_trg_key);
-            muTrgCorrections_Mc["Central"]=mutrgcorrections_->at(muon_trg_key_mc);
-            muTrgCorrections_Data["Central"]=mutrgcorrections_->at(muon_trg_key_data);
-            // muTrgCorrections_Mc["Central"]=mutrgcorrections_->at("NUM_IsoMu24_DEN_CutBasedIdTight_and_PFIsoTight_MCeff");
-            // muTrgCorrections_Data["Central"]=mutrgcorrections_->at("NUM_IsoMu24_DEN_CutBasedIdTight_and_PFIsoTight_DATAeff");
-            // eleTrgCorrections["Central"]=etrgcorrections_->at(ele_trg_key);
-            tauTrgCorrections["Central"]=tautrgcorrections_->at(tau_trg_key);
-            eleTrgCorrections_Mc["Central"]=etrgcorrections_->at(ele_trg_key_mc);
-            eleTrgCorrections_Data["Central"]=etrgcorrections_->at(ele_trg_key_data);
-            ditauJet_trgCorrections["Central"]=ditauJet_trgcorrections_->at(jet_trg_key);
-            etau_trgCorrections_Mc["Central"]=etau_trgcorrections_->at(ele_trg_key_mc);
-            etau_trgCorrections_Data["Central"]=etau_trgcorrections_->at(ele_trg_key_data);
-            mutau_trgCorrections_Mc["Central"]=mutau_trgcorrections_->at(mutau_trg_key_mc);
-            mutau_trgCorrections_Data["Central"]=mutau_trgcorrections_->at(mutau_trg_key_data);
+
+            // bbWW is still using the SF method (not Eff method)
+            // This means we still need the base key (not mc or data)
+            // To fit in, we will still use mc/data keys (they will be the same)
+            // And we will just load the MC one as the default
+            if (muon_trg_key_mc != "None") muTrgCorrections["Central"]=mutrgcorrections_->at(muon_trg_key_mc);
+            if (ele_trg_key_mc != "None") eleTrgCorrections["Central"]=etrgcorrections_->at(ele_trg_key_mc);
+
+
+            if (muon_trg_key_mc != "None") muTrgCorrections_Mc["Central"]=mutrgcorrections_->at(muon_trg_key_mc);
+            if (muon_trg_key_data != "None") muTrgCorrections_Data["Central"]=mutrgcorrections_->at(muon_trg_key_data);
+            if (tau_trg_key != "None") tauTrgCorrections["Central"]=tautrgcorrections_->at(tau_trg_key);
+            if (ele_trg_key_mc != "None") eleTrgCorrections_Mc["Central"]=etrgcorrections_->at(ele_trg_key_mc);
+            if (ele_trg_key_data != "None") eleTrgCorrections_Data["Central"]=etrgcorrections_->at(ele_trg_key_data);
+            if (tau_trg_key != "None") ditauJet_trgCorrections["Central"]=ditauJet_trgcorrections_->at(jet_trg_key);
+            if (ele_trg_key_mc != "None") etau_trgCorrections_Mc["Central"]=etau_trgcorrections_->at(ele_trg_key_mc);
+            if (ele_trg_key_data != "None") etau_trgCorrections_Data["Central"]=etau_trgcorrections_->at(ele_trg_key_data);
+            if (mutau_trg_key_mc != "None") mutau_trgCorrections_Mc["Central"]=mutau_trgcorrections_->at(mutau_trg_key_mc);
+            if (mutau_trg_key_data != "None") mutau_trgCorrections_Data["Central"]=mutau_trgcorrections_->at(mutau_trg_key_data);
         } else {
            throw std::runtime_error("Era not supported");
         }
