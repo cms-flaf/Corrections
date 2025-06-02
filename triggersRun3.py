@@ -79,8 +79,8 @@ class TrigCorrProducer:
                 mu_trg_key_mc = self.trigger_dict['singleIsoMu']['legs'][0]['jsonTRGcorrection_key'][period].format("MC")
                 mu_trg_key_data = self.trigger_dict['singleIsoMu']['legs'][0]['jsonTRGcorrection_key'][period].format("DATA")
             if 'singleEleWpTight' in self.trigger_dict.keys():
-                ele_trg_key_mc = self.trigger_dict['singleEleWpTight']['legs'][0]['jsonTRGcorrection_key'][period].format("MC")
-                ele_trg_key_data = self.trigger_dict['singleEleWpTight']['legs'][0]['jsonTRGcorrection_key'][period].format("DATA")
+                ele_trg_key_mc = self.trigger_dict['singleEleWpTight']['legs'][0]['jsonTRGcorrection_key'][period].format("Mc")
+                ele_trg_key_data = self.trigger_dict['singleEleWpTight']['legs'][0]['jsonTRGcorrection_key'][period].format("Data")
 
             # Now bbtautau keys
             mutau_trg_key_mc, mutau_trg_key_data = None, None
@@ -90,8 +90,8 @@ class TrigCorrProducer:
                 mu_trg_key_mc = self.trigger_dict['singleMu']['legs'][0]['jsonTRGcorrection_key'][period].format("MC")
                 mu_trg_key_data = self.trigger_dict['singleMu']['legs'][0]['jsonTRGcorrection_key'][period].format("DATA")
             if 'singleEle' in self.trigger_dict.keys():
-                ele_trg_key_mc = self.trigger_dict['singleEle']['legs'][0]['jsonTRGcorrection_key'][period].format("MC")
-                ele_trg_key_data = self.trigger_dict['singleEle']['legs'][0]['jsonTRGcorrection_key'][period].format("DATA")
+                ele_trg_key_mc = self.trigger_dict['singleEle']['legs'][0]['jsonTRGcorrection_key'][period].format("Mc")
+                ele_trg_key_data = self.trigger_dict['singleEle']['legs'][0]['jsonTRGcorrection_key'][period].format("Data")
             if 'mutau' in self.trigger_dict.keys():
                 mutau_trg_key_mc = self.trigger_dict['mutau']['legs'][0]['jsonTRGcorrection_key'][period].format("MC")
                 mutau_trg_key_data = self.trigger_dict['mutau']['legs'][0]['jsonTRGcorrection_key'][period].format("DATA")
