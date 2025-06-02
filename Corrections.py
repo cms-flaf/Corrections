@@ -63,7 +63,7 @@ class Corrections:
         # If you run with no corrections, the code will break if you don't check that self.to_apply exists
         # I am curious if setting a new bool will increase the performance
         # I'm open to the suggestion to just do 'if self.to_apply:' instead of this new bool
-        self.corrs_to_apply = len(self.to_apply) > 0
+        self.corrs_to_apply = (self.to_apply != None)
         self.config = config
         self.sample_name = sample_name
         self.MET_type = config['met_type']
