@@ -71,14 +71,44 @@ class TrigCorrProducer:
             if (period.endswith('Summer23BPix')):  TrigCorrProducer.year = period.split("_")[0]+"2023PromptD"
             
             # ROOT.gInterpreter.ProcessLine(f"""::correction::TrigCorrProvider::Initialize("{jsonFile_Mu}","{jsonFile_e}", "{jsonFile_Tau}", "{self.muon_trg_dict[period]}","{self.ele_trg_dict['McEff'][period]}", "{self.tau_trg_dict[period]}", "{period}")""")
-            mu_trg_key_mc = self.trigger_dict['singleMu']['legs'][0]['jsonTRGcorrection_key'][period].format("MC")
-            mu_trg_key_data = self.trigger_dict['singleMu']['legs'][0]['jsonTRGcorrection_key'][period].format("DATA")
-            mutau_trg_key_mc = self.trigger_dict['mutau']['legs'][0]['jsonTRGcorrection_key'][period].format("MC")
-            mutau_trg_key_data = self.trigger_dict['mutau']['legs'][0]['jsonTRGcorrection_key'][period].format("DATA")
-            ele_trg_key_mc = self.trigger_dict['singleEle']['legs'][0]['jsonTRGcorrection_key'][period].format("Mc")
-            ele_trg_key_data = self.trigger_dict['singleEle']['legs'][0]['jsonTRGcorrection_key'][period].format("Data")
-            tau_trg_key = self.trigger_dict['ditau']['legs'][0]['jsonTRGcorrection_key'][period]
-            jet_trg_key = self.trigger_dict['ditaujet']['legs'][1]['jsonTRGcorrection_key'][period]
+            mu_trg_key_mc, mu_trg_key_data = None, None
+            ele_trg_key_mc, ele_trg_key_data = None, None
+
+            # bbWW uses singleIsoMu and singleEleWpTight names
+            if 'singleIsoMu' in self.trigger_dict.keys():
+                mu_trg_key_mc = self.trigger_dict['singleIsoMu']['legs'][0]['jsonTRGcorrection_key'][period].format("MC")
+                mu_trg_key_data = self.trigger_dict['singleIsoMu']['legs'][0]['jsonTRGcorrection_key'][period].format("DATA")
+            if 'singleEleWpTight' in self.trigger_dict.keys():
+                ele_trg_key_mc = self.trigger_dict['singleEleWpTight']['legs'][0]['jsonTRGcorrection_key'][period].format("Mc")
+                ele_trg_key_data = self.trigger_dict['singleEleWpTight']['legs'][0]['jsonTRGcorrection_key'][period].format("Data")
+
+            # Now bbtautau keys
+            mutau_trg_key_mc, mutau_trg_key_data = None, None
+            tau_trg_key = None
+            jet_trg_key = None
+            if 'singleMu' in self.trigger_dict.keys():
+                mu_trg_key_mc = self.trigger_dict['singleMu']['legs'][0]['jsonTRGcorrection_key'][period].format("MC")
+                mu_trg_key_data = self.trigger_dict['singleMu']['legs'][0]['jsonTRGcorrection_key'][period].format("DATA")
+            if 'singleEle' in self.trigger_dict.keys():
+                ele_trg_key_mc = self.trigger_dict['singleEle']['legs'][0]['jsonTRGcorrection_key'][period].format("Mc")
+                ele_trg_key_data = self.trigger_dict['singleEle']['legs'][0]['jsonTRGcorrection_key'][period].format("Data")
+            if 'mutau' in self.trigger_dict.keys():
+                mutau_trg_key_mc = self.trigger_dict['mutau']['legs'][0]['jsonTRGcorrection_key'][period].format("MC")
+                mutau_trg_key_data = self.trigger_dict['mutau']['legs'][0]['jsonTRGcorrection_key'][period].format("DATA")
+            if 'ditau' in self.trigger_dict.keys():
+                tau_trg_key = self.trigger_dict['ditau']['legs'][0]['jsonTRGcorrection_key'][period]
+            if 'ditaujet' in self.trigger_dict.keys():
+                jet_trg_key = self.trigger_dict['ditaujet']['legs'][1]['jsonTRGcorrection_key'][period]
+
+
+            # mu_trg_key_mc = self.trigger_dict['singleMu']['legs'][0]['jsonTRGcorrection_key'][period].format("MC")
+            # mu_trg_key_data = self.trigger_dict['singleMu']['legs'][0]['jsonTRGcorrection_key'][period].format("DATA")
+            # mutau_trg_key_mc = self.trigger_dict['mutau']['legs'][0]['jsonTRGcorrection_key'][period].format("MC")
+            # mutau_trg_key_data = self.trigger_dict['mutau']['legs'][0]['jsonTRGcorrection_key'][period].format("DATA")
+            # ele_trg_key_mc = self.trigger_dict['singleEle']['legs'][0]['jsonTRGcorrection_key'][period].format("Mc")
+            # ele_trg_key_data = self.trigger_dict['singleEle']['legs'][0]['jsonTRGcorrection_key'][period].format("Data")
+            # tau_trg_key = self.trigger_dict['ditau']['legs'][0]['jsonTRGcorrection_key'][period]
+            # jet_trg_key = self.trigger_dict['ditaujet']['legs'][1]['jsonTRGcorrection_key'][period]
             ROOT.gInterpreter.ProcessLine(f"""::correction::TrigCorrProvider::Initialize("{jsonFile_Mu}","{jsonFile_e}", "{jsonFile_Tau}", "{jsonFile_TauJet}", "{jsonFile_eTau}", "{jsonFile_muTau}", "{mu_trg_key_mc}", "{mu_trg_key_data}", "{mutau_trg_key_mc}", "{mutau_trg_key_data}","{ele_trg_key_mc}","{ele_trg_key_data}", "{tau_trg_key}", "{jet_trg_key}", "{period}")""")
             print("TriggCorrProducer initialized")
             TrigCorrProducer.initialized = True
@@ -150,8 +180,11 @@ class TrigCorrProducer:
                 legtype_value = None
                 match = re.search(r"Leg::(\w+)", legtype_query.group(0)) if legtype_query else None
                 legtype_value = match.group(1) if match else None
+                # legtype_query = legtype_query.group(0) if legtype_query else ""
+                # legtype_query = re.sub(r"(Leg::\w+)", r"static_cast<int>(\1)", legtype_query)
                 for leg_idx, leg_name in enumerate(offline_legs):
                     applyTrgBranch_name = f"{trg_name}_{leg_name}_triggerleg{trg_leg_idx+1}_ApplyTrgSF"
+                    # query = legtype_query.format(obj=leg_name)
                     query = trg_leg["offline_obj"]['cut'].format(obj=leg_name)
                     query += f""" && {leg_name}_index >= 0 && HLT_{trg_name} && {leg_name}_HasMatching_{trg_name}"""
                     df = df.Define(applyTrgBranch_name, f"""{query}""")
