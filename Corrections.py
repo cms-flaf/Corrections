@@ -63,6 +63,10 @@ class Corrections:
         self.isData = isData
         self.period = config['era']
         self.to_apply = config.get('corrections', [])
+        # If you run with no corrections, the code will break if you don't check that self.to_apply exists
+        # I am curious if setting a new bool will increase the performance
+        # I'm open to the suggestion to just do 'if self.to_apply:' instead of this new bool
+        self.corrs_to_apply = (self.to_apply != None)
         self.config = config
         self.sample_name = sample_name
         self.sample_type = sample_type
@@ -165,17 +169,18 @@ class Corrections:
 
     def applyScaleUncertainties(self, df, ana_reco_objects):
         source_dict = { central : [] }
-        if 'tauES' in self.to_apply and not self.isData:
-            df, source_dict = self.tau.getES(df, source_dict)
-        if 'eleES' in self.to_apply:
-            df, source_dict = self.ele.getES(df, source_dict)
-        if 'JEC' in self.to_apply or 'JER' in self.to_apply:
-            apply_jes = 'JEC' in self.to_apply and not self.isData
-            apply_jer = 'JER' in self.to_apply and not self.isData
-            df, source_dict = self.jet.getP4Variations(df, source_dict, apply_jer, apply_jes)
-            # df, source_dict = self.fatjet.getP4Variations(df, source_dict, 'JER' in self.to_apply, 'JEC' in self.to_apply)
-        # if 'tauES' in self.to_apply or 'JEC' in self.to_apply or 'JEC' in self.to_apply:
-        #     df, source_dict = self.met.getPFMET(df, source_dict)
+        if self.corrs_to_apply:
+            if 'tauES' in self.to_apply and not self.isData:
+                df, source_dict = self.tau.getES(df, source_dict)
+            if 'eleES' in self.to_apply:
+                df, source_dict = self.ele.getES(df, source_dict)
+            if 'JEC' in self.to_apply or 'JER' in self.to_apply:
+                apply_jes = 'JEC' in self.to_apply and not self.isData
+                apply_jer = 'JER' in self.to_apply and not self.isData
+                df, source_dict = self.jet.getP4Variations(df, source_dict, apply_jer, apply_jes)
+                # df, source_dict = self.fatjet.getP4Variations(df, source_dict, 'JER' in self.to_apply, 'JEC' in self.to_apply)
+            # if 'tauES' in self.to_apply or 'JEC' in self.to_apply or 'JEC' in self.to_apply:
+            #     df, source_dict = self.met.getPFMET(df, source_dict)
         syst_dict = { }
         for source, source_objs in source_dict.items():
             for scale in getScales(source):
@@ -225,22 +230,22 @@ class Corrections:
         start = source_name.find('_')
         src_name = source_name[start + 1:]
 
-        # if sampleType in [ 'DY', 'W' ] and global_params.get('use_stitching', True):
-        #     xs_stitching_name = samples[sample]['crossSectionStitch']
-        #     inclusive_sample_name = findRefSample(samples, sampleType)
-        #     xs_name = samples[inclusive_sample_name]['crossSection']
-        #     xs_stitching = xs_dict[xs_stitching_name]['crossSec']
-        #     xs_stitching_incl = xs_dict[samples[inclusive_sample_name]['crossSectionStitch']]['crossSec']
-        #     if sampleType == 'DY':
-        #         if generator == 'amcatnlo':
-        #             stitch_str = 'if(LHE_Vpt==0.) return 1/2.f; return 1/3.f;'
-        #         elif generator == 'madgraph':
-        #             stitch_str = '1/2.f'
-        #     elif sampleType == 'W':
-        #         if generator == 'madgraph':
-        #             stitch_str= "if(LHE_Njets==0) return 1.f; if(LHE_HT < 70) return 1/2.f; return 1/3.f;"
-        # else:
-        #     xs_name = samples[sample]['crossSection']
+        if sampleType in [ 'DY', 'W' ] and global_params.get('use_stitching', True):
+            xs_stitching_name = samples[sample]['crossSectionStitch']
+            inclusive_sample_name = findRefSample(samples, sampleType)
+            xs_name = samples[inclusive_sample_name]['crossSection']
+            xs_stitching = xs_dict[xs_stitching_name]['crossSec']
+            xs_stitching_incl = xs_dict[samples[inclusive_sample_name]['crossSectionStitch']]['crossSec']
+            if sampleType == 'DY':
+                if generator == 'amcatnlo':
+                    stitch_str = 'if(LHE_Vpt==0.) return 1/2.f; return 1/3.f;'
+                elif generator == 'madgraph':
+                    stitch_str = '1/2.f'
+            elif sampleType == 'W':
+                if generator == 'madgraph':
+                    stitch_str= "if(LHE_Njets==0) return 1.f; if(LHE_HT < 70) return 1/2.f; return 1/3.f;"
+        else:
+            xs_name = samples[sample]['crossSection']
         xs_name = samples[sample]['crossSection']
         df = df.Define("stitching_weight", stitch_str)
         xs_inclusive = xs_dict[xs_name]['crossSec']
@@ -255,9 +260,10 @@ class Corrections:
         df = df.Define('genWeightD', genWeight_def)
 
         all_branches = []
-        if 'pu' in self.to_apply:
-            df, pu_SF_branches = self.pu.getWeight(df)
-            all_branches.append(pu_SF_branches)
+        if self.corrs_to_apply:
+            if 'pu' in self.to_apply:
+                df, pu_SF_branches = self.pu.getWeight(df)
+                all_branches.append(pu_SF_branches)
 
         all_sources = set(itertools.chain.from_iterable(all_branches))
         if central in all_sources:
