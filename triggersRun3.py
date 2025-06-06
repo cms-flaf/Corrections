@@ -39,13 +39,7 @@ class TrigCorrProducer:
     initialized = False
     SFSources = { 'singleIsoMu':['IsoMu24'],'singleEleWpTight':['singleEle'],
                 'singleMu':['IsoMu24'], 'singleEle':['singleEle'], 'ditau':['ditau_DM0', 'ditau_DM1', 'ditau_3Prong']}
-    muon_trg_dict = {"2022_Summer22":"NUM_IsoMu24_DEN_CutBasedIdTight_and_PFIsoTight",
-                    "2022_Summer22EE":"NUM_IsoMu24_DEN_CutBasedIdTight_and_PFIsoTight"}
-                    #  "2022_Summer22EE":"NUM_IsoMu24_DEN_CutBasedIdMedium_and_PFIsoMedium"}
-    ele_trg_dict = {"2022_Summer22":"Electron-HLT-SF","2022_Summer22EE":"Electron-HLT-SF"}
-    tau_trg_dict = {
-        '2022_Summer22': 'tau_trigger',
-        '2022_Summer22EE': 'tau_trigger',}
+
     year = ""
     def __init__(self, period, config, trigger_dict):
         # json_correction_path = eval(trigger_dict['ditaujet']['legs'][1]["jsonTRGcorrection_path"])
@@ -106,17 +100,8 @@ class TrigCorrProducer:
             if 'ditaujet' in self.trigger_dict.keys():
                 jet_trg_key = self.trigger_dict['ditaujet']['legs'][1]['jsonTRGcorrection_key'][period]
 
-
-            # mu_trg_key_mc = self.trigger_dict['singleMu']['legs'][0]['jsonTRGcorrection_key'][period].format("MC")
-            # mu_trg_key_data = self.trigger_dict['singleMu']['legs'][0]['jsonTRGcorrection_key'][period].format("DATA")
-            # mutau_trg_key_mc = self.trigger_dict['mutau']['legs'][0]['jsonTRGcorrection_key'][period].format("MC")
-            # mutau_trg_key_data = self.trigger_dict['mutau']['legs'][0]['jsonTRGcorrection_key'][period].format("DATA")
-            # ele_trg_key_mc = self.trigger_dict['singleEle']['legs'][0]['jsonTRGcorrection_key'][period].format("Mc")
-            # ele_trg_key_data = self.trigger_dict['singleEle']['legs'][0]['jsonTRGcorrection_key'][period].format("Data")
-            # tau_trg_key = self.trigger_dict['ditau']['legs'][0]['jsonTRGcorrection_key'][period]
-            # jet_trg_key = self.trigger_dict['ditaujet']['legs'][1]['jsonTRGcorrection_key'][period]
             ROOT.gInterpreter.ProcessLine(f"""::correction::TrigCorrProvider::Initialize("{jsonFile_Mu}","{jsonFile_e}", "{jsonFile_Tau}", "{jsonFile_TauJet}", "{jsonFile_eTau}", "{jsonFile_muTau}", "{mu_trg_key_mc}", "{mu_trg_key_data}", "{mutau_trg_key_mc}", "{mutau_trg_key_data}","{ele_trg_key_mc}","{ele_trg_key_data}", "{tau_trg_key}", "{jet_trg_key}", "{period}")""")
-            print("TriggCorrProducer initialized")
+            print("TrigCorrProducer initialized")
             TrigCorrProducer.initialized = True
 
     def getSF(self, df, trigger_names, lepton_legs, return_variations, isCentral):
