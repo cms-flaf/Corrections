@@ -30,22 +30,25 @@ class Corrections:
     _global_instance = None
 
     @staticmethod
-    def initializeGlobal(config, sample_name=None, isData=False, load_corr_lib=True, trigger_class=None):
+    def initializeGlobal(config, sample_name=None, sample_type=None, isData=False, load_corr_lib=True, trigger_class=None):
         if Corrections._global_instance is not None:
             raise RuntimeError('Global instance is already initialized')
-        Corrections._global_instance = Corrections(config, isData, sample_name, trigger_class)
+        Corrections._global_instance = Corrections(config, isData, sample_name, sample_type, trigger_class)
         if load_corr_lib:
             returncode, output, err= ps_call(['correction', 'config', '--cflags', '--ldflags'],
                                             catch_stdout=True, decode=True, verbose=0)
             params = output.split(' ')
             for param in params:
                 if param.startswith('-I'):
+                    # ROOT.gInterpreter.AddIncludePath(os.environ['FLAF_ENVIRONMENT_PATH']+"/include")#param[2:].strip())
                     ROOT.gInterpreter.AddIncludePath(param[2:].strip())
                 elif param.startswith('-L'):
                     lib_path = param[2:].strip()
                 elif param.startswith('-l'):
                     lib_name = param[2:].strip()
+            # lib_path = os.environ['FLAF_ENVIRONMENT_PATH']+"/lib/python3.11/site-packages" #
             corr_lib = f"{lib_path}/lib{lib_name}.so"
+
             if not os.path.exists(corr_lib):
                 raise RuntimeError("Correction library is not found.")
             ROOT.gSystem.Load(corr_lib)
@@ -56,21 +59,18 @@ class Corrections:
             raise RuntimeError('Global instance is not initialized')
         return Corrections._global_instance
 
-    def __init__(self, config, isData, sample_name, trigger_class):
+    def __init__(self, config, isData, sample_name, sample_type, trigger_class):
         self.isData = isData
         self.period = config['era']
         self.to_apply = config.get('corrections', [])
-        # If you run with no corrections, the code will break if you don't check that self.to_apply exists
-        # I am curious if setting a new bool will increase the performance
-        # I'm open to the suggestion to just do 'if self.to_apply:' instead of this new bool
-        self.corrs_to_apply = (self.to_apply != None)
         self.config = config
         self.sample_name = sample_name
+        self.sample_type = sample_type
         self.MET_type = config['met_type']
         self.tagger_name = config['tagger_name']
         self.bjet_preselection_branch = config['bjet_preselection_branch']
         self.trigger_dict = trigger_class.trigger_dict if trigger_class else {}
-        
+
         self.tau_ = None
         self.met_ = None
         self.trg_ = None
@@ -81,6 +81,7 @@ class Corrections:
         self.puJetID_ = None
         self.jet_ = None
         self.fatjet_ = None
+        self.Vpt_ = None
 
     @property
     def pu(self):
@@ -88,6 +89,13 @@ class Corrections:
             from .pu import puWeightProducer
             self.pu_ = puWeightProducer(period=period_names[self.period])
         return self.pu_
+
+    @property
+    def Vpt(self):
+        if self.Vpt_ is None:
+            from .Vpt import VptCorrProducer
+            self.Vpt_ = VptCorrProducer(self.sample_type)
+        return self.Vpt_
 
     @property
     def tau(self):
@@ -158,18 +166,17 @@ class Corrections:
 
     def applyScaleUncertainties(self, df, ana_reco_objects):
         source_dict = { central : [] }
-        if self.corrs_to_apply:
-            if 'tauES' in self.to_apply and not self.isData:
-                df, source_dict = self.tau.getES(df, source_dict)
-            if 'eleES' in self.to_apply:
-                df, source_dict = self.ele.getES(df, source_dict)
-            if 'JEC' in self.to_apply or 'JER' in self.to_apply:
-                apply_jes = 'JEC' in self.to_apply and not self.isData
-                apply_jer = 'JER' in self.to_apply and not self.isData
-                df, source_dict = self.jet.getP4Variations(df, source_dict, apply_jer, apply_jes)
-                # df, source_dict = self.fatjet.getP4Variations(df, source_dict, 'JER' in self.to_apply, 'JEC' in self.to_apply)
-            # if 'tauES' in self.to_apply or 'JEC' in self.to_apply or 'JEC' in self.to_apply:
-            #     df, source_dict = self.met.getPFMET(df, source_dict)
+        if 'tauES' in self.to_apply and not self.isData:
+            df, source_dict = self.tau.getES(df, source_dict)
+        if 'eleES' in self.to_apply:
+            df, source_dict = self.ele.getES(df, source_dict)
+        if 'JEC' in self.to_apply or 'JER' in self.to_apply:
+            apply_jes = 'JEC' in self.to_apply and not self.isData
+            apply_jer = 'JER' in self.to_apply and not self.isData
+            df, source_dict = self.jet.getP4Variations(df, source_dict, apply_jer, apply_jes)
+            # df, source_dict = self.fatjet.getP4Variations(df, source_dict, 'JER' in self.to_apply, 'JEC' in self.to_apply)
+        # if 'tauES' in self.to_apply or 'JEC' in self.to_apply or 'JEC' in self.to_apply:
+        #     df, source_dict = self.met.getPFMET(df, source_dict)
         syst_dict = { }
         for source, source_objs in source_dict.items():
             for scale in getScales(source):
@@ -235,6 +242,7 @@ class Corrections:
                     stitch_str= "if(LHE_Njets==0) return 1.f; if(LHE_HT < 70) return 1/2.f; return 1/3.f;"
         else:
             xs_name = samples[sample]['crossSection']
+        xs_name = samples[sample]['crossSection']
         df = df.Define("stitching_weight", stitch_str)
         xs_inclusive = xs_dict[xs_name]['crossSec']
 
@@ -248,10 +256,9 @@ class Corrections:
         df = df.Define('genWeightD', genWeight_def)
 
         all_branches = []
-        if self.corrs_to_apply:
-            if 'pu' in self.to_apply:
-                df, pu_SF_branches = self.pu.getWeight(df)
-                all_branches.append(pu_SF_branches)
+        if 'pu' in self.to_apply:
+            df, pu_SF_branches = self.pu.getWeight(df)
+            all_branches.append(pu_SF_branches)
 
         all_sources = set(itertools.chain.from_iterable(all_branches))
         if central in all_sources:
@@ -280,38 +287,42 @@ class Corrections:
                 for scale in ['Up','Down']:
                     if syst_name == f'pu{scale}' and return_variations:
                         all_weights.append(weight_out_name)
-        if self.corrs_to_apply:
-            if 'tauID' in self.to_apply:
-                df, tau_SF_branches = self.tau.getSF(df, lepton_legs, isCentral, return_variations)
-                all_weights.extend(tau_SF_branches)
-            if 'btagShape' in self.to_apply and not self.isData:
-                df, bTagShape_SF_branches = self.btag.getBTagShapeSF(df, src_name, scale_name, isCentral, return_variations)
-                all_weights.extend(bTagShape_SF_branches)
-            if 'mu' in self.to_apply:
-                if self.mu.low_available:
-                    df, lowPtmuID_SF_branches = self.mu.getLowPtMuonIDSF(df, lepton_legs, isCentral, return_variations)
-                    all_weights.extend(lowPtmuID_SF_branches)
-                if self.mu.med_available:
-                    df, muID_SF_branches = self.mu.getMuonIDSF(df, lepton_legs, isCentral, return_variations)
-                    all_weights.extend(muID_SF_branches)
-                if self.mu.high_available:
-                    df, highPtmuID_SF_branches = self.mu.getHighPtMuonIDSF(df, lepton_legs, isCentral, return_variations)
-                    all_weights.extend(highPtmuID_SF_branches)
-            if 'ele' in self.to_apply:
-                df, eleID_SF_branches = self.ele.getIDSF(df, lepton_legs, isCentral, return_variations)
-                all_weights.extend(eleID_SF_branches)
-            if 'puJetID' in self.to_apply:
-                df, puJetID_SF_branches = self.puJetID.getPUJetIDEff(df, isCentral, return_variations)
-                all_weights.extend(puJetID_SF_branches)
-            if 'btagWP' in self.to_apply:
-                df, bTagWP_SF_branches = self.btag.getBTagWPSF(df, isCentral and return_variations, isCentral)
-                all_weights.extend(bTagWP_SF_branches)
-            if 'trgSF' in self.to_apply:
-                df, trg_SF_branches = self.trg.getSF(df, trigger_names, lepton_legs, isCentral and return_variations, isCentral)
-                all_weights.extend(trg_SF_branches)
-            if 'trgEff' in self.to_apply:
-                df, trg_SF_branches = self.trg.getEff(df, trigger_names, offline_legs, self.trigger_dict)
-                all_weights.extend(trg_SF_branches)
+        if 'Vpt' in self.to_apply:
+            df, Vpt_SF_branches = self.Vpt.getSF(df,isCentral,return_variations)
+            all_weights.extend(Vpt_SF_branches)
+            df, Vpt_DYw_branches = self.Vpt.getDYSF(df,isCentral,return_variations)
+            all_weights.extend(Vpt_DYw_branches)
+        if 'tauID' in self.to_apply:
+            df, tau_SF_branches = self.tau.getSF(df, lepton_legs, isCentral, return_variations)
+            all_weights.extend(tau_SF_branches)
+        if 'btagShape' in self.to_apply and not self.isData:
+            df, bTagShape_SF_branches = self.btag.getBTagShapeSF(df, src_name, scale_name, isCentral, return_variations)
+            all_weights.extend(bTagShape_SF_branches)
+        if 'mu' in self.to_apply:
+            if self.mu.low_available:
+                df, lowPtmuID_SF_branches = self.mu.getLowPtMuonIDSF(df, lepton_legs, isCentral, return_variations)
+                all_weights.extend(lowPtmuID_SF_branches)
+            if self.mu.med_available:
+                df, muID_SF_branches = self.mu.getMuonIDSF(df, lepton_legs, isCentral, return_variations)
+                all_weights.extend(muID_SF_branches)
+            if self.mu.high_available:
+                df, highPtmuID_SF_branches = self.mu.getHighPtMuonIDSF(df, lepton_legs, isCentral, return_variations)
+                all_weights.extend(highPtmuID_SF_branches)
+        if 'ele' in self.to_apply:
+            df, eleID_SF_branches = self.ele.getIDSF(df, lepton_legs, isCentral, return_variations)
+            all_weights.extend(eleID_SF_branches)
+        if 'puJetID' in self.to_apply:
+            df, puJetID_SF_branches = self.puJetID.getPUJetIDEff(df, isCentral, return_variations)
+            all_weights.extend(puJetID_SF_branches)
+        if 'btagWP' in self.to_apply:
+            df, bTagWP_SF_branches = self.btag.getBTagWPSF(df, isCentral and return_variations, isCentral)
+            all_weights.extend(bTagWP_SF_branches)
+        if 'trgSF' in self.to_apply:
+            df, trg_SF_branches = self.trg.getSF(df, trigger_names, lepton_legs, isCentral and return_variations, isCentral)
+            all_weights.extend(trg_SF_branches)
+        if 'trgEff' in self.to_apply:
+            df, trg_SF_branches = self.trg.getEff(df, trigger_names, offline_legs, self.trigger_dict)
+            all_weights.extend(trg_SF_branches)
         return df, all_weights
 
     def getDenominator(self, df, sources, generator):
