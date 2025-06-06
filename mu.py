@@ -49,7 +49,7 @@ class MuCorrProducer:
         # "NUM_HighPtID_DEN_genTracks": "HighPtID",# HighPtID
 
         # ID SF - with tracker muons - RECOMMENDED
-        # "NUM_MediumPromptID_DEN_TrackerMuons":"MediumID_Trk",
+        # "NUM_MediumPromptID_DEN_TrackerMuons":"Medium_promptID_Trk",
         "NUM_MediumID_DEN_TrackerMuons": "MediumID_Trk", # medium ID
         "NUM_TightID_DEN_TrackerMuons":"TightID_Trk", # tight ID
         "NUM_HighPtID_DEN_TrackerMuons": "HighPtID_Trk",# HighPtID ID
@@ -106,7 +106,7 @@ class MuCorrProducer:
         "2017_UL": ["NUM_TightRelIso_DEN_TightIDandIPCut"],
         "2018_UL": ["NUM_TightRelIso_DEN_TightIDandIPCut"],
         "2022_Summer22": ["NUM_LoosePFIso_DEN_TightID"],
-        "2022_Summer22EE": ["NUM_LoosePFIso_DEN_TightID",  "NUM_LoosePFIso_DEN_MediumID"],
+        "2022_Summer22EE": ["NUM_LoosePFIso_DEN_TightID", "NUM_LoosePFIso_DEN_MediumID"],
         "2023_Summer23": ["NUM_LoosePFIso_DEN_TightID"],
         "2023_Summer23BPix": ["NUM_LoosePFIso_DEN_TightID"],
         }
@@ -127,7 +127,7 @@ class MuCorrProducer:
     lowPtmuIso_SF_Sources = []
 
 
-    # trigger
+    # trigger --> do we need this??
     year_unc_dict= {
         "2018_UL": ["NUM_IsoMu24_DEN_CutBasedIdTight_and_PFIsoTight"],
         "2017_UL": ["NUM_IsoMu27_DEN_CutBasedIdTight_and_PFIsoTight"],
@@ -155,7 +155,6 @@ class MuCorrProducer:
             ROOT.gInterpreter.ProcessLine(f'::correction::LowPtMuCorrProvider::Initialize("{jsonFile_eff_lowPt}")')
             MuCorrProducer.period = period
             MuCorrProducer.initialized = True
-
         self.low_available = era.startswith('Run3')
         self.med_available = True
         self.high_available = True
