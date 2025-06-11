@@ -22,7 +22,7 @@ import re
 # crossTrigger run3 : https://gitlab.cern.ch/cms-higgs-leprare/hleprare/-/tree/master/TriggerScaleFactors?ref_type=heads
 # singleEle : /cvmfs/cms.cern.ch/rsync/cms-nanoAOD/jsonpog-integration/POG/EGM/{period}/electronHlt.json.gz
 # singleMu : /cvmfs/cms.cern.ch/rsync/cms-nanoAOD/jsonpog-integration/POG/MUO/{period}/muon_Z.json.gz
-# missing efficiencies for singleMu --> run2 eff are https://gitlab.cern.ch/cms-muonPOG/muonefficiencies/-/tree/master (but run3 is missing also on this folder) 
+# missing efficiencies for singleMu --> run2 eff are https://gitlab.cern.ch/cms-muonPOG/muonefficiencies/-/tree/master (but run3 is missing also on this folder)
 
 
 # SFSources_bbtautau = { 'ditau': [ "ditau_DM0","ditau_DM1", "ditau_3Prong"], 'singleMu':['singleMu'],'singleTau':['singleTau'], 'singleEle':['singleEle'],'etau':['etau_ele',"etau_DM0","etau_DM1", "etau_3Prong",],'mutau':['mutau_mu',"mutau_DM0","mutau_DM1", "mutau_3Prong"]}
@@ -39,7 +39,7 @@ class TrigCorrProducer:
     initialized = False
     SFSources = { 'singleIsoMu':['IsoMu24'],'singleEleWpTight':['singleEle'],
                 'singleMu':['IsoMu24'], 'singleEle':['singleEle'], 'ditau':['ditau_DM0', 'ditau_DM1', 'ditau_3Prong']}
-    
+
     year = ""
     def __init__(self, period, config, trigger_dict):
         # json_correction_path = eval(trigger_dict['ditaujet']['legs'][1]["jsonTRGcorrection_path"])
@@ -52,11 +52,11 @@ class TrigCorrProducer:
         self.trigger_dict = trigger_dict
 
         jsonFile_e = os.path.join(os.environ['ANALYSIS_PATH'],TrigCorrProducer.eTRG_jsonPath.format(period))
-        jsonFile_Tau = os.path.join(os.environ['ANALYSIS_PATH'],TrigCorrProducer.TauTRG_jsonPath.format(period,tau_filename_dict[period]))  
+        jsonFile_Tau = os.path.join(os.environ['ANALYSIS_PATH'],TrigCorrProducer.TauTRG_jsonPath.format(period,tau_filename_dict[period]))
         jsonFile_Mu = os.path.join(os.environ['ANALYSIS_PATH'],TrigCorrProducer.MuTRG_jsonPath.format(tau_filename_dict[period]))
-        jsonFile_TauJet = os.path.join(os.environ['ANALYSIS_PATH'],TrigCorrProducer.TaujetTRG_jsonPath.format(tau_filename_dict[period]))  
-        jsonFile_muTau = os.path.join(os.environ['ANALYSIS_PATH'],TrigCorrProducer.muTauTRG_jsonPath.format(tau_filename_dict[period]))  
-        jsonFile_eTau = os.path.join(os.environ['ANALYSIS_PATH'],TrigCorrProducer.eTauTRG_jsonPath.format(tau_filename_dict[period]))  
+        jsonFile_TauJet = os.path.join(os.environ['ANALYSIS_PATH'],TrigCorrProducer.TaujetTRG_jsonPath.format(tau_filename_dict[period]))
+        jsonFile_muTau = os.path.join(os.environ['ANALYSIS_PATH'],TrigCorrProducer.muTauTRG_jsonPath.format(tau_filename_dict[period]))
+        jsonFile_eTau = os.path.join(os.environ['ANALYSIS_PATH'],TrigCorrProducer.eTauTRG_jsonPath.format(tau_filename_dict[period]))
 
 
         if not TrigCorrProducer.initialized:
@@ -69,7 +69,7 @@ class TrigCorrProducer:
             if (period.endswith('Summer22EE')):  TrigCorrProducer.year = period.split("_")[0]+"Re-recoE+PromptFG"
             if (period.endswith('Summer23')):  TrigCorrProducer.year = period.split("_")[0]+"PromptC"
             if (period.endswith('Summer23BPix')):  TrigCorrProducer.year = period.split("_")[0]+"2023PromptD"
-            
+
             # ROOT.gInterpreter.ProcessLine(f"""::correction::TrigCorrProvider::Initialize("{jsonFile_Mu}","{jsonFile_e}", "{jsonFile_Tau}", "{self.muon_trg_dict[period]}","{self.ele_trg_dict['McEff'][period]}", "{self.tau_trg_dict[period]}", "{period}")""")
             mu_trg_key_mc, mu_trg_key_data = None, None
             ele_trg_key_mc, ele_trg_key_data = None, None
@@ -100,19 +100,10 @@ class TrigCorrProducer:
             if 'ditaujet' in self.trigger_dict.keys():
                 jet_trg_key = self.trigger_dict['ditaujet']['legs'][1]['jsonTRGcorrection_key'][period]
 
-
-            # mu_trg_key_mc = self.trigger_dict['singleMu']['legs'][0]['jsonTRGcorrection_key'][period].format("MC")
-            # mu_trg_key_data = self.trigger_dict['singleMu']['legs'][0]['jsonTRGcorrection_key'][period].format("DATA")
-            # mutau_trg_key_mc = self.trigger_dict['mutau']['legs'][0]['jsonTRGcorrection_key'][period].format("MC")
-            # mutau_trg_key_data = self.trigger_dict['mutau']['legs'][0]['jsonTRGcorrection_key'][period].format("DATA")
-            # ele_trg_key_mc = self.trigger_dict['singleEle']['legs'][0]['jsonTRGcorrection_key'][period].format("Mc")
-            # ele_trg_key_data = self.trigger_dict['singleEle']['legs'][0]['jsonTRGcorrection_key'][period].format("Data")
-            # tau_trg_key = self.trigger_dict['ditau']['legs'][0]['jsonTRGcorrection_key'][period]
-            # jet_trg_key = self.trigger_dict['ditaujet']['legs'][1]['jsonTRGcorrection_key'][period]
             ROOT.gInterpreter.ProcessLine(f"""::correction::TrigCorrProvider::Initialize("{jsonFile_Mu}","{jsonFile_e}", "{jsonFile_Tau}", "{jsonFile_TauJet}", "{jsonFile_eTau}", "{jsonFile_muTau}", "{mu_trg_key_mc}", "{mu_trg_key_data}", "{mutau_trg_key_mc}", "{mutau_trg_key_data}","{ele_trg_key_mc}","{ele_trg_key_data}", "{tau_trg_key}", "{jet_trg_key}", "{period}")""")
-            print("TriggCorrProducer initialized")
+            print("TrigCorrProducer initialized")
             TrigCorrProducer.initialized = True
-            
+
     def getSF(self, df, trigger_names, lepton_legs, return_variations, isCentral):
         SF_branches = []
         legs_to_be ={
@@ -159,7 +150,7 @@ class TrigCorrProducer:
                             df = df.Define(f"{branch_name}", f"static_cast<float>({branch_name}_double)")
                         SF_branches.append(f"{branch_name}")
         return df,SF_branches
-    
+
     def getEff(self, df, trigger_names, offline_legs, trigger_dict):
         ch_trg = self.config.get('triggers', [])
         tauwps = self.config.get('deepTauWPs', [])
