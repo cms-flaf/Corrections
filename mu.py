@@ -95,20 +95,21 @@ class MuCorrProducer:
         "2016postVFP_UL": ["NUM_TightID_DEN_TrackerMuons"],
         "2017_UL": ["NUM_TightID_DEN_TrackerMuons"],
         "2018_UL": ["NUM_TightID_DEN_TrackerMuons"],
-        "2022_Summer22": ["NUM_TightID_DEN_TrackerMuons"],
+        "2022_Summer22": ["NUM_TightID_DEN_TrackerMuons","NUM_MediumID_DEN_TrackerMuons"],
         "2022_Summer22EE": ["NUM_TightID_DEN_TrackerMuons","NUM_MediumID_DEN_TrackerMuons"],
         "2023_Summer23": ["NUM_TightID_DEN_TrackerMuons"],
-        "2023_Summer23BPix": ["NUM_TightID_DEN_TrackerMuons"],
+        "2023_Summer23": ["NUM_TightID_DEN_TrackerMuons","NUM_MediumID_DEN_TrackerMuons"],
+        "2023_Summer23BPix": ["NUM_TightID_DEN_TrackerMuons","NUM_MediumID_DEN_TrackerMuons"],
         }
     muIso_SF_Sources = {
         "2016preVFP_UL": ["NUM_TightRelIso_DEN_TightIDandIPCut"],
         "2016postVFP_UL": ["NUM_TightRelIso_DEN_TightIDandIPCut"],
         "2017_UL": ["NUM_TightRelIso_DEN_TightIDandIPCut"],
         "2018_UL": ["NUM_TightRelIso_DEN_TightIDandIPCut"],
-        "2022_Summer22": ["NUM_LoosePFIso_DEN_TightID"],
+        "2022_Summer22": ["NUM_LoosePFIso_DEN_TightID", "NUM_LoosePFIso_DEN_MediumID"],
         "2022_Summer22EE": ["NUM_LoosePFIso_DEN_TightID", "NUM_LoosePFIso_DEN_MediumID"],
-        "2023_Summer23": ["NUM_LoosePFIso_DEN_TightID"],
-        "2023_Summer23BPix": ["NUM_LoosePFIso_DEN_TightID"],
+        "2023_Summer23": ["NUM_LoosePFIso_DEN_TightID", "NUM_LoosePFIso_DEN_MediumID"],
+        "2023_Summer23BPix": ["NUM_LoosePFIso_DEN_TightID", "NUM_LoosePFIso_DEN_MediumID"],
         }
 
     # for high pt id
@@ -133,10 +134,10 @@ class MuCorrProducer:
         "2017_UL": ["NUM_IsoMu27_DEN_CutBasedIdTight_and_PFIsoTight"],
         "2016preVFP_UL": ["NUM_IsoMu24_or_IsoTkMu24_DEN_CutBasedIdTight_and_PFIsoTight" ],
         "2016postVFP_UL":["NUM_IsoMu24_or_IsoTkMu24_DEN_CutBasedIdTight_and_PFIsoTight" ],
-        "2022_Summer22": ["NUM_IsoMu24_DEN_CutBasedIdTight_and_PFIsoTight"],
+        "2022_Summer22": ["NUM_IsoMu24_DEN_CutBasedIdTight_and_PFIsoTight", "NUM_IsoMu24_DEN_CutBasedIdMedium_and_PFIsoMedium"],
         "2022_Summer22EE": ["NUM_IsoMu24_DEN_CutBasedIdTight_and_PFIsoTight", "NUM_IsoMu24_DEN_CutBasedIdMedium_and_PFIsoMedium"],
-        "2023_Summer23": ["NUM_IsoMu24_DEN_CutBasedIdTight_and_PFIsoTight"],
-        "2023_Summer23BPix": ["NUM_IsoMu24_DEN_CutBasedIdTight_and_PFIsoTight"],
+        "2023_Summer23": ["NUM_IsoMu24_DEN_CutBasedIdTight_and_PFIsoTight", "NUM_IsoMu24_DEN_CutBasedIdMedium_and_PFIsoMedium"],
+        "2023_Summer23BPix": ["NUM_IsoMu24_DEN_CutBasedIdTight_and_PFIsoTight", "NUM_IsoMu24_DEN_CutBasedIdMedium_and_PFIsoMedium"],
     }
     period = None
 
