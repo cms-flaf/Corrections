@@ -115,7 +115,7 @@ public:
             if (tau_trg_key != "None") tauTrgCorrections["Central"]=tautrgcorrections_->at(tau_trg_key);
             if (ele_trg_key_mc != "None") eleTrgCorrections_Mc["Central"]=etrgcorrections_->at(ele_trg_key_mc);
             if (ele_trg_key_data != "None") eleTrgCorrections_Data["Central"]=etrgcorrections_->at(ele_trg_key_data);
-            if (tau_trg_key != "None") ditauJet_trgCorrections["Central"]=ditauJet_trgcorrections_->at(jet_trg_key);
+            if (jet_trg_key != "None") ditauJet_trgCorrections["Central"]=ditauJet_trgcorrections_->at(jet_trg_key);
             if (ele_trg_key_mc != "None") etau_trgCorrections_Mc["Central"]=etau_trgcorrections_->at(ele_trg_key_mc);
             if (ele_trg_key_data != "None") etau_trgCorrections_Data["Central"]=etau_trgcorrections_->at(ele_trg_key_data);
             if (mutau_trg_key_mc != "None") mutau_trgCorrections_Mc["Central"]=mutau_trgcorrections_->at(mutau_trg_key_mc);

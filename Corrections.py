@@ -30,22 +30,25 @@ class Corrections:
     _global_instance = None
 
     @staticmethod
-    def initializeGlobal(config, sample_name=None, isData=False, load_corr_lib=True, trigger_class=None):
+    def initializeGlobal(config, sample_name=None, sample_type=None, isData=False, load_corr_lib=True, trigger_class=None):
         if Corrections._global_instance is not None:
             raise RuntimeError('Global instance is already initialized')
-        Corrections._global_instance = Corrections(config, isData, sample_name, trigger_class)
+        Corrections._global_instance = Corrections(config, isData, sample_name, sample_type, trigger_class)
         if load_corr_lib:
             returncode, output, err= ps_call(['correction', 'config', '--cflags', '--ldflags'],
                                             catch_stdout=True, decode=True, verbose=0)
             params = output.split(' ')
             for param in params:
                 if param.startswith('-I'):
+                    # ROOT.gInterpreter.AddIncludePath(os.environ['FLAF_ENVIRONMENT_PATH']+"/include")#param[2:].strip())
                     ROOT.gInterpreter.AddIncludePath(param[2:].strip())
                 elif param.startswith('-L'):
                     lib_path = param[2:].strip()
                 elif param.startswith('-l'):
                     lib_name = param[2:].strip()
+            # lib_path = os.environ['FLAF_ENVIRONMENT_PATH']+"/lib/python3.11/site-packages" #
             corr_lib = f"{lib_path}/lib{lib_name}.so"
+
             if not os.path.exists(corr_lib):
                 raise RuntimeError("Correction library is not found.")
             ROOT.gSystem.Load(corr_lib)
@@ -56,17 +59,18 @@ class Corrections:
             raise RuntimeError('Global instance is not initialized')
         return Corrections._global_instance
 
-    def __init__(self, config, isData, sample_name, trigger_class):
+    def __init__(self, config, isData, sample_name, sample_type, trigger_class):
         self.isData = isData
         self.period = config['era']
         self.to_apply = config.get('corrections', [])
         self.config = config
         self.sample_name = sample_name
+        self.sample_type = sample_type
         self.MET_type = config['met_type']
         self.tagger_name = config['tagger_name']
         self.bjet_preselection_branch = config['bjet_preselection_branch']
         self.trigger_dict = trigger_class.trigger_dict if trigger_class else {}
-        
+
         self.tau_ = None
         self.met_ = None
         self.trg_ = None
@@ -77,6 +81,7 @@ class Corrections:
         self.puJetID_ = None
         self.jet_ = None
         self.fatjet_ = None
+        self.Vpt_ = None
 
     @property
     def pu(self):
@@ -84,6 +89,13 @@ class Corrections:
             from .pu import puWeightProducer
             self.pu_ = puWeightProducer(period=period_names[self.period])
         return self.pu_
+
+    @property
+    def Vpt(self):
+        if self.Vpt_ is None:
+            from .Vpt import VptCorrProducer
+            self.Vpt_ = VptCorrProducer(self.sample_type)
+        return self.Vpt_
 
     @property
     def tau(self):
@@ -230,6 +242,7 @@ class Corrections:
                     stitch_str= "if(LHE_Njets==0) return 1.f; if(LHE_HT < 70) return 1/2.f; return 1/3.f;"
         else:
             xs_name = samples[sample]['crossSection']
+        xs_name = samples[sample]['crossSection']
         df = df.Define("stitching_weight", stitch_str)
         xs_inclusive = xs_dict[xs_name]['crossSec']
 
@@ -274,6 +287,11 @@ class Corrections:
                 for scale in ['Up','Down']:
                     if syst_name == f'pu{scale}' and return_variations:
                         all_weights.append(weight_out_name)
+        if 'Vpt' in self.to_apply:
+            df, Vpt_SF_branches = self.Vpt.getSF(df,isCentral,return_variations)
+            all_weights.extend(Vpt_SF_branches)
+            df, Vpt_DYw_branches = self.Vpt.getDYSF(df,isCentral,return_variations)
+            all_weights.extend(Vpt_DYw_branches)
         if 'tauID' in self.to_apply:
             df, tau_SF_branches = self.tau.getSF(df, lepton_legs, isCentral, return_variations)
             all_weights.extend(tau_SF_branches)
@@ -299,7 +317,10 @@ class Corrections:
         if 'btagWP' in self.to_apply:
             df, bTagWP_SF_branches = self.btag.getBTagWPSF(df, isCentral and return_variations, isCentral)
             all_weights.extend(bTagWP_SF_branches)
-        if 'trg' in self.to_apply:
+        if 'trgSF' in self.to_apply:
+            df, trg_SF_branches = self.trg.getSF(df, trigger_names, lepton_legs, isCentral and return_variations, isCentral)
+            all_weights.extend(trg_SF_branches)
+        if 'trgEff' in self.to_apply:
             df, trg_SF_branches = self.trg.getEff(df, trigger_names, offline_legs, self.trigger_dict)
             all_weights.extend(trg_SF_branches)
         return df, all_weights
