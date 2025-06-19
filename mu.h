@@ -354,11 +354,12 @@ public:
     }
 
     //We can probably remove this highPtId bool, or maybe we will have to invent a lowPtId
-    static bool sourceApplies(UncSource source, const float Muon_pfRelIso04_all, const bool Muon_TightId, const float muon_Pt, const float Muon_tkRelIso, const bool Muon_highPtId)
+    static bool sourceApplies(UncSource source, const float Muon_pfRelIso04_all, const bool Muon_TightId, const float muon_Pt, const float Muon_tkRelIso, const bool Muon_highPtId, const bool Muon_MediumId)
     {
         // ID
         bool tightID_condition = (Muon_TightId && Muon_pfRelIso04_all<0.15); //Since there is not an ISO, should we remove this pfRelIso?
         if(source == UncSource::NUM_TightID_DEN_TrackerMuons && tightID_condition ) return true;
+        if(source == UncSource::NUM_MediumID_DEN_TrackerMuons && Muon_MediumId ) return true;
         return false;
     }
 
@@ -366,9 +367,11 @@ public:
     corrections_(CorrectionSet::from_file(fileName))
     {
         lowPtmuCorrections["NUM_TightID_DEN_TrackerMuons"]=corrections_->at("NUM_TightID_DEN_TrackerMuons");
+        lowPtmuCorrections["NUM_MediumID_DEN_TrackerMuons"]=corrections_->at("NUM_MediumID_DEN_TrackerMuons");
+
     }
-    float getLowPtMuonSF(const LorentzVectorM & muon_p4, const float Muon_pfRelIso04_all, const bool Muon_TightId, const float Muon_tkRelIso, const bool Muon_highPtId, UncSource source, UncScale scale) const {
-        const UncScale muID_scale = sourceApplies(source, Muon_pfRelIso04_all, Muon_TightId, muon_p4.Pt(), Muon_tkRelIso, Muon_highPtId) ? scale : UncScale::Central;
+    float getLowPtMuonSF(const LorentzVectorM & muon_p4, const float Muon_pfRelIso04_all, const bool Muon_TightId, const float Muon_tkRelIso, const bool Muon_highPtId, const bool Muon_MediumId, UncSource source, UncScale scale) const {
+        const UncScale muID_scale = sourceApplies(source, Muon_pfRelIso04_all, Muon_TightId, muon_p4.Pt(), Muon_tkRelIso, Muon_highPtId, Muon_MediumId) ? scale : UncScale::Central;
         const std::string& scale_str = getScaleStr(muID_scale);
         return source == UncSource::Central ? 1. : lowPtmuCorrections.at(getUncSourceName(source))->evaluate({abs(muon_p4.Eta()),muon_p4.Pt(), scale_str}) ;
     }
