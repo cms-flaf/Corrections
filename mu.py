@@ -124,7 +124,7 @@ class MuCorrProducer:
     # NUM_TightMiniIso_DEN_MediumID
     # for low pt id
     lowPtmuReco_SF_sources = []
-    lowPtmuID_SF_Sources = ["NUM_TightID_DEN_TrackerMuons"]
+    lowPtmuID_SF_Sources = ["NUM_TightID_DEN_TrackerMuons", "NUM_MediumID_DEN_TrackerMuons"]
     lowPtmuIso_SF_Sources = []
 
 
@@ -252,7 +252,7 @@ class MuCorrProducer:
 
                     genMatch_bool = f"(({leg_name}_gen_kind == 2) || ({leg_name}_gen_kind == 4))"
 
-                    df = df.Define(f"{branch_name}_double",f'''{leg_name}_legType == Leg::mu && {leg_name}_index >= 0 && ({genMatch_bool}) ? ::correction::LowPtMuCorrProvider::getGlobal().getLowPtMuonSF({leg_name}_p4, Muon_pfRelIso04_all.at({leg_name}_index), Muon_tightId.at({leg_name}_index), Muon_highPtId.at({leg_name}_index), Muon_tkRelIso.at({leg_name}_index),::correction::LowPtMuCorrProvider::UncSource::{source}, ::correction::UncScale::{scale}) : 1.''')
+                    df = df.Define(f"{branch_name}_double",f'''{leg_name}_legType == Leg::mu && {leg_name}_index >= 0 && ({genMatch_bool}) ? ::correction::LowPtMuCorrProvider::getGlobal().getLowPtMuonSF({leg_name}_p4, Muon_pfRelIso04_all.at({leg_name}_index), Muon_tightId.at({leg_name}_index), Muon_tkRelIso.at({leg_name}_index), Muon_highPtId.at({leg_name}_index), Muon_mediumId.at({leg_name}_index),::correction::LowPtMuCorrProvider::UncSource::{source}, ::correction::UncScale::{scale}) : 1.''')
 
 
                     if scale != central:
