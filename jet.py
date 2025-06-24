@@ -113,15 +113,15 @@ class JetCorrProducer:
     jec_tag_map_mc = { "2022_Summer22": "Summer22_22Sep2023_V2_MC",
                        "2022_Prompt": "Winter22Run3_V2_MC",
                        "2022_Summer22EE": "Summer22EE_22Sep2023_V2_MC",
-                       "2023_Summer23BPix": "Summer23BPixPrompt23_V1_MC",
-                       "2023_Summer23": "Summer23Prompt23_V1_MC" }
+                       "2023_Summer23BPix": "Summer23BPixPrompt23_V3_MC",
+                       "2023_Summer23": "Summer23Prompt23_V2_MC" }
 
     # maps period to base tag
     # for DATA: jec_tag = {base_tag}_Run{letters}_V{version}_DATA
     jec_tag_map_data = { "2022_Summer22": "Summer22_22Sep2023_Run{}_V2_DATA",
                          "2023_Summer23BPix": "Summer23BPixPrompt23_Run{}_V2_DATA",
                          "2022_Prompt": "Winter22Run3_Run{}_V2_DATA",
-                         "2023_Summer23": "Summer23Prompt23_Run{}_V1_DATA",
+                         "2023_Summer23": "Summer23Prompt23_Run{}_V2_DATA",
                          "2022_Summer22EE": "Summer22EE_22Sep2023_Run{}_V2_DATA" }
 
     run_versions = {"2022_Summer22": [],

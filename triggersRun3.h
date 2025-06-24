@@ -88,7 +88,7 @@ public:
         //        throw std::runtime_error("Era not supported");
         //     }
         // }
-        
+
         TrigCorrProvider(const std::string& muon_trg_file, const std::string& ele_trg_file, const std::string& tau_trg_file, const std::string& ditauJet_trg_file, const std::string& etau_trg_file, const std::string& mutau_trg_file, const std::string& muon_trg_key_mc, const std::string& muon_trg_key_data, const std::string& mutau_trg_key_mc, const std::string& mutau_trg_key_data,  const std::string& ele_trg_key_mc, const std::string& ele_trg_key_data, const std::string& tau_trg_key, const std::string& jet_trg_key, const std::string& era) :
         // TrigCorrProvider(const std::string& muon_trg_file, const std::string& ele_trg_file, const std::string& muon_trg_key, const std::string& ele_trg_key, const std::string& era) :
         mutrgcorrections_(CorrectionSet::from_file(muon_trg_file)),
@@ -98,7 +98,7 @@ public:
         etau_trgcorrections_(CorrectionSet::from_file(etau_trg_file)),
         mutau_trgcorrections_(CorrectionSet::from_file(mutau_trg_file))
         {
-            if (era == "2022_Summer22" || era == "2022_Summer22EE"){// || era == "2023_Summer23" || era == "2023_Summer23BPix"){
+            if (era == "2022_Summer22" || era == "2022_Summer22EE" || era == "2023_Summer23" || era == "2023_Summer23BPix"){
                 // muTrgCorrections["Central"]=mutrgcorrections_->at(muon_trg_key);
             // muTrgCorrections["Central"]=mutrgcorrections_->at(muon_trg_key);
 
@@ -150,7 +150,7 @@ public:
         }
         return eff ;
     }
-    
+
     float getEff_singleMu(const LorentzVectorM & part_p4, const int & part_decayMode, std::string year, std::string trg_name, std::string ele_input, std::string Working_Point, UncSource source, UncScale scale,  std::string datatype) const {
         float eff = 1;
         const std::string& scale_str = getMuScaleStr(scale);
@@ -163,7 +163,7 @@ public:
         }
         return eff ;
     }
-    
+
     float getEff_etau_leg_e(const LorentzVectorM & part_p4, const int & part_decayMode, std::string year, std::string trg_name, std::string ele_input, std::string Working_Point, UncSource source, UncScale scale,  std::string datatype) const {
         float eff = 1;
         const std::string& scale_str = getEleEffScaleStr(scale);
@@ -216,7 +216,7 @@ public:
         }
         return eff ;
     }
-    
+
     float getEff_ditaujet_leg_jet(const LorentzVectorM & part_p4, const int & part_decayMode, std::string year, std::string trg_name, std::string ele_input, std::string Working_Point, UncSource source, UncScale scale,  std::string datatype) const {
         float eff = 1;
         const std::string& scale_str = getDiTauScaleStr(scale);
