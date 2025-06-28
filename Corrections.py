@@ -83,6 +83,7 @@ class Corrections:
         self.jet_ = None
         self.fatjet_ = None
         self.Vpt_ = None
+        self.JetVetoMap_ = None
 
     @property
     def pu(self):
@@ -95,8 +96,15 @@ class Corrections:
     def Vpt(self):
         if self.Vpt_ is None:
             from .Vpt import VptCorrProducer
-            self.Vpt_ = VptCorrProducer(self.sample_type)
+            self.Vpt_ = VptCorrProducer(self.sample_type,self.period)
         return self.Vpt_
+
+    @property
+    def JetVetoMap(self):
+        if self.JetVetoMap_ is None:
+            from .JetVetoMap import JetVetoMapProvider
+            self.JetVetoMap_ = JetVetoMapProvider(self.period)
+        return self.JetVetoMap_
 
     @property
     def tau(self):
@@ -182,7 +190,7 @@ class Corrections:
             apply_jes = 'JEC' in self.to_apply and not self.isData
             apply_jer = 'JER' in self.to_apply and not self.isData
             df, source_dict = self.jet.getP4Variations(df, source_dict, apply_jer, apply_jes)
-        if 'muonScaRe' in self.to_apply:
+        if 'muScaRe' in self.to_apply:
             df, source_dict = self.muScaRe.getP4Variations(df, source_dict)
             # df, source_dict = self.fatjet.getP4Variations(df, source_dict, 'JER' in self.to_apply, 'JEC' in self.to_apply)
         # if 'tauES' in self.to_apply or 'JEC' in self.to_apply or 'JEC' in self.to_apply:
@@ -202,8 +210,7 @@ class Corrections:
         return df, syst_dict
 
     # scale_name for getBTagShapeSF is contained in syst_name
-    def getNormalisationCorrections(self, df, global_params, samples, sample, lepton_legs, offline_legs, trigger_names, syst_name, source_name,
-                                    ana_cache=None, return_variations=True, isCentral=True):
+    def getNormalisationCorrections(self, df, global_params, samples, sample, lepton_legs, offline_legs, trigger_names, syst_name, source_name, ana_cache=None, return_variations=True, isCentral=True):
         lumi = global_params['luminosity']
         sampleType = samples[sample]['sampleType']
         generator = samples[sample]['generator']
@@ -297,6 +304,9 @@ class Corrections:
                 for scale in ['Up','Down']:
                     if syst_name == f'pu{scale}' and return_variations:
                         all_weights.append(weight_out_name)
+        if 'JetVetoMap' in self.to_apply:
+            df,JetVetoMap_branches = self.GetJetVetoMap(df)
+            all_weights.extend(JetVetoMap_branches)
         if 'Vpt' in self.to_apply:
             df, Vpt_SF_branches = self.Vpt.getSF(df,isCentral,return_variations)
             all_weights.extend(Vpt_SF_branches)

@@ -119,7 +119,7 @@ class JetCorrProducer:
     # maps period to base tag
     # for DATA: jec_tag = {base_tag}_Run{letters}_V{version}_DATA
     jec_tag_map_data = { "2022_Summer22": "Summer22_22Sep2023_Run{}_V2_DATA",
-                         "2023_Summer23BPix": "Summer23BPixPrompt23_Run{}_V2_DATA",
+                         "2023_Summer23BPix": "Summer23BPixPrompt23_Run{}_V3_DATA",
                          "2022_Prompt": "Winter22Run3_Run{}_V2_DATA",
                          "2023_Summer23": "Summer23Prompt23_Run{}_V2_DATA",
                          "2022_Summer22EE": "Summer22EE_22Sep2023_Run{}_V2_DATA" }
@@ -294,12 +294,3 @@ class JetCorrProducer:
         else:
             df = df.Define("Jet_ptRes", "::correction::JetCorrProvider::getGlobal().getResolution(Jet_pt, Jet_eta, Rho_fixedGridRhoFastjetAll)")
         return df
-
-    #def getVetoMap(self, df):
-    #    df = df.Define(f"vetoMapLooseRegion", "Jet_pt > 15 && ( Jet_jetId & 2 ) && (Jet_puId > 0 || Jet_pt >50) ")
-
-    # jet pT > 15 GeV
-    # tight jet ID
-    # PU jet ID for CHS jets with pT < 50 GeV
-    # jet EM fraction (charged + neutral) < 0.9
-    # jets that don’t overlap with PF muon (dR < 0.2) RemoveOverlaps(Jet_p4, vetoMapLooseRegion, Muon_p4, Muon_p4.size(), 0.2)

@@ -41,9 +41,13 @@ class JetVetoMapProvider:
     def GetJetVetoMap(self, df):
         SF_branches = []
         uncSource = "jetvetomap"
-         df = df.Define(f"weight_jetVetoMap_double",f'''::correction::JetVetoMapProvider::getGlobal().GetJetVetoMapValue(Jet_p4)''')
-         # jet eta, jet phi, type = "jetvetomap"
-         df = df.Define("weight_jetVetoMap", f"static_cast<float>(weight_jetVetoMap_double)")
+        df = df.Define(f"vetoMapLooseRegion", "Jet_pt > 15 && ( Jet_jetId & 2 ) && SelectedJet_chHEF + SelectedJet_neHEF < 0.9 ") #  (Jet_puId > 0 || Jet_pt >50) &&  for CHS jets
+        df = df.Define(f"vetoMapLooseRegionNonOverlapping", " RemoveOverlaps(Jet_p4, vetoMapLooseRegion, Muon_p4, Muon_p4.size(), 0.2)")
+        # jet pT > 15 GeV, tight jet ID, PU jet ID for CHS jets with pT < 50 GeV,  jet EM fraction (charged + neutral) < 0.9
+        # jets that don’t overlap with PF muon (dR < 0.2) RemoveOverlaps(Jet_p4, vetoMapLooseRegion, Muon_p4, Muon_p4.size(), 0.2)
+        df = df.Define(f"weight_jetVetoMap_double",f'''vetoMapLooseRegionNonOverlapping? ::correction::JetVetoMapProvider::getGlobal().GetJetVetoMapValue(Jet_p4):1''')
+        # jet eta, jet phi, type = "jetvetomap"
+        df = df.Define("weight_jetVetoMap", f"static_cast<float>(weight_jetVetoMap_double)")
         SF_branches.append("weight_jetVetoMap")
         return df,SF_branches
 
