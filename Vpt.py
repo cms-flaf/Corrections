@@ -31,20 +31,20 @@ scale_defs = {
 #
 
 class VptCorrProducer:
-    EWK_corr_jsonPath_recoil = "Corrections/data/EWK_Corr_Vpt/{0}/DY_pTll_recoil_corrections_{0}_v2.json"
-    EWK_corr_jsonPath_weights = "Corrections/data/EWK_Corr_Vpt/{0}/DY_pTll_weights_{0}_v2.json"
+    EWK_corr_jsonPath_recoil = "Corrections/data/EWK_Corr_Vpt/DYweightCorrlib/DY_pTll_recoil_corrections_{0}_v3.json.gz"
+    EWK_corr_jsonPath_weights = "Corrections/data/EWK_Corr_Vpt/DYweightCorrlib/DY_pTll_weights_{0}_v3.json.gz"
     EWK_corr_filePath = "Corrections/data/EWK_Corr_Vpt/{0}"
     initialized = False
     SFSources = ["Vpt", "ewcorr"]
     DY_w_SFSources = ["DYWeight"]
 
-    def __init__(self, sampleType, order="NLO"):
+    def __init__(self, sampleType, period, order="NLO"):
         rootFile_EWKcorr_name = "ZJetsCorr_collection_wek.root" if sampleType == "DY" else "WJetsCorr_collection_ewk.root"
         rootFile_EWKcorr = os.path.join(os.environ['ANALYSIS_PATH'],VptCorrProducer.EWK_corr_filePath.format(rootFile_EWKcorr_name))
-        period = "Run3_2022EE"
+        # period = "Run3_2022" #NEED TO BE FIXED!!!!
         jsonFile_EWKcorr_recoil = os.path.join(os.environ['ANALYSIS_PATH'],VptCorrProducer.EWK_corr_jsonPath_recoil.format(period_names_Vpt[period]))
-
         jsonFile_EWKcorr_weight = os.path.join(os.environ['ANALYSIS_PATH'],VptCorrProducer.EWK_corr_jsonPath_weights.format(period_names_Vpt[period]))
+        print(jsonFile_EWKcorr_weight)
         self.order = order
         hist_name = "eej_pTV_kappa_EW" if sampleType == "DY" else "evj_pTV_kappa_EW"
         hist_nominal_weight = "ewcorr"

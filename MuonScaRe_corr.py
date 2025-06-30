@@ -8,7 +8,7 @@ class MuonScaReCorrProducer:
     initialized = False
     jsonPath = "Corrections/data/MUO/MuonScaRe/{}.json"
     initialized = False
-    uncSources = ["Total"]
+    uncSources = ["ScaRe"]
 
     period = None
     def __init__(self, period, isData, return_variations=False):
@@ -27,7 +27,7 @@ class MuonScaReCorrProducer:
 
     def getP4Variations(self, df,source_dict):
         # Data apply scale correction
-        for source in [ central ] + ['corr']:
+        for source in [ central ] + ['ScaRe']:
             source_eff = source
             updateSourceDict(source_dict, source_eff, 'Muon')
             for scale in getScales(source):
