@@ -162,6 +162,7 @@ private:
         JetCorrectionProvider(std::string const& json_file_name,
                               std::string const& jetsmear_file_name,
                               std::string const& jec_tag,
+                              std::string const& other_jec_tag,
                               std::string const& jer_tag,
                               std::string const& algo,
                               std::string const& year,
@@ -172,11 +173,13 @@ private:
         ,   jersmear_corr_(CorrectionSet::from_file(jetsmear_file_name)->at("JERSmear"))
         ,   corr_jer_sf_(corrset_->at(jer_tag + "_ScaleFactor_" + algo))
         ,   corr_jer_res_(corrset_->at(jer_tag + "_PtResolution_" + algo))
-        ,   cmpd_corr_(corrset_->compound().at(jec_tag + "_L1L2L3Res_" + algo))
+        ,   cmpd_corr_(corrset_->compound().at(other_jec_tag + "_L1L2L3Res_" + algo))
         ,   is_data_(is_data)
+        ,   year_(year)
         ,   apply_cmpd_(apply_compound)
         {
             // map with uncertainty sources should only be filled for MC
+            std::cout << "JetCorrectionProvider: init" << std::endl;
             if (!is_data_)
             {
                 auto const& unc_map_ref = use_regrouped ? unc_map_regrouped : unc_map_total;
@@ -198,7 +201,7 @@ private:
         }
 
         std::map<std::pair<UncSource, UncScale>, RVecLV> getShiftedP4(RVecF Jet_pt, const RVecF& Jet_eta, const RVecF& Jet_phi, RVecF Jet_mass,
-                                                                      const RVecF& Jet_rawFactor, const RVecF& Jet_area, const float rho, int event, bool apply_jer,
+                                                                      const RVecF& Jet_rawFactor, const RVecF& Jet_area, const float rho, int event, bool apply_jer, bool require_run_number, const unsigned int run,
                                                                       const RVecF& GenJet_pt = {}, const RVecI& Jet_genJetIdx = {}) const
         {
             std::map<std::pair<UncSource, UncScale>, RVecLV> all_shifted_p4;
@@ -241,7 +244,15 @@ private:
                 // evaluate and apply compound correction
                 if (apply_cmpd_)
                 {
-                    float cmpd_sf = cmpd_corr_->evaluate({Jet_area[i], Jet_eta[i], Jet_pt[i], rho});
+                    float cmpd_sf = 1.0;
+                    if (require_run_number)
+                        {
+                            cmpd_sf = cmpd_corr_->evaluate({Jet_area[i], Jet_eta[i], Jet_pt[i], rho, static_cast<float>(run)}); // for 2023 data and 2023BPix data&MC, need also run number
+                        }
+                    else
+                        {
+                            cmpd_sf = cmpd_corr_->evaluate({Jet_area[i], Jet_eta[i], Jet_pt[i], rho});
+                        }
                     Jet_pt[i] *= cmpd_sf;
                     Jet_mass[i] *= cmpd_sf;
                 }
@@ -319,6 +330,7 @@ private:
         Correction::Ref corr_jer_res_;
         CompoundCorrection::Ref cmpd_corr_;
         bool is_data_;
+        std::string year_;
         bool apply_cmpd_;
 
         inline static const std::map<UncSource, std::string> unc_map_total = { { UncSource::Total, "Total" },

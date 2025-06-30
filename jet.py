@@ -110,19 +110,19 @@ class JetCorrProducer:
                     "2023_Summer23": "Summer23Prompt23_RunCv1234_JRV1_MC" }
 
     # maps period to JEC tag
-    jec_tag_map_mc = { "2022_Summer22": "Summer22_22Sep2023_V2_MC",
-                       "2022_Prompt": "Winter22Run3_V2_MC",
-                       "2022_Summer22EE": "Summer22EE_22Sep2023_V2_MC",
-                       "2023_Summer23BPix": "Summer23BPixPrompt23_V3_MC",
-                       "2023_Summer23": "Summer23Prompt23_V2_MC" }
+    jec_tag_map_mc = { "2022_Summer22": ["Summer22_22Sep2023_V2_MC"],
+                       "2022_Prompt": ["Winter22Run3_V2_MC"],
+                       "2022_Summer22EE": ["Summer22EE_22Sep2023_V2_MC"],
+                       "2023_Summer23BPix": ["Summer23BPixPrompt23_V3_MC"],
+                       "2023_Summer23": ["Summer23Prompt23_V2_MC"]}
 
     # maps period to base tag
     # for DATA: jec_tag = {base_tag}_Run{letters}_V{version}_DATA
-    jec_tag_map_data = { "2022_Summer22": "Summer22_22Sep2023_Run{}_V2_DATA",
-                         "2023_Summer23BPix": "Summer23BPixPrompt23_Run{}_V3_DATA",
-                         "2022_Prompt": "Winter22Run3_Run{}_V2_DATA",
-                         "2023_Summer23": "Summer23Prompt23_Run{}_V2_DATA",
-                         "2022_Summer22EE": "Summer22EE_22Sep2023_Run{}_V2_DATA" }
+    jec_tag_map_data = { "2022_Summer22": ["Summer22_22Sep2023_Run{}_V2_DATA"],
+                         "2023_Summer23BPix": ["Summer23BPixPrompt23_Run{}_V3_DATA", "Summer23BPixPrompt23_V3_DATA"],
+                         "2022_Prompt": ["Winter22Run3_Run{}_V2_DATA"],
+                         "2023_Summer23": ["Summer23Prompt23_Run{}_V2_DATA", "Summer23Prompt23_V2_DATA"],
+                         "2022_Summer22EE": ["Summer22EE_22Sep2023_Run{}_V2_DATA" ]}
 
     run_versions = {"2022_Summer22": [],
                     "2023_Summer23BPix": [],
@@ -151,8 +151,9 @@ class JetCorrProducer:
         else:
             self.uncSources_toUse = JetCorrProducer.uncSources_minimal
         self.year = int(period[:4])
-        print(f"period: {period}")
-        print(f"year: {self.year}")
+        self.period = period
+        # print(f"period: {period}")
+        # print(f"year: {self.year}")
         if not self.use_corrlib:
             print("Initializing old JetCorrProducer")
             JEC_dir = directories_JEC[period]
@@ -161,11 +162,9 @@ class JetCorrProducer:
             JER_SF_txt = f"{JER_dir}_{type_suffix}/{JER_dir}_{type_suffix}_SF_AK4PFchs.txt"
             JER_PtRes_txt = f"{JER_dir}_{type_suffix}/{JER_dir}_{type_suffix}_PtResolution_AK4PFchs.txt"
             JEC_Regrouped_txt = f"{JEC_dir}/{regrouped_files_names[period]}"
-
             ptResolution = getJMEFile("JRDatabase", JER_PtRes_txt)
             ptResolutionSF = getJMEFile("JRDatabase", JER_SF_txt)
             JEC_Regrouped = getJMEFile("JECDatabase", JEC_Regrouped_txt)
-
             if not JetCorrProducer.initialized:
                 ROOT.gSystem.Load("libJetMETCorrectionsModules.so")
                 ROOT.gSystem.Load("libCondFormatsJetMETObjects.so")
@@ -177,6 +176,7 @@ class JetCorrProducer:
                 ROOT.gInterpreter.Declare(f'#include "{JME_calc_base}"')
                 ROOT.gInterpreter.Declare(f'#include "{JME_calc_path}"')
                 ROOT.gInterpreter.Declare(f'#include "{header_path}"')
+
                 ROOT.gInterpreter.ProcessLine(f"""::correction::JetCorrProvider::Initialize("{ptResolution}", "{ptResolutionSF}","{JEC_Regrouped}", "{periods[period]}")""")
                 JetCorrProducer.period = period
                 JetCorrProducer.initialized = True
@@ -186,14 +186,14 @@ class JetCorrProducer:
             jet_jsonFile = os.path.join(os.environ['ANALYSIS_PATH'], jet_path)
             jersmear_path = JetCorrProducer.jersmear_jsonPath
             jetsmear_jsonFile = os.path.join(os.environ['ANALYSIS_PATH'], jersmear_path)
-
             year = period.split('_')[0]
             jec_tag_map = JetCorrProducer.jec_tag_map_data if self.isData else JetCorrProducer.jec_tag_map_mc
-            jec_tag = jec_tag_map[period]
+            jec_tag_array = jec_tag_map[period]
+            jec_tag = jec_tag_array[0]
+            other_jec_tag = jec_tag_array[1] if len(jec_tag_array) > 1 else jec_tag_array[0]
             if self.isData:
                 letter_list = JetCorrProducer.run_letters[period]
                 version_list = JetCorrProducer.run_versions[period]
-
                 sample_letter = ""
                 sample_version = ""
                 if sample_name[-1].isalpha():
@@ -225,6 +225,7 @@ class JetCorrProducer:
                 if not sample_letter and not sample_version:
                     raise RuntimeError(f"sample name {sample_name} doesn't follow expected pattern base_letter_version")
                 jec_tag = jec_tag.format(letters)
+                other_jec_tag = other_jec_tag.format(letters)
 
             jer_tag = JetCorrProducer.jer_tag_map[period]
             algo = JetCorrProducer.jet_algorithm
@@ -239,6 +240,7 @@ class JetCorrProducer:
                 ROOT.gInterpreter.ProcessLine(f"""::correction::JetCorrectionProvider::Initialize("{jet_jsonFile}",
                                                                                                   "{jetsmear_jsonFile}",
                                                                                                   "{jec_tag}",
+                                                                                                  "{other_jec_tag}",
                                                                                                   "{jer_tag}",
                                                                                                   "{algo}",
                                                                                                   "{year}",
@@ -252,13 +254,22 @@ class JetCorrProducer:
         class_name = ""
         if self.use_corrlib:
             apply_jer = "true" if apply_JER and not self.isData else "false"
+            require_run_number = "false"
+            print(f"period = {self.period}")
+            print(f"isData = {self.isData}")
+            if self.period == "2023_Summer23" and self.isData:
+                print("putting require run number true ")
+                require_run_number = "true"
+            if self.period == "2023_Summer23BPix" :
+                require_run_number = "true"
+            print("require_run_number? ", require_run_number)
             if not self.isData:
                 df = df.Define("Jet_p4_shifted_map", f'''::correction::JetCorrectionProvider::getGlobal().getShiftedP4(Jet_pt, Jet_eta, Jet_phi, Jet_mass,
-                                                                                                                       Jet_rawFactor, Jet_area, Rho_fixedGridRhoFastjetAll, event, {apply_jer},
+                                                                                                                       Jet_rawFactor, Jet_area, Rho_fixedGridRhoFastjetAll, event, {apply_jer}, {require_run_number},run,
                                                                                                                        GenJet_pt, Jet_genJetIdx)''')
             else:
                 df = df.Define("Jet_p4_shifted_map", f'''::correction::JetCorrectionProvider::getGlobal().getShiftedP4(Jet_pt, Jet_eta, Jet_phi, Jet_mass,
-                                                                                                                       Jet_rawFactor, Jet_area, Rho_fixedGridRhoFastjetAll, event, {apply_jer})''')
+                                                                                                                       Jet_rawFactor, Jet_area, Rho_fixedGridRhoFastjetAll,event, {apply_jer}, {require_run_number}, run)''')
             class_name = "JetCorrectionProvider"
         else:
             df = df.Define('Jet_p4_shifted_map', f'''::correction::JetCorrProvider::getGlobal().getShiftedP4(
@@ -286,7 +297,6 @@ class JetCorrProducer:
                 df = df.Define(f"Jet_p4_{syst_name}_delta", f"Jet_p4_{syst_name} - Jet_p4_{nano}")
 
         return df, source_dict
-
 
     def getEnergyResolution(self, df):
         if self.use_corrlib:

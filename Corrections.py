@@ -304,9 +304,9 @@ class Corrections:
                 for scale in ['Up','Down']:
                     if syst_name == f'pu{scale}' and return_variations:
                         all_weights.append(weight_out_name)
-        if 'JetVetoMap' in self.to_apply:
-            df,JetVetoMap_branches = self.GetJetVetoMap(df)
-            all_weights.extend(JetVetoMap_branches)
+        # if 'JetVetoMap' in self.to_apply:
+        #     df,JetVetoMap_branches = self.JetVetoMap.GetJetVetoMap(df)
+        #     all_weights.extend(JetVetoMap_branches)
         if 'Vpt' in self.to_apply:
             df, Vpt_SF_branches = self.Vpt.getSF(df,isCentral,return_variations)
             all_weights.extend(Vpt_SF_branches)
