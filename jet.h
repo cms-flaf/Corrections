@@ -201,7 +201,7 @@ private:
         }
 
         std::map<std::pair<UncSource, UncScale>, RVecLV> getShiftedP4(RVecF Jet_pt, const RVecF& Jet_eta, const RVecF& Jet_phi, RVecF Jet_mass,
-                                                                      const RVecF& Jet_rawFactor, const RVecF& Jet_area, const float rho, int event, bool apply_jer, bool require_run_number, const unsigned int run,
+                                                                      const RVecF& Jet_rawFactor, const RVecF& Jet_area, const float rho, int event, bool apply_jer, bool require_run_number, const unsigned int run, bool wantPhi,
                                                                       const RVecF& GenJet_pt = {}, const RVecI& Jet_genJetIdx = {}) const
         {
             std::map<std::pair<UncSource, UncScale>, RVecLV> all_shifted_p4;
@@ -246,9 +246,16 @@ private:
                 {
                     float cmpd_sf = 1.0;
                     if (require_run_number)
+                    {
+                    // for run3_2023BPix data they want also phi ..
+                        if (wantPhi)
                         {
+                            cmpd_sf = cmpd_corr_->evaluate({Jet_area[i], Jet_eta[i], Jet_pt[i], rho, Jet_phi[i], static_cast<float>(run)});
+                        }
+                        else{
                             cmpd_sf = cmpd_corr_->evaluate({Jet_area[i], Jet_eta[i], Jet_pt[i], rho, static_cast<float>(run)}); // for 2023 data and 2023BPix data&MC, need also run number
                         }
+                    }
                     else
                         {
                             cmpd_sf = cmpd_corr_->evaluate({Jet_area[i], Jet_eta[i], Jet_pt[i], rho});

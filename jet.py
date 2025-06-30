@@ -262,14 +262,16 @@ class JetCorrProducer:
                 require_run_number = "true"
             if self.period == "2023_Summer23BPix" :
                 require_run_number = "true"
+            wantPhi = "true" if self.period == "2023_Summer23BPix" and self.isData else "false"
             print("require_run_number? ", require_run_number)
+            print("wantPhi? ", wantPhi)
             if not self.isData:
                 df = df.Define("Jet_p4_shifted_map", f'''::correction::JetCorrectionProvider::getGlobal().getShiftedP4(Jet_pt, Jet_eta, Jet_phi, Jet_mass,
-                                                                                                                       Jet_rawFactor, Jet_area, Rho_fixedGridRhoFastjetAll, event, {apply_jer}, {require_run_number},run,
+                                                                                                                       Jet_rawFactor, Jet_area, Rho_fixedGridRhoFastjetAll, event, {apply_jer}, {require_run_number},run,{wantPhi},
                                                                                                                        GenJet_pt, Jet_genJetIdx)''')
             else:
                 df = df.Define("Jet_p4_shifted_map", f'''::correction::JetCorrectionProvider::getGlobal().getShiftedP4(Jet_pt, Jet_eta, Jet_phi, Jet_mass,
-                                                                                                                       Jet_rawFactor, Jet_area, Rho_fixedGridRhoFastjetAll,event, {apply_jer}, {require_run_number}, run)''')
+                                                                                                                       Jet_rawFactor, Jet_area, Rho_fixedGridRhoFastjetAll,event, {apply_jer}, {require_run_number}, run,{wantPhi})''')
             class_name = "JetCorrectionProvider"
         else:
             df = df.Define('Jet_p4_shifted_map', f'''::correction::JetCorrProvider::getGlobal().getShiftedP4(
