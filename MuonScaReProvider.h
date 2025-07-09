@@ -83,7 +83,7 @@ namespace correction {
     public:
         enum class UncSource : int {
             Central = -1,
-            corr = 0,
+            ScaRe = 0,
         };
         static const std::string& getScaleStr(UncScale scale)
         {
@@ -97,7 +97,7 @@ namespace correction {
 
         static bool sourceApplies(UncSource source)
         {
-            if(source == UncSource::corr) return true;
+            if(source == UncSource::ScaRe) return true;
             return false;
         }
 
