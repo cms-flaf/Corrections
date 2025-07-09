@@ -189,7 +189,8 @@ class Corrections:
         if 'JEC' in self.to_apply or 'JER' in self.to_apply:
             apply_jes = 'JEC' in self.to_apply and not self.isData
             apply_jer = 'JER' in self.to_apply and not self.isData
-            df, source_dict = self.jet.getP4Variations(df, source_dict, apply_jer, apply_jes)
+            apply_jet_horns_fix_ = 'JER' in self.to_apply and 'Jet_horns_fix' in self.to_apply and not self.isData
+            df, source_dict = self.jet.getP4Variations(df, source_dict, apply_jer, apply_jes, apply_jet_horns_fix_)
         if 'muScaRe' in self.to_apply:
             df, source_dict = self.muScaRe.getP4Variations(df, source_dict)
             # df, source_dict = self.fatjet.getP4Variations(df, source_dict, 'JER' in self.to_apply, 'JEC' in self.to_apply)

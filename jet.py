@@ -250,28 +250,24 @@ class JetCorrProducer:
                 JetCorrProducer.initialized = True
 
 
-    def getP4Variations(self, df, source_dict, apply_JER, apply_JES):
+    def getP4Variations(self, df, source_dict, apply_JER, apply_JES, apply_forward_jet_horns_fix_=False):
         class_name = ""
+        apply_forward_jet_horns_fix = "true" if apply_forward_jet_horns_fix_ else "false"
         if self.use_corrlib:
             apply_jer = "true" if apply_JER and not self.isData else "false"
             require_run_number = "false"
-            print(f"period = {self.period}")
-            print(f"isData = {self.isData}")
             if self.period == "2023_Summer23" and self.isData:
-                print("putting require run number true ")
                 require_run_number = "true"
             if self.period == "2023_Summer23BPix" :
                 require_run_number = "true"
             wantPhi = "true" if self.period == "2023_Summer23BPix" and self.isData else "false"
-            print("require_run_number? ", require_run_number)
-            print("wantPhi? ", wantPhi)
             if not self.isData:
                 df = df.Define("Jet_p4_shifted_map", f'''::correction::JetCorrectionProvider::getGlobal().getShiftedP4(Jet_pt, Jet_eta, Jet_phi, Jet_mass,
-                                                                                                                       Jet_rawFactor, Jet_area, Rho_fixedGridRhoFastjetAll, event, {apply_jer}, {require_run_number},run,{wantPhi},
+                                                                                                                       Jet_rawFactor, Jet_area, Rho_fixedGridRhoFastjetAll, event, {apply_jer}, {require_run_number},run,{wantPhi},{apply_forward_jet_horns_fix},
                                                                                                                        GenJet_pt, Jet_genJetIdx)''')
             else:
                 df = df.Define("Jet_p4_shifted_map", f'''::correction::JetCorrectionProvider::getGlobal().getShiftedP4(Jet_pt, Jet_eta, Jet_phi, Jet_mass,
-                                                                                                                       Jet_rawFactor, Jet_area, Rho_fixedGridRhoFastjetAll,event, {apply_jer}, {require_run_number}, run,{wantPhi})''')
+                                                                                                                       Jet_rawFactor, Jet_area, Rho_fixedGridRhoFastjetAll,event, {apply_jer}, {require_run_number}, run,{wantPhi},{apply_forward_jet_horns_fix})''')
             class_name = "JetCorrectionProvider"
         else:
             df = df.Define('Jet_p4_shifted_map', f'''::correction::JetCorrProvider::getGlobal().getShiftedP4(

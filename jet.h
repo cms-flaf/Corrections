@@ -84,7 +84,7 @@ public:
                     const RVecF& Jet_mass, const RVecF& Jet_rawFactor, const RVecF& Jet_area,
                     const RVecI& Jet_jetId, const float rho, const RVecI& Jet_partonFlavour,
                     std::uint32_t seed, const RVecF& GenJet_pt, const RVecF& GenJet_eta,
-                    const RVecF& GenJet_phi, const RVecF& GenJet_mass, int event) const {
+                    const RVecF& GenJet_phi, const RVecF& GenJet_mass, int event, bool apply_forward_jet_horns_fix) const {
         std::map<std::pair<UncSource,UncScale>, RVecLV> all_shifted_p4;
         auto result = jvc_total.produce(Jet_pt, Jet_eta, Jet_phi, Jet_mass, Jet_rawFactor,
                                     Jet_area, Jet_jetId, rho, Jet_partonFlavour, seed,
@@ -99,7 +99,7 @@ public:
                 for (int jet_idx= 0 ; jet_idx < Jet_pt.size(); ++jet_idx){
                     // temporary fix for jet horn issue --> do not apply JER for
 
-                    if(unc_source == UncSource::JER && (std::abs(Jet_eta[jet_idx]) >= 2.5 || std::abs(Jet_eta[jet_idx]) <= 3)){
+                    if(apply_forward_jet_horns_fix && unc_source == UncSource::JER && (std::abs(Jet_eta[jet_idx]) >= 2.5 || std::abs(Jet_eta[jet_idx]) <= 3)){
                         shifted_p4[jet_idx] = LorentzVectorM(Jet_pt[jet_idx], Jet_eta[jet_idx],
                         Jet_phi[jet_idx], Jet_mass[jet_idx]);
                     }
@@ -201,7 +201,7 @@ private:
         }
 
         std::map<std::pair<UncSource, UncScale>, RVecLV> getShiftedP4(RVecF Jet_pt, const RVecF& Jet_eta, const RVecF& Jet_phi, RVecF Jet_mass,
-                                                                      const RVecF& Jet_rawFactor, const RVecF& Jet_area, const float rho, int event, bool apply_jer, bool require_run_number, const unsigned int run, bool wantPhi,
+                                                                      const RVecF& Jet_rawFactor, const RVecF& Jet_area, const float rho, int event, bool apply_jer, bool require_run_number, const unsigned int run, bool wantPhi,  bool apply_forward_jet_horns_fix,
                                                                       const RVecF& GenJet_pt = {}, const RVecI& Jet_genJetIdx = {}) const
         {
             std::map<std::pair<UncSource, UncScale>, RVecLV> all_shifted_p4;
