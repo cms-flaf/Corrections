@@ -37,9 +37,8 @@ class JetVetoMapProvider:
             JetVetoMapProvider.initialized = True
 
 
-    def GetJetVetoMap(self, df):
+    def GetJetVetoMap(self, df, pre_sel):
         # jet pT > 15 GeV, tight jet ID, PU jet ID for CHS jets with pT < 50 GeV,  jet EM fraction (charged + neutral) < 0.9
-        # jets that don’t overlap with PF muon (dR < 0.2) RemoveOverlaps(Jet_p4, vetoMapLooseRegion, Muon_p4, Muon_p4.size(), 0.2)
-        df = df.Define(f"Jet_vetoMap",f'''::correction::JetVetoMapProvider::getGlobal().GetJetVetoMapValues(Jet_p4,vetoMapLooseRegionNonOverlapping)''')
+        df = df.Define(f"Jet_isInsideVetoRegion",f'''::correction::JetVetoMapProvider::getGlobal().GetJetVetoMapValues(Jet_p4,{pre_sel})''')
         return df
 
