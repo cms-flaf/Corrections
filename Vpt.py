@@ -31,8 +31,8 @@ scale_defs = {
 #
 
 class VptCorrProducer:
-    EWK_corr_jsonPath_recoil = "Corrections/data/DYWeightCorrLib/DY_pTll_recoil_corrections_{0}_v3.json.gz"
-    EWK_corr_jsonPath_weights = "Corrections/data/DYWeightCorrLib/DY_pTll_weights_{0}_v3.json.gz"
+    EWK_corr_jsonPath_recoil = "Corrections/data/DYWeightHLepRare/DY_pTll_recoil_corrections_{0}_v3.json.gz"
+    EWK_corr_jsonPath_weights = "Corrections/data/DYWeightHLepRare/DY_pTll_weights_{0}_v3.json.gz"
     EWK_corr_filePath = "Corrections/data/EWK_Corr_Vpt/{0}"
     initialized = False
     SFSources = ["Vpt", "ewcorr"]
