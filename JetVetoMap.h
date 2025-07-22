@@ -15,7 +15,7 @@ namespace correction {
 
         }
         RVecB GetJetVetoMapValues(const RVecLV& Jet_p4) const {
-            RVecB veto_values(Jet_p4.size()); // Default value is 1.0 (no veto)
+            RVecB veto_values(Jet_p4.size(), 1.0); // Default value is 1.0 (no veto)
             for (int jet_idx = 0; jet_idx < Jet_p4.size(); jet_idx++) {
                 float jvm_factor = JetVetoMap_value->evaluate({"jetvetomap", Jet_p4[jet_idx].Eta(),Jet_p4[jet_idx].Phi()}) ;
                 veto_values[jet_idx] = static_cast<bool>(jvm_factor); // Apply the correction factor
