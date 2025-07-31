@@ -98,8 +98,7 @@ public:
                 int scale_idx = GetJesIdx(unc_source, uncScale);
                 for (int jet_idx= 0 ; jet_idx < Jet_pt.size(); ++jet_idx){
                     // temporary fix for jet horn issue --> do not apply JER for
-
-                    if(apply_forward_jet_horns_fix && unc_source == UncSource::JER && (std::abs(Jet_eta[jet_idx]) >= 2.5 || std::abs(Jet_eta[jet_idx]) <= 3)){
+                    if(apply_forward_jet_horns_fix && unc_source == UncSource::JER && (std::abs(Jet_eta[jet_idx]) >= 2.5 && std::abs(Jet_eta[jet_idx]) <= 3)){
                         shifted_p4[jet_idx] = LorentzVectorM(Jet_pt[jet_idx], Jet_eta[jet_idx],
                         Jet_phi[jet_idx], Jet_mass[jet_idx]);
                     }

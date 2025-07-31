@@ -41,7 +41,6 @@ class VptCorrProducer:
     def __init__(self, sampleType, period, order="NLO"):
         rootFile_EWKcorr_name = "ZJetsCorr_collection_wek.root" if sampleType == "DY" else "WJetsCorr_collection_ewk.root"
         rootFile_EWKcorr = os.path.join(os.environ['ANALYSIS_PATH'],VptCorrProducer.EWK_corr_filePath.format(rootFile_EWKcorr_name))
-        # period = "Run3_2022" #NEED TO BE FIXED!!!!
         jsonFile_EWKcorr_recoil = os.path.join(os.environ['ANALYSIS_PATH'],VptCorrProducer.EWK_corr_jsonPath_recoil.format(period_names_Vpt[period]))
         jsonFile_EWKcorr_weight = os.path.join(os.environ['ANALYSIS_PATH'],VptCorrProducer.EWK_corr_jsonPath_weights.format(period_names_Vpt[period]))
         print(jsonFile_EWKcorr_weight)

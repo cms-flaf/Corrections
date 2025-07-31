@@ -15,7 +15,7 @@ namespace correction {
         }
         RVecB GetJetVetoMapValues(const RVecLV& Jet_p4) const {
             // Non-zero value for (eta, phi) indicates that the region is vetoed. --> initialization with 0.
-            RVecB veto_values(Jet_p4.size(), 0.); // Default value is 0.0 (NO veto)
+             RVecB veto_values(Jet_p4.size(), false); // Default value is false (NO veto)
             for (int jet_idx = 0; jet_idx < Jet_p4.size(); jet_idx++) {
                 float jvm_factor = JetVetoMap_value->evaluate({"jetvetomap", Jet_p4[jet_idx].Eta(),Jet_p4[jet_idx].Phi()}) ;
                 veto_values[jet_idx] = static_cast<bool>(jvm_factor); // Apply the correction factor
