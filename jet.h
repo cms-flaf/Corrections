@@ -84,7 +84,7 @@ public:
                     const RVecF& Jet_mass, const RVecF& Jet_rawFactor, const RVecF& Jet_area,
                     const RVecI& Jet_jetId, const float rho, const RVecI& Jet_partonFlavour,
                     std::uint32_t seed, const RVecF& GenJet_pt, const RVecF& GenJet_eta,
-                    const RVecF& GenJet_phi, const RVecF& GenJet_mass, int event) const {
+                    const RVecF& GenJet_phi, const RVecF& GenJet_mass, int event, bool apply_forward_jet_horns_fix) const {
         std::map<std::pair<UncSource,UncScale>, RVecLV> all_shifted_p4;
         auto result = jvc_total.produce(Jet_pt, Jet_eta, Jet_phi, Jet_mass, Jet_rawFactor,
                                     Jet_area, Jet_jetId, rho, Jet_partonFlavour, seed,
@@ -97,8 +97,15 @@ public:
                 if(unc_source == UncSource::Central && uncScale != UncScale::Central) continue;
                 int scale_idx = GetJesIdx(unc_source, uncScale);
                 for (int jet_idx= 0 ; jet_idx < Jet_pt.size(); ++jet_idx){
-                    shifted_p4[jet_idx] = LorentzVectorM(result.pt(scale_idx)[jet_idx], Jet_eta[jet_idx],
-                    Jet_phi[jet_idx], result.mass(scale_idx)[jet_idx]);
+                    // temporary fix for jet horn issue --> do not apply JER for
+                    if(apply_forward_jet_horns_fix && unc_source == UncSource::JER && (std::abs(Jet_eta[jet_idx]) >= 2.5 && std::abs(Jet_eta[jet_idx]) <= 3)){
+                        shifted_p4[jet_idx] = LorentzVectorM(Jet_pt[jet_idx], Jet_eta[jet_idx],
+                        Jet_phi[jet_idx], Jet_mass[jet_idx]);
+                    }
+                    else{
+                        shifted_p4[jet_idx] = LorentzVectorM(result.pt(scale_idx)[jet_idx], Jet_eta[jet_idx],
+                        Jet_phi[jet_idx], result.mass(scale_idx)[jet_idx]);
+                    }
                 }
             all_shifted_p4.insert({{unc_source, uncScale}, shifted_p4});
             }
@@ -108,6 +115,7 @@ public:
     RVecF getResolution(const RVecF& Jet_pt, const RVecF& Jet_eta, const float rho) const {
         return jvc_total.getResolution(Jet_pt, Jet_eta, rho);
     }
+
 
     //RVecI getVetoMap(const RVecF& Jet_eta, const RVecF& Jet_phi) const{
 
@@ -153,6 +161,7 @@ private:
         JetCorrectionProvider(std::string const& json_file_name,
                               std::string const& jetsmear_file_name,
                               std::string const& jec_tag,
+                              std::string const& other_jec_tag,
                               std::string const& jer_tag,
                               std::string const& algo,
                               std::string const& year,
@@ -163,11 +172,13 @@ private:
         ,   jersmear_corr_(CorrectionSet::from_file(jetsmear_file_name)->at("JERSmear"))
         ,   corr_jer_sf_(corrset_->at(jer_tag + "_ScaleFactor_" + algo))
         ,   corr_jer_res_(corrset_->at(jer_tag + "_PtResolution_" + algo))
-        ,   cmpd_corr_(corrset_->compound().at(jec_tag + "_L1L2L3Res_" + algo))
+        ,   cmpd_corr_(corrset_->compound().at(other_jec_tag + "_L1L2L3Res_" + algo))
         ,   is_data_(is_data)
+        ,   year_(year)
         ,   apply_cmpd_(apply_compound)
         {
             // map with uncertainty sources should only be filled for MC
+            std::cout << "JetCorrectionProvider: init" << std::endl;
             if (!is_data_)
             {
                 auto const& unc_map_ref = use_regrouped ? unc_map_regrouped : unc_map_total;
@@ -189,7 +200,7 @@ private:
         }
 
         std::map<std::pair<UncSource, UncScale>, RVecLV> getShiftedP4(RVecF Jet_pt, const RVecF& Jet_eta, const RVecF& Jet_phi, RVecF Jet_mass,
-                                                                      const RVecF& Jet_rawFactor, const RVecF& Jet_area, const float rho, int event, bool apply_jer,
+                                                                      const RVecF& Jet_rawFactor, const RVecF& Jet_area, const float rho, int event, bool apply_jer, bool require_run_number, const unsigned int run, bool wantPhi,  bool apply_forward_jet_horns_fix,
                                                                       const RVecF& GenJet_pt = {}, const RVecI& Jet_genJetIdx = {}) const
         {
             std::map<std::pair<UncSource, UncScale>, RVecLV> all_shifted_p4;
@@ -200,13 +211,13 @@ private:
             RVecLV central_p4(sz);
             for (size_t i = 0; i < sz; ++i)
             {
+                bool is_jet_in_horn = std::abs(Jet_eta[i]) >= 2.5 && std::abs(Jet_eta[i]) <= 3 && Jet_genJetIdx[i] != -1;
                 // uscaling
                 if (apply_cmpd_)
                 {
                     Jet_pt[i] *= 1.0 - Jet_rawFactor[i];
                     Jet_mass[i] *= 1.0 - Jet_rawFactor[i];
                 }
-
                 if (!is_data_ && apply_jer)
                 {
                     // extract jer scale factor and resolution
@@ -217,8 +228,14 @@ private:
                     int genjet_idx = Jet_genJetIdx[i];
                     float genjet_pt = genjet_idx != -1 ? GenJet_pt[genjet_idx] : -1.0;
                     float jersmear_factor = jersmear_corr_->evaluate({Jet_pt[i], Jet_eta[i], genjet_pt, rho, event, jer_pt_res, jer_sf});
+                    // temporary fix for jet horn issue --> do not apply JER for eta range and jet matched to genjet
 
-                    // apply jer smearing (only for MC)
+                    if(is_jet_in_horn)
+                    {
+                        jersmear_factor = 1.0; // do not apply JER for jets in the horn
+                    }
+
+                    // // apply jer smearing (only for MC)
                     Jet_pt[i] *= jersmear_factor;
                     Jet_mass[i] *= jersmear_factor;
                 }
@@ -226,7 +243,22 @@ private:
                 // evaluate and apply compound correction
                 if (apply_cmpd_)
                 {
-                    float cmpd_sf = cmpd_corr_->evaluate({Jet_area[i], Jet_eta[i], Jet_pt[i], rho});
+                    float cmpd_sf = 1.0;
+                    if (require_run_number)
+                    {
+                    // for run3_2023BPix data they want also phi ..
+                        if (wantPhi)
+                        {
+                            cmpd_sf = cmpd_corr_->evaluate({Jet_area[i], Jet_eta[i], Jet_pt[i], rho, Jet_phi[i], static_cast<float>(run)});
+                        }
+                        else{
+                            cmpd_sf = cmpd_corr_->evaluate({Jet_area[i], Jet_eta[i], Jet_pt[i], rho, static_cast<float>(run)}); // for 2023 data and 2023BPix data&MC, need also run number
+                        }
+                    }
+                    else
+                        {
+                            cmpd_sf = cmpd_corr_->evaluate({Jet_area[i], Jet_eta[i], Jet_pt[i], rho});
+                        }
                     Jet_pt[i] *= cmpd_sf;
                     Jet_mass[i] *= cmpd_sf;
                 }
@@ -252,7 +284,12 @@ private:
                                 for (size_t jet_idx = 0; jet_idx < sz; ++jet_idx)
                                 {
                                     float sf = 1.0;
+                                    bool is_jet_in_horn = std::abs(Jet_eta[jet_idx]) >= 2.5 && std::abs(Jet_eta[jet_idx]) <= 3 && Jet_genJetIdx[jet_idx] != -1;
                                     sf += static_cast<int>(uncScale)*jer_pt_resolutions[jet_idx];
+                                    if(is_jet_in_horn)
+                                    {
+                                        sf = 1.0; // do not apply JER for jets in the horn
+                                    }
                                     shifted_p4[jet_idx] = LorentzVectorM(sf*Jet_pt[jet_idx], Jet_eta[jet_idx], Jet_phi[jet_idx], sf*Jet_mass[jet_idx]);
                                 }
                                 all_shifted_p4.insert({{unc_source, uncScale}, shifted_p4});
@@ -299,6 +336,7 @@ private:
         Correction::Ref corr_jer_res_;
         CompoundCorrection::Ref cmpd_corr_;
         bool is_data_;
+        std::string year_;
         bool apply_cmpd_;
 
         inline static const std::map<UncSource, std::string> unc_map_total = { { UncSource::Total, "Total" },
