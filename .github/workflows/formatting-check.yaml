@@ -11,7 +11,7 @@ permissions:
 
 jobs:
   formatting-check:
-    runs-on: ubuntu-latest
+    runs-on: cmssw/el9:x86_64
     steps:
       - uses: actions/checkout@v3
 
@@ -24,7 +24,8 @@ jobs:
         run: pip install black
 
       - name: Install clang-format
-        run: sudo apt-get update && sudo apt-get install clang-format
+        run: clang-format-19.1.7-2.el9
+        # run: sudo apt-get update && sudo apt-get install clang-format
 
       - name: Get changed files
         id: changed-files
