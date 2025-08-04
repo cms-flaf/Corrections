@@ -24,7 +24,7 @@ jobs:
         run: pip install black
 
       - name: Install clang-format
-        run: sudo apt-get update && sudo apt-get install clang-format=19.1.7
+        run: sudo apt-get update && sudo apt list --all-versions clang-format && sudo apt-get install clang-format=1:19.1.7
 
       - name: Get changed files
         id: changed-files
