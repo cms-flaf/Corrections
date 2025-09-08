@@ -5,7 +5,6 @@ import itertools
 from .CorrectionsCore import *
 from FLAF.RunKit.run_tools import ps_call
 
-
 def getBranches(syst_name, all_branches):
     final_branches = []
     for branches in all_branches:
@@ -84,6 +83,7 @@ class Corrections:
         self.jet_ = None
         self.fatjet_ = None
         self.Vpt_ = None
+        self.JetVetoMap_ = None
 
     @property
     def pu(self):
@@ -98,8 +98,16 @@ class Corrections:
         if self.Vpt_ is None:
             from .Vpt import VptCorrProducer
 
-            self.Vpt_ = VptCorrProducer(self.sample_type)
+            self.Vpt_ = VptCorrProducer(self.sample_type, self.period)
         return self.Vpt_
+
+    @property
+    def JetVetoMap(self):
+        if self.JetVetoMap_ is None:
+            from .JetVetoMap import JetVetoMapProvider
+
+            self.JetVetoMap_ = JetVetoMapProvider(self.period)
+        return self.JetVetoMap_
 
     @property
     def tau(self):
@@ -206,10 +214,15 @@ class Corrections:
         if "JEC" in self.to_apply or "JER" in self.to_apply:
             apply_jes = "JEC" in self.to_apply and not self.isData
             apply_jer = "JER" in self.to_apply and not self.isData
-            df, source_dict = self.jet.getP4Variations(
-                df, source_dict, apply_jer, apply_jes
+            apply_jet_horns_fix_ = (
+                "JER" in self.to_apply
+                and "Jet_horns_fix" in self.to_apply
+                and not self.isData
             )
-        if "muonScaRe" in self.to_apply:
+            df, source_dict = self.jet.getP4Variations(
+                df, source_dict, apply_jer, apply_jes, apply_jet_horns_fix_
+            )
+        if "muScaRe" in self.to_apply:
             df, source_dict = self.muScaRe.getP4Variations(df, source_dict)
             # df, source_dict = self.fatjet.getP4Variations(df, source_dict, 'JER' in self.to_apply, 'JEC' in self.to_apply)
         # if 'tauES' in self.to_apply or 'JEC' in self.to_apply or 'JEC' in self.to_apply:
