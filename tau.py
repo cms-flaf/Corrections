@@ -32,9 +32,9 @@ period_in_tau_file_name = {
 }
 
 class TauCorrProducer:
-    jsonPath = "/cvmfs/cms.cern.ch/rsync/cms-nanoAOD/jsonpog-integration/POG/TAU/{}/tau.json.gz"
+    # jsonPath = "/cvmfs/cms.cern.ch/rsync/cms-nanoAOD/jsonpog-integration/POG/TAU/{}/tau.json.gz"
+    jsonPath = "/eos/cms/store/group/phys_tau/lrussell/TAU_SFs_and_TES/tau_{}_{}.json". # correction Aug 2025
     initialized = False
-    deepTauVersion = 'DeepTau2017v2p1'
 
     energyScaleSources_tau = ["TauES_DM0", "TauES_DM1", "TauES_3prong"]
     energyScaleSources_lep = ["EleFakingTauES_DM0", "EleFakingTauES_DM1", "MuFakingTauES"]
@@ -44,15 +44,15 @@ class TauCorrProducer:
 
 
     def __init__(self, period, config):
-        jsonFile = TauCorrProducer.jsonPath.format(period_in_tau_file_name[period])
         self.deepTauVersion = f"""DeepTau{deepTauVersions[config["deepTauVersion"]]}v{config["deepTauVersion"]}"""
-        if self.deepTauVersion=='DeepTau2018v2p5':
-            #tau_DeepTau2018v2p5_2018_UL_101123 #Run3: tau_DeepTau2018v2p5_2022_preEE.json
-            if period.startswith('Run3'):
-                jsonFile_rel = f"Corrections/data/TAU/{period_in_tau_file_name[period]}/tau_DeepTau2018v2p5_{period_in_tau_file_name[period]}.json"
-            else:
-                jsonFile_rel = f"Corrections/data/TAU/{period_in_tau_file_name[period]}/tau_DeepTau2018v2p5_{period_in_tau_file_name[period]}_101123.json"
-            jsonFile = os.path.join(os.environ['ANALYSIS_PATH'],jsonFile_rel)
+        jsonFile = TauCorrProducer.jsonPath.format(self.deepTauVersion, period_in_tau_file_name[period])
+        # if self.deepTauVersion=='DeepTau2018v2p5':
+        #     #tau_DeepTau2018v2p5_2018_UL_101123 #Run3: tau_DeepTau2018v2p5_2022_preEE.json
+        #     if period.startswith('Run3'):
+        #         jsonFile_rel = f"Corrections/data/TAU/{period_in_tau_file_name[period]}/tau_DeepTau2018v2p5_{period_in_tau_file_name[period]}.json"
+        #     else:
+        #         jsonFile_rel = f"Corrections/data/TAU/{period_in_tau_file_name[period]}/tau_DeepTau2018v2p5_{period_in_tau_file_name[period]}_101123.json"
+        #     jsonFile = os.path.join(os.environ['ANALYSIS_PATH'],jsonFile_rel)
         if not TauCorrProducer.initialized:
             headers_dir = os.path.dirname(os.path.abspath(__file__))
             header_path = os.path.join(headers_dir, "tau.h")
