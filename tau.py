@@ -35,7 +35,7 @@ period_in_tau_file_name = {
 
 class TauCorrProducer:
     # jsonPath = "/cvmfs/cms.cern.ch/rsync/cms-nanoAOD/jsonpog-integration/POG/TAU/{}/tau.json.gz"
-    jsonPath = "/eos/cms/store/group/phys_tau/lrussell/TAU_SFs_and_TES/tau_{}_{}.json". # correction Aug 2025
+    jsonPath = "/eos/cms/store/group/phys_tau/lrussell/TAU_SFs_and_TES/tau_{}_{}.json" # correction Aug 2025
     initialized = False
 
     energyScaleSources_tau = ["TauES_DM0", "TauES_DM1", "TauES_3prong"]
