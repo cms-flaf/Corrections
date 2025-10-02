@@ -35,7 +35,8 @@ period_in_tau_file_name = {
 
 class TauCorrProducer:
     # jsonPath = "/cvmfs/cms.cern.ch/rsync/cms-nanoAOD/jsonpog-integration/POG/TAU/{}/tau.json.gz"
-    jsonPath = "/eos/cms/store/group/phys_tau/lrussell/TAU_SFs_and_TES/tau_{}_{}.json" # correction Aug 2025
+    tau_json = "Corrections/data/TAU/{}/tau_{}_{}.json"
+    
     initialized = False
 
     energyScaleSources_tau = ["TauES_DM0", "TauES_DM1", "TauES_3prong"]
@@ -79,7 +80,11 @@ class TauCorrProducer:
 
     def __init__(self, period, config):
         self.deepTauVersion = f"""DeepTau{deepTauVersions[config["deepTauVersion"]]}v{config["deepTauVersion"]}"""
-        jsonFile = TauCorrProducer.jsonPath.format(self.deepTauVersion, period_in_tau_file_name[period])
+        jsonFile = os.path.join(
+            os.environ["ANALYSIS_PATH"],
+            TauCorrProducer.tau_json.format(period_in_tau_file_name[period], self.deepTauVersion, period_in_tau_file_name[period])
+        )
+        print(f"Using tau SFs from {jsonFile}")
         # if self.deepTauVersion=='DeepTau2018v2p5':
         #     #tau_DeepTau2018v2p5_2018_UL_101123 #Run3: tau_DeepTau2018v2p5_2022_preEE.json
         #     if period.startswith('Run3'):
