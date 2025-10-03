@@ -37,6 +37,10 @@ class EleCorrProducer:
             EleES_JsonFile = EleCorrProducer.EleES_JsonPath_Run3.format(period)
             EleID_JsonFile_key = "Electron-ID-SF"
             EleES_JsonFile_key = "Scale"
+            if period == "2023_Summer23":
+                EleES_JsonFile_key = "2023PromptC_ScaleJSON"
+            if period == "2023_Summer23BPix":
+                EleES_JsonFile_key = "2023PromptD_ScaleJSON"
 
         if not EleCorrProducer.initialized:
             headers_dir = os.path.dirname(os.path.abspath(__file__))
