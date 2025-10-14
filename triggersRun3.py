@@ -30,6 +30,7 @@ import re
 
 taujsonfileversion = "2025-10-01"
 
+
 class TrigCorrProducer:
     eTRG_jsonPath = "/cvmfs/cms.cern.ch/rsync/cms-nanoAOD/jsonpog-integration/POG/EGM/{}/electronHlt.json.gz"
     MuTRG_jsonPath = os.path.join(
@@ -92,7 +93,9 @@ class TrigCorrProducer:
         )
         jsonFile_Tau = os.path.join(
             os.environ["ANALYSIS_PATH"],
-            TrigCorrProducer.TauTRG_jsonPath.format(period_in_taupog_folder[period], tau_filename_dict[period]),
+            TrigCorrProducer.TauTRG_jsonPath.format(
+                period_in_taupog_folder[period], tau_filename_dict[period]
+            ),
         )
         jsonFile_Mu = os.path.join(
             os.environ["ANALYSIS_PATH"],
