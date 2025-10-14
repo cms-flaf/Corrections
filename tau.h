@@ -292,9 +292,16 @@ namespace correction {
                                                 deepTauVersion_,
                                                 scale_str});
                     } else if (deepTauVersion_ == "DeepTau2018v2p5") {
+                        int tau_dm = -50;
+                        if (Tau_decayMode.at(n)==2){
+                            tau_dm =1;
+                        }
+                        else{
+                            tau_dm = Tau_decayMode.at(n);
+                        }
                         sf = tau_es_->evaluate({Tau_p4[n].pt(),
                                                 Tau_p4[n].eta(),
-                                                Tau_decayMode.at(n),
+                                                tau_dm,
                                                 static_cast<int>(genMatch),
                                                 deepTauVersion_,
                                                 wpVSjet,
@@ -331,7 +338,14 @@ namespace correction {
                     sourceApplies(source, Tau_p4, Tau_decayMode, genMatch) ? scale : UncScale::Central;
                 const UncSource tau_had_source = tau_had_scale == UncScale::Central ? UncSource::Central : source;
                 const std::string& scale_str =
-                    scale != UncScale::Central ? getScaleStr(tau_had_source, tau_had_scale, year_) : "default";
+                    scale != UncScale::Central ? getScaleStr(tau_had_source, tau_had_scale, year_) : "nom";
+                    // scale != UncScale::Central ? getScaleStr(tau_had_source, tau_had_scale, year_) : "nom";
+                // std::cout << "Tau SF: ch=" << static_cast<int>(ch) << " wpVSe=" << wpVSe << " wpVSmu=" << wpVSmu
+                //           << " wpVSjet=" << wpVSjet << " genMatch=" << static_cast<int>(genMatch)
+                //           << " Tau_decayMode=" << Tau_decayMode << " Tau_pt=" << Tau_p4.pt()
+                //           << " Tau_eta=" << Tau_p4.eta() << " source=" << static_cast<int>(source)
+                //           << " scale=" << static_cast<int>(scale) << " scale_str=" << scale_str
+                //           << " genuineTau_SFtype=" << genuineTau_SFtype << std::endl;
                 const auto sf = tau_vs_jet_->evaluate(
                     {Tau_p4.pt(), Tau_decayMode, Tau_genMatch, wpVSjet, wpVSe, scale_str, genuineTau_SFtype});
                 return sf;

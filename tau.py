@@ -43,7 +43,7 @@ period_in_taupog_folder = {
     "Run3_2023BPix": "Run3-23DSep23-Summer23BPix-NanoAODv12",
 }
 
-jsonfileversion = "2025-05-05"
+jsonfileversion = "2025-10-01"
 
 
 class TauCorrProducer:
@@ -109,7 +109,6 @@ class TauCorrProducer:
                 f'::correction::TauCorrProvider::Initialize("{jsonFile}", "{self.deepTauVersion}", {wp_map_cpp}, {tauType_map} , "{period_in_tau_json[period]}")'
             )
             TauCorrProducer.initialized = True
-            # deepTauVersion = f"""DeepTau{deepTauVersions[config["deepTauVersion"]]}{config["deepTauVersion"]}"""
 
     def getES(self, df, source_dict):
         for source in (
