@@ -57,7 +57,7 @@ class EleCorrProducer:
             if period.endswith("Summer23"):
                 EleCorrProducer.year = period.split("_")[0] + "PromptC"
             if period.endswith("Summer23BPix"):
-                EleCorrProducer.year = period.split("_")[0] + "2023PromptD"
+                EleCorrProducer.year = period.split("_")[0] + "PromptD"
             EleCorrProducer.initialized = True
 
     def getES(self, df, source_dict):

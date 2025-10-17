@@ -127,7 +127,7 @@ class TrigCorrProducer:
             if period.endswith("Summer23"):
                 TrigCorrProducer.year = period.split("_")[0] + "PromptC"
             if period.endswith("Summer23BPix"):
-                TrigCorrProducer.year = period.split("_")[0] + "2023PromptD"
+                TrigCorrProducer.year = period.split("_")[0] + "PromptD"
 
             # ROOT.gInterpreter.ProcessLine(f"""::correction::TrigCorrProvider::Initialize("{jsonFile_Mu}","{jsonFile_e}", "{jsonFile_Tau}", "{self.muon_trg_dict[period]}","{self.ele_trg_dict['McEff'][period]}", "{self.tau_trg_dict[period]}", "{period}")""")
             mu_trg_key_mc, mu_trg_key_data = None, None
