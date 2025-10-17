@@ -54,14 +54,17 @@ namespace correction {
                        UncScale scale) const {
             const UncScale jet_scale = sourceApplies(source) ? scale : UncScale::Central;
             float value = 1.0;
-            if (period.starts_with("2023")){
-                 value = EleIDSF_->evaluate(
-                 {period, getIDScaleStr(jet_scale), working_point, Electron_p4.eta(), Electron_p4.pt(), Electron_p4.phi()});
-             }
-             else{
-                 value = EleIDSF_->evaluate(
-                 {period, getIDScaleStr(jet_scale), working_point, Electron_p4.eta(), Electron_p4.pt()});
-             }
+            if (period.starts_with("2023")) {
+                value = EleIDSF_->evaluate({period,
+                                            getIDScaleStr(jet_scale),
+                                            working_point,
+                                            Electron_p4.eta(),
+                                            Electron_p4.pt(),
+                                            Electron_p4.phi()});
+            } else {
+                value = EleIDSF_->evaluate(
+                    {period, getIDScaleStr(jet_scale), working_point, Electron_p4.eta(), Electron_p4.pt()});
+            }
             return value;
         }
 
