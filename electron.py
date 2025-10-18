@@ -91,10 +91,10 @@ class EleCorrProducer:
                         # print(branch_central)
                         df = df.Define(
                             f"{branch_name}_double",
-                            f"""({leg_name}_legType == Leg::e && {leg_name}_pt >= 10 &&  {leg_name}_index >= 0 && (({leg_name}_gen_kind == 1) || ({leg_name}_gen_kind == 3)))  ? ::correction::EleCorrProvider::getGlobal().getID_SF(
+                            f"""({leg_name}_legType == Leg::e && {leg_name}_p4.pt() >= 10 &&  {leg_name}_index >= 0 && (({leg_name}_gen_kind == 1) || ({leg_name}_gen_kind == 3)))  ? ::correction::EleCorrProvider::getGlobal().getID_SF(
                                 {leg_name}_p4, "{working_point}",
                                 "{EleCorrProducer.year}",::correction::EleCorrProvider::UncSource::{source}, ::correction::UncScale::{scale}) : 1.;""",
-                        )
+                        ) # Changed from leg_name_pt >= 10 to leg_name_p4.pt() >= 10. This is because on the VERY CLOSE edge case where eleES lowers the pt below 10, the code would crash (Seen in file /eos/cms/store/group/phys_higgs/HLepRare/skim_2025_v1/Run3_2023/DYto2Tau_MLL_50_2J_amcatnloFXFX/nano_59.root)
 
                         if scale != central:
                             branch_name_final = branch_name + "_rel"
