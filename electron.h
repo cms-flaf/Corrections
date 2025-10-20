@@ -56,19 +56,15 @@ namespace correction {
             float value = 1.0;
             if (period.starts_with("2023")) {
                 value = safeEvaluate(EleIDSF_,
-                                       period,
-                                       getIDScaleStr(jet_scale),
-                                       working_point,
-                                       Electron_p4.eta(),
-                                       Electron_p4.pt(),
-                                       Electron_p4.phi());
+                                     period,
+                                     getIDScaleStr(jet_scale),
+                                     working_point,
+                                     Electron_p4.eta(),
+                                     Electron_p4.pt(),
+                                     Electron_p4.phi());
             } else {
-                value = safeEvaluate(EleIDSF_,
-                                      period,
-                                      getIDScaleStr(jet_scale),
-                                      working_point,
-                                      Electron_p4.eta(),
-                                      Electron_p4.pt());
+                value = safeEvaluate(
+                    EleIDSF_, period, getIDScaleStr(jet_scale), working_point, Electron_p4.eta(), Electron_p4.pt());
             }
             return value;
         }
