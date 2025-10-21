@@ -39,7 +39,7 @@ period_in_taupog_folder = {
     "Run2_2018": "Run2-2018-UL-NanoAODv9",
     "Run3_2022": "Run3-22CDSep23-Summer22-NanoAODv12",
     "Run3_2022EE": "Run3-22EFGSep23-Summer22EE-NanoAODv12",
-    "Run3_2023": "Run3-23CSep23-Summer22-NanoAODv12",
+    "Run3_2023": "Run3-23CSep23-Summer23-NanoAODv12",
     "Run3_2023BPix": "Run3-23DSep23-Summer23BPix-NanoAODv12",
 }
 
