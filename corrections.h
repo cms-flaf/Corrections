@@ -25,6 +25,23 @@ namespace correction {
         ((std::cerr << "\t" << std::forward<Args>(args) << "\n"), ...);
     }
 
+    template <typename... Args>
+    double safeEvaluate(const correction::Correction::Ref& corrRef, Args&&... args) {
+        try {
+            std::vector<correction::Variable::Type> values{std::forward<Args>(args)...};
+            return corrRef->evaluate(values);
+        } catch (const std::exception& e) {
+            std::cerr << "ERROR while evaluating correction ......... " << corrRef->name() << "  .........\n";
+            print_args(std::forward<Args>(args)...);
+            std::cerr << "exception message: " << e.what() << "\n";
+            throw;  // rilancia dopo aver loggato
+        } catch (...) {
+            std::cerr << "UNKNOWN ERROR in correction .........  " << corrRef->name() << "  .........\n";
+            print_args(std::forward<Args>(args)...);
+            throw;
+        }
+    }
+
     template <typename CorrectionClass>
     class CorrectionsBase {
       public:

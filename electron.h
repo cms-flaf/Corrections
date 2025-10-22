@@ -53,8 +53,20 @@ namespace correction {
                        UncSource source,
                        UncScale scale) const {
             const UncScale jet_scale = sourceApplies(source) ? scale : UncScale::Central;
-            return EleIDSF_->evaluate(
-                {period, getIDScaleStr(jet_scale), working_point, Electron_p4.eta(), Electron_p4.pt()});
+            float value = 1.0;
+            if (period.starts_with("2023")) {
+                value = safeEvaluate(EleIDSF_,
+                                     period,
+                                     getIDScaleStr(jet_scale),
+                                     working_point,
+                                     Electron_p4.eta(),
+                                     Electron_p4.pt(),
+                                     Electron_p4.phi());
+            } else {
+                value = safeEvaluate(
+                    EleIDSF_, period, getIDScaleStr(jet_scale), working_point, Electron_p4.eta(), Electron_p4.pt());
+            }
+            return value;
         }
 
         RVecLV getES(const RVecLV& Electron_p4,
