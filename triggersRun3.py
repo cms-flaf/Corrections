@@ -80,7 +80,7 @@ class TrigCorrProducer:
             "Run2_2018": "Run2-2018-UL-NanoAODv9",
             "2022_Summer22": "Run3-22CDSep23-Summer22-NanoAODv12",
             "2022_Summer22EE": "Run3-22EFGSep23-Summer22EE-NanoAODv12",
-            "2023_Summer23": "Run3-23CSep23-Summer22-NanoAODv12",
+            "2023_Summer23": "Run3-23CSep23-Summer23-NanoAODv12",
             "2023_Summer23BPix": "Run3-23DSep23-Summer23BPix-NanoAODv12",
         }
 
