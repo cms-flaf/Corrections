@@ -226,7 +226,12 @@ class Corrections:
         if "muScaRe" in self.to_apply:
             df, source_dict = self.muScaRe.getP4Variations(df, source_dict)
             # df, source_dict = self.fatjet.getP4Variations(df, source_dict, 'JER' in self.to_apply, 'JEC' in self.to_apply)
-        if 'tauES' in self.to_apply or 'JEC' in self.to_apply or 'JER' in self.to_apply or 'eleES' in self.to_apply:
+        if (
+            "tauES" in self.to_apply
+            or "JEC" in self.to_apply
+            or "JER" in self.to_apply
+            or "eleES" in self.to_apply
+        ):
             df, source_dict = self.met.getPFMET(df, source_dict, self.MET_type)
         syst_dict = {}
         for source, source_objs in source_dict.items():
