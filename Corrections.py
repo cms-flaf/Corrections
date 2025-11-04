@@ -231,8 +231,9 @@ class Corrections:
             or "JEC" in self.to_apply
             or "JER" in self.to_apply
             or "eleES" in self.to_apply
+            or "muScaRe" in self.to_apply
         ):
-            df, source_dict = self.met.getPFMET(df, source_dict, self.MET_type)
+            df, source_dict = self.met.getMET(df, source_dict, self.MET_type)
         syst_dict = {}
         for source, source_objs in source_dict.items():
             for scale in getScales(source):
@@ -252,6 +253,9 @@ class Corrections:
                         ):
                             continue
                         if f"{obj}_p4_{syst_name}" not in df.GetColumnNames():
+                            print(
+                                f"Defining nominal {obj}_p4_{syst_name} as {obj}_p4_{suffix}"
+                            )
                             df = df.Define(
                                 f"{obj}_p4_{syst_name}", f"{obj}_p4_{suffix}"
                             )
