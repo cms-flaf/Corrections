@@ -139,7 +139,6 @@ class JetCorrProducer:
         "2022_Summer22EE": ["Summer22EE_22Sep2023_Run{}_V2_DATA"],
     }
 
-
     # maps period to JER tag (only for MC!)
     fatjer_tag_map = {
         "2022_Summer22": "Summer22_22Sep2023_JRV1_MC",
@@ -268,7 +267,9 @@ class JetCorrProducer:
             fatjec_tag_array = fatjec_tag_map[period]
             fatjec_tag = fatjec_tag_array[0]
             other_fatjec_tag = (
-                fatjec_tag_array[1] if len(fatjec_tag_array) > 1 else fatjec_tag_array[0]
+                fatjec_tag_array[1]
+                if len(fatjec_tag_array) > 1
+                else fatjec_tag_array[0]
             )
 
             if self.isData:
@@ -432,7 +433,8 @@ class JetCorrProducer:
                     f"FatJet_p4_shifted_map.at({{::correction::{class_name}::UncSource::{source}, ::correction::UncScale::{scale}}})",
                 )
                 df = df.Define(
-                    f"FatJet_p4_{syst_name}_delta", f"FatJet_p4_{syst_name} - FatJet_p4_{nano}"
+                    f"FatJet_p4_{syst_name}_delta",
+                    f"FatJet_p4_{syst_name} - FatJet_p4_{nano}",
                 )
 
         return df, source_dict

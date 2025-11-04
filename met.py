@@ -15,10 +15,10 @@ class METCorrProducer:
             METCorrProducer.initialized = True
 
     def getMET(self, df, source_dict, MET_type):
-        pfMET_objs = {"Electron", "Muon", "Tau", "Jet"}
+        MET_objs = {"Electron", "Muon", "Tau", "Jet"}
         source_dict_upd = copy.deepcopy(source_dict)
         for source, all_source_objs in source_dict.items():
-            source_objs = set(all_source_objs).intersection(pfMET_objs)
+            source_objs = set(all_source_objs).intersection(MET_objs)
             if source == central or len(source_objs) > 0:
                 updateSourceDict(source_dict_upd, source, "MET")
                 for scale in getScales(source):
