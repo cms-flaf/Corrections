@@ -349,23 +349,21 @@ namespace correction {
             return all_shifted_p4;
         }
 
-
-
         std::map<std::pair<UncSource, UncScale>, RVecLV> getShiftedP4_FatJet(RVecF FatJet_pt,
-                                                                      const RVecF& FatJet_eta,
-                                                                      const RVecF& FatJet_phi,
-                                                                      RVecF FatJet_mass,
-                                                                      const RVecF& FatJet_rawFactor,
-                                                                      const RVecF& FatJet_area,
-                                                                      const float rho,
-                                                                      int event,
-                                                                      bool apply_jer,
-                                                                      bool require_run_number,
-                                                                      const unsigned int run,
-                                                                      bool wantPhi,
-                                                                      bool apply_forward_jet_horns_fix,
-                                                                      const RVecF& GenFatJet_pt = {},
-                                                                      const RVecI& FatJet_genJetIdx = {}) const {
+                                                                             const RVecF& FatJet_eta,
+                                                                             const RVecF& FatJet_phi,
+                                                                             RVecF FatJet_mass,
+                                                                             const RVecF& FatJet_rawFactor,
+                                                                             const RVecF& FatJet_area,
+                                                                             const float rho,
+                                                                             int event,
+                                                                             bool apply_jer,
+                                                                             bool require_run_number,
+                                                                             const unsigned int run,
+                                                                             bool wantPhi,
+                                                                             bool apply_forward_jet_horns_fix,
+                                                                             const RVecF& GenFatJet_pt = {},
+                                                                             const RVecI& FatJet_genJetIdx = {}) const {
             std::map<std::pair<UncSource, UncScale>, RVecLV> all_shifted_p4;
             std::vector<UncScale> uncScales = {UncScale::Up, UncScale::Down};
 
@@ -388,8 +386,8 @@ namespace correction {
 
                     int genjet_idx = FatJet_genJetIdx[i];
                     float genjet_pt = genjet_idx != -1 ? GenFatJet_pt[genjet_idx] : -1.0;
-                    float jersmear_factor =
-                        fat_jersmear_corr_->evaluate({FatJet_pt[i], FatJet_eta[i], genjet_pt, rho, event, fatjer_pt_res, fatjer_sf});
+                    float jersmear_factor = fat_jersmear_corr_->evaluate(
+                        {FatJet_pt[i], FatJet_eta[i], genjet_pt, rho, event, fatjer_pt_res, fatjer_sf});
                     // temporary fix for jet horn issue --> do not apply JER for eta range and jet matched to genjet
 
                     if (is_jet_in_horn) {
@@ -407,8 +405,12 @@ namespace correction {
                     if (require_run_number) {
                         // for run3_2023BPix data they want also phi ..
                         if (wantPhi) {
-                            cmpd_sf = fat_cmpd_corr_->evaluate(
-                                {FatJet_area[i], FatJet_eta[i], FatJet_pt[i], rho, FatJet_phi[i], static_cast<float>(run)});
+                            cmpd_sf = fat_cmpd_corr_->evaluate({FatJet_area[i],
+                                                                FatJet_eta[i],
+                                                                FatJet_pt[i],
+                                                                rho,
+                                                                FatJet_phi[i],
+                                                                static_cast<float>(run)});
                         } else {
                             cmpd_sf = fat_cmpd_corr_->evaluate(
                                 {FatJet_area[i],
@@ -459,8 +461,10 @@ namespace correction {
                                 Correction::Ref corr = fat_corrset_->at(unc_name);
                                 float unc = corr->evaluate({FatJet_eta[jet_idx], FatJet_pt[jet_idx]});
                                 sf += static_cast<int>(uncScale) * unc;
-                                shifted_p4[jet_idx] = LorentzVectorM(
-                                    sf * FatJet_pt[jet_idx], FatJet_eta[jet_idx], FatJet_phi[jet_idx], sf * FatJet_mass[jet_idx]);
+                                shifted_p4[jet_idx] = LorentzVectorM(sf * FatJet_pt[jet_idx],
+                                                                     FatJet_eta[jet_idx],
+                                                                     FatJet_phi[jet_idx],
+                                                                     sf * FatJet_mass[jet_idx]);
                             }
                             all_shifted_p4.insert({{unc_source, uncScale}, shifted_p4});
                         }
@@ -469,8 +473,6 @@ namespace correction {
             }
             return all_shifted_p4;
         }
-
-
 
         RVecF GetResolutions(RVecF pt, RVecF mass, RVecF const& raw_factor, RVecF const& eta, float rho) const {
             size_t sz = pt.size();
