@@ -391,7 +391,7 @@ class JetCorrProducer:
                 df = df.Define(
                     "FatJet_p4_shifted_map",
                     f"""::correction::JetCorrectionProvider::getGlobal().getShiftedP4(FatJet_pt, FatJet_eta, FatJet_phi, FatJet_mass,
-                                                                                                                       FatJet_rawFactor, FatJet_area, Rho_fixedGridRhoFastjetAll, event, {apply_jer}, {require_run_number},run,{wantPhi},{apply_forward_jet_horns_fix}""",
+                                                                                                                       FatJet_rawFactor, FatJet_area, Rho_fixedGridRhoFastjetAll, event, {apply_jer}, {require_run_number},run,{wantPhi},{apply_forward_jet_horns_fix})""",
                 )
             class_name = "JetCorrectionProvider"
         else:
