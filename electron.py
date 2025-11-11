@@ -62,7 +62,7 @@ class EleCorrProducer:
 
     def getES(self, df, source_dict):
         for source in EleCorrProducer.energyScaleSources_ele:
-            updateSourceDict(source_dict, source, "Ele")
+            updateSourceDict(source_dict, source, "Electron")
             for scale in getScales(source):
                 syst_name = getSystName(source, scale)
                 df = df.Define(
