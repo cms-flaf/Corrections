@@ -86,6 +86,7 @@ class JetCorrProducer:
     initialized = False
 
     jet_algorithm = "AK4PFPuppi"
+    fatjet_algorithm = "AK8PFPuppi"
 
     uncSources_regrouped = [
         "FlavorQCD",
@@ -104,7 +105,7 @@ class JetCorrProducer:
     uncSources_minimal = ["Total"]
 
     jet_jsonPath = "/cvmfs/cms.cern.ch/rsync/cms-nanoAOD/jsonpog-integration/POG/JME/{}/jet_jerc.json.gz"
-    # fatjet_jsonPath = "/cvmfs/cms.cern.ch/rsync/cms-nanoAOD/jsonpog-integration/POG/JME/{}/fatJet_jerc.json.gz"
+    fatjet_jsonPath = "/cvmfs/cms.cern.ch/rsync/cms-nanoAOD/jsonpog-integration/POG/JME/{}/fatJet_jerc.json.gz"
     jersmear_jsonPath = "/cvmfs/cms.cern.ch/rsync/cms-nanoAOD/jsonpog-integration/POG/JME/jer_smear.json.gz"
 
     # maps period to JER tag (only for MC!)
@@ -128,6 +129,35 @@ class JetCorrProducer:
     # maps period to base tag
     # for DATA: jec_tag = {base_tag}_Run{letters}_V{version}_DATA
     jec_tag_map_data = {
+        "2022_Summer22": ["Summer22_22Sep2023_Run{}_V2_DATA"],
+        "2023_Summer23BPix": [
+            "Summer23BPixPrompt23_Run{}_V3_DATA",
+            "Summer23BPixPrompt23_V3_DATA",
+        ],
+        "2022_Prompt": ["Winter22Run3_Run{}_V2_DATA"],
+        "2023_Summer23": ["Summer23Prompt23_Run{}_V2_DATA", "Summer23Prompt23_V2_DATA"],
+        "2022_Summer22EE": ["Summer22EE_22Sep2023_Run{}_V2_DATA"],
+    }
+
+    # maps period to JER tag (only for MC!)
+    fatjer_tag_map = {
+        "2022_Summer22": "Summer22_22Sep2023_JRV1_MC",
+        "2022_Prompt": "JR_Winter22Run3_V1_MC",
+        "2022_Summer22EE": "Summer22EE_22Sep2023_JRV1_MC",
+        "2023_Summer23BPix": "Summer23BPixPrompt23_RunD_JRV1_MC",
+        "2023_Summer23": "Summer23Prompt23_RunCv1234_JRV1_MC",
+    }
+
+    # maps period to JEC tag
+    fatjec_tag_map_mc = {
+        "2022_Summer22": ["Summer22_22Sep2023_V2_MC"],
+        "2022_Prompt": ["Winter22Run3_V2_MC"],
+        "2022_Summer22EE": ["Summer22EE_22Sep2023_V2_MC"],
+        "2023_Summer23BPix": ["Summer23BPixPrompt23_V3_MC"],
+        "2023_Summer23": ["Summer23Prompt23_V2_MC"],
+    }
+
+    fatjec_tag_map_data = {
         "2022_Summer22": ["Summer22_22Sep2023_Run{}_V2_DATA"],
         "2023_Summer23BPix": [
             "Summer23BPixPrompt23_Run{}_V3_DATA",
@@ -219,11 +249,29 @@ class JetCorrProducer:
                 if self.isData
                 else JetCorrProducer.jec_tag_map_mc
             )
+
             jec_tag_array = jec_tag_map[period]
             jec_tag = jec_tag_array[0]
             other_jec_tag = (
                 jec_tag_array[1] if len(jec_tag_array) > 1 else jec_tag_array[0]
             )
+
+            fatjet_path = JetCorrProducer.fatjet_jsonPath.format(period)
+            fatjet_jsonFile = os.path.join(os.environ["ANALYSIS_PATH"], fatjet_path)
+            fatjec_tag_map = (
+                JetCorrProducer.fatjec_tag_map_data
+                if self.isData
+                else JetCorrProducer.fatjec_tag_map_mc
+            )
+
+            fatjec_tag_array = fatjec_tag_map[period]
+            fatjec_tag = fatjec_tag_array[0]
+            other_fatjec_tag = (
+                fatjec_tag_array[1]
+                if len(fatjec_tag_array) > 1
+                else fatjec_tag_array[0]
+            )
+
             if self.isData:
                 letter_list = JetCorrProducer.run_letters[period]
                 version_list = JetCorrProducer.run_versions[period]
@@ -267,8 +315,14 @@ class JetCorrProducer:
                 jec_tag = jec_tag.format(letters)
                 other_jec_tag = other_jec_tag.format(letters)
 
+                fatjec_tag = fatjec_tag.format(letters)
+                other_fatjec_tag = other_fatjec_tag.format(letters)
+
             jer_tag = JetCorrProducer.jer_tag_map[period]
             algo = JetCorrProducer.jet_algorithm
+
+            fatjer_tag = JetCorrProducer.jer_tag_map[period]
+            fatalgo = JetCorrProducer.fatjet_algorithm
 
             if not JetCorrProducer.initialized:
                 headers_dir = os.path.dirname(os.path.abspath(__file__))
@@ -284,6 +338,11 @@ class JetCorrProducer:
                                                                                                   "{other_jec_tag}",
                                                                                                   "{jer_tag}",
                                                                                                   "{algo}",
+                                                                                                  "{fatjet_jsonFile}",
+                                                                                                  "{fatjec_tag}",
+                                                                                                  "{other_fatjec_tag}",
+                                                                                                  "{fatjer_tag}",
+                                                                                                  "{fatalgo}",
                                                                                                   "{year}",
                                                                                                    {is_data},
                                                                                                    {regrouped},
@@ -317,11 +376,22 @@ class JetCorrProducer:
                                                                                                                        Jet_rawFactor, Jet_area, Rho_fixedGridRhoFastjetAll, event, {apply_jer}, {require_run_number},run,{wantPhi},{apply_forward_jet_horns_fix},
                                                                                                                        GenJet_pt, Jet_genJetIdx)""",
                 )
+                df = df.Define(
+                    "FatJet_p4_shifted_map",
+                    f"""::correction::JetCorrectionProvider::getGlobal().getShiftedP4(FatJet_pt, FatJet_eta, FatJet_phi, FatJet_mass,
+                                                                                                                       FatJet_rawFactor, FatJet_area, Rho_fixedGridRhoFastjetAll, event, {apply_jer}, {require_run_number},run,{wantPhi},{apply_forward_jet_horns_fix},
+                                                                                                                       GenJetAK8_pt, FatJet_genJetAK8Idx)""",
+                )
             else:
                 df = df.Define(
                     "Jet_p4_shifted_map",
                     f"""::correction::JetCorrectionProvider::getGlobal().getShiftedP4(Jet_pt, Jet_eta, Jet_phi, Jet_mass,
                                                                                                                        Jet_rawFactor, Jet_area, Rho_fixedGridRhoFastjetAll,event, {apply_jer}, {require_run_number}, run,{wantPhi},{apply_forward_jet_horns_fix})""",
+                )
+                df = df.Define(
+                    "FatJet_p4_shifted_map",
+                    f"""::correction::JetCorrectionProvider::getGlobal().getShiftedP4(FatJet_pt, FatJet_eta, FatJet_phi, FatJet_mass,
+                                                                                                                       FatJet_rawFactor, FatJet_area, Rho_fixedGridRhoFastjetAll, event, {apply_jer}, {require_run_number},run,{wantPhi},{apply_forward_jet_horns_fix})""",
                 )
             class_name = "JetCorrectionProvider"
         else:
@@ -347,6 +417,7 @@ class JetCorrProducer:
                 source_eff = source_eff + JetCorrProducer.period.split("_")[0]
                 source += "year"
             updateSourceDict(source_dict, source_eff, "Jet")
+            updateSourceDict(source_dict, source_eff, "FatJet")
             for scale in getScales(source):
                 syst_name = getSystName(source_eff, scale)
                 df = df.Define(
@@ -355,6 +426,15 @@ class JetCorrProducer:
                 )
                 df = df.Define(
                     f"Jet_p4_{syst_name}_delta", f"Jet_p4_{syst_name} - Jet_p4_{nano}"
+                )
+
+                df = df.Define(
+                    f"FatJet_p4_{syst_name}",
+                    f"FatJet_p4_shifted_map.at({{::correction::{class_name}::UncSource::{source}, ::correction::UncScale::{scale}}})",
+                )
+                df = df.Define(
+                    f"FatJet_p4_{syst_name}_delta",
+                    f"FatJet_p4_{syst_name} - FatJet_p4_{nano}",
                 )
 
         return df, source_dict
