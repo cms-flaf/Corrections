@@ -193,16 +193,13 @@ class bTagCorrProducer:
         for source in src_list:
             for scale in scale_list:
                 if source == central and scale != central:
-                    print(f'S1: Skipping source={source}, scale={scale}')
                     continue
 
                 if source != central and scale == central:
-                    print(f'S2: Skipping source={source}, scale={scale}')
                     continue
 
                 syst_name = source + scale  # if source != central else 'Central'
                 branch_name = f"weight_bTagShape_{syst_name}"
-                # branch_central = f"""weight_bTagShape_{source+central}"""
                 branch_central = f"weight_bTagShape_{central}"
 
                 df = df.Define(
@@ -218,7 +215,6 @@ class bTagCorrProducer:
                     scale != central and not force_name_as_central
                 ):  # If jes unc we do not want relative
                     branch_name_final = branch_name + "_rel"
-                    print(f'D1: Defining branch {branch_name_final}: source={source}, scale={scale}')
                     df = df.Define(
                         branch_name_final,
                         f"static_cast<float>({branch_name}_double/{branch_central})",
@@ -230,7 +226,6 @@ class bTagCorrProducer:
                         branch_name_final = f"""weight_bTagShape_{central}"""
                     else:
                         branch_name_final = branch_name
-                        print(f'D2: Defining branch {branch_name_final}: source={source}, scale={scale}')
                     df = df.Define(
                         branch_name_final, f"static_cast<float>({branch_name}_double)"
                     )
