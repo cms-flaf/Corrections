@@ -282,7 +282,7 @@ class Corrections:
             or "eleES" in self.to_apply
             or "muScaRe" in self.to_apply
         ):
-            df, source_dict = self.met.getMET(df, source_dict, self.MET_type)
+            df, source_dict = self.met.getMET(df, source_dict, self.global_params["met_type"])
         syst_dict = {}
         for source, source_objs in source_dict.items():
             for scale in getScales(source):
