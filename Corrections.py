@@ -52,8 +52,18 @@ class Corrections:
             raise RuntimeError("Global instance is not initialized")
         return Corrections._global_instance
 
-    def __init__(self, *, global_params, dataset_name, dataset_cfg, process_name, process_cfg,
-                 processors, isData, trigger_class):
+    def __init__(
+        self,
+        *,
+        global_params,
+        dataset_name,
+        dataset_cfg,
+        process_name,
+        process_cfg,
+        processors,
+        isData,
+        trigger_class,
+    ):
         self.global_params = global_params
         self.dataset_name = dataset_name
         self.dataset_cfg = dataset_cfg
@@ -67,7 +77,11 @@ class Corrections:
 
         self.to_apply = {}
         correction_origins = {}
-        for cfg_name, cfg in [ ('dataset', dataset_cfg), ('process', process_cfg), ('global', global_params) ]:
+        for cfg_name, cfg in [
+            ("dataset", dataset_cfg),
+            ("process", process_cfg),
+            ("global", global_params),
+        ]:
             if not cfg:
                 continue
             for corr_entry in cfg.get("corrections", []):
@@ -76,16 +90,24 @@ class Corrections:
                     value = {}
                 elif type(corr_entry) == dict:
                     name = corr_entry["name"]
-                    value = { k: v for k, v in corr_entry.items() if k != "name" }
+                    value = {k: v for k, v in corr_entry.items() if k != "name"}
                 else:
-                    raise RuntimeError(f"Unknown correction entry type={type(corr_entry)}. {corr_entry}")
+                    raise RuntimeError(
+                        f"Unknown correction entry type={type(corr_entry)}. {corr_entry}"
+                    )
                 if name not in self.to_apply:
                     self.to_apply[name] = value
                     correction_origins[name] = cfg_name
                 else:
-                    print(f'Warning: correction {name} is already defined in {correction_origins[name]}. Skipping definition from {cfg_name}', file=sys.stderr)
+                    print(
+                        f"Warning: correction {name} is already defined in {correction_origins[name]}. Skipping definition from {cfg_name}",
+                        file=sys.stderr,
+                    )
         if len(self.to_apply) > 0:
-            print(f'Corrections to apply: {", ".join(self.to_apply.keys())}', file=sys.stderr)
+            print(
+                f'Corrections to apply: {", ".join(self.to_apply.keys())}',
+                file=sys.stderr,
+            )
 
         self.xs_db_ = None
         self.tau_ = None
@@ -288,20 +310,27 @@ class Corrections:
                             )
         return df, syst_dict
 
-
     def defineCrossSection(self, df, crossSectionBranch):
         xs_processor_names = []
         for p_name, proc in self.processors.items():
             if hasattr(proc, "onAnaTuple_defineCrossSection"):
                 xs_processor_names.append(p_name)
         if len(xs_processor_names) == 0:
-            raise RuntimeError("No processor implements onAnaTuple_defineCrossSection method")
+            raise RuntimeError(
+                "No processor implements onAnaTuple_defineCrossSection method"
+            )
         if len(xs_processor_names) > 1:
-            raise RuntimeError("Multiple processors implement onAnaTuple_defineCrossSection method. Not supported.")
+            raise RuntimeError(
+                "Multiple processors implement onAnaTuple_defineCrossSection method. Not supported."
+            )
         p_name = xs_processor_names[0]
-        print(f'Using processor "{p_name}" to define cross section for dataset "{self.dataset_name}"')
+        print(
+            f'Using processor "{p_name}" to define cross section for dataset "{self.dataset_name}"'
+        )
         xs_processor = self.processors[p_name]
-        return xs_processor.onAnaTuple_defineCrossSection(df, crossSectionBranch, self.xs_db, self.dataset_name, self.dataset_cfg)
+        return xs_processor.onAnaTuple_defineCrossSection(
+            df, crossSectionBranch, self.xs_db, self.dataset_name, self.dataset_cfg
+        )
 
     def defineDenominator(self, df, denomBranch, syst_name, scale_name, ana_caches):
         denom_processor_names = []
@@ -309,18 +338,36 @@ class Corrections:
             if hasattr(proc, "onAnaTuple_defineDenominator"):
                 denom_processor_names.append(p_name)
         if len(denom_processor_names) == 0:
-            raise RuntimeError("No processor implements onAnaTuple_defineDenominator method")
+            raise RuntimeError(
+                "No processor implements onAnaTuple_defineDenominator method"
+            )
         if len(denom_processor_names) > 1:
-            raise RuntimeError("Multiple processors implement onAnaTuple_defineDenominator method. Not supported.")
+            raise RuntimeError(
+                "Multiple processors implement onAnaTuple_defineDenominator method. Not supported."
+            )
         p_name = denom_processor_names[0]
-        print(f'Using processor "{p_name}" to define denominator for dataset "{self.dataset_name}"')
+        print(
+            f'Using processor "{p_name}" to define denominator for dataset "{self.dataset_name}"'
+        )
         if len(ana_caches) > 1:
-            print(f"Available ana_caches for denominator calculation: {list(ana_caches.keys())}")
+            print(
+                f"Available ana_caches for denominator calculation: {list(ana_caches.keys())}"
+            )
         denom_processor = self.processors[p_name]
-        return denom_processor.onAnaTuple_defineDenominator(df, denomBranch, p_name, self.dataset_name, syst_name, scale_name, ana_caches)
+        return denom_processor.onAnaTuple_defineDenominator(
+            df,
+            denomBranch,
+            p_name,
+            self.dataset_name,
+            syst_name,
+            scale_name,
+            ana_caches,
+        )
 
     def getNormalisationCorrections(
-        self, df, *,
+        self,
+        df,
+        *,
         lepton_legs,
         offline_legs,
         trigger_names,
@@ -329,7 +376,7 @@ class Corrections:
         ana_caches,
         return_variations=True,
         isCentral=True,
-        use_genWeight_sign_only=True
+        use_genWeight_sign_only=True,
     ):
         lumi = self.global_params["luminosity"]
 
@@ -348,7 +395,11 @@ class Corrections:
         start = source_name.find("_")
         src_name = source_name[start + 1 :]
 
-        genWeight_def = "std::copysign<double>(1., genWeight)" if use_genWeight_sign_only else "double(genWeight)"
+        genWeight_def = (
+            "std::copysign<double>(1., genWeight)"
+            if use_genWeight_sign_only
+            else "double(genWeight)"
+        )
         df = df.Define("genWeightD", genWeight_def)
 
         crossSectionBranch = "crossSection"
@@ -364,9 +415,11 @@ class Corrections:
             all_sources.remove(central)
         all_weights = []
         for syst_name in [central] + list(all_sources):
-            denomBranch = f'__denom_{syst_name}'
+            denomBranch = f"__denom_{syst_name}"
             syst_unc, syst_scale = splitSystName(syst_name)
-            df = self.defineDenominator(df, denomBranch, syst_unc, syst_scale, ana_caches)
+            df = self.defineDenominator(
+                df, denomBranch, syst_unc, syst_scale, ana_caches
+            )
             branches = getBranches(syst_name, all_branches)
             sf_product = " * ".join(branches) if len(branches) > 0 else "1.0"
             weight_name = (
@@ -374,9 +427,7 @@ class Corrections:
             )
             weight_rel_name = f"weight_MC_Lumi_{syst_name}_rel"
             weight_out_name = weight_name if syst_name == central else weight_rel_name
-            weight_formula = (
-                f"genWeightD * {lumi} * {crossSectionBranch} * {sf_product} / {denomBranch}"
-            )
+            weight_formula = f"genWeightD * {lumi} * {crossSectionBranch} * {sf_product} / {denomBranch}"
             df = df.Define(weight_name, f"static_cast<float>({weight_formula})")
 
             if syst_name == central:
@@ -452,6 +503,7 @@ class Corrections:
             )
             all_weights.extend(trg_SF_branches)
         return df, all_weights
+
 
 # amcatnlo problem
 # https://cms-talk.web.cern.ch/t/correct-way-to-stitch-lo-w-jet-inclusive-and-jet-binned-samples/17651/3

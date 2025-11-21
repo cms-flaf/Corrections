@@ -47,6 +47,7 @@ def getSystName(source, scale):
         f"getSystName: inconsistent source:scale combination = {source}:{scale}"
     )
 
+
 def splitSystName(syst_name):
     if syst_name == central:
         return (central, central)
@@ -56,6 +57,7 @@ def splitSystName(syst_name):
             scale = suffix
             return (source, scale)
     raise RuntimeError(f"splitSystName: cannot split syst_name = {syst_name}")
+
 
 def updateSourceDict(source_dict, source, obj):
     if source not in source_dict:
