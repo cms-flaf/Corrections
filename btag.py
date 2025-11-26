@@ -194,9 +194,13 @@ class bTagCorrProducer:
             for scale in scale_list:
                 if source == central and scale != central:
                     continue
+
+                if source != central and scale == central:
+                    continue
+
                 syst_name = source + scale  # if source != central else 'Central'
                 branch_name = f"weight_bTagShape_{syst_name}"
-                branch_central = f"""weight_bTagShape_{source+central}"""
+                branch_central = f"weight_bTagShape_{central}"
 
                 df = df.Define(
                     f"{branch_name}_double",
