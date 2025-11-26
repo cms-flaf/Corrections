@@ -48,6 +48,17 @@ def getSystName(source, scale):
     )
 
 
+def splitSystName(syst_name):
+    if syst_name == central:
+        return (central, central)
+    for suffix in [up, down]:
+        if syst_name.endswith(suffix):
+            source = syst_name[: -len(suffix)]
+            scale = suffix
+            return (source, scale)
+    raise RuntimeError(f"splitSystName: cannot split syst_name = {syst_name}")
+
+
 def updateSourceDict(source_dict, source, obj):
     if source not in source_dict:
         source_dict[source] = []
