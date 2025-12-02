@@ -90,3 +90,14 @@ def createTauSFTypeMap(map_sf_python):
         map_sf_cpp += f'{{ Channel::{ch}, "{ch_data}" }}, '
     map_sf_cpp += "})"
     return map_sf_cpp
+
+def getLegTypeString(df, leg_type_column):
+    column_type = df.GetColumnType(leg_type_column)
+    if column_type in ["Int_t", "int"]:
+        return f"static_cast<Leg>({leg_type_column})"
+    elif column_type == "Leg":
+        return leg_type_column
+    else:
+        raise RuntimeError(
+            f"getLegTypeString: unsupported column type {column_type} for {leg_type_column}"
+        )
