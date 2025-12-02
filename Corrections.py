@@ -176,7 +176,7 @@ class Corrections:
         if self.tau_ is None:
             from .tau import TauCorrProducer
 
-            self.tau_ = TauCorrProducer(self.period, self.global_params)
+            self.tau_ = TauCorrProducer(period=self.period, config=self.global_params, columns=self.to_apply.get("tauID", {}).get("columns", {}))
         return self.tau_
 
     @property
