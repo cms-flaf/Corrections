@@ -50,7 +50,6 @@ namespace correction {
         template <typename... Args>
         static void Initialize(Args&&... args) {
             try {
-                std::cerr << "Initializing " << typeid(CorrectionClass).name() << std::endl;
                 if( _getGlobal() ) {
                     std::cerr << typeid(CorrectionClass).name()
                               << " already initialized." << std::endl;

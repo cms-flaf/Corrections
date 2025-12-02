@@ -277,7 +277,7 @@ class Corrections:
             apply_jer = "JER" in self.to_apply and not self.isData
             apply_jet_horns_fix_ = (
                 "JER" in self.to_apply
-                and "Jet_horns_fix" in self.to_apply
+                and self.to_apply["JER"].get("apply_jet_horns_fix", False)
                 and not self.isData
             )
             df, source_dict = self.jet.getP4Variations(
@@ -509,20 +509,27 @@ class Corrections:
                 df, isCentral, return_variations
             )
             all_weights.extend(puJetID_SF_branches)
-        if "trgSF" in self.to_apply:
-            df, trg_SF_branches = self.trg.getSF(
-                df,
-                trigger_names,
-                lepton_legs,
-                isCentral and return_variations,
-                isCentral,
-            )
-            all_weights.extend(trg_SF_branches)
-        if "trgEff" in self.to_apply:
-            df, trg_SF_branches = self.trg.getEff(
-                df, trigger_names, offline_legs, self.trigger_dict
-            )
-            all_weights.extend(trg_SF_branches)
+        if "trigger" in self.to_apply:
+            mode = self.to_apply["trigger"]["mode"]
+            if mode == "SF":
+                df, trg_SF_branches = self.trg.getSF(
+                    df,
+                    trigger_names,
+                    lepton_legs,
+                    isCentral and return_variations,
+                    isCentral,
+                )
+                all_weights.extend(trg_SF_branches)
+            elif mode == "efficiency":
+                df, trg_SF_branches = self.trg.getEff(
+                    df, trigger_names, offline_legs, self.trigger_dict
+                )
+                all_weights.extend(trg_SF_branches)
+            else:
+                raise RuntimeError(
+                    f"Trigger correction mode {mode} not recognized. Supported modes are 'SF' and 'efficiency'."
+                )
+
         return df, all_weights
 
 
