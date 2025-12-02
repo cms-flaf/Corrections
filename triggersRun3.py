@@ -213,7 +213,7 @@ class TrigCorrProducer:
             for leg_idx, leg_name in enumerate(lepton_legs):
                 applyTrgBranch_name = f"{trg_name}_{leg_name}_ApplyTrgSF"
                 leg_to_be = legs_to_be[trg_name][leg_idx]
-                legType = f'{leg_name}_legType'
+                legType = f"{leg_name}_legType"
                 legType = getLegTypeString(df, legType)
                 df = df.Define(
                     applyTrgBranch_name,
@@ -300,7 +300,9 @@ class TrigCorrProducer:
                     )
                     # query = legtype_query.format(obj=leg_name)
                     query = trg_leg["offline_obj"]["cut"].format(obj=leg_name)
-                    query += f""" && HLT_{trg_name} && {leg_name}_HasMatching_{trg_name}"""
+                    query += (
+                        f""" && HLT_{trg_name} && {leg_name}_HasMatching_{trg_name}"""
+                    )
                     df = df.Define(applyTrgBranch_name, f"""{query}""")
                     for scale in getScales(None):
                         for mc_or_data in ["data", "mc"]:

@@ -109,7 +109,6 @@ class EleCorrProducer:
                         genMatch_bool = f"{gen_kind} == 1 || {gen_kind} == 3"
                         legType = getLegTypeString(df, legType)
 
-
                         df = df.Define(
                             f"{branch_name}_double",
                             f"""{legType} == Leg::e && {p4}.pt() >= 10 && ({genMatch_bool})

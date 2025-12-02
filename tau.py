@@ -102,7 +102,6 @@ class TauCorrProducer:
         "channelId",
     ]
 
-
     def __init__(self, *, period, config, columns):
         self.deepTauVersion = f"""DeepTau{deepTauVersions[config["deepTauVersion"]]}v{config["deepTauVersion"]}"""
         jsonFile = TauCorrProducer.jsonPath.format(
@@ -121,7 +120,6 @@ class TauCorrProducer:
         self.columns = {}
         for col in TauCorrProducer.inputColumns:
             self.columns[col] = columns.get(col, col)
-
 
     def getES(self, df, source_dict):
         for source in (
@@ -171,7 +169,7 @@ class TauCorrProducer:
                     p4 = f'{leg_name}_{self.columns["p4"]}'
 
                     legType = getLegTypeString(df, legType)
-                    channelId = getChannelIdString(df, self.columns['channelId'])
+                    channelId = getChannelIdString(df, self.columns["channelId"])
 
                     df = df.Define(
                         f"{branch_Medium_name}_double",

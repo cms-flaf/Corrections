@@ -50,9 +50,8 @@ namespace correction {
         template <typename... Args>
         static void Initialize(Args&&... args) {
             try {
-                if( _getGlobal() ) {
-                    std::cerr << typeid(CorrectionClass).name()
-                              << " already initialized." << std::endl;
+                if (_getGlobal()) {
+                    std::cerr << typeid(CorrectionClass).name() << " already initialized." << std::endl;
                     throw std::runtime_error("Class already initialized.");
                 }
                 _getGlobal() = std::make_unique<CorrectionClass>(args...);

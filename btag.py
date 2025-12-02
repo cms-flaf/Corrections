@@ -95,14 +95,17 @@ class bTagCorrProducer:
             ROOT.gInterpreter.Declare(f'#include "{headershape_path}"')
             ROOT.gInterpreter.Declare(f'#include "{header_path}"')
 
-
-            ROOT.gInterpreter.ProcessLineSynch(f'::correction::bTagCorrProvider::Initialize("{jsonFile}", "{jsonFile_eff}", "{self.tagger}")')
+            ROOT.gInterpreter.ProcessLineSynch(
+                f'::correction::bTagCorrProvider::Initialize("{jsonFile}", "{jsonFile_eff}", "{self.tagger}")'
+            )
             # ROOT.correction.bTagCorrProvider.Initialize(
             #     jsonFile, jsonFile_eff, self.tagger
             # )
             ROOT.correction.bTagCorrProvider.getGlobal()
 
-            ROOT.gInterpreter.ProcessLineSynch(f"""::correction::bTagShapeCorrProvider::Initialize("{jsonFile}", "{periods[period]}", "{self.tagger}")""")
+            ROOT.gInterpreter.ProcessLineSynch(
+                f"""::correction::bTagShapeCorrProvider::Initialize("{jsonFile}", "{periods[period]}", "{self.tagger}")"""
+            )
             # ROOT.correction.bTagShapeCorrProvider.Initialize(
             #     jsonFile, periods[period], self.tagger
             # )
@@ -200,9 +203,13 @@ class bTagCorrProducer:
 
         for source in src_list:
             for scale in scale_list:
-                if (source == central and scale != central) or (source != central and scale == central):
+                if (source == central and scale != central) or (
+                    source != central and scale == central
+                ):
                     continue
-                syst_name = getSystName(source, scale)  # if source != central else 'Central'
+                syst_name = getSystName(
+                    source, scale
+                )  # if source != central else 'Central'
                 branch_name = f"weight_bTagShape_{syst_name}"
                 branch_central = f"weight_bTagShape_{central}"
 

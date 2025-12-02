@@ -17,7 +17,7 @@ def findLibLocation(lib_name, first_guess=None):
     paths_to_check = []
     if first_guess is not None:
         paths_to_check.append(first_guess)
-    other_paths = os.environ.get('LD_LIBRARY_PATH', '').split(':')
+    other_paths = os.environ.get("LD_LIBRARY_PATH", "").split(":")
     paths_to_check.extend(other_paths)
     full_lib_name = f"lib{lib_name}.so"
     for path in paths_to_check:
@@ -25,6 +25,7 @@ def findLibLocation(lib_name, first_guess=None):
         if os.path.exists(lib_path):
             return lib_path
     raise RuntimeError(f"Library {lib_name} not found.")
+
 
 class Corrections:
     _global_instance = None
@@ -51,7 +52,7 @@ class Corrections:
                 elif param.startswith("-l"):
                     lib_name = param[2:].strip()
 
-            #ROOT.gInterpreter.AddIncludePath(os.environ['FLAF_ENVIRONMENT_PATH']+"/include")
+            # ROOT.gInterpreter.AddIncludePath(os.environ['FLAF_ENVIRONMENT_PATH']+"/include")
             corr_lib = findLibLocation(lib_name, lib_path)
             ROOT.gSystem.Load(corr_lib)
 
@@ -176,7 +177,11 @@ class Corrections:
         if self.tau_ is None:
             from .tau import TauCorrProducer
 
-            self.tau_ = TauCorrProducer(period=self.period, config=self.global_params, columns=self.to_apply.get("tauID", {}).get("columns", {}))
+            self.tau_ = TauCorrProducer(
+                period=self.period,
+                config=self.global_params,
+                columns=self.to_apply.get("tauID", {}).get("columns", {}),
+            )
         return self.tau_
 
     @property
@@ -224,7 +229,10 @@ class Corrections:
     def mu(self):
         if self.mu_ is None:
             from .mu import MuCorrProducer
-            self.mu_ = MuCorrProducer(era=self.period, columns=self.to_apply["mu"].get("columns", {}))
+
+            self.mu_ = MuCorrProducer(
+                era=self.period, columns=self.to_apply["mu"].get("columns", {})
+            )
         return self.mu_
 
     @property
@@ -243,7 +251,10 @@ class Corrections:
         if self.ele_ is None:
             from .electron import EleCorrProducer
 
-            self.ele_ = EleCorrProducer(period=period_names[self.period], columns=self.to_apply.get("ele", {}).get("columns", {}))
+            self.ele_ = EleCorrProducer(
+                period=period_names[self.period],
+                columns=self.to_apply.get("ele", {}).get("columns", {}),
+            )
         return self.ele_
 
     @property
@@ -407,7 +418,7 @@ class Corrections:
         start = source_name.find("_")
         src_name = source_name[start + 1 :]
         all_weights = []
-        if 'MC_Lumi_pu' in self.to_apply:
+        if "MC_Lumi_pu" in self.to_apply:
             lumi = self.global_params["luminosity"]
 
             genWeight_def = (
@@ -438,10 +449,14 @@ class Corrections:
                 branches = getBranches(syst_name, all_branches)
                 sf_product = " * ".join(branches) if len(branches) > 0 else "1.0"
                 weight_name = (
-                    f"weight_{syst_name}" if syst_name != central else "weight_MC_Lumi_pu"
+                    f"weight_{syst_name}"
+                    if syst_name != central
+                    else "weight_MC_Lumi_pu"
                 )
                 weight_rel_name = f"weight_MC_Lumi_{syst_name}_rel"
-                weight_out_name = weight_name if syst_name == central else weight_rel_name
+                weight_out_name = (
+                    weight_name if syst_name == central else weight_rel_name
+                )
                 weight_formula = f"genWeightD * {lumi} * {crossSectionBranch} * {sf_product} / {denomBranch}"
                 df = df.Define(weight_name, f"static_cast<float>({weight_formula})")
 
@@ -468,7 +483,7 @@ class Corrections:
             all_weights.extend(tau_SF_branches)
         if "btag" in self.to_apply:
             btag_sf_mode = self.to_apply["btag"]["modes"][self.stage]
-            if btag_sf_mode in [ "shape", "wp" ]:
+            if btag_sf_mode in ["shape", "wp"]:
                 # scale_name for getBTagShapeSF is contained in syst_name
                 if btag_sf_mode == "shape":
                     df, bTagSF_branches = self.btag.getBTagShapeSF(
