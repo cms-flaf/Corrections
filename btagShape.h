@@ -1,4 +1,5 @@
-#pragma once
+#ifndef CORRECTION_BTAGSHAPECORRPROVIDER_H
+#define CORRECTION_BTAGSHAPECORRPROVIDER_H
 
 #include "corrections.h"
 #include "jet.h"
@@ -138,10 +139,11 @@ namespace correction {
         bTagShapeCorrProvider(const std::string& fileName, const std::string& year, std::string const& tagger_name)
             : corrections_(CorrectionSet::from_file(fileName)),
               shape_corr_(corrections_->at(tagger_name + "_shape")),
-              _year(year) {}
+              _year(year) {
+            std::cerr << "Initialized bTagShapeCorrProvider::bTagShapeCorrProvider()" << std::endl;
+        }
 
         float getBTagShapeSF(const RVecLV& Jet_p4,
-                             const RVecB& pre_sel,
                              const RVecI& Jet_Flavour,
                              const RVecF& Jet_bTag_score,
                              UncSource source,
@@ -149,9 +151,8 @@ namespace correction {
             double sf_product = 1.;
             std::string source_str = getUncName().at(source);
             for (size_t jet_idx = 0; jet_idx < Jet_p4.size(); jet_idx++) {
-                if (!(pre_sel[jet_idx] && Jet_bTag_score[jet_idx] >= 0.0)) {
+                if (Jet_bTag_score[jet_idx] < 0.0)
                     continue;
-                }
                 const UncScale jet_tag_scale = sourceApplies(source, Jet_Flavour[jet_idx]) ? scale : UncScale::Central;
                 const std::string& scale_str = getScaleStr(jet_tag_scale);
                 bool isCentral = jet_tag_scale == UncScale::Central;
@@ -191,3 +192,5 @@ namespace correction {
     };
 
 }  //namespace correction
+
+#endif  // CORRECTION_BTAGSHAPECORRPROVIDER_H

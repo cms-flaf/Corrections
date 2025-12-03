@@ -23,7 +23,13 @@ class EleCorrProducer:
     energyScaleSources_ele = ["EleES"]
     year = ""
 
-    def __init__(self, period):
+    inputColumns = [
+        "gen_kind",
+        "legType",
+        "p4",
+    ]
+
+    def __init__(self, *, period, columns):
         EleID_JsonFile = EleCorrProducer.EleID_JsonPath.format(period)
 
         if period.startswith("Run2"):
@@ -60,6 +66,10 @@ class EleCorrProducer:
                 EleCorrProducer.year = period.split("_")[0] + "PromptD"
             EleCorrProducer.initialized = True
 
+        self.columns = {}
+        for col in EleCorrProducer.inputColumns:
+            self.columns[col] = columns.get(col, col)
+
     def getES(self, df, source_dict):
         for source in EleCorrProducer.energyScaleSources_ele:
             updateSourceDict(source_dict, source, "Electron")
@@ -86,19 +96,28 @@ class EleCorrProducer:
                     if not isCentral and scale != central:
                         continue
                     # syst_name = getSystName(source, scale)
-                    for leg_idx, leg_name in enumerate(lepton_legs):
+                    for leg_name in lepton_legs:
                         branch_name = (
                             f"weight_{leg_name}_EleSF_{working_point}_{source+scale}"
                         )
                         branch_central = f"""weight_{leg_name}_EleSF_{working_point}_{source+central}"""
-                        # print(branch_name)
-                        # print(branch_central)
+
+                        gen_kind = f"{leg_name}_{self.columns['gen_kind']}"
+                        legType = f'{leg_name}_{self.columns["legType"]}'
+                        p4 = f'{leg_name}_{self.columns["p4"]}'
+
+                        genMatch_bool = f"{gen_kind} == 1 || {gen_kind} == 3"
+                        legType = getLegTypeString(df, legType)
+
                         df = df.Define(
                             f"{branch_name}_double",
-                            f"""({leg_name}_legType == Leg::e && {leg_name}_p4.pt() >= 10 &&  {leg_name}_index >= 0 && (({leg_name}_gen_kind == 1) || ({leg_name}_gen_kind == 3)))  ? ::correction::EleCorrProvider::getGlobal().getID_SF(
-                                {leg_name}_p4, "{working_point}",
-                                "{EleCorrProducer.year}",::correction::EleCorrProvider::UncSource::{source}, ::correction::UncScale::{scale}) : 1.;""",
-                        )  # Changed from leg_name_pt >= 10 to leg_name_p4.pt() >= 10. This is because on the VERY CLOSE edge case where eleES lowers the pt below 10, the code would crash (Seen in file /eos/cms/store/group/phys_higgs/HLepRare/skim_2025_v1/Run3_2023/DYto2Tau_MLL_50_2J_amcatnloFXFX/nano_59.root)
+                            f"""{legType} == Leg::e && {p4}.pt() >= 10 && ({genMatch_bool})
+                                ? ::correction::EleCorrProvider::getGlobal().getID_SF(
+                                    {p4}, "{working_point}", "{EleCorrProducer.year}",
+                                    ::correction::EleCorrProvider::UncSource::{source},
+                                    ::correction::UncScale::{scale})
+                                : 1.""",
+                        )
 
                         if scale != central:
                             branch_name_final = branch_name + "_rel"

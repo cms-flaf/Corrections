@@ -182,7 +182,18 @@ class MuCorrProducer:
     }
     period = None
 
-    def __init__(self, era):
+    inputColumns = [
+        "pfRelIso04_all",
+        "tightId",
+        "tkRelIso",
+        "highPtId",
+        "mediumId",
+        "legType",
+        "p4",
+        "gen_kind",
+    ]
+
+    def __init__(self, *, era, columns):
         period = period_names[era]
         jsonFile_eff = os.path.join(
             os.environ["ANALYSIS_PATH"], MuCorrProducer.muIDEff_JsonPath.format(period)
@@ -213,10 +224,13 @@ class MuCorrProducer:
         self.low_available = era.startswith("Run3")
         self.med_available = True
         self.high_available = True
+        self.columns = {}
+        for col in MuCorrProducer.inputColumns:
+            self.columns[col] = columns.get(col, col)
 
     def getMuonIDSF(self, df, lepton_legs, isCentral, return_variations):
         SF_branches = []
-        # sf_sources = MuCorrProducer.muID_SF_Sources + MuCorrProducer.muReco_SF_sources + MuCorrProducer.muIso_SF_Sources
+
         sf_sources = (
             MuCorrProducer.muID_SF_Sources[MuCorrProducer.period]
             + MuCorrProducer.muReco_SF_sources[MuCorrProducer.period]
@@ -235,23 +249,32 @@ class MuCorrProducer:
                     else central
                 )
                 syst_name = source_name + scale if source != central else "Central"
-                for leg_idx, leg_name in enumerate(
-                    lepton_legs
-                ):  # So legname is lep1 or lep2 for bbww, and tau1 or tau2 for bbtautau, can use this instead of a hard hh_bbww = True
+                for leg_name in lepton_legs:
                     branch_name = f"weight_{leg_name}_MuonID_SF_{syst_name}"
                     branch_central = (
                         f"""weight_{leg_name}_MuonID_SF_{source_name+central}"""
                     )
-                    genMatch_bool = (
-                        f"(({leg_name}_gen_kind == 2) || ({leg_name}_gen_kind == 4))"
-                    )
-                    genMatch_bool = (
-                        f"(({leg_name}_gen_kind == 2) || ({leg_name}_gen_kind == 4))"
-                    )
+
+                    gen_kind = f"{leg_name}_{self.columns['gen_kind']}"
+                    legType = f'{leg_name}_{self.columns["legType"]}'
+                    p4 = f'{leg_name}_{self.columns["p4"]}'
+                    pfRelIso04_all = f'{leg_name}_{self.columns["pfRelIso04_all"]}'
+                    tightId = f'{leg_name}_{self.columns["tightId"]}'
+                    tkRelIso = f'{leg_name}_{self.columns["tkRelIso"]}'
+                    highPtId = f'{leg_name}_{self.columns["highPtId"]}'
+                    mediumId = f'{leg_name}_{self.columns["mediumId"]}'
+
+                    genMatch_bool = f"{gen_kind} == 2 || {gen_kind} == 4"
+                    legType = getLegTypeString(df, legType)
 
                     df = df.Define(
                         f"{branch_name}_double",
-                        f"""{leg_name}_legType == Leg::mu && {leg_name}_index >= 0 && ({genMatch_bool}) ? ::correction::MuCorrProvider::getGlobal().getMuonSF({leg_name}_p4, Muon_pfRelIso04_all.at({leg_name}_index), Muon_tightId.at({leg_name}_index),Muon_tkRelIso.at({leg_name}_index),Muon_highPtId.at({leg_name}_index),Muon_mediumId.at({leg_name}_index),::correction::MuCorrProvider::UncSource::{source}, ::correction::UncScale::{scale}) : 1.""",
+                        f"""{legType} == Leg::mu && ({genMatch_bool})
+                            ? ::correction::MuCorrProvider::getGlobal().getMuonSF(
+                                {p4}, {pfRelIso04_all}, {tightId}, {tkRelIso}, {highPtId}, {mediumId},
+                                ::correction::MuCorrProvider::UncSource::{source},
+                                ::correction::UncScale::{scale})
+                            : 1.""",
                     )
 
                     # Change to this format
@@ -309,13 +332,27 @@ class MuCorrProducer:
                     branch_central = (
                         f"""weight_{leg_name}_HighPt_MuonID_SF_{source_name+central}"""
                     )
-                    genMatch_bool = (
-                        f"(({leg_name}_gen_kind == 2) || ({leg_name}_gen_kind == 4))"
-                    )
+
+                    gen_kind = f"{leg_name}_{self.columns['gen_kind']}"
+                    legType = f'{leg_name}_{self.columns["legType"]}'
+                    p4 = f'{leg_name}_{self.columns["p4"]}'
+                    pfRelIso04_all = f'{leg_name}_{self.columns["pfRelIso04_all"]}'
+                    tightId = f'{leg_name}_{self.columns["tightId"]}'
+                    tkRelIso = f'{leg_name}_{self.columns["tkRelIso"]}'
+                    highPtId = f'{leg_name}_{self.columns["highPtId"]}'
+                    mediumId = f'{leg_name}_{self.columns["mediumId"]}'
+
+                    genMatch_bool = f"{gen_kind} == 2 || {gen_kind} == 4"
+                    legType = getLegTypeString(df, legType)
 
                     df = df.Define(
                         f"{branch_name}_double",
-                        f"""{leg_name}_legType == Leg::mu && {leg_name}_index >= 0 && ({genMatch_bool}) ? ::correction::HighPtMuCorrProvider::getGlobal().getHighPtMuonSF({leg_name}_p4, Muon_pfRelIso04_all.at({leg_name}_index), Muon_tightId.at({leg_name}_index), Muon_highPtId.at({leg_name}_index), Muon_tkRelIso.at({leg_name}_index), Muon_mediumId.at({leg_name}_index),::correction::HighPtMuCorrProvider::UncSource::{source}, ::correction::UncScale::{scale}) : 1.""",
+                        f"""{legType} == Leg::mu && ({genMatch_bool})
+                            ? ::correction::HighPtMuCorrProvider::getGlobal().getHighPtMuonSF(
+                                {p4}, {pfRelIso04_all}, {tightId}, {highPtId}, {tkRelIso}, {mediumId},
+                                ::correction::HighPtMuCorrProvider::UncSource::{source},
+                                ::correction::UncScale::{scale})
+                            : 1.""",
                     )
 
                     if scale != central:
@@ -365,13 +402,26 @@ class MuCorrProducer:
                         f"""weight_{leg_name}_LowPt_MuonID_SF_{source_name+central}"""
                     )
 
-                    genMatch_bool = (
-                        f"(({leg_name}_gen_kind == 2) || ({leg_name}_gen_kind == 4))"
-                    )
+                    gen_kind = f"{leg_name}_{self.columns['gen_kind']}"
+                    legType = f'{leg_name}_{self.columns["legType"]}'
+                    p4 = f'{leg_name}_{self.columns["p4"]}'
+                    pfRelIso04_all = f'{leg_name}_{self.columns["pfRelIso04_all"]}'
+                    tightId = f'{leg_name}_{self.columns["tightId"]}'
+                    tkRelIso = f'{leg_name}_{self.columns["tkRelIso"]}'
+                    highPtId = f'{leg_name}_{self.columns["highPtId"]}'
+                    mediumId = f'{leg_name}_{self.columns["mediumId"]}'
+
+                    genMatch_bool = f"{gen_kind} == 2 || {gen_kind} == 4"
+                    legType = getLegTypeString(df, legType)
 
                     df = df.Define(
                         f"{branch_name}_double",
-                        f"""{leg_name}_legType == Leg::mu && {leg_name}_index >= 0 && ({genMatch_bool}) ? ::correction::LowPtMuCorrProvider::getGlobal().getLowPtMuonSF({leg_name}_p4, Muon_pfRelIso04_all.at({leg_name}_index), Muon_tightId.at({leg_name}_index), Muon_tkRelIso.at({leg_name}_index), Muon_highPtId.at({leg_name}_index), Muon_mediumId.at({leg_name}_index),::correction::LowPtMuCorrProvider::UncSource::{source}, ::correction::UncScale::{scale}) : 1.""",
+                        f"""{legType} == Leg::mu && ({genMatch_bool})
+                            ? ::correction::LowPtMuCorrProvider::getGlobal().getLowPtMuonSF(
+                                {p4}, {pfRelIso04_all}, {tightId}, {tkRelIso}, {highPtId}, {mediumId},
+                                ::correction::LowPtMuCorrProvider::UncSource::{source},
+                                ::correction::UncScale::{scale})
+                            : 1.""",
                     )
 
                     if scale != central:
