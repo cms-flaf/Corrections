@@ -242,7 +242,7 @@ class TrigCorrProducer:
                             df = df.Define(
                                 f"{branch_name}_double",
                                 f"""{applyTrgBranch_name} ? ::correction::TrigCorrProvider::getGlobal().getSF_{trigCorr_dict[trg_name]}(
-                                        {leg_name}_p4,"{TrigCorrProducer.year}",{leg_name}_decayMode), "{trigCorr_dict[trg_name]}", "Medium", "sf", ::correction::TrigCorrProvider::UncSource::{source}, ::correction::UncScale::{scale} ) : 1.f""",
+                                        {leg_name}_p4,"{TrigCorrProducer.year}",{leg_name}_decayMode, "{trigCorr_dict[trg_name]}", "Medium", "sf", ::correction::TrigCorrProvider::UncSource::{source}, ::correction::UncScale::{scale} ) : 1.f""",
                             )
                         else:
                             df = df.Define(

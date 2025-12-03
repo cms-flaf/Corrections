@@ -113,7 +113,7 @@ class EleCorrProducer:
                             f"{branch_name}_double",
                             f"""{legType} == Leg::e && {p4}.pt() >= 10 && ({genMatch_bool})
                                 ? ::correction::EleCorrProvider::getGlobal().getID_SF(
-                                    {leg_name}_p4, "{working_point}", "{EleCorrProducer.year}",
+                                    {p4}, "{working_point}", "{EleCorrProducer.year}",
                                     ::correction::EleCorrProvider::UncSource::{source},
                                     ::correction::UncScale::{scale})
                                 : 1.""",

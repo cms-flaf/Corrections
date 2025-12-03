@@ -56,13 +56,13 @@ namespace correction {
                 }
                 _getGlobal() = std::make_unique<CorrectionClass>(args...);
             } catch (std::exception& e) {
-                std::cerr << "Erorr while initializing " << typeid(CorrectionClass).name()
+                std::cerr << "Error while initializing " << typeid(CorrectionClass).name()
                           << " with arguments:" << "\n";
                 print_args(std::forward<Args>(args)...);
                 std::cerr << "exception message: " << e.what() << "\n";
                 throw;
             } catch (...) {
-                std::cerr << "Erorr while initializing " << typeid(CorrectionClass).name()
+                std::cerr << "Error while initializing " << typeid(CorrectionClass).name()
                           << " with arguments:" << "\n";
                 print_args(std::forward<Args>(args)...);
                 std::cerr << "exception category: unknown\n";
