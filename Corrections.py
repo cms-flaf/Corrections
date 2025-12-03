@@ -13,6 +13,20 @@ def getBranches(syst_name, all_branches):
     return final_branches
 
 
+def findLibLocation(lib_name, first_guess=None):
+    paths_to_check = []
+    if first_guess is not None:
+        paths_to_check.append(first_guess)
+    other_paths = os.environ.get("LD_LIBRARY_PATH", "").split(":")
+    paths_to_check.extend(other_paths)
+    full_lib_name = f"lib{lib_name}.so"
+    for path in paths_to_check:
+        lib_path = os.path.join(path, full_lib_name)
+        if os.path.exists(lib_path):
+            return lib_path
+    raise RuntimeError(f"Library {lib_name} not found.")
+
+
 class Corrections:
     _global_instance = None
 
@@ -29,19 +43,17 @@ class Corrections:
                 verbose=0,
             )
             params = output.split(" ")
+            lib_path = None
             for param in params:
                 if param.startswith("-I"):
-                    # ROOT.gInterpreter.AddIncludePath(os.environ['FLAF_ENVIRONMENT_PATH']+"/include")#param[2:].strip())
                     ROOT.gInterpreter.AddIncludePath(param[2:].strip())
                 elif param.startswith("-L"):
                     lib_path = param[2:].strip()
                 elif param.startswith("-l"):
                     lib_name = param[2:].strip()
-            # lib_path = os.environ['FLAF_ENVIRONMENT_PATH']+"/lib/python3.11/site-packages" #
-            corr_lib = f"{lib_path}/lib{lib_name}.so"
 
-            if not os.path.exists(corr_lib):
-                raise RuntimeError("Correction library is not found.")
+            # ROOT.gInterpreter.AddIncludePath(os.environ['FLAF_ENVIRONMENT_PATH']+"/include")
+            corr_lib = findLibLocation(lib_name, lib_path)
             ROOT.gSystem.Load(corr_lib)
 
         Corrections._global_instance = Corrections(**kwargs)
@@ -56,6 +68,7 @@ class Corrections:
         self,
         *,
         global_params,
+        stage,
         dataset_name,
         dataset_cfg,
         process_name,
@@ -74,6 +87,7 @@ class Corrections:
         self.trigger_dict = trigger_class.trigger_dict if trigger_class else {}
 
         self.period = global_params["era"]
+        self.stage = stage
 
         self.to_apply = {}
         correction_origins = {}
@@ -84,23 +98,22 @@ class Corrections:
         ]:
             if not cfg:
                 continue
-            for corr_entry in cfg.get("corrections", []):
-                if type(corr_entry) == str:
-                    name = corr_entry
-                    value = {}
-                elif type(corr_entry) == dict:
-                    name = corr_entry["name"]
-                    value = {k: v for k, v in corr_entry.items() if k != "name"}
-                else:
+            for corr_name, corr_params in cfg.get("corrections", {}).items():
+                if "stage" in corr_params and "stages" in corr_params:
                     raise RuntimeError(
-                        f"Unknown correction entry type={type(corr_entry)}. {corr_entry}"
+                        f"correction {corr_name} in {cfg_name} has both 'stage' and 'stages' defined. Please use only one of them."
                     )
-                if name not in self.to_apply:
-                    self.to_apply[name] = value
-                    correction_origins[name] = cfg_name
+                corr_stages = corr_params.get("stages", [])
+                if "stage" in corr_params:
+                    corr_stages.append(corr_params["stage"])
+                if stage not in corr_stages:
+                    continue
+                if corr_name not in self.to_apply:
+                    self.to_apply[corr_name] = corr_params
+                    correction_origins[corr_name] = cfg_name
                 else:
                     print(
-                        f"Warning: correction {name} is already defined in {correction_origins[name]}. Skipping definition from {cfg_name}",
+                        f"Warning: correction {corr_name} is already defined in {correction_origins[corr_name]}. Skipping definition from {cfg_name}",
                         file=sys.stderr,
                     )
         if len(self.to_apply) > 0:
@@ -164,7 +177,11 @@ class Corrections:
         if self.tau_ is None:
             from .tau import TauCorrProducer
 
-            self.tau_ = TauCorrProducer(self.period, self.global_params)
+            self.tau_ = TauCorrProducer(
+                period=self.period,
+                config=self.global_params,
+                columns=self.to_apply.get("tauID", {}).get("columns", {}),
+            )
         return self.tau_
 
     @property
@@ -190,12 +207,13 @@ class Corrections:
         if self.btag_ is None:
             from .btag import bTagCorrProducer
 
+            params = self.to_apply["btag"]
             self.btag_ = bTagCorrProducer(
-                period_names[self.period],
-                self.global_params["bjet_preselection_branch"],
-                tagger_name=self.global_params["tagger_name"],
-                loadEfficiency=False,
-                use_split_jes=False,
+                period=period_names[self.period],
+                jetCollection=params["jetCollection"],
+                tagger=params["tagger"],
+                loadEfficiency=params.get("loadEfficiency", False),
+                useSplitJes=params.get("useSplitJes", False),
             )
         return self.btag_
 
@@ -212,8 +230,9 @@ class Corrections:
         if self.mu_ is None:
             from .mu import MuCorrProducer
 
-            # self.mu_ = MuCorrProducer(period_names[self.period])
-            self.mu_ = MuCorrProducer(self.period)
+            self.mu_ = MuCorrProducer(
+                era=self.period, columns=self.to_apply["mu"].get("columns", {})
+            )
         return self.mu_
 
     @property
@@ -232,7 +251,10 @@ class Corrections:
         if self.ele_ is None:
             from .electron import EleCorrProducer
 
-            self.ele_ = EleCorrProducer(period_names[self.period])
+            self.ele_ = EleCorrProducer(
+                period=period_names[self.period],
+                columns=self.to_apply.get("ele", {}).get("columns", {}),
+            )
         return self.ele_
 
     @property
@@ -266,7 +288,7 @@ class Corrections:
             apply_jer = "JER" in self.to_apply and not self.isData
             apply_jet_horns_fix_ = (
                 "JER" in self.to_apply
-                and "Jet_horns_fix" in self.to_apply
+                and self.to_apply["JER"].get("apply_jet_horns_fix", False)
                 and not self.isData
             )
             df, source_dict = self.jet.getP4Variations(
@@ -380,7 +402,6 @@ class Corrections:
         isCentral=True,
         use_genWeight_sign_only=True,
     ):
-        lumi = self.global_params["luminosity"]
 
         # syst name is only needed to determine scale (only it contains up/down/cetnral)
         if "Up" in syst_name:
@@ -396,52 +417,59 @@ class Corrections:
         # in case if source_name contains underscores we want to keep everything after the first occurence of the underscore
         start = source_name.find("_")
         src_name = source_name[start + 1 :]
-
-        genWeight_def = (
-            "std::copysign<double>(1., genWeight)"
-            if use_genWeight_sign_only
-            else "double(genWeight)"
-        )
-        df = df.Define("genWeightD", genWeight_def)
-
-        crossSectionBranch = "crossSection"
-        df = self.defineCrossSection(df, crossSectionBranch)
-
-        all_branches = []
-        if "pu" in self.to_apply:
-            df, pu_SF_branches = self.pu.getWeight(df)
-            all_branches.append(pu_SF_branches)
-
-        all_sources = set(itertools.chain.from_iterable(all_branches))
-        if central in all_sources:
-            all_sources.remove(central)
         all_weights = []
-        for syst_name in [central] + list(all_sources):
-            denomBranch = f"__denom_{syst_name}"
-            syst_unc, syst_scale = splitSystName(syst_name)
-            df = self.defineDenominator(
-                df, denomBranch, syst_unc, syst_scale, ana_caches
-            )
-            branches = getBranches(syst_name, all_branches)
-            sf_product = " * ".join(branches) if len(branches) > 0 else "1.0"
-            weight_name = (
-                f"weight_{syst_name}" if syst_name != central else "weight_MC_Lumi_pu"
-            )
-            weight_rel_name = f"weight_MC_Lumi_{syst_name}_rel"
-            weight_out_name = weight_name if syst_name == central else weight_rel_name
-            weight_formula = f"genWeightD * {lumi} * {crossSectionBranch} * {sf_product} / {denomBranch}"
-            df = df.Define(weight_name, f"static_cast<float>({weight_formula})")
+        if "MC_Lumi_pu" in self.to_apply:
+            lumi = self.global_params["luminosity"]
 
-            if syst_name == central:
-                all_weights.append(weight_out_name)
-            else:
-                df = df.Define(
-                    weight_out_name,
-                    f"static_cast<float>(weight_{syst_name}/weight_MC_Lumi_pu)",
+            genWeight_def = (
+                "std::copysign<double>(1., genWeight)"
+                if use_genWeight_sign_only
+                else "double(genWeight)"
+            )
+            df = df.Define("genWeightD", genWeight_def)
+
+            crossSectionBranch = "crossSection"
+            df = self.defineCrossSection(df, crossSectionBranch)
+
+            all_branches = []
+            if "pu" in self.to_apply:
+                df, pu_SF_branches = self.pu.getWeight(df)
+                all_branches.append(pu_SF_branches)
+
+            all_sources = set(itertools.chain.from_iterable(all_branches))
+            if central in all_sources:
+                all_sources.remove(central)
+
+            for syst_name in [central] + list(all_sources):
+                denomBranch = f"__denom_{syst_name}"
+                syst_unc, syst_scale = splitSystName(syst_name)
+                df = self.defineDenominator(
+                    df, denomBranch, syst_unc, syst_scale, ana_caches
                 )
-                for scale in ["Up", "Down"]:
-                    if syst_name == f"pu{scale}" and return_variations:
-                        all_weights.append(weight_out_name)
+                branches = getBranches(syst_name, all_branches)
+                sf_product = " * ".join(branches) if len(branches) > 0 else "1.0"
+                weight_name = (
+                    f"weight_{syst_name}"
+                    if syst_name != central
+                    else "weight_MC_Lumi_pu"
+                )
+                weight_rel_name = f"weight_MC_Lumi_{syst_name}_rel"
+                weight_out_name = (
+                    weight_name if syst_name == central else weight_rel_name
+                )
+                weight_formula = f"genWeightD * {lumi} * {crossSectionBranch} * {sf_product} / {denomBranch}"
+                df = df.Define(weight_name, f"static_cast<float>({weight_formula})")
+
+                if syst_name == central:
+                    all_weights.append(weight_out_name)
+                else:
+                    df = df.Define(
+                        weight_out_name,
+                        f"static_cast<float>(weight_{syst_name}/weight_MC_Lumi_pu)",
+                    )
+                    for scale in ["Up", "Down"]:
+                        if syst_name == f"pu{scale}" and return_variations:
+                            all_weights.append(weight_out_name)
 
         if "Vpt" in self.to_apply:
             df, Vpt_SF_branches = self.Vpt.getSF(df, isCentral, return_variations)
@@ -453,12 +481,23 @@ class Corrections:
                 df, lepton_legs, isCentral, return_variations
             )
             all_weights.extend(tau_SF_branches)
-        if "btagShape" in self.to_apply:
-            # scale_name for getBTagShapeSF is contained in syst_name
-            df, bTagShape_SF_branches = self.btag.getBTagShapeSF(
-                df, src_name, scale_name, isCentral, return_variations
-            )
-            all_weights.extend(bTagShape_SF_branches)
+        if "btag" in self.to_apply:
+            btag_sf_mode = self.to_apply["btag"]["modes"][self.stage]
+            if btag_sf_mode in ["shape", "wp"]:
+                # scale_name for getBTagShapeSF is contained in syst_name
+                if btag_sf_mode == "shape":
+                    df, bTagSF_branches = self.btag.getBTagShapeSF(
+                        df, src_name, scale_name, isCentral, return_variations
+                    )
+                else:
+                    df, bTagSF_branches = self.btag.getBTagWPSF(
+                        df, isCentral and return_variations, isCentral
+                    )
+                all_weights.extend(bTagSF_branches)
+            elif btag_sf_mode != "none":
+                raise RuntimeError(
+                    f"btag mode {btag_sf_mode} not recognized. Supported modes are 'shape', 'wp' and 'none'."
+                )
         if "mu" in self.to_apply:
             if self.mu.low_available:
                 df, lowPtmuID_SF_branches = self.mu.getLowPtMuonIDSF(
@@ -485,25 +524,27 @@ class Corrections:
                 df, isCentral, return_variations
             )
             all_weights.extend(puJetID_SF_branches)
-        if "btagWP" in self.to_apply:
-            df, bTagWP_SF_branches = self.btag.getBTagWPSF(
-                df, isCentral and return_variations, isCentral
-            )
-            all_weights.extend(bTagWP_SF_branches)
-        if "trgSF" in self.to_apply:
-            df, trg_SF_branches = self.trg.getSF(
-                df,
-                trigger_names,
-                lepton_legs,
-                isCentral and return_variations,
-                isCentral,
-            )
-            all_weights.extend(trg_SF_branches)
-        if "trgEff" in self.to_apply:
-            df, trg_SF_branches = self.trg.getEff(
-                df, trigger_names, offline_legs, self.trigger_dict
-            )
-            all_weights.extend(trg_SF_branches)
+        if "trigger" in self.to_apply:
+            mode = self.to_apply["trigger"]["mode"]
+            if mode == "SF":
+                df, trg_SF_branches = self.trg.getSF(
+                    df,
+                    trigger_names,
+                    lepton_legs,
+                    isCentral and return_variations,
+                    isCentral,
+                )
+                all_weights.extend(trg_SF_branches)
+            elif mode == "efficiency":
+                df, trg_SF_branches = self.trg.getEff(
+                    df, trigger_names, offline_legs, self.trigger_dict
+                )
+                all_weights.extend(trg_SF_branches)
+            else:
+                raise RuntimeError(
+                    f"Trigger correction mode {mode} not recognized. Supported modes are 'SF' and 'efficiency'."
+                )
+
         return df, all_weights
 
 
