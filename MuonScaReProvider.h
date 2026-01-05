@@ -48,9 +48,9 @@ namespace correction {
     };
 
     struct CrystalBall{
-        double pi=3.14159;
-        double sqrtPiOver2=sqrt(pi/2.0);
-        double sqrt2=sqrt(2.0);
+        static constexpr double pi = std::numbers::pi;
+        static constexpr double double sqrtPiOver2=sqrt(pi/2.0);
+        static constexpr double sqrt2 = std::numbers::sqrt2;
         double m;
         double s;
         double a;

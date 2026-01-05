@@ -44,7 +44,7 @@ class VptCorrProducer:
         print(sampleType)
         rootFile_EWKcorr_name = (
             "ZJetsCorr_collection_wek.root"
-            if "DY" in sampleType
+            if sampleType == "DY"
             else "WJetsCorr_collection_ewk.root"
         )
         rootFile_EWKcorr = os.path.join(
@@ -61,7 +61,7 @@ class VptCorrProducer:
         )
         print(jsonFile_EWKcorr_weight)
         self.order = order
-        hist_name = "eej_pTV_kappa_EW" if "DY" in sampleType else "evj_pTV_kappa_EW"
+        hist_name = "eej_pTV_kappa_EW" if sampleType == "DY" else "evj_pTV_kappa_EW"
         hist_nominal_weight = "ewcorr"
         self.sampleType = sampleType
         if not VptCorrProducer.initialized:
@@ -137,7 +137,7 @@ class VptCorrProducer:
                 syst_name = source + scale  # if source != central else 'Central'
                 branch_SF_name = f"weight_EWKCorr_{syst_name}"
                 branch_name_central = f"weight_EWKCorr_{source}Central"
-                if "W" in self.sampleType or "DY" in self.sampleType:
+                if self.sampleType == "W" or self.sampleType == "DY":
                     df = df.Define(
                         f"{branch_SF_name}_double_sc",
                         f"""::correction::VptCorrProvider::getGlobal().getSF_fromRootFile(

@@ -325,9 +325,6 @@ class Corrections:
                             and "{obj}_p4_{suffix}" not in df.GetColumnNames()
                         ):
                             continue
-                        if "MET" in obj and f"{obj}_pt" not in df.GetColumnNames():
-                            continue
-                        # if "MET" in obj and f"{obj}_p4_{suffix}" not in df.GetColumnNames(): continue
                         if f"{obj}_p4_{syst_name}" not in df.GetColumnNames():
                             print(
                                 f"Defining nominal {obj}_p4_{syst_name} as {obj}_p4_{suffix}"
