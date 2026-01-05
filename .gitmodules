@@ -1,0 +1,3 @@
+[submodule "hleprare"]
+	path = hleprare
+	url = git@gitlab.cern.ch:7999/cms-higgs-leprare/hleprare.git
