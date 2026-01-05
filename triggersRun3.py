@@ -276,13 +276,15 @@ class TrigCorrProducer:
                     VSjetWP[trg] = "placeholder"
         SF_branches = []
         for trg_name in trigger_names:
+            muon_pt = trigger_dict[trg_name].get("muon_pt", "pt")
             trigger_legs = trigger_dict[trg_name]["legs"]
             for trg_leg_idx, trg_leg in enumerate(trigger_legs):
                 electron_input = trigger_dict[trg_name]["legs"][trg_leg_idx][
                     "jsonTRGcorrection_elepath"
                 ]
                 legtype_query = re.search(
-                    r"{obj}_legType == Leg::\w+", trg_leg["offline_obj"]["cut"]
+                    r"{obj}_legType == Leg::\w+",
+                    trg_leg["offline_obj"]["cut"].format(muon_pt=muon_pt),
                 )
                 # Extract the leg type (e.g., 'mu') from the string "{obj}_legType == Leg::mu"
                 legtype_value = None

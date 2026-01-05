@@ -48,9 +48,13 @@ namespace correction {
     };
 
     struct CrystalBall{
-        static constexpr double pi = std::numbers::pi;
-        static constexpr double double sqrtPiOver2=sqrt(pi/2.0);
-        static constexpr double sqrt2 = std::numbers::sqrt2;
+        // static constexpr double pi = std::numbers::pi;
+        // static constexpr double sqrtPiOver2 = sqrt(pi/2.0);
+        // static constexpr double sqrt2 = std::numbers::sqrt2;
+        double pi=3.14159;
+        double sqrtPiOver2=sqrt(pi/2.0);
+        double sqrt2=sqrt(2.0);
+
         double m;
         double s;
         double a;
@@ -142,37 +146,65 @@ namespace correction {
 
         MuonScaReCorrProvider(const std::string& jsonFile) : cset(CorrectionSet::from_file(jsonFile)) {}
 
-        RVecLV getES(const RVecF& Muon_pt,
-                     const RVecF& Muon_eta,
-                     const RVecF& Muon_phi,
-                     const RVecF& Muon_mass,
-                     const RVecI& Muon_charge,
-                     const RVecUC& Muon_nTrackerLayers,
+        LorentzVectorM getES(const float Muon_pt,
+                     const float Muon_eta,
+                     const float Muon_phi,
+                     const float Muon_mass,
+                     const int Muon_charge,
+                     const unsigned char Muon_nTrackerLayers,
                      const bool is_data,
+                     const int evtNumber,
+                     const int lumiNumber,
                      UncSource source,
                      UncScale scale) const {
-            RVecLV MuonSmeared_p4(Muon_pt.size());
-            for (size_t n = 0; n < Muon_pt.size(); ++n) {
-                // const GenLeptonMatch genMatch = static_cast<GenLeptonMatch>(Tau_genMatch.at(n));
                 const UncScale mu_scale = sourceApplies(source) ? scale : UncScale::Central;
                 const UncSource mu_source = mu_scale == UncScale::Central ? UncSource::Central : source;
                 const std::string& scale_str = getScaleStr(mu_scale);
-                const int isData = isData ? 1 : 0;
-                const auto muon_pt_scaled = pt_scale(is_data, Muon_pt[n], Muon_eta[n], Muon_phi[n], Muon_charge[n]);
-                MuonSmeared_p4[n] = LorentzVectorM(muon_pt_scaled, Muon_eta[n], Muon_phi[n], Muon_mass[n]);
+                const int isData = is_data ? 1 : 0;
+                const double muon_pt_scaled = mu_scale == UncScale::Central ? pt_scale(is_data, Muon_pt, Muon_eta, Muon_phi, Muon_charge) : pt_scale_var(Muon_pt, Muon_eta, Muon_phi, Muon_charge, scale_str);
+                double muon_pt_resol = muon_pt_scaled;
                 if (!isData) {
-                    const auto muon_pt_scaled_mc = pt_resol(muon_pt_scaled, Muon_eta[n], Muon_nTrackerLayers[n]);
-                    MuonSmeared_p4[n] = LorentzVectorM(muon_pt_scaled_mc, Muon_eta[n], Muon_phi[n], Muon_mass[n]);
+                    muon_pt_resol = mu_scale == UncScale::Central ? pt_resol(muon_pt_scaled, Muon_eta, Muon_phi, Muon_nTrackerLayers, evtNumber, lumiNumber) : pt_resol_var(muon_pt_scaled, muon_pt_resol, Muon_eta, scale_str) ;
                 }
-            }
-            return MuonSmeared_p4;
+                const LorentzVectorM muon_p4_ScaRe= LorentzVectorM(muon_pt_resol, Muon_eta, Muon_phi, Muon_mass);
+                return muon_p4_ScaRe;
         }
+
+        // RVecLV getES(const RVecF& Muon_pt,
+        //              const RVecF& Muon_eta,
+        //              const RVecF& Muon_phi,
+        //              const RVecF& Muon_mass,
+        //              const RVecI& Muon_charge,
+        //              const RVecUC& Muon_nTrackerLayers,
+        //              const bool is_data,
+        //              const int evtNumber,
+        //              const int lumiNumber,
+        //              UncSource source,
+        //              UncScale scale) const {
+        //     RVecLV MuonSmeared_p4(Muon_pt.size());
+        //     for (size_t n = 0; n < Muon_pt.size(); ++n) {
+        //         // const GenLeptonMatch genMatch = static_cast<GenLeptonMatch>(Tau_genMatch.at(n));
+        //         const UncScale mu_scale = sourceApplies(source) ? scale : UncScale::Central;
+        //         const UncSource mu_source = mu_scale == UncScale::Central ? UncSource::Central : source;
+        //         const std::string& scale_str = getScaleStr(mu_scale);
+        //         const int isData = is_data ? 1 : 0;
+        //         const auto muon_pt_scaled = mu_scale == UncScale::Central ? pt_scale(is_data, Muon_pt[n], Muon_eta[n], Muon_phi[n], Muon_charge[n]) : pt_scale_var(Muon_pt[n], Muon_eta[n], Muon_phi[n], Muon_charge[n], scale_str);
+        //         // MuonSmeared_p4[n] = LorentzVectorM(muon_pt_scaled, Muon_eta[n], Muon_phi[n], Muon_mass[n]);
+        //         if (!isData) {
+        //             const auto muon_pt_resol =  mu_scale == UncScale::Central ? pt_resol(muon_pt_scaled, Muon_eta[n], Muon_nTrackerLayers[n], evtNumber, lumiNumber) : pt_resol_var(double muon_pt_scaled, double muon_pt_resol, double Muon_eta[n], scale_str) ;
+        //         else {
+        //             const auto muon_pt_resol = muon_pt_scaled ;
+        //         }
+        //         MuonSmeared_p4[n] = LorentzVectorM(muon_pt_resol, Muon_eta[n], Muon_phi[n], Muon_mass[n]);
+        //     }
+        //     return MuonSmeared_p4;
+        // }
 
       private:
         std::unique_ptr<CorrectionSet> cset;
 
       private:
-        double get_rndm(double eta, double phi, float nL, int evtNumber, int lumiNumber) {
+        double get_rndm(double eta, double phi, float nL, int evtNumber, int lumiNumber) const {
             // obtain parameters from correctionlib
             double mean = cset->at("cb_params")->evaluate({abs(eta), nL, 0});
             double sigma = cset->at("cb_params")->evaluate({abs(eta), nL, 1});
@@ -191,7 +223,7 @@ namespace correction {
             return cb.invcdf(rndm);
         }
 
-        double get_std(double pt, double eta, float nL) {
+        double get_std(double pt, double eta, float nL) const {
 
             // obtain paramters from correctionlib
             double param_0 = cset->at("poly_params")->evaluate({abs(eta), nL, 0});
@@ -204,7 +236,7 @@ namespace correction {
             return sigma;
         }
 
-        double get_k(double eta, string var) {
+        double get_k(double eta, string var) const {
 
             // obtain parameters from correctionlib
             double k_data = cset->at("k_data")->evaluate({abs(eta), var});
@@ -219,7 +251,7 @@ namespace correction {
 
 
 
-        double pt_resol(double pt, double eta, double phi, float nL, int evtNumber, int lumiNumber, double low_pt_threshold = 26) {
+        double pt_resol(double pt, double eta, double phi, float nL, int evtNumber, int lumiNumber, double low_pt_threshold = 26) const {
             // load correction values
             double rndm = (double) get_rndm(eta, phi, nL, evtNumber, lumiNumber);
             double std = (double) get_std(pt, eta, nL);
@@ -235,7 +267,7 @@ namespace correction {
             return ptc;
         }
 
-        double pt_resol_var(double pt_woresol, double pt_wresol, double eta, string updn){
+        double pt_resol_var(double pt_woresol, double pt_wresol, double eta, string updn) const {
 
             double k = (double) get_k(eta, "nom");
 
@@ -263,7 +295,7 @@ namespace correction {
             return pt_var;
         }
 
-        double pt_scale(bool is_data, double pt, double eta, double phi, int charge, double low_pt_threshold = 26) {
+        double pt_scale(bool is_data, double pt, double eta, double phi, int charge, double low_pt_threshold = 26) const {
 
             // use right correction
             string dtmc = "mc";
@@ -278,7 +310,7 @@ namespace correction {
         }
 
 
-        double pt_scale_var(double pt, double eta, double phi, int charge, string updn) {
+        double pt_scale_var(double pt, double eta, double phi, int charge, string updn) const {
 
             double stat_a = cset->at("a_mc")->evaluate({eta, phi, "stat"});
             double stat_m = cset->at("m_mc")->evaluate({eta, phi, "stat"});
