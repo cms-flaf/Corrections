@@ -111,6 +111,7 @@ namespace correction {
                      const RVecI& Muon_charge,
                      const RVecUC& Muon_nTrackerLayers,
                      const bool is_data,
+                     const int event,
                      UncSource source,
                      UncScale scale) const {
             RVecLV MuonSmeared_p4(Muon_pt.size());
@@ -119,13 +120,28 @@ namespace correction {
                 const UncScale mu_scale = sourceApplies(source) ? scale : UncScale::Central;
                 const UncSource mu_source = mu_scale == UncScale::Central ? UncSource::Central : source;
                 const std::string& scale_str = getScaleStr(mu_scale);
-                const int isData = isData ? 1 : 0;
-                const auto muon_pt_scaled = pt_scale(is_data, Muon_pt[n], Muon_eta[n], Muon_phi[n], Muon_charge[n]);
-                MuonSmeared_p4[n] = LorentzVectorM(muon_pt_scaled, Muon_eta[n], Muon_phi[n], Muon_mass[n]);
-                if (!isData) {
-                    const auto muon_pt_scaled_mc = pt_resol(muon_pt_scaled, Muon_eta[n], Muon_nTrackerLayers[n]);
+                const int isData = is_data ? 1 : 0;
+                // if(event==74738519){
+                //     std::cout << "mu_idx = "<< n << std::endl;
+                //     std::cout << "event= " << event<< std::endl;
+                //     std::cout << "isData= " << isData<< std::endl;
+                //     std::cout << "Muon_pt[n] = " << Muon_pt[n] << std::endl;
+                //     std::cout << "Muon_eta[n] = " << Muon_eta[n] << std::endl;
+                //     std::cout << "Muon_phi[n] = " << Muon_phi[n] << std::endl;
+                //     std::cout << "Muon_charge[n] = " <<  Muon_charge[n] << std::endl;
+                //     std::cout << "Muon_nTrackerLayers[n] = " << static_cast<float>(Muon_nTrackerLayers[n]) << std::endl;
+                // }
+                const auto muon_pt_scaled = pt_scale(isData, Muon_pt[n], Muon_eta[n], Muon_phi[n], Muon_charge[n]);
+                // if(event==74738519)
+                //     std::cout << "muon_pt_scaled = " << muon_pt_scaled << std::endl;
+
+                if (!is_data) {
+                    const auto muon_pt_scaled_mc = pt_resol(muon_pt_scaled, Muon_eta[n], static_cast<float>(Muon_nTrackerLayers[n]));
+                    // if(event==74738519)
+                    //     std::cout << "muon_pt_scaled_mc " << muon_pt_scaled_mc << std::endl;
                     MuonSmeared_p4[n] = LorentzVectorM(muon_pt_scaled_mc, Muon_eta[n], Muon_phi[n], Muon_mass[n]);
                 }
+                MuonSmeared_p4[n] = LorentzVectorM(muon_pt_scaled, Muon_eta[n], Muon_phi[n], Muon_mass[n]);
             }
             return MuonSmeared_p4;
         }
@@ -180,9 +196,13 @@ namespace correction {
             double std = (double)get_std(pt, eta, nL);
             double k = (double)get_k(eta, "nom");
 
+
             // calculate corrected value and return original value if a parameter is nan
             double ptc = pt * (1 + k * std * rndm);
             if (isnan(ptc))
+                ptc = pt;
+            ////// temporary patch:
+            if(isinf(ptc))
                 ptc = pt;
             return ptc;
         }
@@ -218,7 +238,9 @@ namespace correction {
 
             double a = cset->at("a_" + dtmc)->evaluate({eta, phi, "nom"});
             double m = cset->at("m_" + dtmc)->evaluate({eta, phi, "nom"});
+            auto pt_scaled = 1. / (m / pt + charge * a) ;
             return 1. / (m / pt + charge * a);
+
         }
 
         double pt_scale_var(double pt, double eta, double phi, int charge, string updn) const {

@@ -172,7 +172,7 @@ class JetCorrProducer:
         "2022_Summer22": [],
         "2023_Summer23BPix": [],
         "2022_Prompt": [],
-        "2023_Summer23": ["v123", "v4"],
+        "2023_Summer23": ["v1","v2","v3","v123", "v4"],
         "2022_Summer22EE": [],
         "2024_Winter24": [],
     }
@@ -298,9 +298,8 @@ class JetCorrProducer:
                 # same for run version:
                 # e.g. for 2023_Summer23 run version is v123 or v4
                 # if there is no exact match, take compound version
-                # sample_version = v* => need to check that * is in exactly one version in available version list
                 if version_list and sample_version not in version_list:
-                    matches = [v for v in version_list if sample_version[1:] in v]
+                    matches = [v for v in version_list if sample_version in v]
                     if len(matches) != 1:
                         raise RuntimeError(
                             f"ambiguous deduction of sample version for {sample_name}: got version options {matches}"

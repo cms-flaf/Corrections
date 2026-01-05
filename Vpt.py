@@ -32,10 +32,10 @@ scale_defs = {
 
 class VptCorrProducer:
     EWK_corr_jsonPath_recoil = (
-        "Corrections/data/DYWeightHLepRare/DY_pTll_recoil_corrections_{0}_v3.json.gz"
+        "Corrections/data/hleprare/DYweightCorrlib/DY_pTll_recoil_corrections_{0}_v5.json.gz"
     )
     EWK_corr_jsonPath_weights = (
-        "Corrections/data/DYWeightHLepRare/DY_pTll_weights_{0}_v3.json.gz"
+        "Corrections/data/hleprare/DYweightCorrlib/DY_pTll_weights_{0}_v5.json.gz"
     )
     EWK_corr_filePath = "Corrections/data/EWK_Corr_Vpt/{0}"
     initialized = False
@@ -43,9 +43,10 @@ class VptCorrProducer:
     DY_w_SFSources = ["DYWeight"]
 
     def __init__(self, sampleType, period, order="NLO"):
+        print(sampleType)
         rootFile_EWKcorr_name = (
             "ZJetsCorr_collection_wek.root"
-            if sampleType == "DY"
+            if "DY" in sampleType
             else "WJetsCorr_collection_ewk.root"
         )
         rootFile_EWKcorr = os.path.join(
@@ -62,7 +63,7 @@ class VptCorrProducer:
         )
         print(jsonFile_EWKcorr_weight)
         self.order = order
-        hist_name = "eej_pTV_kappa_EW" if sampleType == "DY" else "evj_pTV_kappa_EW"
+        hist_name = "eej_pTV_kappa_EW" if "DY" in sampleType else "evj_pTV_kappa_EW"
         hist_nominal_weight = "ewcorr"
         self.sampleType = sampleType
         if not VptCorrProducer.initialized:
@@ -138,7 +139,7 @@ class VptCorrProducer:
                 syst_name = source + scale  # if source != central else 'Central'
                 branch_SF_name = f"weight_EWKCorr_{syst_name}"
                 branch_name_central = f"weight_EWKCorr_{source}Central"
-                if self.sampleType == "W" or self.sampleType == "DY":
+                if "W" in self.sampleType  or "DY" in self.sampleType:
                     df = df.Define(
                         f"{branch_SF_name}_double_sc",
                         f"""::correction::VptCorrProvider::getGlobal().getSF_fromRootFile(
