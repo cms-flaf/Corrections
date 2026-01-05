@@ -23,7 +23,13 @@ class EleCorrProducer:
     energyScaleSources_ele = ["EleES"]
     year = ""
 
-    def __init__(self, period):
+    inputColumns = [
+        "gen_kind",
+        "legType",
+        "p4",
+    ]
+
+    def __init__(self, *, period, columns):
         EleID_JsonFile = EleCorrProducer.EleID_JsonPath.format(period)
 
         if period.startswith("Run2"):
@@ -37,6 +43,10 @@ class EleCorrProducer:
             EleES_JsonFile = EleCorrProducer.EleES_JsonPath_Run3.format(period)
             EleID_JsonFile_key = "Electron-ID-SF"
             EleES_JsonFile_key = "Scale"
+            if period == "2023_Summer23":
+                EleES_JsonFile_key = "2023PromptC_ScaleJSON"
+            if period == "2023_Summer23BPix":
+                EleES_JsonFile_key = "2023PromptD_ScaleJSON"
 
         if not EleCorrProducer.initialized:
             headers_dir = os.path.dirname(os.path.abspath(__file__))
@@ -53,12 +63,16 @@ class EleCorrProducer:
             if period.endswith("Summer23"):
                 EleCorrProducer.year = period.split("_")[0] + "PromptC"
             if period.endswith("Summer23BPix"):
-                EleCorrProducer.year = period.split("_")[0] + "2023PromptD"
+                EleCorrProducer.year = period.split("_")[0] + "PromptD"
             EleCorrProducer.initialized = True
+
+        self.columns = {}
+        for col in EleCorrProducer.inputColumns:
+            self.columns[col] = columns.get(col, col)
 
     def getES(self, df, source_dict):
         for source in EleCorrProducer.energyScaleSources_ele:
-            updateSourceDict(source_dict, source, "Ele")
+            updateSourceDict(source_dict, source, "Electron")
             for scale in getScales(source):
                 syst_name = getSystName(source, scale)
                 df = df.Define(
@@ -82,19 +96,17 @@ class EleCorrProducer:
                     if not isCentral and scale != central:
                         continue
                     # syst_name = getSystName(source, scale)
-                    for leg_idx, leg_name in enumerate(lepton_legs):
+                    for leg_name in lepton_legs:
                         branch_name = (
                             f"weight_{leg_name}_EleSF_{working_point}_{source+scale}"
                         )
                         branch_central = f"""weight_{leg_name}_EleSF_{working_point}_{source+central}"""
-                        # print(branch_name)
-                        # print(branch_central)
-                        df = df.Define(
-                            f"{branch_name}_double",
-                            f"""({leg_name}_legType == Leg::e && {leg_name}_pt >= 10 &&  {leg_name}_index >= 0 && (({leg_name}_gen_kind == 1) || ({leg_name}_gen_kind == 3)))  ? ::correction::EleCorrProvider::getGlobal().getID_SF(
+                        #print(branch_name)
+                        #print(branch_central)
+                        df = df.Define(f"{branch_name}_double",
+                                    f'''({leg_name}_legType == Leg::e && {leg_name}_pt >= 10 &&  {leg_name}_index >= 0 && (({leg_name}_gen_kind == 1) || ({leg_name}_gen_kind == 3)))  ? ::correction::EleCorrProvider::getGlobal().getID_SF(
                                 {leg_name}_p4, "{working_point}",
-                                "{EleCorrProducer.year}",::correction::EleCorrProvider::UncSource::{source}, ::correction::UncScale::{scale}) : 1.;""",
-                        )
+                                "{EleCorrProducer.year}",::correction::EleCorrProvider::UncSource::{source}, ::correction::UncScale::{scale}) : 1.;''')
 
                         if scale != central:
                             branch_name_final = branch_name + "_rel"

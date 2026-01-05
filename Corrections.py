@@ -1,25 +1,8 @@
 import os
-import yaml
 import itertools
 
 from .CorrectionsCore import *
 from FLAF.RunKit.run_tools import ps_call
-
-
-def findRefSample(config, sample_type):
-    refSample = []
-    for sample, sampleDef in config.items():
-        # if sampleDef.get('sampleType', None) == sample_type:
-        #    print(sample, sampleDef)
-        if sampleDef.get("sampleType", None) == sample_type and sampleDef.get(
-            "isReference", False
-        ):
-            refSample.append(sample)
-    if len(refSample) != 1:
-        # print(refSample)
-        raise RuntimeError(f"multiple refSamples for {sample_type}: {refSample}")
-    return refSample[0]
-
 
 def getBranches(syst_name, all_branches):
     final_branches = []
@@ -29,23 +12,28 @@ def getBranches(syst_name, all_branches):
     return final_branches
 
 
+def findLibLocation(lib_name, first_guess=None):
+    paths_to_check = []
+    if first_guess is not None:
+        paths_to_check.append(first_guess)
+    other_paths = os.environ.get("LD_LIBRARY_PATH", "").split(":")
+    paths_to_check.extend(other_paths)
+    full_lib_name = f"lib{lib_name}.so"
+    for path in paths_to_check:
+        lib_path = os.path.join(path, full_lib_name)
+        if os.path.exists(lib_path):
+            return lib_path
+    raise RuntimeError(f"Library {lib_name} not found.")
+
+
 class Corrections:
     _global_instance = None
 
     @staticmethod
-    def initializeGlobal(
-        config,
-        sample_name=None,
-        sample_type=None,
-        isData=False,
-        load_corr_lib=True,
-        trigger_class=None,
-    ):
+    def initializeGlobal(load_corr_lib=False, **kwargs):
         if Corrections._global_instance is not None:
             raise RuntimeError("Global instance is already initialized")
-        Corrections._global_instance = Corrections(
-            config, isData, sample_name, sample_type, trigger_class
-        )
+
         if load_corr_lib:
             returncode, output, err = ps_call(
                 ["correction", "config", "--cflags", "--ldflags"],
@@ -54,20 +42,20 @@ class Corrections:
                 verbose=0,
             )
             params = output.split(" ")
+            lib_path = None
             for param in params:
                 if param.startswith("-I"):
-                    # ROOT.gInterpreter.AddIncludePath(os.environ['FLAF_ENVIRONMENT_PATH']+"/include")#param[2:].strip())
                     ROOT.gInterpreter.AddIncludePath(param[2:].strip())
                 elif param.startswith("-L"):
                     lib_path = param[2:].strip()
                 elif param.startswith("-l"):
                     lib_name = param[2:].strip()
-            # lib_path = os.environ['FLAF_ENVIRONMENT_PATH']+"/lib/python3.11/site-packages" #
-            corr_lib = f"{lib_path}/lib{lib_name}.so"
 
-            if not os.path.exists(corr_lib):
-                raise RuntimeError("Correction library is not found.")
+            # ROOT.gInterpreter.AddIncludePath(os.environ['FLAF_ENVIRONMENT_PATH']+"/include")
+            corr_lib = findLibLocation(lib_name, lib_path)
             ROOT.gSystem.Load(corr_lib)
+
+        Corrections._global_instance = Corrections(**kwargs)
 
     @staticmethod
     def getGlobal():
@@ -75,18 +63,65 @@ class Corrections:
             raise RuntimeError("Global instance is not initialized")
         return Corrections._global_instance
 
-    def __init__(self, config, isData, sample_name, sample_type, trigger_class):
+    def __init__(
+        self,
+        *,
+        global_params,
+        stage,
+        dataset_name,
+        dataset_cfg,
+        process_name,
+        process_cfg,
+        processors,
+        isData,
+        trigger_class,
+    ):
+        self.global_params = global_params
+        self.dataset_name = dataset_name
+        self.dataset_cfg = dataset_cfg
+        self.process_name = process_name
+        self.process_cfg = process_cfg
+        self.processors = processors
         self.isData = isData
-        self.period = config["era"]
-        self.to_apply = config.get("corrections", [])
-        self.config = config
-        self.sample_name = sample_name
-        self.sample_type = sample_type
-        self.MET_type = config["met_type"]
-        self.tagger_name = config["tagger_name"]
-        self.bjet_preselection_branch = config["bjet_preselection_branch"]
         self.trigger_dict = trigger_class.trigger_dict if trigger_class else {}
 
+        self.period = global_params["era"]
+        self.stage = stage
+
+        self.to_apply = {}
+        correction_origins = {}
+        for cfg_name, cfg in [
+            ("dataset", dataset_cfg),
+            ("process", process_cfg),
+            ("global", global_params),
+        ]:
+            if not cfg:
+                continue
+            for corr_name, corr_params in cfg.get("corrections", {}).items():
+                if "stage" in corr_params and "stages" in corr_params:
+                    raise RuntimeError(
+                        f"correction {corr_name} in {cfg_name} has both 'stage' and 'stages' defined. Please use only one of them."
+                    )
+                corr_stages = corr_params.get("stages", [])
+                if "stage" in corr_params:
+                    corr_stages.append(corr_params["stage"])
+                if stage not in corr_stages:
+                    continue
+                if corr_name not in self.to_apply:
+                    self.to_apply[corr_name] = corr_params
+                    correction_origins[corr_name] = cfg_name
+                else:
+                    print(
+                        f"Warning: correction {corr_name} is already defined in {correction_origins[corr_name]}. Skipping definition from {cfg_name}",
+                        file=sys.stderr,
+                    )
+        if len(self.to_apply) > 0:
+            print(
+                f'Corrections to apply: {", ".join(self.to_apply.keys())}',
+                file=sys.stderr,
+            )
+
+        self.xs_db_ = None
         self.tau_ = None
         self.met_ = None
         self.trg_ = None
@@ -102,6 +137,17 @@ class Corrections:
         self.JetVetoMap_ = None
 
     @property
+    def xs_db(self):
+        if self.xs_db_ is None:
+            from FLAF.Common.CrossSectionDB import CrossSectionDB
+
+            self.xs_db_ = CrossSectionDB.Load(
+                os.environ["ANALYSIS_PATH"],
+                self.global_params["crossSectionsFile"],
+            )
+        return self.xs_db_
+
+    @property
     def pu(self):
         if self.pu_ is None:
             from .pu import puWeightProducer
@@ -114,7 +160,7 @@ class Corrections:
         if self.Vpt_ is None:
             from .Vpt import VptCorrProducer
 
-            self.Vpt_ = VptCorrProducer(self.sample_type, self.period)
+            self.Vpt_ = VptCorrProducer(self.to_apply["Vpt"]["type"], self.period)
         return self.Vpt_
 
     @property
@@ -130,7 +176,11 @@ class Corrections:
         if self.tau_ is None:
             from .tau import TauCorrProducer
 
-            self.tau_ = TauCorrProducer(self.period, self.config)
+            self.tau_ = TauCorrProducer(
+                period=self.period,
+                config=self.global_params,
+                columns=self.to_apply.get("tauID", {}).get("columns", {}),
+            )
         return self.tau_
 
     @property
@@ -139,7 +189,7 @@ class Corrections:
             from .jet import JetCorrProducer
 
             self.jet_ = JetCorrProducer(
-                period_names[self.period], self.isData, self.sample_name
+                period_names[self.period], self.isData, self.dataset_name
             )
         return self.jet_
 
@@ -156,12 +206,13 @@ class Corrections:
         if self.btag_ is None:
             from .btag import bTagCorrProducer
 
+            params = self.to_apply["btag"]
             self.btag_ = bTagCorrProducer(
-                period_names[self.period],
-                self.bjet_preselection_branch,
-                tagger_name=self.tagger_name,
-                loadEfficiency=False,
-                use_split_jes=False,
+                period=period_names[self.period],
+                jetCollection=params["jetCollection"],
+                tagger=params["tagger"],
+                loadEfficiency=params.get("loadEfficiency", False),
+                useSplitJes=params.get("useSplitJes", False),
             )
         return self.btag_
 
@@ -178,8 +229,9 @@ class Corrections:
         if self.mu_ is None:
             from .mu import MuCorrProducer
 
-            # self.mu_ = MuCorrProducer(period_names[self.period])
-            self.mu_ = MuCorrProducer(self.period)
+            self.mu_ = MuCorrProducer(
+                era=self.period, columns=self.to_apply["mu"].get("columns", {})
+            )
         return self.mu_
 
     @property
@@ -198,7 +250,10 @@ class Corrections:
         if self.ele_ is None:
             from .electron import EleCorrProducer
 
-            self.ele_ = EleCorrProducer(period_names[self.period])
+            self.ele_ = EleCorrProducer(
+                period=period_names[self.period],
+                columns=self.to_apply.get("ele", {}).get("columns", {}),
+            )
         return self.ele_
 
     @property
@@ -217,7 +272,7 @@ class Corrections:
             else:
                 from .triggers import TrigCorrProducer
             self.trg_ = TrigCorrProducer(
-                period_names[self.period], self.config, self.trigger_dict
+                period_names[self.period], self.global_params, self.trigger_dict
             )
         return self.trg_
 
@@ -232,7 +287,7 @@ class Corrections:
             apply_jer = "JER" in self.to_apply and not self.isData
             apply_jet_horns_fix_ = (
                 "JER" in self.to_apply
-                and "Jet_horns_fix" in self.to_apply
+                and self.to_apply["JER"].get("apply_jet_horns_fix", False)
                 and not self.isData
             )
             df, source_dict = self.jet.getP4Variations(
@@ -241,8 +296,16 @@ class Corrections:
         if "muScaRe" in self.to_apply:
             df, source_dict = self.muScaRe.getP4Variations(df, source_dict)
             # df, source_dict = self.fatjet.getP4Variations(df, source_dict, 'JER' in self.to_apply, 'JEC' in self.to_apply)
-        # if 'tauES' in self.to_apply or 'JEC' in self.to_apply or 'JEC' in self.to_apply:
-        #     df, source_dict = self.met.getPFMET(df, source_dict)
+        if (
+            "tauES" in self.to_apply
+            or "JEC" in self.to_apply
+            or "JER" in self.to_apply
+            or "eleES" in self.to_apply
+            or "muScaRe" in self.to_apply
+        ):
+            df, source_dict = self.met.getMET(
+                df, source_dict, self.global_params["met_type"]
+            )
         syst_dict = {}
         for source, source_objs in source_dict.items():
             for scale in getScales(source):
@@ -262,40 +325,83 @@ class Corrections:
                         ):
                             continue
                         if f"{obj}_p4_{syst_name}" not in df.GetColumnNames():
+                            print(
+                                f"Defining nominal {obj}_p4_{syst_name} as {obj}_p4_{suffix}"
+                            )
                             df = df.Define(
                                 f"{obj}_p4_{syst_name}", f"{obj}_p4_{suffix}"
                             )
         return df, syst_dict
 
-    # scale_name for getBTagShapeSF is contained in syst_name
+    def defineCrossSection(self, df, crossSectionBranch):
+        xs_processor_names = []
+        for p_name, proc in self.processors.items():
+            if hasattr(proc, "onAnaTuple_defineCrossSection"):
+                xs_processor_names.append(p_name)
+        if len(xs_processor_names) == 0:
+            raise RuntimeError(
+                "No processor implements onAnaTuple_defineCrossSection method"
+            )
+        if len(xs_processor_names) > 1:
+            raise RuntimeError(
+                "Multiple processors implement onAnaTuple_defineCrossSection method. Not supported."
+            )
+        p_name = xs_processor_names[0]
+        print(
+            f'Using processor "{p_name}" to define cross section for dataset "{self.dataset_name}"'
+        )
+        xs_processor = self.processors[p_name]
+        return xs_processor.onAnaTuple_defineCrossSection(
+            df, crossSectionBranch, self.xs_db, self.dataset_name, self.dataset_cfg
+        )
+
+    def defineDenominator(self, df, denomBranch, syst_name, scale_name, ana_caches):
+        denom_processor_names = []
+        for p_name, proc in self.processors.items():
+            if hasattr(proc, "onAnaTuple_defineDenominator"):
+                denom_processor_names.append(p_name)
+        if len(denom_processor_names) == 0:
+            raise RuntimeError(
+                "No processor implements onAnaTuple_defineDenominator method"
+            )
+        if len(denom_processor_names) > 1:
+            raise RuntimeError(
+                "Multiple processors implement onAnaTuple_defineDenominator method. Not supported."
+            )
+        p_name = denom_processor_names[0]
+        print(
+            f'Using processor "{p_name}" to define denominator for dataset "{self.dataset_name}"'
+        )
+        if len(ana_caches) > 1:
+            print(
+                f"Available ana_caches for denominator calculation: {list(ana_caches.keys())}"
+            )
+        denom_processor = self.processors[p_name]
+        return denom_processor.onAnaTuple_defineDenominator(
+            df,
+            denomBranch,
+            p_name,
+            self.dataset_name,
+            syst_name,
+            scale_name,
+            ana_caches,
+        )
+
     def getNormalisationCorrections(
         self,
         df,
-        global_params,
-        samples,
-        sample,
+        *,
         lepton_legs,
         offline_legs,
         trigger_names,
         syst_name,
         source_name,
-        ana_cache=None,
+        ana_caches,
         return_variations=True,
         isCentral=True,
+        use_genWeight_sign_only=True,
     ):
-        lumi = global_params["luminosity"]
-        sampleType = samples[sample]["sampleType"]
-        generator = samples[sample]["generator"]
-        xsFile = global_params["crossSectionsFile"]
-        xsFilePath = os.path.join(os.environ["ANALYSIS_PATH"], xsFile)
-        with open(xsFilePath, "r") as xs_file:
-            xs_dict = yaml.safe_load(xs_file)
-        xs_stitching = 1.0
-        xs_stitching_incl = 1.0
-        xs_inclusive = 1.0
-        stitch_str = "1.f"
 
-        scale_name = None
         # syst name is only needed to determine scale (only it contains up/down/cetnral)
         if "Up" in syst_name:
             scale_name = up
@@ -304,103 +410,66 @@ class Corrections:
         elif "Central" in syst_name:
             scale_name = central
         else:
-            pass
-
-        if scale_name is None:
             raise RuntimeError("Obtained scale not Central, Up or Down")
 
         # source_name is needed to determine source and it doesn't contain up/down/cetnral
         # in case if source_name contains underscores we want to keep everything after the first occurence of the underscore
         start = source_name.find("_")
         src_name = source_name[start + 1 :]
-
-        if sampleType in ["DY", "W"] and global_params.get("use_stitching", True):
-            xs_stitching_name = samples[sample]["crossSectionStitch"]
-            inclusive_sample_name = findRefSample(samples, sampleType)
-            xs_name = samples[inclusive_sample_name]["crossSection"]
-            xs_stitching = xs_dict[xs_stitching_name]["crossSec"]
-            xs_stitching_incl = xs_dict[
-                samples[inclusive_sample_name]["crossSectionStitch"]
-            ]["crossSec"]
-            if sampleType == "DY":
-                if generator == "amcatnlo":
-                    stitch_str = "if(LHE_Vpt==0.) return 1/2.f; return 1/3.f;"
-                elif generator == "madgraph":
-                    stitch_str = "1/2.f"
-            elif sampleType == "W":
-                if generator == "madgraph":
-                    stitch_str = "if(LHE_Njets==0) return 1.f; if(LHE_HT < 70) return 1/2.f; return 1/3.f;"
-        else:
-            xs_name = samples[sample]["crossSection"]
-        xs_name = samples[sample]["crossSection"]
-        df = df.Define("stitching_weight", stitch_str)
-        xs_inclusive = xs_dict[xs_name]["crossSec"]
-
-        stitching_weight_string = (
-            f" {xs_stitching} * stitching_weight * ({xs_inclusive}/{xs_stitching_incl})"
-        )
-
-        generator_name = (
-            samples[sample]["generator"]
-            if samples[sample]["sampleType"] != "data"
-            else ""
-        )
-        genWeight_def = "double(genWeight)"
-        if generator_name in ["madgraph", "amcatnlo"]:
-            # print("using madgraph or amcatnlo")
-            genWeight_def = "std::copysign<double>(1., genWeight)"
-        df = df.Define("genWeightD", genWeight_def)
-
-        all_branches = []
-        if "pu" in self.to_apply:
-            df, pu_SF_branches = self.pu.getWeight(df)
-            all_branches.append(pu_SF_branches)
-
-        all_sources = set(itertools.chain.from_iterable(all_branches))
-        if central in all_sources:
-            all_sources.remove(central)
         all_weights = []
-        for syst_name in [central] + list(all_sources):
-            denom = (
-                f'/{ana_cache["denominator"][central][central]}'
-                if ana_cache is not None
-                else ""
-            )
-            for scale in ["Up", "Down"]:
-                if syst_name == f"pu{scale}":
-                    denom = (
-                        f"""/{ana_cache["denominator"]["pu"][scale]}"""
-                        if ana_cache is not None
-                        else ""
-                    )
-            # if not isCentral : continue
-            branches = getBranches(syst_name, all_branches)
-            product = " * ".join(branches)
-            if len(product) > 0:
-                product = "* " + product
-            weight_name = (
-                f"weight_{syst_name}" if syst_name != central else "weight_MC_Lumi_pu"
-            )
-            weight_rel_name = f"weight_MC_Lumi_{syst_name}_rel"
-            weight_out_name = weight_name if syst_name == central else weight_rel_name
-            weight_formula = (
-                f"genWeightD * {lumi} * {stitching_weight_string} {product} {denom}"
-            )
-            df = df.Define(weight_name, f"static_cast<float>({weight_formula})")
+        if "MC_Lumi_pu" in self.to_apply:
+            lumi = self.global_params["luminosity"]
 
-            if syst_name == central:
-                all_weights.append(weight_out_name)
-            else:
-                df = df.Define(
-                    weight_out_name,
-                    f"static_cast<float>(weight_{syst_name}/weight_MC_Lumi_pu)",
+            genWeight_def = (
+                "std::copysign<double>(1., genWeight)"
+                if use_genWeight_sign_only
+                else "double(genWeight)"
+            )
+            df = df.Define("genWeightD", genWeight_def)
+
+            crossSectionBranch = "crossSection"
+            df = self.defineCrossSection(df, crossSectionBranch)
+
+            all_branches = []
+            if "pu" in self.to_apply:
+                df, pu_SF_branches = self.pu.getWeight(df)
+                all_branches.append(pu_SF_branches)
+
+            all_sources = set(itertools.chain.from_iterable(all_branches))
+            if central in all_sources:
+                all_sources.remove(central)
+
+            for syst_name in [central] + list(all_sources):
+                denomBranch = f"__denom_{syst_name}"
+                syst_unc, syst_scale = splitSystName(syst_name)
+                df = self.defineDenominator(
+                    df, denomBranch, syst_unc, syst_scale, ana_caches
                 )
-                for scale in ["Up", "Down"]:
-                    if syst_name == f"pu{scale}" and return_variations:
-                        all_weights.append(weight_out_name)
-        # if 'JetVetoMap' in self.to_apply:
-        #     df,JetVetoMap_branches = self.JetVetoMap.GetJetVetoMap(df)
-        #     all_weights.extend(JetVetoMap_branches)
+                branches = getBranches(syst_name, all_branches)
+                sf_product = " * ".join(branches) if len(branches) > 0 else "1.0"
+                weight_name = (
+                    f"weight_{syst_name}"
+                    if syst_name != central
+                    else "weight_MC_Lumi_pu"
+                )
+                weight_rel_name = f"weight_MC_Lumi_{syst_name}_rel"
+                weight_out_name = (
+                    weight_name if syst_name == central else weight_rel_name
+                )
+                weight_formula = f"genWeightD * {lumi} * {crossSectionBranch} * {sf_product} / {denomBranch}"
+                df = df.Define(weight_name, f"static_cast<float>({weight_formula})")
+
+                if syst_name == central:
+                    all_weights.append(weight_out_name)
+                else:
+                    df = df.Define(
+                        weight_out_name,
+                        f"static_cast<float>(weight_{syst_name}/weight_MC_Lumi_pu)",
+                    )
+                    for scale in ["Up", "Down"]:
+                        if syst_name == f"pu{scale}" and return_variations:
+                            all_weights.append(weight_out_name)
+
         if "Vpt" in self.to_apply:
             df, Vpt_SF_branches = self.Vpt.getSF(df, isCentral, return_variations)
             all_weights.extend(Vpt_SF_branches)
@@ -411,11 +480,23 @@ class Corrections:
                 df, lepton_legs, isCentral, return_variations
             )
             all_weights.extend(tau_SF_branches)
-        if "btagShape" in self.to_apply and not self.isData:
-            df, bTagShape_SF_branches = self.btag.getBTagShapeSF(
-                df, src_name, scale_name, isCentral, return_variations
-            )
-            all_weights.extend(bTagShape_SF_branches)
+        if "btag" in self.to_apply:
+            btag_sf_mode = self.to_apply["btag"]["modes"][self.stage]
+            if btag_sf_mode in ["shape", "wp"]:
+                # scale_name for getBTagShapeSF is contained in syst_name
+                if btag_sf_mode == "shape":
+                    df, bTagSF_branches = self.btag.getBTagShapeSF(
+                        df, src_name, scale_name, isCentral, return_variations
+                    )
+                else:
+                    df, bTagSF_branches = self.btag.getBTagWPSF(
+                        df, isCentral and return_variations, isCentral
+                    )
+                all_weights.extend(bTagSF_branches)
+            elif btag_sf_mode != "none":
+                raise RuntimeError(
+                    f"btag mode {btag_sf_mode} not recognized. Supported modes are 'shape', 'wp' and 'none'."
+                )
         if "mu" in self.to_apply:
             if self.mu.low_available:
                 df, lowPtmuID_SF_branches = self.mu.getLowPtMuonIDSF(
@@ -442,44 +523,29 @@ class Corrections:
                 df, isCentral, return_variations
             )
             all_weights.extend(puJetID_SF_branches)
-        if "btagWP" in self.to_apply:
-            df, bTagWP_SF_branches = self.btag.getBTagWPSF(
-                df, isCentral and return_variations, isCentral
-            )
-            all_weights.extend(bTagWP_SF_branches)
-        if "trgSF" in self.to_apply:
-            df, trg_SF_branches = self.trg.getSF(
-                df,
-                trigger_names,
-                lepton_legs,
-                isCentral and return_variations,
-                isCentral,
-            )
-            all_weights.extend(trg_SF_branches)
-        if "trgEff" in self.to_apply:
-            df, trg_SF_branches = self.trg.getEff(
-                df, trigger_names, offline_legs, self.trigger_dict
-            )
-            all_weights.extend(trg_SF_branches)
+        if "trigger" in self.to_apply:
+            mode = self.to_apply["trigger"]["mode"]
+            if mode == "SF":
+                df, trg_SF_branches = self.trg.getSF(
+                    df,
+                    trigger_names,
+                    lepton_legs,
+                    isCentral and return_variations,
+                    isCentral,
+                )
+                all_weights.extend(trg_SF_branches)
+            elif mode == "efficiency":
+                df, trg_SF_branches = self.trg.getEff(
+                    df, trigger_names, offline_legs, self.trigger_dict
+                )
+                all_weights.extend(trg_SF_branches)
+            else:
+                raise RuntimeError(
+                    f"Trigger correction mode {mode} not recognized. Supported modes are 'SF' and 'efficiency'."
+                )
+
         return df, all_weights
 
-    def getDenominator(self, df, sources, generator):
-        if "pu" in self.to_apply:
-            df, pu_SF_branches = self.pu.getWeight(df)
-        syst_names = []
-        genWeight_def = "double(genWeight)"
-        if generator in ["madgraph", "amcatnlo"]:
-            genWeight_def = "std::copysign<double>(1., genWeight)"
-        df = df.Define("genWeightD", genWeight_def)
-        for source in sources:
-            for scale in getScales(source):
-                syst_name = getSystName(source, scale)
-                weight_formula = "genWeightD"
-                if "pu" in self.to_apply:
-                    weight_formula += f" * puWeight_{scale}"
-                df = df.Define(f"weight_denom_{syst_name}", weight_formula)
-                syst_names.append(syst_name)
-        return df, syst_names
 
 
 # amcatnlo problem

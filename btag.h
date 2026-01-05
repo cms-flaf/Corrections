@@ -1,18 +1,19 @@
-#pragma once
+#ifndef CORRECTION_BTAG_H
+#define CORRECTION_BTAG_H
 
 #include "correction.h"
 #include "corrections.h"
 
 namespace correction {
-    class bTagCorrProvider : public CorrectionsBase<bTagCorrProvider> {
-      public:
-        enum class UncSource : int {
-            Central = -1,
-            btagSFbc_uncorrelated = 0,
-            btagSFlight_uncorrelated = 1,
-            btagSFbc_correlated = 2,
-            btagSFlight_correlated = 3,
-        };
+        class bTagCorrProvider : public CorrectionsBase<bTagCorrProvider> {
+            public:
+            enum class UncSource : int {
+                Central = -1,
+                btagSFbc_uncorrelated = 0,
+                btagSFlight_uncorrelated = 1,
+                btagSFbc_correlated = 2,
+                btagSFlight_correlated = 3,
+            };
 
         static const std::map<WorkingPointsbTag, std::pair<std::string, std::string>>& getWPNames() {
             static const std::map<WorkingPointsbTag, std::pair<std::string, std::string>> names = {
@@ -98,7 +99,6 @@ namespace correction {
         }
 
         float getSF(const RVecLV& Jet_p4,
-                    const RVecB& pre_sel,
                     const RVecI& Jet_Flavour,
                     const RVecF& Jet_bTag_score,
                     WorkingPointsbTag btag_wp,
@@ -107,8 +107,6 @@ namespace correction {
             float eff_MC_tot = 1.;
             float eff_data_tot = 1.;
             for (size_t jet_idx = 0; jet_idx < Jet_p4.size(); jet_idx++) {
-                if (!pre_sel[jet_idx])
-                    continue;
                 const UncScale jet_tag_scale = sourceApplies(source, Jet_Flavour[jet_idx]) ? scale : UncScale::Central;
                 const std::string& scale_str = getScaleStr(jet_tag_scale, source);
                 float eff_MC = GetNormalisedEfficiency(GetBtagEfficiency(
@@ -174,3 +172,5 @@ namespace correction {
     };
 
 }  //namespace correction
+
+#endif  // CORRECTION_BTAG_H

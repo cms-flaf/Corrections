@@ -28,13 +28,19 @@ import re
 
 # SFSources_bbtautau = { 'ditau': [ "ditau_DM0","ditau_DM1", "ditau_3Prong"], 'singleMu':['singleMu'],'singleTau':['singleTau'], 'singleEle':['singleEle'],'etau':['etau_ele',"etau_DM0","etau_DM1", "etau_3Prong",],'mutau':['mutau_mu',"mutau_DM0","mutau_DM1", "mutau_3Prong"]}
 
+taujsonfileversion = "2025-10-01"
+
 
 class TrigCorrProducer:
     eTRG_jsonPath = "/cvmfs/cms.cern.ch/rsync/cms-nanoAOD/jsonpog-integration/POG/EGM/{}/electronHlt.json.gz"
     MuTRG_jsonPath = os.path.join(
         os.environ["ANALYSIS_PATH"], "Corrections/data/TRG/{}/MuHlt_abseta_pt_wEff.json"
     )
-    TauTRG_jsonPath = "/cvmfs/cms.cern.ch/rsync/cms-nanoAOD/jsonpog-integration/POG/TAU/{}/tau_DeepTau2018v2p5_{}.json.gz"
+    TauTRG_jsonPath = (
+        "/cvmfs/cms-griddata.cern.ch/cat/metadata/TAU/{}/"
+        + taujsonfileversion
+        + "/tau_DeepTau2018v2p5_{}.json.gz"
+    )
     muTauTRG_jsonPath = os.path.join(
         os.environ["ANALYSIS_PATH"],
         "Corrections/data/TRG/{}/CrossMuTauHlt_MuLeg_v1.json",
@@ -67,6 +73,17 @@ class TrigCorrProducer:
             "2023_Summer23": "2023_preBPix",
             "2023_Summer23BPix": "2023_postBPix",
         }
+        period_in_taupog_folder = {
+            "Run2_2016_HIPM": "Run2-2016preVFP-UL-NanoAODv9",
+            "Run2_2016": "Run2-2016postVFP-UL-NanoAODv9",
+            "Run2_2017": "Run2-2017-UL-NanoAODv9",
+            "Run2_2018": "Run2-2018-UL-NanoAODv9",
+            "2022_Summer22": "Run3-22CDSep23-Summer22-NanoAODv12",
+            "2022_Summer22EE": "Run3-22EFGSep23-Summer22EE-NanoAODv12",
+            "2023_Summer23": "Run3-23CSep23-Summer23-NanoAODv12",
+            "2023_Summer23BPix": "Run3-23DSep23-Summer23BPix-NanoAODv12",
+        }
+
         self.period = period
         self.config = config
         self.trigger_dict = trigger_dict
@@ -76,7 +93,9 @@ class TrigCorrProducer:
         )
         jsonFile_Tau = os.path.join(
             os.environ["ANALYSIS_PATH"],
-            TrigCorrProducer.TauTRG_jsonPath.format(period, tau_filename_dict[period]),
+            TrigCorrProducer.TauTRG_jsonPath.format(
+                period_in_taupog_folder[period], tau_filename_dict[period]
+            ),
         )
         jsonFile_Mu = os.path.join(
             os.environ["ANALYSIS_PATH"],
@@ -108,7 +127,7 @@ class TrigCorrProducer:
             if period.endswith("Summer23"):
                 TrigCorrProducer.year = period.split("_")[0] + "PromptC"
             if period.endswith("Summer23BPix"):
-                TrigCorrProducer.year = period.split("_")[0] + "2023PromptD"
+                TrigCorrProducer.year = period.split("_")[0] + "PromptD"
 
             # ROOT.gInterpreter.ProcessLine(f"""::correction::TrigCorrProvider::Initialize("{jsonFile_Mu}","{jsonFile_e}", "{jsonFile_Tau}", "{self.muon_trg_dict[period]}","{self.ele_trg_dict['McEff'][period]}", "{self.tau_trg_dict[period]}", "{period}")""")
             mu_trg_key_mc, mu_trg_key_data = None, None
@@ -194,9 +213,11 @@ class TrigCorrProducer:
             for leg_idx, leg_name in enumerate(lepton_legs):
                 applyTrgBranch_name = f"{trg_name}_{leg_name}_ApplyTrgSF"
                 leg_to_be = legs_to_be[trg_name][leg_idx]
+                legType = f"{leg_name}_legType"
+                legType = getLegTypeString(df, legType)
                 df = df.Define(
                     applyTrgBranch_name,
-                    f"""{leg_name}_legType == Leg::{leg_to_be} && {leg_name}_index >= 0 && HLT_{trg_name} && {leg_name}_HasMatching_{trg_name}""",
+                    f"""{legType} == Leg::{leg_to_be} && HLT_{trg_name} && {leg_name}_HasMatching_{trg_name}""",
                 )
                 for source in [central] + sf_sources:
                     for scale in getScales(source):
@@ -221,7 +242,7 @@ class TrigCorrProducer:
                             df = df.Define(
                                 f"{branch_name}_double",
                                 f"""{applyTrgBranch_name} ? ::correction::TrigCorrProvider::getGlobal().getSF_{trigCorr_dict[trg_name]}(
-                                        {leg_name}_p4,"{TrigCorrProducer.year}",Tau_decayMode.at(HttCandidate.leg_index[{leg_idx}]), "{trigCorr_dict[trg_name]}", "Medium", "sf", ::correction::TrigCorrProvider::UncSource::{source}, ::correction::UncScale::{scale} ) : 1.f""",
+                                        {leg_name}_p4,"{TrigCorrProducer.year}",{leg_name}_decayMode, "{trigCorr_dict[trg_name]}", "Medium", "sf", ::correction::TrigCorrProvider::UncSource::{source}, ::correction::UncScale::{scale} ) : 1.f""",
                             )
                         else:
                             df = df.Define(
@@ -279,7 +300,9 @@ class TrigCorrProducer:
                     )
                     # query = legtype_query.format(obj=leg_name)
                     query = trg_leg["offline_obj"]["cut"].format(obj=leg_name)
-                    query += f""" && {leg_name}_index >= 0 && HLT_{trg_name} && {leg_name}_HasMatching_{trg_name}"""
+                    query += (
+                        f""" && HLT_{trg_name} && {leg_name}_HasMatching_{trg_name}"""
+                    )
                     df = df.Define(applyTrgBranch_name, f"""{query}""")
                     for scale in getScales(None):
                         for mc_or_data in ["data", "mc"]:

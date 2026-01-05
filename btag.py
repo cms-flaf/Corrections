@@ -4,6 +4,7 @@ from .CorrectionsCore import *
 from FLAF.Common.Utilities import WorkingPointsbTag
 import yaml
 
+
 # https://twiki.cern.ch/twiki/bin/viewauth/CMS/BTagShapeCalibration
 # https://twiki.cern.ch/twiki/bin/view/CMS/BTagCalibration
 # https://twiki.cern.ch/twiki/bin/view/CMS/BTagSFMethods
@@ -69,17 +70,18 @@ class bTagCorrProducer:
 
     def __init__(
         self,
+        *,
         period,
-        bjet_preselection_branch,
+        jetCollection,
         loadEfficiency=False,
-        tagger_name="deepJet",
-        use_split_jes=False,
+        tagger="particleNet",
+        useSplitJes=False,
     ):
-        print(f"tagger_name={tagger_name}")
-        self.tagger_name = tagger_name
-        self.btag_branch = bTagCorrProducer.tagger_to_brag_branch[tagger_name]
-        self.bjet_preselection_branch = bjet_preselection_branch
-        self.use_split_jes = use_split_jes
+        print(f"tagger={tagger}")
+        self.tagger = tagger
+        self.btag_branch = bTagCorrProducer.tagger_to_brag_branch[tagger]
+        self.jetCollection = jetCollection
+        self.useSplitJes = useSplitJes
         jsonFile = bTagCorrProducer.jsonPath.format(period)
         jsonFile_eff = os.path.join(
             os.environ["ANALYSIS_PATH"],
@@ -91,18 +93,25 @@ class bTagCorrProducer:
             headers_dir = os.path.dirname(os.path.abspath(__file__))
             header_path = os.path.join(headers_dir, "btag.h")
             headershape_path = os.path.join(headers_dir, "btagShape.h")
-            ROOT.gInterpreter.Declare(f'#include "{header_path}"')
             ROOT.gInterpreter.Declare(f'#include "{headershape_path}"')
-            # ROOT.gInterpreter.ProcessLine(f'::correction::bTagCorrProvider::Initialize("{jsonFile}", "{jsonFile_eff}")')
-            # ROOT.gInterpreter.ProcessLine(f"""::correction::bTagShapeCorrProvider::Initialize("{jsonFile}", "{periods[period]}, "{self.tagger_name}")""")
-            ROOT.correction.bTagCorrProvider.Initialize(
-                jsonFile, jsonFile_eff, self.tagger_name
+            ROOT.gInterpreter.Declare(f'#include "{header_path}"')
+
+            ROOT.gInterpreter.ProcessLineSynch(
+                f'::correction::bTagCorrProvider::Initialize("{jsonFile}", "{jsonFile_eff}", "{self.tagger}")'
             )
+            # ROOT.correction.bTagCorrProvider.Initialize(
+            #     jsonFile, jsonFile_eff, self.tagger
+            # )
             ROOT.correction.bTagCorrProvider.getGlobal()
-            ROOT.correction.bTagShapeCorrProvider.Initialize(
-                jsonFile, periods[period], self.tagger_name
+
+            ROOT.gInterpreter.ProcessLineSynch(
+                f"""::correction::bTagShapeCorrProvider::Initialize("{jsonFile}", "{periods[period]}", "{self.tagger}")"""
             )
+            # ROOT.correction.bTagShapeCorrProvider.Initialize(
+            #     jsonFile, periods[period], self.tagger
+            # )
             ROOT.correction.bTagShapeCorrProvider.getGlobal()
+
             bTagCorrProducer.initialized = True
 
     def getWPValues(self):
@@ -114,11 +123,11 @@ class bTagCorrProducer:
             )
         return wp_values
 
-    def getWPid(self, df):
-        wp_values = self.getWPValues()
+    def getWPid(self, df, jetCollection=None):
+        jetCollection = jetCollection or self.jetCollection
         df = df.Define(
-            f"Jet_idbtag{self.btag_branch}",
-            f"::correction::bTagCorrProvider::getGlobal().getWPBranch(Jet_btag{self.btag_branch})",
+            f"{jetCollection}_idbtag{self.btag_branch}",
+            f"::correction::bTagCorrProvider::getGlobal().getWPBranch({jetCollection}_btag{self.btag_branch})",
         )
         return df
 
@@ -139,10 +148,13 @@ class bTagCorrProducer:
                     # print(branch_name)
                     branch_central = f"""weight_bTagSF_{wp.name}_{source+central}"""
                     # branch_central = f"""weight_bTagSF_{wp.name}_{getSystName(central, central)}"""
+                    p4 = f"{self.jetCollection}_p4"
+                    hadronFlavour = f"{self.jetCollection}_hadronFlavour"
+                    btagScore = f"{self.jetCollection}_btag{self.btag_branch}"
                     df = df.Define(
                         f"{branch_name}_double",
                         f""" ::correction::bTagCorrProvider::getGlobal().getSF(
-                                Jet_p4, Jet_bCand, Jet_hadronFlavour, Jet_btag{self.btag_branch}, WorkingPointsbTag::{wp.name},
+                                {p4}, {hadronFlavour}, {btagScore}, WorkingPointsbTag::{wp.name},
                                 ::correction::bTagCorrProvider::UncSource::{source}, ::correction::UncScale::{scale}) """,
                     )
                     if scale != central:
@@ -192,16 +204,24 @@ class bTagCorrProducer:
 
         for source in src_list:
             for scale in scale_list:
-                if source == central and scale != central:
+                if (source == central and scale != central) or (
+                    source != central and scale == central
+                ):
                     continue
-                syst_name = source + scale  # if source != central else 'Central'
+                syst_name = getSystName(
+                    source, scale
+                )  # if source != central else 'Central'
                 branch_name = f"weight_bTagShape_{syst_name}"
-                branch_central = f"""weight_bTagShape_{source+central}"""
+                branch_central = f"weight_bTagShape_{central}"
+
+                p4 = f"{self.jetCollection}_p4"
+                hadronFlavour = f"{self.jetCollection}_hadronFlavour"
+                btagScore = f"{self.jetCollection}_btag{self.btag_branch}"
 
                 df = df.Define(
                     f"{branch_name}_double",
                     f"""::correction::bTagShapeCorrProvider::getGlobal().getBTagShapeSF(
-                    Jet_p4, {self.bjet_preselection_branch}, Jet_hadronFlavour, Jet_btag{self.btag_branch},
+                    {p4}, {hadronFlavour}, {btagScore},
                     ::correction::bTagShapeCorrProvider::UncSource::{source},
                     ::correction::UncScale::{scale}
                     ) """,

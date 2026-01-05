@@ -1,9 +1,68 @@
-#pragma once
+#ifndef CORRECTION_BTAGSHAPECORRPROVIDER_H
+#define CORRECTION_BTAGSHAPECORRPROVIDER_H
 
 #include "corrections.h"
 #include "jet.h"
 
 namespace correction {
+    class bTagShapeCorrProvider : public CorrectionsBase<bTagShapeCorrProvider> {
+      public:
+        enum class UncSource : int {
+            Central = -1,
+            lf = 0,
+            hf = 1,
+            lfstats1 = 2,
+            lfstats2 = 3,
+            hfstats1 = 4,
+            hfstats2 = 5,
+            cferr1 = 6,
+            cferr2 = 7,
+            jesRelativeBal = 8,
+            jesHF = 9,
+            jesBBEC1 = 10,
+            jesEC2 = 11,
+            jesAbsolute = 12,
+            jesFlavorQCD = 13,
+            jesBBEC1_year = 14,
+            jesAbsolute_year = 15,
+            jesEC2_year = 16,
+            jesHF_year = 17,
+            jesRelativeSample_year = 18,
+            jesTotal = 19
+        };
+        static bool needYear(UncSource source) {
+            if (source == UncSource::jesBBEC1_year || source == UncSource::jesAbsolute_year ||
+                source == UncSource::jesEC2_year || source == UncSource::jesHF_year ||
+                source == UncSource::jesRelativeSample_year) {
+                return true;
+            }
+            return false;
+        }
+        static const std::map<UncSource, std::string> getUncName() {
+            static const std::map<UncSource, std::string> UncMapNames = {
+                {UncSource::Central, "Central"},
+                {UncSource::lf, "lf"},
+                {UncSource::hf, "hf"},
+                {UncSource::lfstats1, "lfstats1"},
+                {UncSource::lfstats2, "lfstats2"},
+                {UncSource::hfstats1, "hfstats1"},
+                {UncSource::hfstats2, "hfstats2"},
+                {UncSource::cferr1, "cferr1"},
+                {UncSource::cferr2, "cferr2"},
+                {UncSource::jesRelativeBal, "jesRelativeBal"},
+                {UncSource::jesHF, "jesHF"},
+                {UncSource::jesBBEC1, "jesBBEC1"},
+                {UncSource::jesEC2, "jesEC2"},
+                {UncSource::jesAbsolute, "jesAbsolute"},
+                {UncSource::jesFlavorQCD, "jesFlavorQCD"},
+                {UncSource::jesBBEC1_year, "jesBBEC1_"},
+                {UncSource::jesAbsolute_year, "jesAbsolute_"},
+                {UncSource::jesEC2_year, "jesEC2_"},
+                {UncSource::jesHF_year, "jesHF_"},
+                {UncSource::jesRelativeSample_year, "jesRelativeSample_"},
+                {UncSource::jesTotal, "jes"}};
+            return UncMapNames;
+        }
     class bTagShapeCorrProvider : public CorrectionsBase<bTagShapeCorrProvider> {
       public:
         enum class UncSource : int {
@@ -138,10 +197,11 @@ namespace correction {
         bTagShapeCorrProvider(const std::string& fileName, const std::string& year, std::string const& tagger_name)
             : corrections_(CorrectionSet::from_file(fileName)),
               shape_corr_(corrections_->at(tagger_name + "_shape")),
-              _year(year) {}
+              _year(year) {
+            std::cerr << "Initialized bTagShapeCorrProvider::bTagShapeCorrProvider()" << std::endl;
+        }
 
         float getBTagShapeSF(const RVecLV& Jet_p4,
-                             const RVecB& pre_sel,
                              const RVecI& Jet_Flavour,
                              const RVecF& Jet_bTag_score,
                              UncSource source,
@@ -149,9 +209,8 @@ namespace correction {
             double sf_product = 1.;
             std::string source_str = getUncName().at(source);
             for (size_t jet_idx = 0; jet_idx < Jet_p4.size(); jet_idx++) {
-                if (!(pre_sel[jet_idx] && Jet_bTag_score[jet_idx] >= 0.0)) {
+                if (Jet_bTag_score[jet_idx] < 0.0)
                     continue;
-                }
                 const UncScale jet_tag_scale = sourceApplies(source, Jet_Flavour[jet_idx]) ? scale : UncScale::Central;
                 const std::string& scale_str = getScaleStr(jet_tag_scale);
                 bool isCentral = jet_tag_scale == UncScale::Central;
@@ -191,3 +250,5 @@ namespace correction {
     };
 
 }  //namespace correction
+
+#endif  // CORRECTION_BTAGSHAPECORRPROVIDER_H
