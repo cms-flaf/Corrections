@@ -4,7 +4,6 @@ from .CorrectionsCore import *
 from FLAF.Common.Utilities import WorkingPointsbTag
 import yaml
 
-
 # https://twiki.cern.ch/twiki/bin/viewauth/CMS/BTagShapeCalibration
 # https://twiki.cern.ch/twiki/bin/view/CMS/BTagCalibration
 # https://twiki.cern.ch/twiki/bin/view/CMS/BTagSFMethods

@@ -5,15 +5,15 @@
 #include "corrections.h"
 
 namespace correction {
-        class bTagCorrProvider : public CorrectionsBase<bTagCorrProvider> {
-            public:
-            enum class UncSource : int {
-                Central = -1,
-                btagSFbc_uncorrelated = 0,
-                btagSFlight_uncorrelated = 1,
-                btagSFbc_correlated = 2,
-                btagSFlight_correlated = 3,
-            };
+    class bTagCorrProvider : public CorrectionsBase<bTagCorrProvider> {
+      public:
+        enum class UncSource : int {
+            Central = -1,
+            btagSFbc_uncorrelated = 0,
+            btagSFlight_uncorrelated = 1,
+            btagSFbc_correlated = 2,
+            btagSFlight_correlated = 3,
+        };
 
         static const std::map<WorkingPointsbTag, std::pair<std::string, std::string>>& getWPNames() {
             static const std::map<WorkingPointsbTag, std::pair<std::string, std::string>> names = {

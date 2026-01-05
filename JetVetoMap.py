@@ -44,7 +44,6 @@ class JetVetoMapProvider:
 
     def GetJetVetoMap(self, df):
         # jet pT > 15 GeV, tight jet ID, PU jet ID for CHS jets with pT < 50 GeV,  jet EM fraction (charged + neutral) < 0.9
-        
         df = df.Define(
             f"Jet_isInsideVetoRegion",
             f"""::correction::JetVetoMapProvider::getGlobal().GetJetVetoMapValues(Jet_p4)""",

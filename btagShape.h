@@ -63,64 +63,6 @@ namespace correction {
                 {UncSource::jesTotal, "jes"}};
             return UncMapNames;
         }
-    class bTagShapeCorrProvider : public CorrectionsBase<bTagShapeCorrProvider> {
-      public:
-        enum class UncSource : int {
-            Central = -1,
-            lf = 0,
-            hf = 1,
-            lfstats1 = 2,
-            lfstats2 = 3,
-            hfstats1 = 4,
-            hfstats2 = 5,
-            cferr1 = 6,
-            cferr2 = 7,
-            jesRelativeBal = 8,
-            jesHF = 9,
-            jesBBEC1 = 10,
-            jesEC2 = 11,
-            jesAbsolute = 12,
-            jesFlavorQCD = 13,
-            jesBBEC1_year = 14,
-            jesAbsolute_year = 15,
-            jesEC2_year = 16,
-            jesHF_year = 17,
-            jesRelativeSample_year = 18,
-            jesTotal = 19
-        };
-        static bool needYear(UncSource source) {
-            if (source == UncSource::jesBBEC1_year || source == UncSource::jesAbsolute_year ||
-                source == UncSource::jesEC2_year || source == UncSource::jesHF_year ||
-                source == UncSource::jesRelativeSample_year) {
-                return true;
-            }
-            return false;
-        }
-        static const std::map<UncSource, std::string> getUncName() {
-            static const std::map<UncSource, std::string> UncMapNames = {
-                {UncSource::Central, "Central"},
-                {UncSource::lf, "lf"},
-                {UncSource::hf, "hf"},
-                {UncSource::lfstats1, "lfstats1"},
-                {UncSource::lfstats2, "lfstats2"},
-                {UncSource::hfstats1, "hfstats1"},
-                {UncSource::hfstats2, "hfstats2"},
-                {UncSource::cferr1, "cferr1"},
-                {UncSource::cferr2, "cferr2"},
-                {UncSource::jesRelativeBal, "jesRelativeBal"},
-                {UncSource::jesHF, "jesHF"},
-                {UncSource::jesBBEC1, "jesBBEC1"},
-                {UncSource::jesEC2, "jesEC2"},
-                {UncSource::jesAbsolute, "jesAbsolute"},
-                {UncSource::jesFlavorQCD, "jesFlavorQCD"},
-                {UncSource::jesBBEC1_year, "jesBBEC1_"},
-                {UncSource::jesAbsolute_year, "jesAbsolute_"},
-                {UncSource::jesEC2_year, "jesEC2_"},
-                {UncSource::jesHF_year, "jesHF_"},
-                {UncSource::jesRelativeSample_year, "jesRelativeSample_"},
-                {UncSource::jesTotal, "jes"}};
-            return UncMapNames;
-        }
 
         static std::string getScaleStr(UncScale scale) {
             static const std::map<UncScale, std::string> scale_names = {

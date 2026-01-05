@@ -38,7 +38,7 @@ class MuonScaReCorrProducer:
                 # print(f"Muon_p4_{syst_name}")
                 df = df.Define(
                     f"Muon_p4_{syst_name}",
-                    f"""::correction::MuonScaReCorrProvider::getGlobal().getES(Muon_pt, Muon_eta, Muon_phi, Muon_mass, Muon_charge, Muon_nTrackerLayers, isData, event, ::correction::MuonScaReCorrProvider::UncSource::{source}, ::correction::UncScale::{scale})""",
+                    f"""::correction::MuonScaReCorrProvider::getGlobal().getES(Muon_pt, Muon_eta, Muon_phi, Muon_mass, Muon_charge, Muon_nTrackerLayers, isData, ::correction::MuonScaReCorrProvider::UncSource::{source}, ::correction::UncScale::{scale})""",
                 )
                 df = df.Define(
                     f"Muon_p4_{syst_name}_delta",

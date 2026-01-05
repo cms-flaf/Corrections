@@ -101,12 +101,23 @@ class EleCorrProducer:
                             f"weight_{leg_name}_EleSF_{working_point}_{source+scale}"
                         )
                         branch_central = f"""weight_{leg_name}_EleSF_{working_point}_{source+central}"""
-                        #print(branch_name)
-                        #print(branch_central)
-                        df = df.Define(f"{branch_name}_double",
-                                    f'''({leg_name}_legType == Leg::e && {leg_name}_pt >= 10 &&  {leg_name}_index >= 0 && (({leg_name}_gen_kind == 1) || ({leg_name}_gen_kind == 3)))  ? ::correction::EleCorrProvider::getGlobal().getID_SF(
-                                {leg_name}_p4, "{working_point}",
-                                "{EleCorrProducer.year}",::correction::EleCorrProvider::UncSource::{source}, ::correction::UncScale::{scale}) : 1.;''')
+
+                        gen_kind = f"{leg_name}_{self.columns['gen_kind']}"
+                        legType = f'{leg_name}_{self.columns["legType"]}'
+                        p4 = f'{leg_name}_{self.columns["p4"]}'
+
+                        genMatch_bool = f"{gen_kind} == 1 || {gen_kind} == 3"
+                        legType = getLegTypeString(df, legType)
+
+                        df = df.Define(
+                            f"{branch_name}_double",
+                            f"""{legType} == Leg::e && {p4}.pt() >= 10 && ({genMatch_bool})
+                                ? ::correction::EleCorrProvider::getGlobal().getID_SF(
+                                    {p4}, "{working_point}", "{EleCorrProducer.year}",
+                                    ::correction::EleCorrProvider::UncSource::{source},
+                                    ::correction::UncScale::{scale})
+                                : 1.""",
+                        )
 
                         if scale != central:
                             branch_name_final = branch_name + "_rel"
