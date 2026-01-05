@@ -172,7 +172,7 @@ class JetCorrProducer:
         "2022_Summer22": [],
         "2023_Summer23BPix": [],
         "2022_Prompt": [],
-        "2023_Summer23": ["v1","v2","v3","v123", "v4"],
+        "2023_Summer23": ["v1", "v2", "v3", "v123", "v4"],
         "2022_Summer22EE": [],
         "2024_Winter24": [],
     }

@@ -31,9 +31,7 @@ scale_defs = {
 
 
 class VptCorrProducer:
-    EWK_corr_jsonPath_recoil = (
-        "Corrections/data/hleprare/DYweightCorrlib/DY_pTll_recoil_corrections_{0}_v5.json.gz"
-    )
+    EWK_corr_jsonPath_recoil = "Corrections/data/hleprare/DYweightCorrlib/DY_pTll_recoil_corrections_{0}_v5.json.gz"
     EWK_corr_jsonPath_weights = (
         "Corrections/data/hleprare/DYweightCorrlib/DY_pTll_weights_{0}_v5.json.gz"
     )
@@ -139,7 +137,7 @@ class VptCorrProducer:
                 syst_name = source + scale  # if source != central else 'Central'
                 branch_SF_name = f"weight_EWKCorr_{syst_name}"
                 branch_name_central = f"weight_EWKCorr_{source}Central"
-                if "W" in self.sampleType  or "DY" in self.sampleType:
+                if "W" in self.sampleType or "DY" in self.sampleType:
                     df = df.Define(
                         f"{branch_SF_name}_double_sc",
                         f"""::correction::VptCorrProvider::getGlobal().getSF_fromRootFile(

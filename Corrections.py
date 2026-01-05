@@ -4,6 +4,7 @@ import itertools
 from .CorrectionsCore import *
 from FLAF.RunKit.run_tools import ps_call
 
+
 def getBranches(syst_name, all_branches):
     final_branches = []
     for branches in all_branches:
@@ -324,7 +325,8 @@ class Corrections:
                             and "{obj}_p4_{suffix}" not in df.GetColumnNames()
                         ):
                             continue
-                        if "MET" in obj and f"{obj}_pt" not in df.GetColumnNames(): continue
+                        if "MET" in obj and f"{obj}_pt" not in df.GetColumnNames():
+                            continue
                         # if "MET" in obj and f"{obj}_p4_{suffix}" not in df.GetColumnNames(): continue
                         if f"{obj}_p4_{syst_name}" not in df.GetColumnNames():
                             print(
@@ -547,7 +549,6 @@ class Corrections:
                 )
 
         return df, all_weights
-
 
 
 # amcatnlo problem
