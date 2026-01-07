@@ -243,7 +243,7 @@ class Corrections:
             self.muScaRe_ = MuonScaReCorrProducer(
                 period_names[self.period],
                 self.isData,
-                self.to_apply["muScaRe"].get("pt_for_ScaRe", "pt_nano"),
+                self.to_apply["muScaRe"].get("mu_pt_for_ScaReApplication", "pt_nano"),
             )
         return self.muScaRe_
 
@@ -402,6 +402,7 @@ class Corrections:
         return_variations=True,
         isCentral=True,
         use_genWeight_sign_only=True,
+        extraFormat="",
     ):
 
         # syst name is only needed to determine scale (only it contains up/down/cetnral)
@@ -534,11 +535,16 @@ class Corrections:
                     lepton_legs,
                     isCentral and return_variations,
                     isCentral,
+                    extraFormat=extraFormat,
                 )
                 all_weights.extend(trg_SF_branches)
             elif mode == "efficiency":
                 df, trg_SF_branches = self.trg.getEff(
-                    df, trigger_names, offline_legs, self.trigger_dict
+                    df,
+                    trigger_names,
+                    offline_legs,
+                    self.trigger_dict,
+                    extraFormat=extraFormat,
                 )
                 all_weights.extend(trg_SF_branches)
             else:
