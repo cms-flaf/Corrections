@@ -156,10 +156,10 @@ class TrigCorrProducer:
             if "singleMu" in self.trigger_dict.keys():
                 mu_trg_key_mc = self.trigger_dict["singleMu"]["legs"][0][
                     "jsonTRGcorrection_key"
-                ][period].format("MC")
+                ][period].format(MuIDWP=config.get("muonID_WP_for_triggerSF", "Medium"))
                 mu_trg_key_data = self.trigger_dict["singleMu"]["legs"][0][
                     "jsonTRGcorrection_key"
-                ][period].format("DATA")
+                ][period].format(MuIDWP=config.get("muonID_WP_for_triggerSF", "Medium"))
             if "singleEle" in self.trigger_dict.keys():
                 ele_trg_key_mc = self.trigger_dict["singleEle"]["legs"][0][
                     "jsonTRGcorrection_key"
