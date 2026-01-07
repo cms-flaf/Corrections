@@ -214,10 +214,17 @@ namespace correction {
                 return true;
 
             // ======================
-            // TRIGGER → volutamente esclusi
+            // TRIGGER
             // ======================
             return false;
         }
+
+        // TODO:
+        // 1. need to add miniIso to the infos
+        // 2. clean from Run2 parts, maybe splitting?
+        // 3. propagate the changes also to the soft and highpT muons
+        // 4. currently there is a map between corrections_ and the actual evaluation. What is the sense?! 
+
 
 
         MuCorrProvider(const std::string& fileName, const std::string& era)
