@@ -408,17 +408,26 @@ class Corrections:
             crossSectionBranch = "crossSection"
             df = self.defineCrossSection(df, crossSectionBranch)
 
-            shape_weights_dict = { (central, central): [] }
+            shape_weights_dict = {(central, central): []}
             if "pu" in self.to_apply:
-                df = self.pu.getWeight(df, shape_weights_dict=shape_weights_dict, return_variations=return_variations and isCentral)
+                df = self.pu.getWeight(
+                    df,
+                    shape_weights_dict=shape_weights_dict,
+                    return_variations=return_variations and isCentral,
+                )
 
-            for (shape_unc_source, shape_unc_scale), shape_weights in shape_weights_dict.items():
+            for (
+                shape_unc_source,
+                shape_unc_scale,
+            ), shape_weights in shape_weights_dict.items():
                 shape_unc_name = getSystName(shape_unc_source, shape_unc_scale)
                 denomBranch = f"__denom_{shape_unc_name}"
                 df = self.defineDenominator(
                     df, denomBranch, shape_unc_source, shape_unc_scale, ana_caches
                 )
-                shape_weights_product = " * ".join(shape_weights) if len(shape_weights) > 0 else "1.0"
+                shape_weights_product = (
+                    " * ".join(shape_weights) if len(shape_weights) > 0 else "1.0"
+                )
                 weight_name = (
                     f"weight_{shape_unc_name}"
                     if shape_unc_name != central
@@ -437,7 +446,6 @@ class Corrections:
                         f"static_cast<float>(weight_{shape_unc_name}/weight_MC_Lumi_pu)",
                     )
                 all_weights.append(weight_out_name)
-
 
         if "Vpt" in self.to_apply:
             df, Vpt_SF_branches = self.Vpt.getSF(df, isCentral, return_variations)
