@@ -5,14 +5,6 @@ from .CorrectionsCore import *
 from FLAF.RunKit.run_tools import ps_call
 
 
-def getBranches(syst_name, all_branches):
-    final_branches = []
-    for branches in all_branches:
-        name = syst_name if syst_name in branches else central
-        final_branches.extend(branches[name])
-    return final_branches
-
-
 def findLibLocation(lib_name, first_guess=None):
     paths_to_check = []
     if first_guess is not None:
@@ -311,7 +303,7 @@ class Corrections:
         for source, source_objs in source_dict.items():
             for scale in getScales(source):
                 syst_name = getSystName(source, scale)
-                syst_dict[syst_name] = source
+                syst_dict[syst_name] = (source, scale)
                 for obj in ana_reco_objects:
                     if obj not in source_objs:
                         suffix = (
@@ -356,7 +348,7 @@ class Corrections:
             df, crossSectionBranch, self.xs_db, self.dataset_name, self.dataset_cfg
         )
 
-    def defineDenominator(self, df, denomBranch, syst_name, scale_name, ana_caches):
+    def defineDenominator(self, df, denomBranch, unc_source, unc_scale, ana_caches):
         denom_processor_names = []
         for p_name, proc in self.processors.items():
             if hasattr(proc, "onAnaTuple_defineDenominator"):
@@ -383,8 +375,8 @@ class Corrections:
             denomBranch,
             p_name,
             self.dataset_name,
-            syst_name,
-            scale_name,
+            unc_source,
+            unc_scale,
             ana_caches,
         )
 
@@ -395,28 +387,13 @@ class Corrections:
         lepton_legs,
         offline_legs,
         trigger_names,
-        syst_name,
-        source_name,
+        unc_source,
+        unc_scale,
         ana_caches,
         return_variations=True,
-        isCentral=True,
         use_genWeight_sign_only=True,
     ):
-
-        # syst name is only needed to determine scale (only it contains up/down/cetnral)
-        if "Up" in syst_name:
-            scale_name = up
-        elif "Down" in syst_name:
-            scale_name = down
-        elif "Central" in syst_name:
-            scale_name = central
-        else:
-            raise RuntimeError("Obtained scale not Central, Up or Down")
-
-        # source_name is needed to determine source and it doesn't contain up/down/cetnral
-        # in case if source_name contains underscores we want to keep everything after the first occurence of the underscore
-        start = source_name.find("_")
-        src_name = source_name[start + 1 :]
+        isCentral = unc_source == central
         all_weights = []
         if "MC_Lumi_pu" in self.to_apply:
             lumi = self.global_params["luminosity"]
@@ -431,45 +408,36 @@ class Corrections:
             crossSectionBranch = "crossSection"
             df = self.defineCrossSection(df, crossSectionBranch)
 
-            all_branches = []
+            shape_weights_dict = { (central, central): [] }
             if "pu" in self.to_apply:
-                df, pu_SF_branches = self.pu.getWeight(df)
-                all_branches.append(pu_SF_branches)
+                df = self.pu.getWeight(df, shape_weights_dict=shape_weights_dict, return_variations=return_variations and isCentral)
 
-            all_sources = set(itertools.chain.from_iterable(all_branches))
-            if central in all_sources:
-                all_sources.remove(central)
-
-            for syst_name in [central] + list(all_sources):
-                denomBranch = f"__denom_{syst_name}"
-                syst_unc, syst_scale = splitSystName(syst_name)
+            for (shape_unc_source, shape_unc_scale), shape_weights in shape_weights_dict.items():
+                shape_unc_name = getSystName(shape_unc_source, shape_unc_scale)
+                denomBranch = f"__denom_{shape_unc_name}"
                 df = self.defineDenominator(
-                    df, denomBranch, syst_unc, syst_scale, ana_caches
+                    df, denomBranch, shape_unc_source, shape_unc_scale, ana_caches
                 )
-                branches = getBranches(syst_name, all_branches)
-                sf_product = " * ".join(branches) if len(branches) > 0 else "1.0"
+                shape_weights_product = " * ".join(shape_weights) if len(shape_weights) > 0 else "1.0"
                 weight_name = (
-                    f"weight_{syst_name}"
-                    if syst_name != central
+                    f"weight_{shape_unc_name}"
+                    if shape_unc_name != central
                     else "weight_MC_Lumi_pu"
                 )
-                weight_rel_name = f"weight_MC_Lumi_{syst_name}_rel"
+                weight_rel_name = f"weight_MC_Lumi_{shape_unc_name}_rel"
                 weight_out_name = (
-                    weight_name if syst_name == central else weight_rel_name
+                    weight_name if shape_unc_name == central else weight_rel_name
                 )
-                weight_formula = f"genWeightD * {lumi} * {crossSectionBranch} * {sf_product} / {denomBranch}"
+                weight_formula = f"genWeightD * {lumi} * {crossSectionBranch} * {shape_weights_product} / {denomBranch}"
                 df = df.Define(weight_name, f"static_cast<float>({weight_formula})")
 
-                if syst_name == central:
-                    all_weights.append(weight_out_name)
-                else:
+                if shape_unc_name != central:
                     df = df.Define(
                         weight_out_name,
-                        f"static_cast<float>(weight_{syst_name}/weight_MC_Lumi_pu)",
+                        f"static_cast<float>(weight_{shape_unc_name}/weight_MC_Lumi_pu)",
                     )
-                    for scale in ["Up", "Down"]:
-                        if syst_name == f"pu{scale}" and return_variations:
-                            all_weights.append(weight_out_name)
+                all_weights.append(weight_out_name)
+
 
         if "Vpt" in self.to_apply:
             df, Vpt_SF_branches = self.Vpt.getSF(df, isCentral, return_variations)
@@ -484,10 +452,9 @@ class Corrections:
         if "btag" in self.to_apply:
             btag_sf_mode = self.to_apply["btag"]["modes"][self.stage]
             if btag_sf_mode in ["shape", "wp"]:
-                # scale_name for getBTagShapeSF is contained in syst_name
                 if btag_sf_mode == "shape":
                     df, bTagSF_branches = self.btag.getBTagShapeSF(
-                        df, src_name, scale_name, isCentral, return_variations
+                        df, unc_source, unc_scale, isCentral, return_variations
                     )
                 else:
                     df, bTagSF_branches = self.btag.getBTagWPSF(

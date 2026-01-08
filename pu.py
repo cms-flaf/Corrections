@@ -38,19 +38,20 @@ class puWeightProducer:
             )
             puWeightProducer.initialized = True
 
-    def getWeight(self, df, return_variations=True, isCentral=True):
+    def getWeight(self, df, shape_weights_dict=None, return_variations=True):
         sf_sources = puWeightProducer.uncSource if return_variations else []
         weights = {}
         for source in [central] + sf_sources:
             for scale in getScales(source):
-                if not isCentral and scale != central:
-                    continue
-                syst_name = getSystName(source, scale)
-                weights[syst_name] = []
+                branch_name = f"puWeight_{scale}"
                 df = df.Define(
-                    f"puWeight_{scale}",
+                    branch_name,
                     f"""::correction::puCorrProvider::getGlobal().getWeight(
                                 ::correction::UncScale::{scale}, Pileup_nTrueInt)""",
                 )
-                weights[syst_name].append(f"puWeight_{scale}")
-        return df, weights
+                key = (source, scale)
+                if shape_weights_dict:
+                    if key not in shape_weights_dict:
+                        shape_weights_dict[key] = []
+                    shape_weights_dict[key].append(branch_name)
+        return df
