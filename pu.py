@@ -40,7 +40,6 @@ class puWeightProducer:
 
     def getWeight(self, df, shape_weights_dict=None, return_variations=True):
         sf_sources = puWeightProducer.uncSource if return_variations else []
-        weights = {}
         for source in [central] + sf_sources:
             for scale in getScales(source):
                 branch_name = f"puWeight_{scale}"
