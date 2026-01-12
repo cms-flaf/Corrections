@@ -4,6 +4,7 @@ import ROOT
 from .CorrectionsCore import *
 from FLAF.Common.Utilities import DeclareHeader
 
+
 class MuonScaReCorrProducer:
     initialized = False
     jsonPath = "Corrections/data/MUO/MuonScaRe/{}.json"
@@ -47,10 +48,12 @@ class MuonScaReCorrProducer:
         sf_scales = [central, up, down]
         for source in ["ScaRe"]:
             updateSourceDict(source_dict, source, "Muon")
-            p4 = f'Muon_p4_{self.pt_for_ScaRe}'
+            p4 = f"Muon_p4_{self.pt_for_ScaRe}"
             for scale in sf_scales:
                 syst_name = f"ScaRe{scale}" if scale != central else f"ScaRe"
-                print(f"computing ScaRe on {p4} and defining the scare varied p4 as Muon_p4_{syst_name}")
+                print(
+                    f"computing ScaRe on {p4} and defining the scare varied p4 as Muon_p4_{syst_name}"
+                )
                 df = df.Define(
                     f"Muon_p4_{syst_name}",
                     f"""::correction::MuonScaReCorrProvider::getGlobal().getES(v_ops::pt({p4}), v_ops::eta({p4}), v_ops::phi({p4}), v_ops::mass({p4}), Muon_charge, Muon_nTrackerLayers, isData, event, luminosityBlock, ::correction::MuonScaReCorrProvider::UncSource::{source}, ::correction::UncScale::{scale})""",
