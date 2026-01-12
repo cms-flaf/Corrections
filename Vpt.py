@@ -31,7 +31,7 @@ scale_defs = {
 
 
 class VptCorrProducer:
-    EWK_corr_jsonPath_recoil = "Corrections/data/hleprare/DYweightCorrlib/DY_pTll_recoil_corrections_{0}_v5.json.gz"
+    EWK_corr_jsonPath_recoil = "Corrections/data/hleprare/DYandRecoilCorrlib/DY_pTll_recoil_corrections_{0}_v5.json.gz"
     EWK_corr_jsonPath_weights = (
         "Corrections/data/hleprare/DYweightCorrlib/DY_pTll_weights_{0}_v5.json.gz"
     )
