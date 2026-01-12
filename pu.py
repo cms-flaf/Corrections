@@ -12,7 +12,14 @@ from .CorrectionsCore import *
 
 
 class puWeightProducer:
-    jsonPath = "/cvmfs/cms.cern.ch/rsync/cms-nanoAOD/jsonpog-integration/POG/LUM/{}/puWeights.json.gz"
+    jsonPaths = {
+        "2024_Summer24": "/cvmfs/cms-griddata.cern.ch/cat/metadata/LUM/Run3-24CDEReprocessingFGHIPrompt-Summer24-NanoAODv15/latest/puWeights_BCDEFGHI.json.gz",
+        "2023_Summer23BPix": "/cvmfs/cms-griddata.cern.ch/cat/metadata/LUM/Run3-23DSep23-Summer23BPix-NanoAODv12/latest/puWeights.json.gz",
+        "2023_Summer23": "/cvmfs/cms-griddata.cern.ch/cat/metadata/LUM/Run3-23CSep23-Summer23-NanoAODv12/latest/puWeights.json.gz",
+        "2022_Summer22EE": "/cvmfs/cms-griddata.cern.ch/cat/metadata/LUM/Run3-22EFGSep23-Summer22EE-NanoAODv12/latest/puWeights.json.gz",
+        "2022_Summer22": "/cvmfs/cms-griddata.cern.ch/cat/metadata/LUM/Run3-22CDSep23-Summer22-NanoAODv12/latest/puWeights.json.gz",
+    }
+
     initialized = False
 
     uncSource = ["pu"]
@@ -29,7 +36,7 @@ class puWeightProducer:
     }
 
     def __init__(self, period):
-        jsonFile = puWeightProducer.jsonPath.format(period)
+        jsonFile = puWeightProducer.jsonPaths[period]
         if not puWeightProducer.initialized:
             headers_dir = os.path.dirname(os.path.abspath(__file__))
             header_path = os.path.join(headers_dir, "pu.h")
