@@ -2,126 +2,10 @@
 
 #include "correction.h"
 #include "corrections.h"
-// #include "MuonScaRe.cc"
 
 #include <boost/math/special_functions/erf.hpp>
 
 namespace correction {
-
-    class SeedSequence {
-    public:
-        explicit SeedSequence(std::initializer_list<uint32_t> seeds)
-            : m_seeds(seeds) {}
-
-        template <typename Iter>
-        void generate(Iter begin, Iter end) const {
-            const size_t n = std::distance(begin, end);
-        if (n == 0) return;
-
-        const uint32_t mult = 0x9e3779b9;
-        const uint32_t mix_const = 0x85ebca6b;
-
-        std::vector<uint32_t> buffer(n, 0x8b8b8b8b);
-
-        size_t s = m_seeds.size();
-        size_t t = (n >= s) ? n - s : 0;
-
-            size_t i = 0;
-
-        for(; i < std::min(n, s); ++i) {
-                buffer[i] = buffer[i] ^ (m_seeds[i] + mult * i);
-        }
-        for(; i < n; ++i) {
-                buffer[i] = buffer[i] ^ (mult * i);
-            }
-
-        for (size_t k = 0; k < n; ++k) {
-                uint32_t z = buffer[(k + n - 1) % n] ^ (buffer[k] >> 27);
-            buffer[k] = (z * mix_const) ^ (buffer[k] << 13);
-            }
-
-        std::copy(buffer.begin(), buffer.end(), begin);
-        }
-
-    private:
-        std::vector<uint32_t> m_seeds;
-    };
-
-    struct CrystalBall{
-        // static constexpr double pi = std::numbers::pi;
-        // static constexpr double sqrtPiOver2 = sqrt(pi/2.0);
-        // static constexpr double sqrt2 = std::numbers::sqrt2;
-        double pi=3.14159;
-        double sqrtPiOver2=sqrt(pi/2.0);
-        double sqrt2=sqrt(2.0);
-
-        double m;
-        double s;
-        double a;
-        double n;
-        double B;
-        double C;
-        double D;
-        double N;
-        double NA;
-        double Ns;
-        double NC;
-        double F;
-        double G;
-        double k;
-        double cdfMa;
-        double cdfPa;
-        CrystalBall():m(0),s(1),a(10),n(10){
-            init();
-        }
-        CrystalBall(double mean, double sigma, double alpha, double n)
-            :m(mean),s(sigma),a(alpha),n(n){
-            init();
-        }
-        void init(){
-            double fa = fabs(a);
-            double ex = exp(-fa*fa/2);
-            double A  = pow(n/fa, n) * ex;
-            double C1 = n/fa/(n-1) * ex;
-            double D1 = 2 * sqrtPiOver2 * erf(fa/sqrt2);
-            B = n/fa-fa;
-            C = (D1+2*C1)/C1;
-            D = (D1+2*C1)/2;
-            N = 1.0/s/(D1+2*C1);
-            k = 1.0/(n-1);
-            NA = N*A;
-            Ns = N*s;
-            NC = Ns*C1;
-            F = 1-fa*fa/n;
-            G = s*n/fa;
-            cdfMa = cdf(m-a*s);
-            cdfPa = cdf(m+a*s);
-        }
-        double pdf(double x) const{
-            double d=(x-m)/s;
-            if(d<-a) return NA*pow(B-d, -n);
-            if(d>a) return NA*pow(B+d, -n);
-            return N*exp(-d*d/2);
-        }
-        double pdf(double x, double ks, double dm) const{
-            double d=(x-m-dm)/(s*ks);
-            if(d<-a) return NA/ks*pow(B-d, -n);
-            if(d>a) return NA/ks*pow(B+d, -n);
-            return N/ks*exp(-d*d/2);
-
-        }
-        double cdf(double x) const{
-            double d = (x-m)/s;
-            if(d<-a) return NC / pow(F-s*d/G, n-1);
-            if(d>a) return NC * (C - pow(F+s*d/G, 1-n) );
-            return Ns * (D - sqrtPiOver2 * erf(-d/sqrt2));
-        }
-        double invcdf(double u) const{
-            if(u<cdfMa) return m + G*(F - pow(NC/u, k));
-            if(u>cdfPa) return m - G*(F - pow(C-u/NC, -k) );
-            return m - sqrt2 * s * boost::math::erf_inv((D - u/Ns )/sqrtPiOver2);
-        }
-    };
 
     class MuonScaReCorrProvider : public CorrectionsBase<MuonScaReCorrProvider> {
       public:
@@ -164,41 +48,45 @@ namespace correction {
                 const double muon_pt_scaled = mu_scale == UncScale::Central ? pt_scale(is_data, Muon_pt, Muon_eta, Muon_phi, Muon_charge) : pt_scale_var(Muon_pt, Muon_eta, Muon_phi, Muon_charge, scale_str);
                 double muon_pt_resol = muon_pt_scaled;
                 if (!isData) {
-                    muon_pt_resol = mu_scale == UncScale::Central ? pt_resol(muon_pt_scaled, Muon_eta, Muon_phi, Muon_nTrackerLayers, evtNumber, lumiNumber) : pt_resol_var(muon_pt_scaled, muon_pt_resol, Muon_eta, scale_str) ;
+                    muon_pt_resol = mu_scale == UncScale::Central ? pt_resol(muon_pt_scaled, Muon_eta, Muon_phi, Muon_nTrackerLayers, evtNumber, lumiNumber) : pt_resol_var(muon_pt_scaled, muon_pt_resol, Muon_eta, scale_str);
+
                 }
-                const LorentzVectorM muon_p4_ScaRe= LorentzVectorM(muon_pt_resol, Muon_eta, Muon_phi, Muon_mass);
+                const LorentzVectorM muon_p4_ScaRe = LorentzVectorM(muon_pt_resol, Muon_eta, Muon_phi, Muon_mass);
                 return muon_p4_ScaRe;
         }
+        RVecLV getES(const RVecF& Muon_pt,
+                const RVecF& Muon_eta,
+                const RVecF& Muon_phi,
+                const RVecF& Muon_mass,
+                const RVecI   Muon_charge,
+                const RVecUC& Muon_nTrackerLayers,
+                const bool is_data,
+                const int evtNumber,
+                const int lumiNumber,
+                UncSource source,
+                UncScale scale) const
+            {
+                const size_t nMuons = Muon_pt.size();
+                RVecLV out(nMuons);
 
-        // RVecLV getES(const RVecF& Muon_pt,
-        //              const RVecF& Muon_eta,
-        //              const RVecF& Muon_phi,
-        //              const RVecF& Muon_mass,
-        //              const RVecI& Muon_charge,
-        //              const RVecUC& Muon_nTrackerLayers,
-        //              const bool is_data,
-        //              const int evtNumber,
-        //              const int lumiNumber,
-        //              UncSource source,
-        //              UncScale scale) const {
-        //     RVecLV MuonSmeared_p4(Muon_pt.size());
-        //     for (size_t n = 0; n < Muon_pt.size(); ++n) {
-        //         // const GenLeptonMatch genMatch = static_cast<GenLeptonMatch>(Tau_genMatch.at(n));
-        //         const UncScale mu_scale = sourceApplies(source) ? scale : UncScale::Central;
-        //         const UncSource mu_source = mu_scale == UncScale::Central ? UncSource::Central : source;
-        //         const std::string& scale_str = getScaleStr(mu_scale);
-        //         const int isData = is_data ? 1 : 0;
-        //         const auto muon_pt_scaled = mu_scale == UncScale::Central ? pt_scale(is_data, Muon_pt[n], Muon_eta[n], Muon_phi[n], Muon_charge[n]) : pt_scale_var(Muon_pt[n], Muon_eta[n], Muon_phi[n], Muon_charge[n], scale_str);
-        //         // MuonSmeared_p4[n] = LorentzVectorM(muon_pt_scaled, Muon_eta[n], Muon_phi[n], Muon_mass[n]);
-        //         if (!isData) {
-        //             const auto muon_pt_resol =  mu_scale == UncScale::Central ? pt_resol(muon_pt_scaled, Muon_eta[n], Muon_nTrackerLayers[n], evtNumber, lumiNumber) : pt_resol_var(double muon_pt_scaled, double muon_pt_resol, double Muon_eta[n], scale_str) ;
-        //         else {
-        //             const auto muon_pt_resol = muon_pt_scaled ;
-        //         }
-        //         MuonSmeared_p4[n] = LorentzVectorM(muon_pt_resol, Muon_eta[n], Muon_phi[n], Muon_mass[n]);
-        //     }
-        //     return MuonSmeared_p4;
-        // }
+                for (size_t i = 0; i < nMuons; ++i) {
+                    out[i] = getES(
+                        Muon_pt[i],
+                        Muon_eta[i],
+                        Muon_phi[i],
+                        Muon_mass[i],
+                        Muon_charge[i],
+                        Muon_nTrackerLayers[i],
+                        is_data,
+                        evtNumber,
+                        lumiNumber,
+                        source,
+                        scale
+                    );
+                }
+
+                return out;
+            }
 
       private:
         std::unique_ptr<CorrectionSet> cset;
@@ -212,9 +100,9 @@ namespace correction {
             double alpha = cset->at("cb_params")->evaluate({abs(eta), nL, 3});
 
             // instantiate CB and get random number following the CB
-            CrystalBall cb(mean, sigma, alpha, n);
+            CB::CrystalBall cb(mean, sigma, alpha, n);
             int64_t phi_seed = static_cast<int64_t>((phi / M_PI) * ((1LL << 31) - 1)) & 0xFFF;
-            SeedSequence seq{static_cast<uint32_t>(evtNumber), static_cast<uint32_t>(lumiNumber), static_cast<uint32_t>(phi_seed)};
+            CB::SeedSequence seq{static_cast<uint32_t>(evtNumber), static_cast<uint32_t>(lumiNumber), static_cast<uint32_t>(phi_seed)};
             uint32_t seed;
             seq.generate(&seed, &seed + 1);
 
@@ -263,7 +151,9 @@ namespace correction {
             if(ptc / pt > 2 || ptc / pt < 0.1 || ptc < 0 || pt < low_pt_threshold || pt > 200){
             ptc = pt;
             }
-            // TODO: Understand why for evts with pT < threshold the pt_corr is set to one
+            // For muons outside the validated pT range (including pT < low_pt_threshold),
+            // or when the smeared pT is clearly unphysical, we return the original pT
+            // to avoid applying resolution corrections where they are not defined.
             return ptc;
         }
 

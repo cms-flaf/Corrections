@@ -196,7 +196,7 @@ class TrigCorrProducer:
         lepton_legs,
         return_variations,
         isCentral,
-        extraFormat="",
+        extraFormat={},
     ):
         SF_branches = []
         legs_to_be = {
@@ -247,7 +247,7 @@ class TrigCorrProducer:
                         }
                         leg_p4 = f"{leg_name}_p4"
                         if extraFormat != "":
-                            leg_p4 += f"""_{extraFormat}"""
+                            leg_p4 += f"""_{extraFormat["pt"]}"""
                         # for tau trigger sf, selecting SF for the time being as a corrtype, rather than eff_data/eff_mc
                         if trg_name == "ditau":
                             df = df.Define(
@@ -275,7 +275,7 @@ class TrigCorrProducer:
                         SF_branches.append(f"{branch_name}")
         return df, SF_branches
 
-    def getEff(self, df, trigger_names, offline_legs, trigger_dict, extraFormat=""):
+    def getEff(self, df, trigger_names, offline_legs, trigger_dict, extraFormat={}):
         ch_trg = self.config.get("triggers", [])
         tauwps = self.config.get("deepTauWPs", [])
         VSjetWP = {}
@@ -294,7 +294,7 @@ class TrigCorrProducer:
                 ]
                 legtype_query = re.search(
                     r"{obj}_legType == Leg::\w+",
-                    trg_leg["offline_obj"]["cut"].format(extraFormat=extraFormat),
+                    trg_leg["offline_obj"]["cut"].format(**extraFormat),
                 )
                 # Extract the leg type (e.g., 'mu') from the string "{obj}_legType == Leg::mu"
                 legtype_value = None

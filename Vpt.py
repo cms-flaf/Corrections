@@ -41,7 +41,6 @@ class VptCorrProducer:
     DY_w_SFSources = ["DYWeight"]
 
     def __init__(self, sampleType, period, order="NLO"):
-        print(sampleType)
         rootFile_EWKcorr_name = (
             "ZJetsCorr_collection_wek.root"
             if sampleType == "DY"
@@ -97,7 +96,6 @@ class VptCorrProducer:
                             f"""::correction::VptCorrProvider::getGlobal().getDY_weight(LHE_Vpt, "{self.order}",
                                         ::correction::VptCorrProvider::UncSource::{source}, ::correction::VptCorrProvider::DYUncScale::{scale_def} )""",
                         )
-                        # print(df.Count().GetValue())
                         # for scale_def in scale_defs[order][scale]:
                         # print(scale_def)
                         # df = df.Define(f"{branch_SF_name}_weightCorrLib_double", f"""weightCorrLib_map_{scale}.at("{scale_def}")""")

@@ -62,7 +62,7 @@ namespace correction {
             NUM_Mu50_or_CascadeMu100_or_HighPtTkMu100_DEN_CutBasedIdGlobalHighPt_and_TkIsoLoose = 50,
             NUM_Mu50_or_CascadeMu100_or_HighPtTkMu100_DEN_CutBasedIdTrkHighPt_and_TkIsoLoose = 51,
             NUM_TightRelTkIso_DEN_HighPtID = 52,
-            NUM_TightRelTkIso_DEN_TrkHighPtID=53,
+            NUM_TightRelTkIso_DEN_TrkHighPtID = 53,
         };
 
         static const std::map<WorkingPointsMuonID, std::string>& getWPID() {
@@ -96,13 +96,12 @@ namespace correction {
                           const bool  Muon_MediumId,
                           const bool  Muon_LooseId) {
 
-                            const bool Muon_LooseIso = (Muon_pfRelIso04_all < 0.25);
-                            const bool Muon_MediumIso = (Muon_pfRelIso04_all < 0.2);
-                            const bool Muon_TightIso = (Muon_pfRelIso04_all < 0.15);
-
-                            const bool Muon_LooseRelTrkIso = (Muon_tkRelIso < 0.25);
-                            const bool Muon_MediumRelTrkIso = (Muon_tkRelIso < 0.2);
-                            const bool Muon_TightRelTrkIso = (Muon_tkRelIso < 0.15);
+            const bool Muon_LooseIso = (Muon_pfRelIso04_all < 0.25);
+            const bool Muon_MediumIso = (Muon_pfRelIso04_all < 0.2);
+            const bool Muon_TightIso = (Muon_pfRelIso04_all < 0.15);
+            const bool Muon_LooseRelTrkIso = (Muon_tkRelIso < 0.25);
+            const bool Muon_MediumRelTrkIso = (Muon_tkRelIso < 0.2);
+            const bool Muon_TightRelTrkIso = (Muon_tkRelIso < 0.15);
             // ======================
             // RECO
             // ======================
@@ -218,14 +217,11 @@ namespace correction {
             // ======================
             return false;
         }
-
-        // TODO:
-        // 1. need to add miniIso to the infos
-        // 2. clean from Run2 parts, maybe splitting?
-        // 3. propagate the changes also to the soft and highpT muons
-        // 4. currently there is a map between corrections_ and the actual evaluation. What is the sense?! 
-
-
+        // NOTE: Maintenance considerations (tracked externally in the issue tracker):
+        // 1. Consider adding miniIso to the infos.
+        // 2. Consider cleaning up or splitting Run2-specific parts.
+        // 3. Consider propagating any changes also to the soft and high-pT muons.
+        // 4. Review the map between corrections_ and the actual evaluation to clarify its purpose.
 
         MuCorrProvider(const std::string& fileName, const std::string& era)
             : corrections_(CorrectionSet::from_file(fileName)) {
@@ -442,6 +438,12 @@ namespace correction {
             if (source == UncSource::NUM_Mu50_or_CascadeMu100_or_HighPtTkMu100_DEN_CutBasedIdTrkHighPt_and_TkIsoLoose)
                 k = "NUM_Mu50_or_CascadeMu100_or_HighPtTkMu100_DEN_CutBasedIdTrkHighPt_and_TkIsoLoose";
 
+            if (source == UncSource::NUM_TightRelIso_DEN_MediumID)
+                k = "NUM_TightRelIso_DEN_MediumID";
+            if (source == UncSource::NUM_TightRelIso_DEN_MediumPromptID)
+                k = "NUM_TightRelIso_DEN_MediumPromptID";
+            if (source == UncSource::NUM_TightRelIso_DEN_TightIDandIPCut)
+                k = "NUM_TightRelIso_DEN_TightIDandIPCut";
             return k;
         }
 

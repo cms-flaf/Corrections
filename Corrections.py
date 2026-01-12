@@ -287,6 +287,8 @@ class Corrections:
             df, source_dict = self.jet.getP4Variations(
                 df, source_dict, apply_jer, apply_jes, apply_jet_horns_fix_
             )
+        if "muScaRe" in self.to_apply:
+            df, source_dict = self.muScaRe.getP4Variations(df, source_dict) if self.stage=='AnaTuple' else self.muScaRe.getP4VariationsForLegs(df)
         if (
             "tauES" in self.to_apply
             or "JEC" in self.to_apply
@@ -298,8 +300,6 @@ class Corrections:
                 df, source_dict, self.global_params["met_type"]
             )
 
-        # if "muScaRe" in self.to_apply:
-        #     df, source_dict = self.muScaRe.getP4Variations(df, source_dict) if self.stage=='AnaTuple' else self.muScaRe.getP4VariationsForLegs(df, self.isData, return_variations)
         syst_dict = {}
         for source, source_objs in source_dict.items():
             for scale in getScales(source):
@@ -392,8 +392,7 @@ class Corrections:
         unc_scale,
         ana_caches,
         return_variations=True,
-        use_genWeight_sign_only=True,
-        extraFormat="",
+        use_genWeight_sign_only=True
     ):
         isCentral = unc_source == central
         all_weights = []
@@ -510,7 +509,7 @@ class Corrections:
                     lepton_legs,
                     isCentral and return_variations,
                     isCentral,
-                    extraFormat=extraFormat,
+                    extraFormat=self.to_apply["trigger"].get("extraFormat",{}),
                 )
                 all_weights.extend(trg_SF_branches)
             elif mode == "efficiency":
@@ -519,7 +518,7 @@ class Corrections:
                     trigger_names,
                     offline_legs,
                     self.trigger_dict,
-                    extraFormat=extraFormat,
+                    extraFormat=self.to_apply["trigger"].get("extraFormat",{}),
                 )
                 all_weights.extend(trg_SF_branches)
             else:
