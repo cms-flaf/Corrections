@@ -275,7 +275,7 @@ class TrigCorrProducer:
                         SF_branches.append(f"{branch_name}")
         return df, SF_branches
 
-    def getEff(self, df, trigger_names, offline_legs, trigger_dict, extraFormat={}):
+    def getEff(self, df, trigger_names, offline_legs, trigger_dict):
         ch_trg = self.config.get("triggers", [])
         tauwps = self.config.get("deepTauWPs", [])
         VSjetWP = {}
