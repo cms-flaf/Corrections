@@ -275,7 +275,7 @@ class TrigCorrProducer:
                         SF_branches.append(f"{branch_name}")
         return df, SF_branches
 
-    def getEff(self, df, trigger_names, offline_legs, trigger_dict, extraFormat={}):
+    def getEff(self, df, trigger_names, offline_legs, trigger_dict):
         ch_trg = self.config.get("triggers", [])
         tauwps = self.config.get("deepTauWPs", [])
         VSjetWP = {}
@@ -293,8 +293,7 @@ class TrigCorrProducer:
                     "jsonTRGcorrection_elepath"
                 ]
                 legtype_query = re.search(
-                    r"{obj}_legType == Leg::\w+",
-                    trg_leg["offline_obj"]["cut"].format(**extraFormat),
+                    r"{obj}_legType == Leg::\w+", trg_leg["offline_obj"]["cut"]
                 )
                 # Extract the leg type (e.g., 'mu') from the string "{obj}_legType == Leg::mu"
                 legtype_value = None

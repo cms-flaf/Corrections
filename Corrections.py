@@ -521,8 +521,7 @@ class Corrections:
                     df,
                     trigger_names,
                     offline_legs,
-                    self.trigger_dict,
-                    extraFormat=self.to_apply["trigger"].get("extraFormat", {}),
+                    self.trigger_dict
                 )
                 all_weights.extend(trg_SF_branches)
             else:
