@@ -518,10 +518,7 @@ class Corrections:
                 all_weights.extend(trg_SF_branches)
             elif mode == "efficiency":
                 df, trg_SF_branches = self.trg.getEff(
-                    df,
-                    trigger_names,
-                    offline_legs,
-                    self.trigger_dict
+                    df, trigger_names, offline_legs, self.trigger_dict
                 )
                 all_weights.extend(trg_SF_branches)
             else:
