@@ -100,9 +100,9 @@ namespace correction {
             double alpha = cset->at("cb_params")->evaluate({abs(eta), nL, 3});
 
             // instantiate CB and get random number following the CB
-            CB::CrystalBall cb(mean, sigma, alpha, n);
+            analysis::CrystalBall cb(mean, sigma, alpha, n);
             int64_t phi_seed = static_cast<int64_t>((phi / M_PI) * ((1LL << 31) - 1)) & 0xFFF;
-            CB::SeedSequence seq{static_cast<uint32_t>(evtNumber), static_cast<uint32_t>(lumiNumber), static_cast<uint32_t>(phi_seed)};
+            analysis::SeedSequence seq{static_cast<uint32_t>(evtNumber), static_cast<uint32_t>(lumiNumber), static_cast<uint32_t>(phi_seed)};
             uint32_t seed;
             seq.generate(&seed, &seed + 1);
 
