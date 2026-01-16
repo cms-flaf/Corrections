@@ -7,7 +7,7 @@ from FLAF.Common.Utilities import DeclareHeader
 
 class MuonScaReCorrProducer:
     initialized = False
-    jsonPath = "Corrections/data/MUO/MuonScaRe/{}.json"
+    jsonPath = "Corrections/data/MUO/MuonScaRe/{}.json.gz"
     initialized = False
     uncSources = ["ScaRe"]
 
