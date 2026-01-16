@@ -299,7 +299,7 @@ class TrigCorrProducer:
                 ]
                 legtype_query = re.search(
                     r"{obj}_legType == Leg::\w+",
-                    trg_leg["offline_obj"]["cut"].format(obj="obj"),
+                    trg_leg["offline_obj"]["cut"],
                 )
                 # Extract the leg type (e.g., 'mu') from the string "{obj}_legType == Leg::mu"
                 legtype_value = None
