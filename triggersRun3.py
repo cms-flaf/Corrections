@@ -157,13 +157,13 @@ class TrigCorrProducer:
                 mu_trg_key_mc = self.trigger_dict["singleMu"]["legs"][0][
                     "jsonTRGcorrection_key"
                 ][period].format(
-                    MuIDWP=config.get("muonID_WP_for_triggerSF", "Medium"), DataMC="Mc"
+                    MuIDWP=config.get("muonID_WP_for_triggerSF", "Medium"), DataMC="MC"
                 )
                 mu_trg_key_data = self.trigger_dict["singleMu"]["legs"][0][
                     "jsonTRGcorrection_key"
                 ][period].format(
                     MuIDWP=config.get("muonID_WP_for_triggerSF", "Medium"),
-                    DataMC="data",
+                    DataMC="DATA",
                 )
             if "singleEle" in self.trigger_dict.keys():
                 ele_trg_key_mc = self.trigger_dict["singleEle"]["legs"][0][
@@ -299,7 +299,7 @@ class TrigCorrProducer:
                 ]
                 legtype_query = re.search(
                     r"{obj}_legType == Leg::\w+",
-                    trg_leg["offline_obj"]["cut"].format(obj="obj", **extraFormat),
+                    trg_leg["offline_obj"]["cut"].format(obj="obj"),
                 )
                 # Extract the leg type (e.g., 'mu') from the string "{obj}_legType == Leg::mu"
                 legtype_value = None
