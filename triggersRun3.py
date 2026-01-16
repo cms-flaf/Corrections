@@ -156,10 +156,15 @@ class TrigCorrProducer:
             if "singleMu" in self.trigger_dict.keys():
                 mu_trg_key_mc = self.trigger_dict["singleMu"]["legs"][0][
                     "jsonTRGcorrection_key"
-                ][period].format("MC")
+                ][period].format(
+                    MuIDWP=config.get("muonID_WP_for_triggerSF", "Medium"), DataMC="MC"
+                )
                 mu_trg_key_data = self.trigger_dict["singleMu"]["legs"][0][
                     "jsonTRGcorrection_key"
-                ][period].format("DATA")
+                ][period].format(
+                    MuIDWP=config.get("muonID_WP_for_triggerSF", "Medium"),
+                    DataMC="DATA",
+                )
             if "singleEle" in self.trigger_dict.keys():
                 ele_trg_key_mc = self.trigger_dict["singleEle"]["legs"][0][
                     "jsonTRGcorrection_key"
@@ -189,7 +194,15 @@ class TrigCorrProducer:
             print("TrigCorrProducer initialized")
             TrigCorrProducer.initialized = True
 
-    def getSF(self, df, trigger_names, lepton_legs, return_variations, isCentral):
+    def getSF(
+        self,
+        df,
+        trigger_names,
+        lepton_legs,
+        return_variations,
+        isCentral,
+        extraFormat={},
+    ):
         SF_branches = []
         legs_to_be = {
             "singleIsoMu": ["mu", "mu"],
@@ -237,18 +250,21 @@ class TrigCorrProducer:
                             "singleMu": "singleIsoMu",
                             "singleEle": "singleEleWpTight",
                         }
+                        leg_p4 = f"{leg_name}_p4"
+                        if "pt" in extraFormat.keys():
+                            leg_p4 += f"""_{extraFormat["pt"]}"""
                         # for tau trigger sf, selecting SF for the time being as a corrtype, rather than eff_data/eff_mc
                         if trg_name == "ditau":
                             df = df.Define(
                                 f"{branch_name}_double",
                                 f"""{applyTrgBranch_name} ? ::correction::TrigCorrProvider::getGlobal().getSF_{trigCorr_dict[trg_name]}(
-                                        {leg_name}_p4,"{TrigCorrProducer.year}",{leg_name}_decayMode, "{trigCorr_dict[trg_name]}", "Medium", "sf", ::correction::TrigCorrProvider::UncSource::{source}, ::correction::UncScale::{scale} ) : 1.f""",
+                                        {leg_p4},"{TrigCorrProducer.year}",{leg_name}_decayMode, "{trigCorr_dict[trg_name]}", "Medium", "sf", ::correction::TrigCorrProvider::UncSource::{source}, ::correction::UncScale::{scale} ) : 1.f""",
                             )
                         else:
                             df = df.Define(
                                 f"{branch_name}_double",
                                 f"""{applyTrgBranch_name} ? ::correction::TrigCorrProvider::getGlobal().getSF_{trigCorr_dict[trg_name]}(
-                                        {leg_name}_p4,"{TrigCorrProducer.year}", ::correction::TrigCorrProvider::UncSource::{source}, ::correction::UncScale::{scale} ) : 1.f""",
+                                        {leg_p4},"{TrigCorrProducer.year}", ::correction::TrigCorrProvider::UncSource::{source}, ::correction::UncScale::{scale} ) : 1.f""",
                             )
                         if scale != central:
                             df = df.Define(
@@ -282,7 +298,8 @@ class TrigCorrProducer:
                     "jsonTRGcorrection_elepath"
                 ]
                 legtype_query = re.search(
-                    r"{obj}_legType == Leg::\w+", trg_leg["offline_obj"]["cut"]
+                    r"{obj}_legType == Leg::\w+",
+                    trg_leg["offline_obj"]["cut"],
                 )
                 # Extract the leg type (e.g., 'mu') from the string "{obj}_legType == Leg::mu"
                 legtype_value = None

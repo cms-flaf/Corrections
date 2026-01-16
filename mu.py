@@ -40,33 +40,53 @@ class MuCorrProducer:
     }
 
     ##### ID + trigger ####
-    muID_SF_Sources_dict = {
+    MediumMu_SF_Sources_dict = {
         # reco SF
-        "NUM_TrackerMuons_DEN_genTracks": "Reco",  # --> This is the recommended one for RECO!!
-        # # ID SF - with genTracks - NOT RECOMMENDED --> WE DO NOT USE THIS
-        # "NUM_MediumPromptID_DEN_genTracks":"MediumID", # medium ID
-        # "NUM_TightID_DEN_genTracks":"TightID", # tight ID
-        # "NUM_HighPtID_DEN_genTracks": "HighPtID",# HighPtID
+        "NUM_TrackerMuons_DEN_genTracks": "Reco",  # --> used in Run 2
         # ID SF - with tracker muons - RECOMMENDED
-        # "NUM_MediumPromptID_DEN_TrackerMuons":"Medium_promptID_Trk",
-        "NUM_MediumID_DEN_genTracks": "Reco_MediumID_genTrk",
-        "NUM_MediumID_DEN_TrackerMuons": "MediumID_Trk",  # medium ID
-        "NUM_TightID_DEN_TrackerMuons": "TightID_Trk",  # tight ID
-        "NUM_HighPtID_DEN_TrackerMuons": "HighPtID_Trk",  # HighPtID ID
+        "NUM_LooseID_DEN_TrackerMuons": "LooseID_Trk",
+        "NUM_MediumID_DEN_genTracks": "MediumID_genTrk",
+        "NUM_MediumPromptID_DEN_TrackerMuons": "MediumPromptID_Trk",
+        "NUM_MediumID_DEN_TrackerMuons": "MediumID_Trk",
+        "NUM_TightID_DEN_TrackerMuons": "TightID_Trk",
+        "NUM_SoftID_DEN_TrackerMuons": "SoftID_Trk",
+        "NUM_HighPtID_DEN_TrackerMuons": "HighPtID_Trk",
+        "NUM_TrkHighPtID_DEN_TrackerMuons": "TrkHighPtID_Trk",
         # Iso SF
-        "NUM_LoosePFIso_DEN_MediumID": "MediumIDLoosePFIso",  # medium ID, loose  iso
-        "NUM_LooseRelIso_DEN_MediumID": "MediumIDLooseRelIso",
-        "NUM_TightRelIso_DEN_MediumPromptID": "MediumRelIso",  # medium ID, tight iso
-        "NUM_TightRelIso_DEN_TightIDandIPCut": "TightRelIso",  # tight ID, tight iso
-        "NUM_TightRelTkIso_DEN_TrkHighPtIDandIPCut": "HighPtIdRelTkIso",  # highPtID, tight tkRelIso
-        "NUM_LoosePFIso_DEN_TightID": "LoosePFIso",  # tight ID, tight PF Iso
+        "NUM_LoosePFIso_DEN_LooseID": "LoosePFIso_LooseID",  # loose ID, loose iso
+        "NUM_LoosePFIso_DEN_MediumID": "LoosePFIso_MediumID",  # medium ID, loose  iso
+        "NUM_LoosePFIso_DEN_MediumPromptID": "LoosePFIso_MediumPromptID",  # medium prompt ID, loose iso
+        "NUM_LoosePFIso_DEN_TightID": "LoosePFIso_TightID",  # tight ID, tight PF Iso
+        "NUM_LooseRelTkIso_DEN_HighPtID": "LooseRelTkIso_HighPtID",  # highPtID, loose tkRelIso
+        "NUM_LooseRelTkIso_DEN_TrkHighPtID": "LooseRelTkIso_TrkHighPtID",  # trkHighPtID, loose tkRelIso
+        "NUM_LooseRelIso_DEN_MediumID": "LooseRelIso_MediumID",
+        "NUM_TightPFIso_DEN_MediumID": "TightPFIso_MediumID",  # medium ID, tight PF Iso
+        "NUM_TightPFIso_DEN_MediumPromptID": "TightPFIso_MediumPromptID",  # medium prompt ID, tight PF Iso
+        "NUM_TightRelTkIso_DEN_HighPtID": "TightRelIso_HighPtID",  # highPtID, tight tkRelIso
+        "NUM_TightRelTkIso_DEN_TrkHighPtID": "TightRelIso_TrkHighPtID",  # trkHighPtID, tight tkRelIso
+        "NUM_TightPFIso_DEN_TightID": "TightPFIso_TightID",  # tight ID, tight PF Iso
+        "NUM_LooseMiniIso_DEN_LooseID": "LooseMiniIso_LooseID",
+        "NUM_LooseMiniIso_DEN_MediumID": "LooseMiniIso_MediumID",
+        "NUM_MediumMiniIso_DEN_MediumID": "MediumMiniIso_MediumID",
+        "NUM_TightMiniIso_DEN_MediumID": "TightMiniIso_MediumID",
+        "NUM_TightRelIso_DEN_MediumPromptID": "MediumRelIso",  # medium ID, tight iso --> old, Run 2 only
+        "NUM_TightRelIso_DEN_TightIDandIPCut": "TightRelIso",  # tight ID, tight iso --> old, Run 2 only
+        "NUM_TightRelTkIso_DEN_TrkHighPtIDandIPCut": "HighPtIdRelTkIso",  # highPtID, tight tkRelIso --> old, Run 2 only
         # Trigger
-        "NUM_IsoMu24_DEN_CutBasedIdTight_and_PFIsoTight": "TightIso24",  # trg --> FOR ALL PT RANGE!!
-        "NUM_IsoMu24_DEN_CutBasedIdMedium_and_PFIsoMedium": "MediumIso24",  # trg for medium muons
-        "NUM_IsoMu27_DEN_CutBasedIdTight_and_PFIsoTight": "TightIso27",  # trg --> FOR ALL PT RANGE!!
-        "NUM_Mu50_or_OldMu100_or_TkMu100_DEN_CutBasedIdGlobalHighPt_and_TkIsoLoose": "Mu50",  # trg --> FOR ALL PT RANGE!!
-        "NUM_Mu50_or_TkMu50_DEN_CutBasedIdGlobalHighPt_and_TkIsoLoose": "Mu50_tkMu50",  # trg --> FOR ALL PT RANGE!!
-        "NUM_IsoMu24_or_IsoTkMu24_DEN_CutBasedIdTight_and_PFIsoTight": "TightIso24OrTightIsoTk24",  # trg --> FOR ALL PT RANGE!!
+        # "NUM_IsoMu24_DEN_CutBasedIdTight_and_PFIsoTight": "TightIso24",  # trg --> FOR ALL PT RANGE!!
+        # "NUM_IsoMu24_DEN_CutBasedIdMedium_and_PFIsoMedium": "MediumIso24",  # trg for medium muons
+        "NUM_IsoMu27_DEN_CutBasedIdTight_and_PFIsoTight": "TightIso27",  # trg --> FOR ALL PT RANGE!!  --> old, Run 2 only
+        "NUM_Mu50_or_OldMu100_or_TkMu100_DEN_CutBasedIdGlobalHighPt_and_TkIsoLoose": "Mu50",  # trg --> FOR ALL PT RANGE!! --> old, Run 2 only
+        "NUM_Mu50_or_TkMu50_DEN_CutBasedIdGlobalHighPt_and_TkIsoLoose": "Mu50_tkMu50",  # trg --> FOR ALL PT RANGE!! --> old, Run 2 only
+        "NUM_IsoMu24_or_IsoTkMu24_DEN_CutBasedIdTight_and_PFIsoTight": "TightIso24OrTightIsoTk24",  # trg --> FOR ALL PT RANGE!! --> old, Run 2 only
+        "NUM_IsoMu24_DEN_CutBasedIdMedium_and_PFIsoMedium": "IsoMu24_CutBasedIdMedium_and_PFIsoMedium",
+        "NUM_IsoMu24_DEN_CutBasedIdTight_and_PFIsoTight": "IsoMu24_CutBasedIdTight_and_PFIsoTight",
+        "NUM_IsoMu24_or_Mu50_or_CascadeMu100_or_HighPtTkMu100_DEN_CutBasedIdGlobalHighPt_and_TkIsoLoose": "IsoMu24_or_Mu50_or_CascadeMu100_or_HighPtTkMu100_CutBasedIdGlobalHighPt_and_TkIsoLoose",
+        "NUM_IsoMu24_or_Mu50_or_CascadeMu100_or_HighPtTkMu100_DEN_CutBasedIdMedium_and_PFIsoMedium": "IsoMu24_or_Mu50_or_CascadeMu100_or_HighPtTkMu100_CutBasedIdMedium_and_PFIsoMedium",
+        "NUM_IsoMu24_or_Mu50_or_CascadeMu100_or_HighPtTkMu100_DEN_CutBasedIdTight_and_PFIsoTight": "IsoMu24_or_Mu50_or_CascadeMu100_or_HighPtTkMu100_CutBasedIdTight_and_PFIsoTight",
+        "NUM_IsoMu24_or_Mu50_or_CascadeMu100_or_HighPtTkMu100_DEN_CutBasedIdTrkHighPt_and_TkIsoLoose": "IsoMu24_or_Mu50_or_CascadeMu100_or_HighPtTkMu100_CutBasedIdTrkHighPt_and_TkIsoLoose",
+        "NUM_Mu50_or_CascadeMu100_or_HighPtTkMu100_DEN_CutBasedIdGlobalHighPt_and_TkIsoLoose": "Mu50_or_CascadeMu100_or_HighPtTkMu100_CutBasedIdGlobalHighPt_and_TkIsoLoose",
+        "NUM_Mu50_or_CascadeMu100_or_HighPtTkMu100_DEN_CutBasedIdTrkHighPt_and_TkIsoLoose": "Mu50_or_CascadeMu100_or_HighPtTkMu100_CutBasedIdTrkHighPt_and_TkIsoLoose",
     }
 
     # muID_SF_Sources = []
@@ -78,7 +98,7 @@ class MuCorrProducer:
     # muIso_SF_Sources = ["NUM_TightRelIso_DEN_TightIDandIPCut"]
 
     # Convert to dicts so we can have different names for different years, motivated by Run3 moving to PF and not having RECO efficiency
-    muReco_SF_sources = {
+    MediumMuReco_SF_sources = {
         "2016preVFP_UL": ["NUM_TrackerMuons_DEN_genTracks"],
         "2016postVFP_UL": ["NUM_TrackerMuons_DEN_genTracks"],
         "2017_UL": ["NUM_TrackerMuons_DEN_genTracks"],
@@ -88,42 +108,130 @@ class MuCorrProducer:
         "2023_Summer23": [],
         "2023_Summer23BPix": [],
     }
-    muID_SF_Sources = {
-        "2016preVFP_UL": ["NUM_TightID_DEN_TrackerMuons"],
-        "2016postVFP_UL": ["NUM_TightID_DEN_TrackerMuons"],
-        "2017_UL": ["NUM_TightID_DEN_TrackerMuons"],
-        "2018_UL": ["NUM_TightID_DEN_TrackerMuons"],
-        "2022_Summer22": [
+    MediumMuIDIso_SF_Sources = {
+        "2016preVFP_UL": [
             "NUM_TightID_DEN_TrackerMuons",
+            "NUM_TightRelIso_DEN_TightIDandIPCut",
+        ],
+        "2016postVFP_UL": [
+            "NUM_TightID_DEN_TrackerMuons",
+            "NUM_TightRelIso_DEN_TightIDandIPCut",
+        ],
+        "2017_UL": [
+            "NUM_TightID_DEN_TrackerMuons",
+            "NUM_TightRelIso_DEN_TightIDandIPCut",
+        ],
+        "2018_UL": [
+            "NUM_TightID_DEN_TrackerMuons",
+            "NUM_TightRelIso_DEN_TightIDandIPCut",
+        ],
+        "2022_Summer22": [
+            "NUM_TrackerMuons_DEN_genTracks",
+            "NUM_LooseID_DEN_TrackerMuons",
+            "NUM_MediumID_DEN_genTracks",
+            "NUM_MediumPromptID_DEN_TrackerMuons",
             "NUM_MediumID_DEN_TrackerMuons",
+            "NUM_TightID_DEN_TrackerMuons",
+            "NUM_SoftID_DEN_TrackerMuons",
+            "NUM_HighPtID_DEN_TrackerMuons",
+            "NUM_TrkHighPtID_DEN_TrackerMuons",
+            "NUM_LoosePFIso_DEN_LooseID",
+            "NUM_LoosePFIso_DEN_MediumID",
+            "NUM_LoosePFIso_DEN_MediumPromptID",
+            "NUM_LoosePFIso_DEN_TightID",
+            "NUM_LooseRelTkIso_DEN_HighPtID",
+            "NUM_LooseRelTkIso_DEN_TrkHighPtID",
+            "NUM_LooseRelIso_DEN_MediumID",
+            "NUM_TightPFIso_DEN_MediumID",
+            "NUM_TightPFIso_DEN_MediumPromptID",
+            "NUM_TightRelTkIso_DEN_HighPtID",
+            "NUM_TightRelTkIso_DEN_TrkHighPtID",
+            "NUM_TightPFIso_DEN_TightID",
+            "NUM_LooseMiniIso_DEN_LooseID",
+            "NUM_LooseMiniIso_DEN_MediumID",
+            "NUM_MediumMiniIso_DEN_MediumID",
+            "NUM_TightMiniIso_DEN_MediumID",
         ],
         "2022_Summer22EE": [
-            "NUM_TightID_DEN_TrackerMuons",
+            "NUM_TrackerMuons_DEN_genTracks",
+            "NUM_LooseID_DEN_TrackerMuons",
+            "NUM_MediumID_DEN_genTracks",
+            "NUM_MediumPromptID_DEN_TrackerMuons",
             "NUM_MediumID_DEN_TrackerMuons",
+            "NUM_TightID_DEN_TrackerMuons",
+            "NUM_SoftID_DEN_TrackerMuons",
+            "NUM_HighPtID_DEN_TrackerMuons",
+            "NUM_TrkHighPtID_DEN_TrackerMuons",
+            "NUM_LoosePFIso_DEN_LooseID",
+            "NUM_LoosePFIso_DEN_MediumID",
+            "NUM_LoosePFIso_DEN_MediumPromptID",
+            "NUM_LoosePFIso_DEN_TightID",
+            "NUM_LooseRelTkIso_DEN_HighPtID",
+            "NUM_LooseRelTkIso_DEN_TrkHighPtID",
+            "NUM_LooseRelIso_DEN_MediumID",
+            "NUM_TightPFIso_DEN_MediumID",
+            "NUM_TightPFIso_DEN_MediumPromptID",
+            "NUM_TightRelTkIso_DEN_HighPtID",
+            "NUM_TightRelTkIso_DEN_TrkHighPtID",
+            "NUM_TightPFIso_DEN_TightID",
+            "NUM_LooseMiniIso_DEN_LooseID",
+            "NUM_LooseMiniIso_DEN_MediumID",
+            "NUM_MediumMiniIso_DEN_MediumID",
+            "NUM_TightMiniIso_DEN_MediumID",
         ],
         "2023_Summer23": [
-            "NUM_TightID_DEN_TrackerMuons",
+            "NUM_TrackerMuons_DEN_genTracks",
+            "NUM_LooseID_DEN_TrackerMuons",
+            "NUM_MediumID_DEN_genTracks",
+            "NUM_MediumPromptID_DEN_TrackerMuons",
             "NUM_MediumID_DEN_TrackerMuons",
+            "NUM_TightID_DEN_TrackerMuons",
+            "NUM_SoftID_DEN_TrackerMuons",
+            "NUM_HighPtID_DEN_TrackerMuons",
+            "NUM_TrkHighPtID_DEN_TrackerMuons",
+            "NUM_LoosePFIso_DEN_LooseID",
+            "NUM_LoosePFIso_DEN_MediumID",
+            "NUM_LoosePFIso_DEN_MediumPromptID",
+            "NUM_LoosePFIso_DEN_TightID",
+            "NUM_LooseRelTkIso_DEN_HighPtID",
+            "NUM_LooseRelTkIso_DEN_TrkHighPtID",
+            "NUM_LooseRelIso_DEN_MediumID",
+            "NUM_TightPFIso_DEN_MediumID",
+            "NUM_TightPFIso_DEN_MediumPromptID",
+            "NUM_TightRelTkIso_DEN_HighPtID",
+            "NUM_TightRelTkIso_DEN_TrkHighPtID",
+            "NUM_TightPFIso_DEN_TightID",
+            "NUM_LooseMiniIso_DEN_LooseID",
+            "NUM_LooseMiniIso_DEN_MediumID",
+            "NUM_MediumMiniIso_DEN_MediumID",
+            "NUM_TightMiniIso_DEN_MediumID",
         ],
         "2023_Summer23BPix": [
-            "NUM_TightID_DEN_TrackerMuons",
+            "NUM_TrackerMuons_DEN_genTracks",
+            "NUM_LooseID_DEN_TrackerMuons",
+            "NUM_MediumID_DEN_genTracks",
+            "NUM_MediumPromptID_DEN_TrackerMuons",
             "NUM_MediumID_DEN_TrackerMuons",
-        ],
-    }
-    muIso_SF_Sources = {
-        "2016preVFP_UL": ["NUM_TightRelIso_DEN_TightIDandIPCut"],
-        "2016postVFP_UL": ["NUM_TightRelIso_DEN_TightIDandIPCut"],
-        "2017_UL": ["NUM_TightRelIso_DEN_TightIDandIPCut"],
-        "2018_UL": ["NUM_TightRelIso_DEN_TightIDandIPCut"],
-        "2022_Summer22": ["NUM_LoosePFIso_DEN_TightID", "NUM_LoosePFIso_DEN_MediumID"],
-        "2022_Summer22EE": [
-            "NUM_LoosePFIso_DEN_TightID",
+            "NUM_TightID_DEN_TrackerMuons",
+            "NUM_SoftID_DEN_TrackerMuons",
+            "NUM_HighPtID_DEN_TrackerMuons",
+            "NUM_TrkHighPtID_DEN_TrackerMuons",
+            "NUM_LoosePFIso_DEN_LooseID",
             "NUM_LoosePFIso_DEN_MediumID",
-        ],
-        "2023_Summer23": ["NUM_LoosePFIso_DEN_TightID", "NUM_LoosePFIso_DEN_MediumID"],
-        "2023_Summer23BPix": [
+            "NUM_LoosePFIso_DEN_MediumPromptID",
             "NUM_LoosePFIso_DEN_TightID",
-            "NUM_LoosePFIso_DEN_MediumID",
+            "NUM_LooseRelTkIso_DEN_HighPtID",
+            "NUM_LooseRelTkIso_DEN_TrkHighPtID",
+            "NUM_LooseRelIso_DEN_MediumID",
+            "NUM_TightPFIso_DEN_MediumID",
+            "NUM_TightPFIso_DEN_MediumPromptID",
+            "NUM_TightRelTkIso_DEN_HighPtID",
+            "NUM_TightRelTkIso_DEN_TrkHighPtID",
+            "NUM_TightPFIso_DEN_TightID",
+            "NUM_LooseMiniIso_DEN_LooseID",
+            "NUM_LooseMiniIso_DEN_MediumID",
+            "NUM_MediumMiniIso_DEN_MediumID",
+            "NUM_TightMiniIso_DEN_MediumID",
         ],
     }
 
@@ -191,6 +299,7 @@ class MuCorrProducer:
         "legType",
         "p4",
         "gen_kind",
+        "looseId",
     ]
 
     def __init__(self, *, era, columns):
@@ -232,9 +341,8 @@ class MuCorrProducer:
         SF_branches = []
 
         sf_sources = (
-            MuCorrProducer.muID_SF_Sources[MuCorrProducer.period]
-            + MuCorrProducer.muReco_SF_sources[MuCorrProducer.period]
-            + MuCorrProducer.muIso_SF_Sources[MuCorrProducer.period]
+            MuCorrProducer.MediumMuIDIso_SF_Sources[MuCorrProducer.period]
+            + MuCorrProducer.MediumMuReco_SF_sources[MuCorrProducer.period]
         )
         sf_scales = [central, up, down] if return_variations else [central]
         for source in sf_sources:
@@ -244,7 +352,7 @@ class MuCorrProducer:
                 if not isCentral and scale != central:
                     continue
                 source_name = (
-                    MuCorrProducer.muID_SF_Sources_dict[source]
+                    MuCorrProducer.MediumMu_SF_Sources_dict[source]
                     if source != central
                     else central
                 )
@@ -263,6 +371,7 @@ class MuCorrProducer:
                     tkRelIso = f'{leg_name}_{self.columns["tkRelIso"]}'
                     highPtId = f'{leg_name}_{self.columns["highPtId"]}'
                     mediumId = f'{leg_name}_{self.columns["mediumId"]}'
+                    looseId = f'{leg_name}_{self.columns["looseId"]}'
 
                     genMatch_bool = f"{gen_kind} == 2 || {gen_kind} == 4"
                     legType = getLegTypeString(df, legType)
@@ -271,7 +380,7 @@ class MuCorrProducer:
                         f"{branch_name}_double",
                         f"""{legType} == Leg::mu && ({genMatch_bool})
                             ? ::correction::MuCorrProvider::getGlobal().getMuonSF(
-                                {p4}, {pfRelIso04_all}, {tightId}, {tkRelIso}, {highPtId}, {mediumId},
+                                {p4}, {pfRelIso04_all}, {tightId}, {tkRelIso}, {highPtId}, {mediumId},{looseId},
                                 ::correction::MuCorrProvider::UncSource::{source},
                                 ::correction::UncScale::{scale})
                             : 1.""",
