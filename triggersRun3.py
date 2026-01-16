@@ -175,7 +175,7 @@ class TrigCorrProducer:
             if "mutau" in self.trigger_dict.keys():
                 mutau_trg_key_mc = self.trigger_dict["mutau"]["legs"][0][
                     "jsonTRGcorrection_key"
-                ][period].format("
+                ][period].format(
                     MuIDWP=config.get("muonID_WP_for_triggerSF", "Medium"), DataMC="MC")
                 mutau_trg_key_data = self.trigger_dict["mutau"]["legs"][0][
                     "jsonTRGcorrection_key"
