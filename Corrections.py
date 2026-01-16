@@ -232,9 +232,10 @@ class Corrections:
         if self.muScaRe_ is None:
             from .MuonScaRe_corr import MuonScaReCorrProducer
 
-            # self.muScaRe_ = MuonScaReCorrProducer(period_names[self.period])
             self.muScaRe_ = MuonScaReCorrProducer(
-                period_names[self.period], self.isData
+                period_names[self.period],
+                self.isData,
+                self.to_apply["muScaRe"].get("mu_pt_for_ScaReApplication", "pt_nano"),
             )
         return self.muScaRe_
 
@@ -287,8 +288,11 @@ class Corrections:
                 df, source_dict, apply_jer, apply_jes, apply_jet_horns_fix_
             )
         if "muScaRe" in self.to_apply:
-            df, source_dict = self.muScaRe.getP4Variations(df, source_dict)
-            # df, source_dict = self.fatjet.getP4Variations(df, source_dict, 'JER' in self.to_apply, 'JEC' in self.to_apply)
+            df, source_dict = (
+                self.muScaRe.getP4Variations(df, source_dict)
+                if self.stage == "AnaTuple"
+                else self.muScaRe.getP4VariationsForLegs(df)
+            )
         if (
             "tauES" in self.to_apply
             or "JEC" in self.to_apply
@@ -299,6 +303,7 @@ class Corrections:
             df, source_dict = self.met.getMET(
                 df, source_dict, self.global_params["met_type"]
             )
+
         syst_dict = {}
         for source, source_objs in source_dict.items():
             for scale in getScales(source):
@@ -508,6 +513,7 @@ class Corrections:
                     lepton_legs,
                     isCentral and return_variations,
                     isCentral,
+                    extraFormat=self.to_apply["trigger"].get("extraFormat", {}),
                 )
                 all_weights.extend(trg_SF_branches)
             elif mode == "efficiency":
