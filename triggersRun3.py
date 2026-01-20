@@ -74,16 +74,7 @@ class TrigCorrProducer:
             "2022_Summer22EE": "2022_postEE",
             "2023_Summer23": "2023_preBPix",
             "2023_Summer23BPix": "2023_postBPix",
-        }
-        period_in_taupog_folder = {
-            "Run2_2016_HIPM": "Run2-2016preVFP-UL-NanoAODv9",
-            "Run2_2016": "Run2-2016postVFP-UL-NanoAODv9",
-            "Run2_2017": "Run2-2017-UL-NanoAODv9",
-            "Run2_2018": "Run2-2018-UL-NanoAODv9",
-            "2022_Summer22": "Run3-22CDSep23-Summer22-NanoAODv12",
-            "2022_Summer22EE": "Run3-22EFGSep23-Summer22EE-NanoAODv12",
-            "2023_Summer23": "Run3-23CSep23-Summer23-NanoAODv12",
-            "2023_Summer23BPix": "Run3-23DSep23-Summer23BPix-NanoAODv12",
+            "2024_Summer24": "2023_postBPix",  # tmp patch since it is currently missing
         }
 
         self.period = period
@@ -97,8 +88,6 @@ class TrigCorrProducer:
         jsonFile_Tau = os.path.join(
             os.environ["ANALYSIS_PATH"],
             TrigCorrProducer.TauTRG_jsonPath.format(new_folder_names["TAU"][period]),
-            #     period_in_taupog_folder[period], tau_filename_dict[period]
-            # ),
         )
         jsonFile_Mu = os.path.join(
             os.environ["ANALYSIS_PATH"],
