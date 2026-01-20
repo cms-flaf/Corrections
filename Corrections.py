@@ -395,7 +395,26 @@ class Corrections:
     ):
         isCentral = unc_source == central
         all_weights = []
-        if "MC_Lumi_pu" in self.to_apply:
+        lumi_weight_name = 'weight_lumi'
+        if "lumi" in self.to_apply:
+            lumi = self.global_params["luminosity"]
+            df = df.Define(lumi_weight_name, f"float({lumi})")
+            all_weights.append(weight_out_name)
+
+        if "crossSection" in self.to_apply
+            crossSectionBranch = "crossSection"
+            df = self.defineCrossSection(df, crossSectionBranch)
+
+        shape_weights_dict = {(central, central): []}
+        if "pu" in self.to_apply:
+            df = self.pu.getWeight(
+                df,
+                shape_weights_dict=shape_weights_dict,
+                return_variations=return_variations and isCentral,
+            )
+
+
+        if "gen_lumi_pu" in self.to_apply:
             lumi = self.global_params["luminosity"]
 
             genWeight_def = (
@@ -405,8 +424,6 @@ class Corrections:
             )
             df = df.Define("genWeightD", genWeight_def)
 
-            crossSectionBranch = "crossSection"
-            df = self.defineCrossSection(df, crossSectionBranch)
 
             shape_weights_dict = {(central, central): []}
             if "pu" in self.to_apply:
