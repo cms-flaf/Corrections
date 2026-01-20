@@ -68,6 +68,28 @@ namespace correction {
             }
             return value;
         }
+        RVecLV getESEtDep(const RVecLV& Electron_p4,
+                     const RVecI& Electron_genMatch,
+                     const RVecF& Electron_SCeta,
+                     unsigned int run,
+                     const RVecUC& Electron_r9,
+                     UncSource source,
+                     UncScale scale) const {
+            RVecLV final_p4 = Electron_p4;
+            for (size_t n = 0; n < Electron_p4.size(); ++n) {
+                const GenLeptonMatch genMatch = static_cast<GenLeptonMatch>(Electron_genMatch.at(n));
+                if (scale != UncScale::Central &&
+                    (genMatch == GenLeptonMatch::Electron || genMatch == GenLeptonMatch::TauElectron)) {
+                    double sf = EleES_->evaluate({"smear",  // "total_uncertainty" no longer available!!
+                                                // static_cast<double>(run),
+                                                Electron_p4[n].pt(),
+                                                static_cast<double>(Electron_r9.at(n)),
+                                                Electron_SCeta[n]});
+                    final_p4[n] *= 1 + static_cast<int>(scale) * sf;
+                }
+            }
+            return final_p4;
+        }
 
         RVecLV getES(const RVecLV& Electron_p4,
                      const RVecI& Electron_genMatch,

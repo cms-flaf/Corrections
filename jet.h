@@ -24,7 +24,7 @@ namespace correction {
         };
 
         // json_file_name - path to json file with corrections
-        // e.g. /cvmfs/cms.cern.ch/rsync/cms-nanoAOD/jsonpog-integration/POG/JME/2022_Summer2022/jet_jerc.json.gz
+        // e.g. /cvmfs/cms-griddata.cern.ch/cat/metadata/JME/2022_Summer2022/jet_jerc.json.gz
 
         // jecTag_corrName_algoType
 
@@ -134,7 +134,7 @@ namespace correction {
                 if (apply_cmpd_) {
                     float cmpd_sf = 1.0;
                     if (require_run_number) {
-                        // for run3_2023BPix data they want also phi ..
+                        // for run3_2023BPix data and 2024 they want also phi ..
                         if (wantPhi) {
                             cmpd_sf = cmpd_corr_->evaluate(
                                 {Jet_area[i], Jet_eta[i], Jet_pt[i], rho, Jet_phi[i], static_cast<float>(run)});
@@ -144,10 +144,19 @@ namespace correction {
                                  Jet_eta[i],
                                  Jet_pt[i],
                                  rho,
-                                 static_cast<float>(run)});  // for 2023 data and 2023BPix data&MC, need also run number
+                                 static_cast<float>(run)});  // for 2023, 2024 data and 2023BPix data&MC, need also run number
                         }
                     } else {
-                        cmpd_sf = cmpd_corr_->evaluate({Jet_area[i], Jet_eta[i], Jet_pt[i], rho});
+                        if (wantPhi) {
+                            cmpd_sf = cmpd_corr_->evaluate(
+                                {Jet_area[i], Jet_eta[i], Jet_pt[i], rho, Jet_phi[i]}); // for 2024 MC, need phi but NOT run number...
+                        } else {
+                            cmpd_sf = cmpd_corr_->evaluate(
+                                {Jet_area[i],
+                                 Jet_eta[i],
+                                 Jet_pt[i],
+                                 rho});
+                        }
                     }
                     Jet_pt[i] *= cmpd_sf;
                     Jet_mass[i] *= cmpd_sf;

@@ -31,7 +31,7 @@ def IsInJESList(src_name, jes_list):
 
 
 class bTagCorrProducer:
-    jsonPath = "/cvmfs/cms.cern.ch/rsync/cms-nanoAOD/jsonpog-integration/POG/BTV/{}/btagging.json.gz"
+    jsonPath = "/cvmfs/cms-griddata.cern.ch/cat/metadata/BTV/{}/latest/btagging.json.gz"
     bTagEff_JsonPath = "Corrections/data/BTV/{}/btagEff.root"
     initialized = False
     uncSource_bTagWP = [
@@ -81,7 +81,7 @@ class bTagCorrProducer:
         self.btag_branch = bTagCorrProducer.tagger_to_brag_branch[tagger]
         self.jetCollection = jetCollection
         self.useSplitJes = useSplitJes
-        jsonFile = bTagCorrProducer.jsonPath.format(period)
+        jsonFile = bTagCorrProducer.jsonPath.format(new_folder_names["BTV"][period])
         jsonFile_eff = os.path.join(
             os.environ["ANALYSIS_PATH"],
             bTagCorrProducer.bTagEff_JsonPath.format(period),

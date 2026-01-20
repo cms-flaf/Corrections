@@ -11,9 +11,15 @@ from .CorrectionsCore import *
 
 
 class MuCorrProducer:
-    muIDEff_JsonPath = "/cvmfs/cms.cern.ch/rsync/cms-nanoAOD/jsonpog-integration/POG/MUO/{}/muon_Z.json.gz"
-    HighPtmuIDEff_JsonPath = "/cvmfs/cms.cern.ch/rsync/cms-nanoAOD/jsonpog-integration/POG/MUO/{}/muon_HighPt.json.gz"
-    LowPtmuIDEff_JsonPath = "/cvmfs/cms.cern.ch/rsync/cms-nanoAOD/jsonpog-integration/POG/MUO/{}/muon_JPsi.json.gz"
+    muIDEff_JsonPath = (
+        "/cvmfs/cms-griddata.cern.ch/cat/metadata/MUO/{}/latest/muon_Z.json.gz"
+    )
+    HighPtmuIDEff_JsonPath = (
+        "/cvmfs/cms-griddata.cern.ch/cat/metadata/MUO/{}/latest/muon_HighPt.json.gz"
+    )
+    LowPtmuIDEff_JsonPath = (
+        "/cvmfs/cms-griddata.cern.ch/cat/metadata/MUO/{}/latest/muon_JPsi.json.gz"
+    )
     initialized = False
 
     ##### dictionaries containing ALL uncertainties ######
@@ -107,6 +113,8 @@ class MuCorrProducer:
         "2022_Summer22EE": [],
         "2023_Summer23": [],
         "2023_Summer23BPix": [],
+        "2024_Winter24": [],
+        "2024_Summer24": [],
     }
     MediumMuIDIso_SF_Sources = {
         "2016preVFP_UL": [
@@ -233,6 +241,60 @@ class MuCorrProducer:
             "NUM_MediumMiniIso_DEN_MediumID",
             "NUM_TightMiniIso_DEN_MediumID",
         ],
+        "2024_Summer24": [
+            "NUM_TrackerMuons_DEN_genTracks",
+            "NUM_LooseID_DEN_TrackerMuons",
+            "NUM_MediumID_DEN_genTracks",
+            "NUM_MediumPromptID_DEN_TrackerMuons",
+            "NUM_MediumID_DEN_TrackerMuons",
+            "NUM_TightID_DEN_TrackerMuons",
+            "NUM_SoftID_DEN_TrackerMuons",
+            "NUM_HighPtID_DEN_TrackerMuons",
+            "NUM_TrkHighPtID_DEN_TrackerMuons",
+            "NUM_LoosePFIso_DEN_LooseID",
+            "NUM_LoosePFIso_DEN_MediumID",
+            "NUM_LoosePFIso_DEN_MediumPromptID",
+            "NUM_LoosePFIso_DEN_TightID",
+            "NUM_LooseRelTkIso_DEN_HighPtID",
+            "NUM_LooseRelTkIso_DEN_TrkHighPtID",
+            "NUM_LooseRelIso_DEN_MediumID",
+            "NUM_TightPFIso_DEN_MediumID",
+            "NUM_TightPFIso_DEN_MediumPromptID",
+            "NUM_TightRelTkIso_DEN_HighPtID",
+            "NUM_TightRelTkIso_DEN_TrkHighPtID",
+            "NUM_TightPFIso_DEN_TightID",
+            "NUM_LooseMiniIso_DEN_LooseID",
+            "NUM_LooseMiniIso_DEN_MediumID",
+            "NUM_MediumMiniIso_DEN_MediumID",
+            "NUM_TightMiniIso_DEN_MediumID",
+        ],
+        "2024_Winter24": [
+            "NUM_TrackerMuons_DEN_genTracks",
+            "NUM_LooseID_DEN_TrackerMuons",
+            "NUM_MediumID_DEN_genTracks",
+            "NUM_MediumPromptID_DEN_TrackerMuons",
+            "NUM_MediumID_DEN_TrackerMuons",
+            "NUM_TightID_DEN_TrackerMuons",
+            "NUM_SoftID_DEN_TrackerMuons",
+            "NUM_HighPtID_DEN_TrackerMuons",
+            "NUM_TrkHighPtID_DEN_TrackerMuons",
+            "NUM_LoosePFIso_DEN_LooseID",
+            "NUM_LoosePFIso_DEN_MediumID",
+            "NUM_LoosePFIso_DEN_MediumPromptID",
+            "NUM_LoosePFIso_DEN_TightID",
+            "NUM_LooseRelTkIso_DEN_HighPtID",
+            "NUM_LooseRelTkIso_DEN_TrkHighPtID",
+            "NUM_LooseRelIso_DEN_MediumID",
+            "NUM_TightPFIso_DEN_MediumID",
+            "NUM_TightPFIso_DEN_MediumPromptID",
+            "NUM_TightRelTkIso_DEN_HighPtID",
+            "NUM_TightRelTkIso_DEN_TrkHighPtID",
+            "NUM_TightPFIso_DEN_TightID",
+            "NUM_LooseMiniIso_DEN_LooseID",
+            "NUM_LooseMiniIso_DEN_MediumID",
+            "NUM_MediumMiniIso_DEN_MediumID",
+            "NUM_TightMiniIso_DEN_MediumID",
+        ],
     }
 
     # for high pt muons
@@ -287,6 +349,14 @@ class MuCorrProducer:
             "NUM_IsoMu24_DEN_CutBasedIdTight_and_PFIsoTight",
             "NUM_IsoMu24_DEN_CutBasedIdMedium_and_PFIsoMedium",
         ],
+        "2024_Winter24": [
+            "NUM_IsoMu24_DEN_CutBasedIdTight_and_PFIsoTight",
+            "NUM_IsoMu24_DEN_CutBasedIdMedium_and_PFIsoMedium",
+        ],
+        "2024_Summer24": [
+            "NUM_IsoMu24_DEN_CutBasedIdTight_and_PFIsoTight",
+            "NUM_IsoMu24_DEN_CutBasedIdMedium_and_PFIsoMedium",
+        ],
     }
     period = None
 
@@ -305,15 +375,20 @@ class MuCorrProducer:
     def __init__(self, *, era, columns):
         period = period_names[era]
         jsonFile_eff = os.path.join(
-            os.environ["ANALYSIS_PATH"], MuCorrProducer.muIDEff_JsonPath.format(period)
+            os.environ["ANALYSIS_PATH"],
+            MuCorrProducer.muIDEff_JsonPath.format(new_folder_names["MUO"][period]),
         )
         jsonFile_eff_highPt = os.path.join(
             os.environ["ANALYSIS_PATH"],
-            MuCorrProducer.HighPtmuIDEff_JsonPath.format(period),
+            MuCorrProducer.HighPtmuIDEff_JsonPath.format(
+                new_folder_names["MUO"][period]
+            ),
         )
         jsonFile_eff_lowPt = os.path.join(
             os.environ["ANALYSIS_PATH"],
-            MuCorrProducer.LowPtmuIDEff_JsonPath.format(period),
+            MuCorrProducer.LowPtmuIDEff_JsonPath.format(
+                new_folder_names["MUO"][period]
+            ),
         )
         if not MuCorrProducer.initialized:
             headers_dir = os.path.dirname(os.path.abspath(__file__))

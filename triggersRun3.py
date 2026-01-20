@@ -21,8 +21,8 @@ import re
 
 # singleTau;diTau run3: https://gitlab.cern.ch/cms-tau-pog/jsonpog-integration/-/tree/TauPOG_v2_deepTauV2p5/POG/TAU?ref_type=heads
 # crossTrigger run3 : https://gitlab.cern.ch/cms-higgs-leprare/hleprare/-/tree/master/TriggerScaleFactors?ref_type=heads
-# singleEle : /cvmfs/cms.cern.ch/rsync/cms-nanoAOD/jsonpog-integration/POG/EGM/{period}/electronHlt.json.gz
-# singleMu : /cvmfs/cms.cern.ch/rsync/cms-nanoAOD/jsonpog-integration/POG/MUO/{period}/muon_Z.json.gz
+# singleEle : /cvmfs/cms-griddata.cern.ch/cat/metadata/EGM/{period}/electronHlt.json.gz
+# singleMu : /cvmfs/cms-griddata.cern.ch/cat/metadata/MUO/{period}/muon_Z.json.gz
 # missing efficiencies for singleMu --> run2 eff are https://gitlab.cern.ch/cms-muonPOG/muonefficiencies/-/tree/master (but run3 is missing also on this folder)
 
 
@@ -32,14 +32,16 @@ taujsonfileversion = "2025-10-01"
 
 
 class TrigCorrProducer:
-    eTRG_jsonPath = "/cvmfs/cms.cern.ch/rsync/cms-nanoAOD/jsonpog-integration/POG/EGM/{}/electronHlt.json.gz"
+    eTRG_jsonPath = (
+        "/cvmfs/cms-griddata.cern.ch/cat/metadata/EGM/{}/latest/electronHlt.json.gz"
+    )
     MuTRG_jsonPath = os.path.join(
         os.environ["ANALYSIS_PATH"], "Corrections/data/TRG/{}/MuHlt_abseta_pt_wEff.json"
     )
     TauTRG_jsonPath = (
-        "/cvmfs/cms-griddata.cern.ch/cat/metadata/TAU/{}/"
-        + taujsonfileversion
-        + "/tau_DeepTau2018v2p5_{}.json.gz"
+        "/cvmfs/cms-griddata.cern.ch/cat/metadata/TAU/{}/latest/tau.json.gz"
+        # + taujsonfileversion
+        # + "/tau_DeepTau2018v2p5_{}.json.gz"
     )
     muTauTRG_jsonPath = os.path.join(
         os.environ["ANALYSIS_PATH"],
@@ -89,13 +91,14 @@ class TrigCorrProducer:
         self.trigger_dict = trigger_dict
 
         jsonFile_e = os.path.join(
-            os.environ["ANALYSIS_PATH"], TrigCorrProducer.eTRG_jsonPath.format(period)
+            os.environ["ANALYSIS_PATH"],
+            TrigCorrProducer.eTRG_jsonPath.format(new_folder_names["EGM"][period]),
         )
         jsonFile_Tau = os.path.join(
             os.environ["ANALYSIS_PATH"],
-            TrigCorrProducer.TauTRG_jsonPath.format(
-                period_in_taupog_folder[period], tau_filename_dict[period]
-            ),
+            TrigCorrProducer.TauTRG_jsonPath.format(new_folder_names["TAU"][period]),
+            #     period_in_taupog_folder[period], tau_filename_dict[period]
+            # ),
         )
         jsonFile_Mu = os.path.join(
             os.environ["ANALYSIS_PATH"],

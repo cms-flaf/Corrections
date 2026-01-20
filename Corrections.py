@@ -323,9 +323,9 @@ class Corrections:
                         ):
                             continue
                         if f"{obj}_p4_{syst_name}" not in df.GetColumnNames():
-                            print(
-                                f"Defining nominal {obj}_p4_{syst_name} as {obj}_p4_{suffix}"
-                            )
+                            # print(
+                            #     f"Defining nominal {obj}_p4_{syst_name} as {obj}_p4_{suffix}"
+                            # )
                             df = df.Define(
                                 f"{obj}_p4_{syst_name}", f"{obj}_p4_{suffix}"
                             )
@@ -345,9 +345,9 @@ class Corrections:
                 "Multiple processors implement onAnaTuple_defineCrossSection method. Not supported."
             )
         p_name = xs_processor_names[0]
-        print(
-            f'Using processor "{p_name}" to define cross section for dataset "{self.dataset_name}"'
-        )
+        # print(
+        #     f'Using processor "{p_name}" to define cross section for dataset "{self.dataset_name}"'
+        # )
         xs_processor = self.processors[p_name]
         return xs_processor.onAnaTuple_defineCrossSection(
             df, crossSectionBranch, self.xs_db, self.dataset_name, self.dataset_cfg
@@ -409,7 +409,6 @@ class Corrections:
                 else "double(genWeight)"
             )
             df = df.Define("genWeightD", genWeight_def)
-
             crossSectionBranch = "crossSection"
             df = self.defineCrossSection(df, crossSectionBranch)
 
@@ -445,6 +444,7 @@ class Corrections:
                 weight_formula = f"genWeightD * {lumi} * {crossSectionBranch} * {shape_weights_product} / {denomBranch}"
                 df = df.Define(weight_name, f"static_cast<float>({weight_formula})")
 
+                # print(f"### DEBUG : defined {weight_name} with {weight_formula}, now {df.Count().GetValue()} entries")
                 if shape_unc_name != central:
                     df = df.Define(
                         weight_out_name,

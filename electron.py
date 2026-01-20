@@ -12,11 +12,77 @@ from .CorrectionsCore import *
 # https://twiki.cern.ch/twiki/bin/view/CMS/EGMHLTRun3RecommendationForPAG
 # https://twiki.cern.ch/twiki/bin/view/CMS/ElectronScaleFactorsRun2#EGM_certified_vs_custom_self_pro
 
+ele_files_names = {
+    "2018_UL": {
+        "eleID": "electron",
+        "eleES": "electronSS",
+    },
+    "2017_UL": {
+        "eleID": "electron",
+        "eleES": "electronSS",
+    },
+    "2016preVFP_UL": {
+        "eleID": "electron",
+        "eleES": "electronSS",
+    },
+    "2016postVFP_UL": {
+        "eleID": "electron",
+        "eleES": "electronSS",
+    },
+    "2022_Summer22": {
+        "eleID": "electron",
+        "eleES": "electronSS",
+        "eleHLT": "electronHlt",
+        "eleID_highPt": "electronID_highPt",
+        "eleES_EtDependent": "electronSS_EtDependent",
+    },
+    "2022_Prompt": {
+        "eleID": "electron",
+        "eleES": "electronSS",
+        "eleHLT": "electronHlt",
+        "eleID_highPt": "electronID_highPt",
+        "eleES_EtDependent": "electronSS_EtDependent",
+    },
+    "2022_Summer22EE": {
+        "eleID": "electron",
+        "eleES": "electronSS",
+        "eleHLT": "electronHlt",
+        "eleID_highPt": "electronID_highPt",
+        "eleES_EtDependent": "electronSS_EtDependent",
+    },
+    "2023_Summer23": {
+        "eleID": "electron",
+        "eleES": "electronSS",
+        "eleHLT": "electronHlt",
+        "eleID_highPt": "electronID_highPt",
+        "eleES_EtDependent": "electronSS_EtDependent",
+    },
+    "2023_Summer23BPix": {
+        "eleID": "electron",
+        "eleES": "electronSS",
+        "eleHLT": "electronHlt",
+        "eleID_highPt": "electronID_highPt",
+        "eleES_EtDependent": "electronSS_EtDependent",
+    },
+    "2024_Summer24": {
+        "eleID": "electron",
+        "eleES": "electronSS",
+        "eleHLT": "electronHlt",
+        "eleID_highPt": "electronID_highPt",
+        "eleES_EtDependent": "electronSS_EtDependent",
+    },
+    "Run3_2024": {  # from the twiki (https://twiki.cern.ch/twiki/bin/view/CMS/EgammSFandSSRun3#SFs_for_Electrons_in_2024_Prompt): Only momentarily, the electron reconstruction and ID SFs have been split into two different json files. They will be merged into one as soon as possible, for the next version of the 2024 SFs.
+        "eleReco": "electron_v1",
+        "eleID": "electronID_v1",
+        "eleES_EtDependent": "electronSS_EtDependent",  # The 2022, 2023, and 2024 Scale and Smearing corrections are provided separately for electrons and photons. In addition, two "flavours" can be used for 2022 and 2023: a standard one, and an eT-dependent one (marked as such in the json file name). The eT-dependent corrections generally yield a better data/MC agreement for objects in the phase space they were derived upon. For 2024, only eT-dependent corrections are available. The Scale and Smearing corrections should not be used for electrons and photons below ~15 GeV and should be used with caution between 15 and 20 GeV, as they were not tuned for this pT range. They might also be ineffective at very high pT (hundreds of GeV).
+    },
+}
+
 
 class EleCorrProducer:
-    EleID_JsonPath = "/cvmfs/cms.cern.ch/rsync/cms-nanoAOD/jsonpog-integration/POG/EGM/{}/electron.json.gz"
+    EleID_JsonPath = "/cvmfs/cms-griddata.cern.ch/cat/metadata/EGM/{folderName}/latest/{filenameID}.json.gz"
     EleES_JsonPath = "Corrections/data/EGM/{}/EGM_ScaleUnc.json.gz"
-    EleES_JsonPath_Run3 = "/cvmfs/cms.cern.ch/rsync/cms-nanoAOD/jsonpog-integration/POG/EGM/{}/electronSS.json.gz"
+    EleES_JsonPath_Run3 = "/cvmfs/cms-griddata.cern.ch/cat/metadata/EGM/{folderName}/latest/{filenameES}.json.gz"
     initialized = False
     ID_sources = ["EleID"]
     working_points = ["wp80iso", "wp80noiso"]
@@ -30,7 +96,16 @@ class EleCorrProducer:
     ]
 
     def __init__(self, *, period, columns):
-        EleID_JsonFile = EleCorrProducer.EleID_JsonPath.format(period)
+
+        file_nameID = ele_files_names[period]["eleID"]
+        file_nameES = (
+            ele_files_names[period]["eleES"]
+            if "eleES" in ele_files_names[period].keys()
+            else ele_files_names[period]["eleES_EtDependent"]
+        )  # in 2024 there is no electronSS...
+        EleID_JsonFile = EleCorrProducer.EleID_JsonPath.format(
+            folderName=new_folder_names["EGM"][period], filenameID=file_nameID
+        )
 
         if period.startswith("Run2"):
             EleES_JsonFile = os.path.join(
@@ -40,14 +115,19 @@ class EleCorrProducer:
             EleID_JsonFile_key = "UL-Electron-ID-SF"
             EleES_JsonFile_key = "UL-EGM_ScaleUnc"
         else:
-            EleES_JsonFile = EleCorrProducer.EleES_JsonPath_Run3.format(period)
+            EleES_JsonFile = EleCorrProducer.EleES_JsonPath_Run3.format(
+                folderName=new_folder_names["EGM"][period], filenameES=file_nameES
+            )  # patch since in 2024 there is no eleES without EtDependent
             EleID_JsonFile_key = "Electron-ID-SF"
             EleES_JsonFile_key = "Scale"
             if period == "2023_Summer23":
                 EleES_JsonFile_key = "2023PromptC_ScaleJSON"
             if period == "2023_Summer23BPix":
                 EleES_JsonFile_key = "2023PromptD_ScaleJSON"
-
+            if period == "2024_Summer24":
+                EleES_JsonFile_key = (
+                    "EGMSmearAndSyst_ElePTsplit_2024"  # "EGMScaleVsRun_2024"
+                )
         if not EleCorrProducer.initialized:
             headers_dir = os.path.dirname(os.path.abspath(__file__))
             header_path = os.path.join(headers_dir, "electron.h")
@@ -75,11 +155,25 @@ class EleCorrProducer:
             updateSourceDict(source_dict, source, "Electron")
             for scale in getScales(source):
                 syst_name = getSystName(source, scale)
-                df = df.Define(
-                    f"Electron_p4_{syst_name}",
-                    f"""::correction::EleCorrProvider::getGlobal().getES(Electron_p4_{nano}, Electron_genMatch,  Electron_seedGain, run,
-                Electron_r9,::correction::EleCorrProvider::UncSource::{source}, ::correction::UncScale::{scale})""",
-                )
+                if self.period.split("_")[0] == "2024":
+                    if (
+                        "Electron_superclusterEta" not in df.GetColumnNames()
+                    ):  # Please note that the correct eta to use to fetch the electron and photon S&S corrections is the supercluster eta (that is Electron(Photon)_superclusterEta in NanoAOD v15). For NanoAOD versions < 15 this variable is not directly available, but one can calculate it as "Electron_eta + Electron_deltaEtaSC". This is unfortunately not the case for photons, for which deltaEtaSC does not exist. In this latter case, Photon_eta can be used instead. Ultimately, the difference between using supercluster era or eta should be minimal.
+                        df = df.Define(
+                            "Electron_superclusterEta",
+                            "RVecF ele_SC_eta; for(size_t i = 0 ; i < Electron_eta.size(); i++) {{ele_SC_eta.push_back(Electron_deltaEtaSC[i]+Electron_eta[i]);}} return ele_SC_eta;",
+                        )
+                    df = df.Define(
+                        f"Electron_p4_{syst_name}",
+                        f"""::correction::EleCorrProvider::getGlobal().getESEtDep(Electron_p4_{nano}, Electron_genMatch,  Electron_SCeta, run,
+                    Electron_r9,::correction::EleCorrProvider::UncSource::{source}, ::correction::UncScale::{scale})""",
+                    )
+                else:
+                    df = df.Define(
+                        f"Electron_p4_{syst_name}",
+                        f"""::correction::EleCorrProvider::getGlobal().getES(Electron_p4_{nano}, Electron_genMatch,  Electron_seedGain, run,
+                    Electron_r9,::correction::EleCorrProvider::UncSource::{source}, ::correction::UncScale::{scale})""",
+                    )
                 df = df.Define(
                     f"Electron_p4_{syst_name}_delta",
                     f"Electron_p4_{syst_name} - Electron_p4_{nano}",

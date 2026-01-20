@@ -48,11 +48,12 @@ jsonfileversion = "2025-10-01"
 
 class TauCorrProducer:
     jsonPath = (
-        "/cvmfs/cms-griddata.cern.ch/cat/metadata/TAU/{}/"
-        + jsonfileversion
-        + "/tau_DeepTau2018v2p5_{}.json.gz"
+        #     "/cvmfs/cms-griddata.cern.ch/cat/metadata/TAU/{}/latest/"
+        #     + jsonfileversion
+        #     + "/tau_DeepTau2018v2p5_{}.json.gz"
+        # )
+        "/cvmfs/cms-griddata.cern.ch/cat/metadata/TAU/{}/latest/tau.json.gz"
     )
-
     initialized = False
 
     energyScaleSources_tau = ["TauES_DM0", "TauES_DM1", "TauES_3prong"]
@@ -104,9 +105,9 @@ class TauCorrProducer:
 
     def __init__(self, *, period, config, columns):
         self.deepTauVersion = f"""DeepTau{deepTauVersions[config["deepTauVersion"]]}v{config["deepTauVersion"]}"""
-        jsonFile = TauCorrProducer.jsonPath.format(
-            period_in_taupog_folder[period], period_in_tau_file_name[period]
-        )
+        jsonFile = TauCorrProducer.jsonPath.format(new_folder_names["TAU"][period])
+        #     period_in_taupog_folder[period], period_in_tau_file_name[period]
+        # )
         if not TauCorrProducer.initialized:
             headers_dir = os.path.dirname(os.path.abspath(__file__))
             header_path = os.path.join(headers_dir, "tau.h")

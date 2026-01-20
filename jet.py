@@ -81,7 +81,7 @@ regrouped_files_names = {
 
 
 class JetCorrProducer:
-    jsonPath_btag = "/cvmfs/cms.cern.ch/rsync/cms-nanoAOD/jsonpog-integration/POG/BTV/{}/btagging.json.gz"
+    jsonPath_btag = "/cvmfs/cms-griddata.cern.ch/cat/metadata/BTV/{}/btagging.json.gz"
 
     initialized = False
 
@@ -104,9 +104,13 @@ class JetCorrProducer:
 
     uncSources_minimal = ["Total"]
 
-    jet_jsonPath = "/cvmfs/cms.cern.ch/rsync/cms-nanoAOD/jsonpog-integration/POG/JME/{}/jet_jerc.json.gz"
-    fatjet_jsonPath = "/cvmfs/cms.cern.ch/rsync/cms-nanoAOD/jsonpog-integration/POG/JME/{}/fatJet_jerc.json.gz"
-    jersmear_jsonPath = "/cvmfs/cms.cern.ch/rsync/cms-nanoAOD/jsonpog-integration/POG/JME/jer_smear.json.gz"
+    jet_jsonPath = (
+        "/cvmfs/cms-griddata.cern.ch/cat/metadata/JME/{}/latest/jet_jerc.json.gz"
+    )
+    fatjet_jsonPath = (
+        "/cvmfs/cms-griddata.cern.ch/cat/metadata/JME/{}/latest/fatJet_jerc.json.gz"
+    )
+    jersmear_jsonPath = "/cvmfs/cms-griddata.cern.ch/cat/metadata/JME/JER-Smearing/latest/jer_smear.json.gz"
 
     # maps period to JER tag (only for MC!)
     jer_tag_map = {
@@ -115,28 +119,41 @@ class JetCorrProducer:
         "2022_Summer22EE": "Summer22EE_22Sep2023_JRV1_MC",
         "2023_Summer23BPix": "Summer23BPixPrompt23_RunD_JRV1_MC",
         "2023_Summer23": "Summer23Prompt23_RunCv1234_JRV1_MC",
+        "2024_Summer24": "Summer23BPixPrompt23_RunD_JRV1_MC",  # For the time being, use the Summer23BPix JERs for 2024 data. The JER MC_ScaleFactor and MC_PtResolution for the Summer24 samples will be announced soon. from https://cms-jerc.web.cern.ch/Recommendations/#2024
     }
 
     # maps period to JEC tag
     jec_tag_map_mc = {
-        "2022_Summer22": ["Summer22_22Sep2023_V2_MC"],
-        "2022_Prompt": ["Winter22Run3_V2_MC"],
-        "2022_Summer22EE": ["Summer22EE_22Sep2023_V2_MC"],
+        "2022_Summer22": ["Summer22_22Sep2023_V3_MC"],
+        "2022_Prompt": ["Winter22Run3_V3_MC"],
+        "2022_Summer22EE": ["Summer22EE_22Sep2023_V3_MC"],
         "2023_Summer23BPix": ["Summer23BPixPrompt23_V3_MC"],
-        "2023_Summer23": ["Summer23Prompt23_V2_MC"],
+        "2023_Summer23": ["Summer23Prompt23_V3_MC"],
+        "2024_Summer24": [
+            "Summer24Prompt24_V2_MC"
+        ],  # https://cms-jerc.web.cern.ch/Recommendations/#2024
+        "2025_Winter25": [
+            "Winter25Prompt25_V2_MC"
+        ],  # https://cms-jerc.web.cern.ch/Recommendations/#2025
     }
 
     # maps period to base tag
     # for DATA: jec_tag = {base_tag}_Run{letters}_V{version}_DATA
     jec_tag_map_data = {
-        "2022_Summer22": ["Summer22_22Sep2023_Run{}_V2_DATA"],
+        "2022_Summer22": ["Summer22_22Sep2023_Run{}_V3_DATA"],
         "2023_Summer23BPix": [
             "Summer23BPixPrompt23_Run{}_V3_DATA",
             "Summer23BPixPrompt23_V3_DATA",
         ],
-        "2022_Prompt": ["Winter22Run3_Run{}_V2_DATA"],
-        "2023_Summer23": ["Summer23Prompt23_Run{}_V2_DATA", "Summer23Prompt23_V2_DATA"],
-        "2022_Summer22EE": ["Summer22EE_22Sep2023_Run{}_V2_DATA"],
+        "2022_Prompt": ["Winter22Run3_Run{}_V3_DATA"],
+        "2023_Summer23": ["Summer23Prompt23_Run{}_V3_DATA", "Summer23Prompt23_V3_DATA"],
+        "2022_Summer22EE": ["Summer22EE_22Sep2023_Run{}_V3_DATA"],
+        "2024_Summer2024": [
+            "Summer24Prompt24_{}_V2_DATA"
+        ],  # https://cms-jerc.web.cern.ch/Recommendations/#2024
+        "2025_Winter25": [
+            "Winter25Prompt25_Run{}_V2_DATA"
+        ],  # https://cms-jerc.web.cern.ch/Recommendations/#2025
     }
 
     # maps period to JER tag (only for MC!)
@@ -146,15 +163,23 @@ class JetCorrProducer:
         "2022_Summer22EE": "Summer22EE_22Sep2023_JRV1_MC",
         "2023_Summer23BPix": "Summer23BPixPrompt23_RunD_JRV1_MC",
         "2023_Summer23": "Summer23Prompt23_RunCv1234_JRV1_MC",
+        "2024_Summer24": "Summer23BPixPrompt23_RunD_JRV1_MC",  # For the time being, use the Summer23BPix JERs for 2024 data. The JER MC_ScaleFactor and MC_PtResolution for the Summer24 samples will be announced soon. from https://cms-jerc.web.cern.ch/Recommendations/#2024
+        "2025_Winter25": "Summer23BPixPrompt23_RunD_JRV1_MC",  # For the time being, use the Summer23BPix JERs for 2024 data. The JER MC_ScaleFactor and MC_PtResolution for the Summer24 samples will be announced soon. from https://cms-jerc.web.cern.ch/Recommendations/#2024
     }
 
     # maps period to JEC tag
     fatjec_tag_map_mc = {
-        "2022_Summer22": ["Summer22_22Sep2023_V2_MC"],
-        "2022_Prompt": ["Winter22Run3_V2_MC"],
-        "2022_Summer22EE": ["Summer22EE_22Sep2023_V2_MC"],
+        "2022_Summer22": ["Summer22_22Sep2023_V3_MC"],
+        "2022_Prompt": ["Winter22Run3_V3_MC"],
+        "2022_Summer22EE": ["Summer22EE_22Sep2023_V3_MC"],
         "2023_Summer23BPix": ["Summer23BPixPrompt23_V3_MC"],
-        "2023_Summer23": ["Summer23Prompt23_V2_MC"],
+        "2023_Summer23": ["Summer23Prompt23_V3_MC"],
+        "2024_Summer24": [
+            "Summer24Prompt24_V2_MC"
+        ],  # https://cms-jerc.web.cern.ch/Recommendations/#2024
+        "2025_Winter25": [
+            "Winter25Prompt25_V2_MC"
+        ],  # https://cms-jerc.web.cern.ch/Recommendations/#2024
     }
 
     fatjec_tag_map_data = {
@@ -166,6 +191,12 @@ class JetCorrProducer:
         "2022_Prompt": ["Winter22Run3_Run{}_V2_DATA"],
         "2023_Summer23": ["Summer23Prompt23_Run{}_V2_DATA", "Summer23Prompt23_V2_DATA"],
         "2022_Summer22EE": ["Summer22EE_22Sep2023_Run{}_V2_DATA"],
+        "2024_Summer2024": [
+            "Summer24Prompt24_{}_V2_DATA"
+        ],  # https://cms-jerc.web.cern.ch/Recommendations/#2024
+        "2025_Winter25": [
+            "Winter25Prompt25_Run{}_V2_DATA"
+        ],  # https://cms-jerc.web.cern.ch/Recommendations/#2024
     }
 
     run_versions = {
@@ -175,6 +206,8 @@ class JetCorrProducer:
         "2023_Summer23": ["v123", "v4"],
         "2022_Summer22EE": [],
         "2024_Winter24": [],
+        "2024_Summer24": [],
+        "2025_Winter25": [],
     }
 
     run_letters = {
@@ -184,6 +217,9 @@ class JetCorrProducer:
         "2023_Summer23": ["C"],
         "2022_Summer22EE": ["E", "F", "G"],
         "2024_Winter24": ["BCD", "E", "F", "G", "H"],
+        "2024_Summer24": ["CDEReprocessing", "FGHIPrompt"],
+        "2025_Winter25": ["C", "D", "E", "F"],
+        # "2024_Summer24": ["CDE", "FGHI"],
     }
 
     # Sources = []
@@ -203,8 +239,6 @@ class JetCorrProducer:
             self.uncSources_toUse = JetCorrProducer.uncSources_minimal
         self.year = int(period[:4])
         self.period = period
-        # print(f"period: {period}")
-        # print(f"year: {self.year}")
         if not self.use_corrlib:
             print("Initializing old JetCorrProducer")
             JEC_dir = directories_JEC[period]
@@ -239,7 +273,10 @@ class JetCorrProducer:
                 JetCorrProducer.initialized = True
         else:
             print("Initializing new JetCorrProducer")
-            jet_path = JetCorrProducer.jet_jsonPath.format(period)
+
+            jet_path = JetCorrProducer.jet_jsonPath.format(
+                new_folder_names["JERC"][period]
+            )
             jet_jsonFile = os.path.join(os.environ["ANALYSIS_PATH"], jet_path)
             jersmear_path = JetCorrProducer.jersmear_jsonPath
             jetsmear_jsonFile = os.path.join(os.environ["ANALYSIS_PATH"], jersmear_path)
@@ -256,7 +293,9 @@ class JetCorrProducer:
                 jec_tag_array[1] if len(jec_tag_array) > 1 else jec_tag_array[0]
             )
 
-            fatjet_path = JetCorrProducer.fatjet_jsonPath.format(period)
+            fatjet_path = JetCorrProducer.fatjet_jsonPath.format(
+                new_folder_names["JERC"][period]
+            )
             fatjet_jsonFile = os.path.join(os.environ["ANALYSIS_PATH"], fatjet_path)
             fatjec_tag_map = (
                 JetCorrProducer.fatjec_tag_map_data
@@ -360,13 +399,16 @@ class JetCorrProducer:
         if self.use_corrlib:
             apply_jer = "true" if apply_JER and not self.isData else "false"
             require_run_number = "false"
-            if self.period == "2023_Summer23" and self.isData:
+            if (
+                self.period == "2023_Summer23" or self.period == "2024_Summer24"
+            ) and self.isData:
                 require_run_number = "true"
             if self.period == "2023_Summer23BPix":
                 require_run_number = "true"
             wantPhi = (
                 "true"
-                if self.period == "2023_Summer23BPix" and self.isData
+                if (self.period == "2023_Summer23BPix" and self.isData)
+                or (self.period == "2024_Summer24")
                 else "false"
             )
             if not self.isData:
