@@ -128,7 +128,9 @@ class JetCorrProducer:
         "2022_Prompt": ["Winter22Run3_V3_MC"],
         "2022_Summer22EE": ["Summer22EE_22Sep2023_V3_MC"],
         "2023_Summer23BPix": ["Summer23BPixPrompt23_V3_MC"],
-        "2023_Summer23": ["Summer23Prompt23_V3_MC"],
+        "2023_Summer23": [
+            "Summer23Prompt23_V2_MC"
+        ],  # Summer23Prompt23_V3_MC still TBA, so keep v2 for the moment... https://cms-jerc.web.cern.ch/Recommendations/#2023
         "2024_Summer24": [
             "Summer24Prompt24_V2_MC"
         ],  # https://cms-jerc.web.cern.ch/Recommendations/#2024
@@ -146,7 +148,10 @@ class JetCorrProducer:
             "Summer23BPixPrompt23_V3_DATA",
         ],
         "2022_Prompt": ["Winter22Run3_Run{}_V3_DATA"],
-        "2023_Summer23": ["Summer23Prompt23_Run{}_V3_DATA", "Summer23Prompt23_V3_DATA"],
+        "2023_Summer23": [
+            "Summer23Prompt23_Run{}_V2_DATA",
+            "Summer23Prompt23_V2_DATA",
+        ],  # Summer23Prompt23_V3 still TBA, so keep v2 for the moment... https://cms-jerc.web.cern.ch/Recommendations/#202
         "2022_Summer22EE": ["Summer22EE_22Sep2023_Run{}_V3_DATA"],
         "2024_Summer2024": [
             "Summer24Prompt24_{}_V2_DATA"
@@ -173,7 +178,9 @@ class JetCorrProducer:
         "2022_Prompt": ["Winter22Run3_V3_MC"],
         "2022_Summer22EE": ["Summer22EE_22Sep2023_V3_MC"],
         "2023_Summer23BPix": ["Summer23BPixPrompt23_V3_MC"],
-        "2023_Summer23": ["Summer23Prompt23_V3_MC"],
+        "2023_Summer23": [
+            "Summer23Prompt23_V2_MC"
+        ],  # Summer23Prompt23_V3 still TBA, so keep v2 for the moment... https://cms-jerc.web.cern.ch/Recommendations/#202
         "2024_Summer24": [
             "Summer24Prompt24_V2_MC"
         ],  # https://cms-jerc.web.cern.ch/Recommendations/#2024
@@ -183,14 +190,17 @@ class JetCorrProducer:
     }
 
     fatjec_tag_map_data = {
-        "2022_Summer22": ["Summer22_22Sep2023_Run{}_V2_DATA"],
+        "2022_Summer22": ["Summer22_22Sep2023_Run{}_V3_DATA"],
         "2023_Summer23BPix": [
             "Summer23BPixPrompt23_Run{}_V3_DATA",
             "Summer23BPixPrompt23_V3_DATA",
         ],
-        "2022_Prompt": ["Winter22Run3_Run{}_V2_DATA"],
-        "2023_Summer23": ["Summer23Prompt23_Run{}_V2_DATA", "Summer23Prompt23_V2_DATA"],
-        "2022_Summer22EE": ["Summer22EE_22Sep2023_Run{}_V2_DATA"],
+        "2022_Prompt": ["Winter22Run3_Run{}_V3_DATA"],
+        "2023_Summer23": [
+            "Summer23Prompt23_Run{}_V2_DATA",
+            "Summer23Prompt23_V2_DATA",
+        ],  # Summer23Prompt23_V3 still TBA, so keep v2 for the moment... https://cms-jerc.web.cern.ch/Recommendations/#202
+        "2022_Summer22EE": ["Summer22EE_22Sep2023_Run{}_V3_DATA"],
         "2024_Summer2024": [
             "Summer24Prompt24_{}_V2_DATA"
         ],  # https://cms-jerc.web.cern.ch/Recommendations/#2024
@@ -203,7 +213,7 @@ class JetCorrProducer:
         "2022_Summer22": [],
         "2023_Summer23BPix": [],
         "2022_Prompt": [],
-        "2023_Summer23": ["v123", "v4"],
+        "2023_Summer23": ["v123", "v4", "v1234"],
         "2022_Summer22EE": [],
         "2024_Winter24": [],
         "2024_Summer24": [],
