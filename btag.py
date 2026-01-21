@@ -65,8 +65,13 @@ class bTagCorrProducer:
         "cferr2",
     ]
 
-    tagger_to_brag_branch = {"particleNet": "PNetB", "deepJet": "DeepFlavB"}
+    tagger_to_brag_branch = {
+        "particleNet": "PNetB",
+        "deepJet": "DeepFlavB",
+        "UParTAK4": "UParTAK4B",
+    }
 
+    # important note: From the 2024 campaign onwards, only the UParTAK4 tagger is supported, and only json files are provided.
     def __init__(
         self,
         *,
@@ -76,6 +81,8 @@ class bTagCorrProducer:
         tagger="particleNet",
         useSplitJes=False,
     ):
+        if period.endswith("24"):
+            tagger = "UParTAK4"
         print(f"tagger={tagger}")
         self.tagger = tagger
         self.btag_branch = bTagCorrProducer.tagger_to_brag_branch[tagger]

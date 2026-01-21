@@ -247,6 +247,7 @@ class Corrections:
             self.ele_ = EleCorrProducer(
                 period=period_names[self.period],
                 columns=self.to_apply.get("ele", {}).get("columns", {}),
+                isData=self.isData,
             )
         return self.ele_
 
