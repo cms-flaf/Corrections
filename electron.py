@@ -31,35 +31,31 @@ ele_files_names = {
     },
     "2022_Summer22": {
         "eleID": "electron",
-        "eleES": "electronSS",
         "eleHLT": "electronHlt",
         "eleID_highPt": "electronID_highPt",
         "eleES_EtDependent": "electronSS_EtDependent",
     },
     "2022_Prompt": {
         "eleID": "electron",
-        "eleES": "electronSS",
         "eleHLT": "electronHlt",
         "eleID_highPt": "electronID_highPt",
         "eleES_EtDependent": "electronSS_EtDependent",
     },
     "2022_Summer22EE": {
         "eleID": "electron",
-        "eleES": "electronSS",
         "eleHLT": "electronHlt",
         "eleID_highPt": "electronID_highPt",
         "eleES_EtDependent": "electronSS_EtDependent",
     },
     "2023_Summer23": {
         "eleID": "electron",
-        "eleES": "electronSS",
         "eleHLT": "electronHlt",
         "eleID_highPt": "electronID_highPt",
         "eleES_EtDependent": "electronSS_EtDependent",
     },
     "2023_Summer23BPix": {
         "eleID": "electron",
-        "eleES": "electronSS",
+        # "eleES": "electronSS",
         "eleHLT": "electronHlt",
         "eleID_highPt": "electronID_highPt",
         "eleES_EtDependent": "electronSS_EtDependent",
@@ -113,13 +109,13 @@ class EleCorrProducer:
                 folderName=new_folder_names["EGM"][period], filenameES=file_nameES
             )  # patch since in 2024 there is no eleES without EtDependent
             EleID_JsonFile_key = "Electron-ID-SF"
-            EleES_JsonFile_key = "Scale"
-            if period == "2023_Summer23":
-                EleES_JsonFile_key = "2023PromptC_ScaleJSON"
-            if period == "2023_Summer23BPix":
-                EleES_JsonFile_key = "2023PromptD_ScaleJSON"
-            if period == "2024_Summer24":
-                EleES_JsonFile_key = "SmearAndSyst"  # "compound corrections
+            EleES_JsonFile_key = "SmearAndSyst"
+            # if period == "2023_Summer23":
+            #     EleES_JsonFile_key = "SmearAndSyst" #"2023PromptC_ScaleJSON"
+            # if period == "2023_Summer23BPix":
+            #     EleES_JsonFile_key = "SmearAndSyst" #"2023PromptD_ScaleJSON"
+            # if period == "2024_Summer24":
+            #     EleES_JsonFile_key = "SmearAndSyst"  # "compound corrections
         if not EleCorrProducer.initialized:
             headers_dir = os.path.dirname(os.path.abspath(__file__))
             header_path = os.path.join(headers_dir, "electron.h")
@@ -149,26 +145,26 @@ class EleCorrProducer:
             updateSourceDict(source_dict, source, "Electron")
             for scale in getScales(source):
                 syst_name = getSystName(source, scale)
-                if self.period.split("_")[0] == "2024":
-                    func_name = "getESEtDep_data" if self.isData else "getESEtDep_MC"
-                    if (
-                        "Electron_superclusterEta" not in df.GetColumnNames()
-                    ):  # Please note that the correct eta to use to fetch the electron and photon S&S corrections is the supercluster eta (that is Electron(Photon)_superclusterEta in NanoAOD v15). For NanoAOD versions < 15 this variable is not directly available, but one can calculate it as "Electron_eta + Electron_deltaEtaSC". This is unfortunately not the case for photons, for which deltaEtaSC does not exist. In this latter case, Photon_eta can be used instead. Ultimately, the difference between using supercluster era or eta should be minimal.
-                        df = df.Define(
-                            "Electron_superclusterEta",
-                            "RVecF ele_SC_eta; for(size_t i = 0 ; i < Electron_eta.size(); i++) {{ele_SC_eta.push_back(Electron_deltaEtaSC[i]+Electron_eta[i]);}} return ele_SC_eta;",
-                        )
+                # if self.period.split("_")[0] == "2024" or self.period.split("_")[0] == "2023" or self.period.split("_")[0] == "2023BPix":
+                func_name = "getESEtDep_data" if self.isData else "getESEtDep_MC"
+                if (
+                    "Electron_superclusterEta" not in df.GetColumnNames()
+                ):  # Please note that the correct eta to use to fetch the electron and photon S&S corrections is the supercluster eta (that is Electron(Photon)_superclusterEta in NanoAOD v15). For NanoAOD versions < 15 this variable is not directly available, but one can calculate it as "Electron_eta + Electron_deltaEtaSC". This is unfortunately not the case for photons, for which deltaEtaSC does not exist. In this latter case, Photon_eta can be used instead. Ultimately, the difference between using supercluster era or eta should be minimal.
                     df = df.Define(
-                        f"Electron_p4_{syst_name}",
-                        f"""::correction::EleCorrProvider::getGlobal().{func_name}(Electron_p4_{nano}, Electron_genMatch, Electron_seedGain, Electron_superclusterEta, run,
-                    Electron_r9,::correction::EleCorrProvider::UncSource::{source}, ::correction::UncScale::{scale})""",
+                        "Electron_superclusterEta",
+                        "RVecF ele_SC_eta; for(size_t i = 0 ; i < Electron_eta.size(); i++) {{ele_SC_eta.push_back(Electron_deltaEtaSC[i]+Electron_eta[i]);}} return ele_SC_eta;",
                     )
-                else:
-                    df = df.Define(
-                        f"Electron_p4_{syst_name}",
-                        f"""::correction::EleCorrProvider::getGlobal().getES(Electron_p4_{nano}, Electron_genMatch,  Electron_seedGain, run,
-                    Electron_r9,::correction::EleCorrProvider::UncSource::{source}, ::correction::UncScale::{scale})""",
-                    )
+                df = df.Define(
+                    f"Electron_p4_{syst_name}",
+                    f"""::correction::EleCorrProvider::getGlobal().{func_name}(Electron_p4_{nano}, Electron_genMatch, Electron_seedGain, Electron_superclusterEta, run,
+                Electron_r9,::correction::EleCorrProvider::UncSource::{source}, ::correction::UncScale::{scale})""",
+                )
+                # else:
+                #     df = df.Define(
+                #         f"Electron_p4_{syst_name}",
+                #         f"""::correction::EleCorrProvider::getGlobal().getES(Electron_p4_{nano}, Electron_genMatch,  Electron_seedGain, run,
+                #     Electron_r9,::correction::EleCorrProvider::UncSource::{source}, ::correction::UncScale::{scale})""",
+                #     )
                 df = df.Define(
                     f"Electron_p4_{syst_name}_delta",
                     f"Electron_p4_{syst_name} - Electron_p4_{nano}",
