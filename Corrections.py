@@ -206,6 +206,7 @@ class Corrections:
                 tagger=params["tagger"],
                 loadEfficiency=params.get("loadEfficiency", False),
                 useSplitJes=params.get("useSplitJes", False),
+                wantShape=params.get("wantShape", True),
             )
         return self.btag_
 

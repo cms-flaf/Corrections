@@ -80,6 +80,7 @@ class bTagCorrProducer:
         loadEfficiency=False,
         tagger="particleNet",
         useSplitJes=False,
+        wantShape=False,
     ):
         print(f"tagger={tagger}")
         self.tagger = tagger
@@ -107,9 +108,11 @@ class bTagCorrProducer:
             #     jsonFile, jsonFile_eff, self.tagger
             # )
             ROOT.correction.bTagCorrProvider.getGlobal()
-
+            wantShape_str = "false"
+            if wantShape:
+                wantShape_str = "true"
             ROOT.gInterpreter.ProcessLineSynch(
-                f"""::correction::bTagShapeCorrProvider::Initialize("{jsonFile}", "{periods[period]}", "{self.tagger}")"""
+                f"""::correction::bTagShapeCorrProvider::Initialize("{jsonFile}", "{periods[period]}", "{self.tagger}", {wantShape_str})"""
             )
             # ROOT.correction.bTagShapeCorrProvider.Initialize(
             #     jsonFile, periods[period], self.tagger
