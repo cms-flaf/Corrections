@@ -136,10 +136,12 @@ namespace correction {
             return false;
         }
 
-        bTagShapeCorrProvider(const std::string& fileName, const std::string& year, std::string const& tagger_name)
+        bTagShapeCorrProvider(const std::string& fileName, const std::string& year, std::string const& tagger_name, const bool wantShape=true)
             : corrections_(CorrectionSet::from_file(fileName)),
-              shape_corr_(corrections_->at(tagger_name + "_shape")),
               _year(year) {
+                if (wantShape){
+                    shape_corr_ = corrections_->at(tagger_name + "_shape");
+                }
             std::cerr << "Initialized bTagShapeCorrProvider::bTagShapeCorrProvider()" << std::endl;
         }
 

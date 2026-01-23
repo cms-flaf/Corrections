@@ -5,6 +5,92 @@ up = "Up"
 down = "Down"
 nano = "nano"
 
+pog_folder_names = {
+    "BTV": {
+        "2016postVFP_UL": "Run2-2016postVFP-UL-NanoAODv9",
+        "2016preVFP_UL": "Run2-2016preVFP-UL-NanoAODv9",
+        "2017_UL": "Run2-2017-UL-NanoAODv9",
+        "2018_UL": "Run2-2018-UL-NanoAODv9",
+        "JER": "Run3-22CDJun23-Summer22-NanoAODv11",
+        "2022_Summer22": "Run3-22CDSep23-Summer22-NanoAODv12",
+        "2022_Summer22EE": "Run3-22EFGSep23-Summer22EE-NanoAODv12",
+        "2023_Summer23": "Run3-23CSep23-Summer23-NanoAODv12",
+        "2023_Summer23BPix": "Run3-23DSep23-Summer23BPix-NanoAODv12",
+        "2024_Summer24": "Run3-24CDEReprocessingFGHIPrompt-Summer24-NanoAODv15",
+        "2025_Winter25": "",
+    },
+    "JERC": {
+        "2018_UL": "Run2-2018-UL-NanoAODv9",
+        "2017_UL": "Run2-2017-UL-NanoAODv9",
+        "2016preVFP_UL": "Run2-2016preVFP-UL-NanoAODv9",
+        "2016postVFP_UL": "Run2-2016postVFP-UL-NanoAODv9",
+        "JER": "JER-Smearing",
+        "2022_Summer22": "Run3-22CDSep23-Summer22-NanoAODv12",  #
+        "2022_Prompt": "Run3-22Prompt-Winter22-NanoAODv12",
+        "2022_Summer22EE": "Run3-22EFGSep23-Summer22EE-NanoAODv12",
+        "2023_Summer23BPix": "Run3-23DSep23-Summer23BPix-NanoAODv12",
+        "2023_Summer23": "Run3-23CSep23-Summer23-NanoAODv12",
+        "2024_Winter24": "Run3-24Prompt-Winter24-NanoAODv14",
+        "2024_Summer24": "Run3-24CDEReprocessingFGHIPrompt-Summer24-NanoAODv15",  # https://cms-jerc.web.cern.ch/Recommendations/#2024
+        "2025_Winter25": "Run3-25Prompt-Winter25-NanoAODv15",
+    },
+    "EGM": {
+        "2016postVFP_UL": "Run2-2016postVFP-UL-NanoAODv15",
+        # "2016postVFP_UL":"Run2-2016postVFP-UL-NanoAODv9",
+        "2016preVFP_UL": "Run2-2016preVFP-UL-NanoAODv15",
+        # "2016preVFP_UL":"Run2-2016preVFP-UL-NanoAODv9",
+        "2017_UL": "Run2-2017-UL-NanoAODv15",
+        # "2017_UL":"Run2-2017-UL-NanoAODv9",
+        "2018_UL": "Run2-2018-UL-NanoAODv15",
+        # "2018_UL":"Run2-2018-UL-NanoAODv9",
+        "2022_Summer22": "Run3-22CDSep23-Summer22-NanoAODv12",
+        "2022_Summer22EE": "Run3-22EFGSep23-Summer22EE-NanoAODv12",
+        "2023_Summer23": "Run3-23CSep23-Summer23-NanoAODv12",
+        "2023_Summer23BPix": "Run3-23DSep23-Summer23BPix-NanoAODv12",
+        "2024_Summer24": "Run3-24CDEReprocessingFGHIPrompt-Summer24-NanoAODv15",
+        "2025_Winter25": "Run3-25Prompt-Summer24-NanoAODv15",
+    },
+    "LUM": {
+        "2016postVFP_UL": "Run2-2016postVFP-UL-NanoAODv9",
+        "2016preVFP_UL": "Run2-2016preVFP-UL-NanoAODv9",
+        "2017_UL": "Run2-2017-UL-NanoAODv9",
+        "2018_UL": "Run2-2018-UL-NanoAODv9",
+        "2022_Summer22": "Run3-22CDSep23-Summer22-NanoAODv12",
+        "2022_Summer22EE": "Run3-22EFGSep23-Summer22EE-NanoAODv12",
+        "2023_Summer23": "Run3-23CSep23-Summer23-NanoAODv12",
+        "2023_Summer23BPix": "Run3-23DSep23-Summer23BPix-NanoAODv12",
+        "2024_Summer24": "Run3-24CDEReprocessingFGHIPrompt-Summer24-NanoAODv15",
+        "2025_Winter25": "",
+    },
+    "MUO": {
+        "2016postVFP_UL": "Run2-2016postVFP-UL-NanoAODv9",
+        "2016preVFP_UL": "Run2-2016preVFP-UL-NanoAODv9",
+        "2017_UL": "Run2-2017-UL-NanoAODv9",
+        "2018_UL": "Run2-2018-UL-NanoAODv9",
+        "2022_Summer22": "Run3-22CDSep23-Summer22-NanoAODv12",
+        "2022_Summer22EE": "Run3-22EFGSep23-Summer22EE-NanoAODv12",
+        "2023_Summer23": "Run3-23CSep23-Summer23-NanoAODv12",
+        "2023_Summer23BPix": "Run3-23DSep23-Summer23BPix-NanoAODv12",
+        "2024_Summer24": "Run3-24CDEReprocessingFGHIPrompt-Summer24-NanoAODv15",
+        "2025_Winter25": "",
+    },
+    "TAU": {
+        "2016postVFP_UL": "Run2-2016postVFP-UL-NanoAODv15",
+        # "2016postVFP_UL":"Run2-2016postVFP-UL-NanoAODv9",
+        "2016preVFP_UL": "Run2-2016preVFP-UL-NanoAODv15",
+        # "2016preVFP_UL":"Run2-2016preVFP-UL-NanoAODv9",
+        "2017_UL": "Run2-2017-UL-NanoAODv15",
+        # "2017_UL":"Run2-2017-UL-NanoAODv9",
+        "2018_UL": "Run2-2018-UL-NanoAODv15",
+        # "2018_UL":"Run2-2018-UL-NanoAODv9",
+        "2022_Summer22": "Run3-22CDSep23-Summer22-NanoAODv12",
+        "2022_Summer22EE": "Run3-22EFGSep23-Summer22EE-NanoAODv12",
+        "2023_Summer23": "Run3-23CSep23-Summer23-NanoAODv12",
+        "2023_Summer23BPix": "Run3-23DSep23-Summer23BPix-NanoAODv12",
+        "2024_Summer24": "Run3-24CDEReprocessingFGHIPrompt-Summer24-NanoAODv15",
+    },
+}
+
 period_names = {
     "Run2_2016_HIPM": "2016preVFP_UL",
     "Run2_2016": "2016postVFP_UL",
@@ -14,10 +100,12 @@ period_names = {
     "Run3_2022EE": "2022_Summer22EE",
     "Run3_2023": "2023_Summer23",
     "Run3_2023BPix": "2023_Summer23BPix",
-    "Run4_2024": "2024_Summer24",
+    "Run3_2024": "2024_Summer24",  # 202_Winter24
+    "Run3_2025": "2025_Winter25",  # 202_Winter24
 }
 
 periods = {
+    "2025_Winter25": "2025",
     "2024_Summer24": "2024",
     "2023_Summer23BPix": "2023",
     "2023_Summer23": "2023",
