@@ -21,8 +21,8 @@ import re
 
 # singleTau;diTau run3: https://gitlab.cern.ch/cms-tau-pog/jsonpog-integration/-/tree/TauPOG_v2_deepTauV2p5/POG/TAU?ref_type=heads
 # crossTrigger run3 : https://gitlab.cern.ch/cms-higgs-leprare/hleprare/-/tree/master/TriggerScaleFactors?ref_type=heads
-# singleEle : /cvmfs/cms.cern.ch/rsync/cms-nanoAOD/jsonpog-integration/POG/EGM/{period}/electronHlt.json.gz
-# singleMu : /cvmfs/cms.cern.ch/rsync/cms-nanoAOD/jsonpog-integration/POG/MUO/{period}/muon_Z.json.gz
+# singleEle : /cvmfs/cms-griddata.cern.ch/cat/metadata/EGM/{period}/electronHlt.json.gz
+# singleMu : /cvmfs/cms-griddata.cern.ch/cat/metadata/MUO/{period}/muon_Z.json.gz
 # missing efficiencies for singleMu --> run2 eff are https://gitlab.cern.ch/cms-muonPOG/muonefficiencies/-/tree/master (but run3 is missing also on this folder)
 
 
@@ -32,14 +32,16 @@ taujsonfileversion = "2025-10-01"
 
 
 class TrigCorrProducer:
-    eTRG_jsonPath = "/cvmfs/cms.cern.ch/rsync/cms-nanoAOD/jsonpog-integration/POG/EGM/{}/electronHlt.json.gz"
+    eTRG_jsonPath = (
+        "/cvmfs/cms-griddata.cern.ch/cat/metadata/EGM/{}/latest/electronHlt.json.gz"
+    )
     MuTRG_jsonPath = os.path.join(
         os.environ["ANALYSIS_PATH"], "Corrections/data/TRG/{}/MuHlt_abseta_pt_wEff.json"
     )
     TauTRG_jsonPath = (
-        "/cvmfs/cms-griddata.cern.ch/cat/metadata/TAU/{}/"
-        + taujsonfileversion
-        + "/tau_DeepTau2018v2p5_{}.json.gz"
+        "/cvmfs/cms-griddata.cern.ch/cat/metadata/TAU/{}/latest/tau.json.gz"
+        # + taujsonfileversion
+        # + "/tau_DeepTau2018v2p5_{}.json.gz"
     )
     muTauTRG_jsonPath = os.path.join(
         os.environ["ANALYSIS_PATH"],
@@ -72,16 +74,7 @@ class TrigCorrProducer:
             "2022_Summer22EE": "2022_postEE",
             "2023_Summer23": "2023_preBPix",
             "2023_Summer23BPix": "2023_postBPix",
-        }
-        period_in_taupog_folder = {
-            "Run2_2016_HIPM": "Run2-2016preVFP-UL-NanoAODv9",
-            "Run2_2016": "Run2-2016postVFP-UL-NanoAODv9",
-            "Run2_2017": "Run2-2017-UL-NanoAODv9",
-            "Run2_2018": "Run2-2018-UL-NanoAODv9",
-            "2022_Summer22": "Run3-22CDSep23-Summer22-NanoAODv12",
-            "2022_Summer22EE": "Run3-22EFGSep23-Summer22EE-NanoAODv12",
-            "2023_Summer23": "Run3-23CSep23-Summer23-NanoAODv12",
-            "2023_Summer23BPix": "Run3-23DSep23-Summer23BPix-NanoAODv12",
+            "2024_Summer24": "2023_postBPix",  # tmp patch since it is currently missing
         }
 
         self.period = period
@@ -89,13 +82,12 @@ class TrigCorrProducer:
         self.trigger_dict = trigger_dict
 
         jsonFile_e = os.path.join(
-            os.environ["ANALYSIS_PATH"], TrigCorrProducer.eTRG_jsonPath.format(period)
+            os.environ["ANALYSIS_PATH"],
+            TrigCorrProducer.eTRG_jsonPath.format(pog_folder_names["EGM"][period]),
         )
         jsonFile_Tau = os.path.join(
             os.environ["ANALYSIS_PATH"],
-            TrigCorrProducer.TauTRG_jsonPath.format(
-                period_in_taupog_folder[period], tau_filename_dict[period]
-            ),
+            TrigCorrProducer.TauTRG_jsonPath.format(pog_folder_names["TAU"][period]),
         )
         jsonFile_Mu = os.path.join(
             os.environ["ANALYSIS_PATH"],

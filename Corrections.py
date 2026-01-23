@@ -206,6 +206,7 @@ class Corrections:
                 tagger=params["tagger"],
                 loadEfficiency=params.get("loadEfficiency", False),
                 useSplitJes=params.get("useSplitJes", False),
+                wantShape=params.get("wantShape", True),
             )
         return self.btag_
 
@@ -247,6 +248,7 @@ class Corrections:
             self.ele_ = EleCorrProducer(
                 period=period_names[self.period],
                 columns=self.to_apply.get("ele", {}).get("columns", {}),
+                isData=self.isData,
             )
         return self.ele_
 
@@ -323,9 +325,9 @@ class Corrections:
                         ):
                             continue
                         if f"{obj}_p4_{syst_name}" not in df.GetColumnNames():
-                            print(
-                                f"Defining nominal {obj}_p4_{syst_name} as {obj}_p4_{suffix}"
-                            )
+                            # print(
+                            #     f"Defining nominal {obj}_p4_{syst_name} as {obj}_p4_{suffix}"
+                            # )
                             df = df.Define(
                                 f"{obj}_p4_{syst_name}", f"{obj}_p4_{suffix}"
                             )
@@ -409,7 +411,6 @@ class Corrections:
                 else "double(genWeight)"
             )
             df = df.Define("genWeightD", genWeight_def)
-
             crossSectionBranch = "crossSection"
             df = self.defineCrossSection(df, crossSectionBranch)
 
