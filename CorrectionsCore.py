@@ -14,9 +14,11 @@ period_names = {
     "Run3_2022EE": "2022_Summer22EE",
     "Run3_2023": "2023_Summer23",
     "Run3_2023BPix": "2023_Summer23BPix",
+    "Run4_2024": "2024_Summer24",
 }
 
 periods = {
+    "2024_Summer24": "2024",
     "2023_Summer23BPix": "2023",
     "2023_Summer23": "2023",
     "2022_Summer22EE": "2022",
