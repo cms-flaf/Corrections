@@ -376,18 +376,18 @@ class MuCorrProducer:
         period = period_names[era]
         jsonFile_eff = os.path.join(
             os.environ["ANALYSIS_PATH"],
-            MuCorrProducer.muIDEff_JsonPath.format(new_folder_names["MUO"][period]),
+            MuCorrProducer.muIDEff_JsonPath.format(pog_folder_names["MUO"][period]),
         )
         jsonFile_eff_highPt = os.path.join(
             os.environ["ANALYSIS_PATH"],
             MuCorrProducer.HighPtmuIDEff_JsonPath.format(
-                new_folder_names["MUO"][period]
+                pog_folder_names["MUO"][period]
             ),
         )
         jsonFile_eff_lowPt = os.path.join(
             os.environ["ANALYSIS_PATH"],
             MuCorrProducer.LowPtmuIDEff_JsonPath.format(
-                new_folder_names["MUO"][period]
+                pog_folder_names["MUO"][period]
             ),
         )
         if not MuCorrProducer.initialized:

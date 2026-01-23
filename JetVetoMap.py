@@ -31,7 +31,7 @@ class JetVetoMapProvider:
         JME_vetoMap_JsonFile = os.path.join(
             os.environ["ANALYSIS_PATH"],
             JetVetoMapProvider.JME_vetoMap_JsonPath.format(
-                new_folder_names["JERC"][period]
+                pog_folder_names["JERC"][period]
             ),
         )
         if not JetVetoMapProvider.initialized:

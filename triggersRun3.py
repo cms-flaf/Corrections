@@ -83,11 +83,11 @@ class TrigCorrProducer:
 
         jsonFile_e = os.path.join(
             os.environ["ANALYSIS_PATH"],
-            TrigCorrProducer.eTRG_jsonPath.format(new_folder_names["EGM"][period]),
+            TrigCorrProducer.eTRG_jsonPath.format(pog_folder_names["EGM"][period]),
         )
         jsonFile_Tau = os.path.join(
             os.environ["ANALYSIS_PATH"],
-            TrigCorrProducer.TauTRG_jsonPath.format(new_folder_names["TAU"][period]),
+            TrigCorrProducer.TauTRG_jsonPath.format(pog_folder_names["TAU"][period]),
         )
         jsonFile_Mu = os.path.join(
             os.environ["ANALYSIS_PATH"],

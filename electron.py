@@ -94,7 +94,7 @@ class EleCorrProducer:
             else ele_files_names[period]["eleES_EtDependent"]
         )  # in 2024 there is no electronSS...
         EleID_JsonFile = EleCorrProducer.EleID_JsonPath.format(
-            folderName=new_folder_names["EGM"][period], filenameID=file_nameID
+            folderName=pog_folder_names["EGM"][period], filenameID=file_nameID
         )
 
         if period.startswith("Run2"):
@@ -106,7 +106,7 @@ class EleCorrProducer:
             EleES_JsonFile_key = "UL-EGM_ScaleUnc"
         else:
             EleES_JsonFile = EleCorrProducer.EleES_JsonPath_Run3.format(
-                folderName=new_folder_names["EGM"][period], filenameES=file_nameES
+                folderName=pog_folder_names["EGM"][period], filenameES=file_nameES
             )  # patch since in 2024 there is no eleES without EtDependent
             EleID_JsonFile_key = "Electron-ID-SF"
             EleES_JsonFile_key = "SmearAndSyst"

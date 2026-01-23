@@ -285,7 +285,7 @@ class JetCorrProducer:
             print("Initializing new JetCorrProducer")
 
             jet_path = JetCorrProducer.jet_jsonPath.format(
-                new_folder_names["JERC"][period]
+                pog_folder_names["JERC"][period]
             )
             jet_jsonFile = os.path.join(os.environ["ANALYSIS_PATH"], jet_path)
             jersmear_path = JetCorrProducer.jersmear_jsonPath
@@ -304,7 +304,7 @@ class JetCorrProducer:
             )
 
             fatjet_path = JetCorrProducer.fatjet_jsonPath.format(
-                new_folder_names["JERC"][period]
+                pog_folder_names["JERC"][period]
             )
             fatjet_jsonFile = os.path.join(os.environ["ANALYSIS_PATH"], fatjet_path)
             fatjec_tag_map = (

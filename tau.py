@@ -19,7 +19,6 @@ period_in_tau_json = {
     "Run3_2022EE": "2022_postEE",
     "Run3_2023": "2023_preBPix",
     "Run3_2023BPix": "2023_postBPix",
-    "Run3_2024": "2023_postBPix",  # tmp patch
 }
 
 period_in_tau_file_name = {
@@ -107,7 +106,7 @@ class TauCorrProducer:
     def __init__(self, *, period, config, columns):
         self.deepTauVersion = f"""DeepTau{deepTauVersions[config["deepTauVersion"]]}v{config["deepTauVersion"]}"""
         jsonFile = TauCorrProducer.jsonPath.format(
-            new_folder_names["TAU"][period_names[period]]
+            pog_folder_names["TAU"][period_names[period]]
         )
         #     period_in_taupog_folder[period], period_in_tau_file_name[period]
         # )

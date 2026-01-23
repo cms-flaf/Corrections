@@ -81,14 +81,12 @@ class bTagCorrProducer:
         tagger="particleNet",
         useSplitJes=False,
     ):
-        if period.endswith("24"):
-            tagger = "UParTAK4"
         print(f"tagger={tagger}")
         self.tagger = tagger
         self.btag_branch = bTagCorrProducer.tagger_to_brag_branch[tagger]
         self.jetCollection = jetCollection
         self.useSplitJes = useSplitJes
-        jsonFile = bTagCorrProducer.jsonPath.format(new_folder_names["BTV"][period])
+        jsonFile = bTagCorrProducer.jsonPath.format(pog_folder_names["BTV"][period])
         jsonFile_eff = os.path.join(
             os.environ["ANALYSIS_PATH"],
             bTagCorrProducer.bTagEff_JsonPath.format(period),

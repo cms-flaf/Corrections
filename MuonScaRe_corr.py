@@ -18,7 +18,7 @@ class MuonScaReCorrProducer:
         self.period = period
         self.pt_for_ScaRe = pt_for_ScaRe
         jsonFile_path = MuonScaReCorrProducer.jsonPath.format(
-            new_folder_names["MUO"][period]
+            pog_folder_names["MUO"][period]
         )
         self.isData = isData
         self.return_variations = return_variations

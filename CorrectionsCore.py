@@ -5,7 +5,7 @@ up = "Up"
 down = "Down"
 nano = "nano"
 
-new_folder_names = {
+pog_folder_names = {
     "BTV": {
         "2016postVFP_UL": "Run2-2016postVFP-UL-NanoAODv9",
         "2016preVFP_UL": "Run2-2016preVFP-UL-NanoAODv9",

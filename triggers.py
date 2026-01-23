@@ -171,7 +171,7 @@ class TrigCorrProducer:
 
     def __init__(self, period, config):
         jsonFile_Tau = TrigCorrProducer.TauTRG_jsonPath.format(
-            new_folder_names["TAU"][period]
+            pog_folder_names["TAU"][period]
         )
         self.deepTauVersion = f"""DeepTau{deepTauVersions[config["deepTauVersion"]]}v{config["deepTauVersion"]}"""
         jsonFile_e = os.path.join(

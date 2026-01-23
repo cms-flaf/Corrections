@@ -31,7 +31,7 @@ class puWeightProducer:
     def __init__(self, period):
         suffix = "_BCDEFGHI" if period == "2024_Summer24" else ""  # tmp patch
         jsonFile = puWeightProducer.JsonPath.format(
-            folder=new_folder_names["LUM"][period], suffix=suffix
+            folder=pog_folder_names["LUM"][period], suffix=suffix
         )
         if not puWeightProducer.initialized:
             headers_dir = os.path.dirname(os.path.abspath(__file__))
