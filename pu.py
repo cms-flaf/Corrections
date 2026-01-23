@@ -46,11 +46,12 @@ class puWeightProducer:
             )
             puWeightProducer.initialized = True
 
-    def getWeight(self, df, shape_weights_dict=None, return_variations=True):
+    def getWeight(self, df, shape_weights_dict=None, return_variations=True, return_list_of_branches=False):
         sf_sources = puWeightProducer.uncSource if return_variations else []
+        branches = []
         for source in [central] + sf_sources:
             for scale in getScales(source):
-                branch_name = f"puWeight_{scale}"
+                branch_name = f"weight_pu_{scale}"
                 df = df.Define(
                     branch_name,
                     f"""::correction::puCorrProvider::getGlobal().getWeight(
@@ -61,4 +62,8 @@ class puWeightProducer:
                     if key not in shape_weights_dict:
                         shape_weights_dict[key] = []
                     shape_weights_dict[key].append(branch_name)
+                branches.append(branch_name)
+
+        if return_list_of_branches:
+            return df, branches
         return df
