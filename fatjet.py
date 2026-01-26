@@ -2,6 +2,7 @@ import os
 import ROOT
 from .CorrectionsCore import *
 
+
 class FatJetCorrProducer:
     initialized = False
 
@@ -31,8 +32,7 @@ class FatJetCorrProducer:
         }
     }
 
-    fatjet_Sources = [ "Hbb", "Hcc", "tau21" ]
-
+    fatjet_Sources = ["Hbb", "Hcc", "tau21"]
 
     def __init__(self, period, ana, tagger, fatjetName, isData=False):
         # ana input for future, if other analyses will use separate corrections
@@ -44,7 +44,6 @@ class FatJetCorrProducer:
         bb_key = this_dict["keys_bb"][period]
         cc_key = this_dict["keys_cc"][period]
 
-        
         if not FatJetCorrProducer.initialized:
             headers_dir = os.path.dirname(os.path.abspath(__file__))
             header_path = os.path.join(headers_dir, "fatjet.h")
@@ -65,10 +64,10 @@ class FatJetCorrProducer:
             for scale in [central] + sf_scales:
                 if not isCentral and scale != central:
                     continue
-                branch_name = (
-                    f"weight_{self.fatjetName}_FatJetSF_{source+scale}"
+                branch_name = f"weight_{self.fatjetName}_FatJetSF_{source+scale}"
+                branch_central = (
+                    f"""weight_{self.fatjetName}_FatJetSF_{source+central}"""
                 )
-                branch_central = f"""weight_{self.fatjetName}_FatJetSF_{source+central}"""
 
                 df = df.Define(
                     f"{branch_name}_double",

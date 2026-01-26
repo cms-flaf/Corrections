@@ -196,7 +196,7 @@ class Corrections:
                 ana=self.to_apply.get("fatjet", {}).get("ana", ""),
                 tagger=self.to_apply.get("fatjet", {}).get("tagger", ""),
                 fatjetName=self.to_apply.get("fatjet", {}).get("fatJetName", ""),
-                isData=self.isData
+                isData=self.isData,
             )
         return self.fatjet_
 
@@ -535,9 +535,7 @@ class Corrections:
         if "fatjet" in self.to_apply:
             # bbWW fatjet corrections taken from here
             # https://indico.cern.ch/event/1573622/#6-updates-on-ak8-calibration-f
-            df, fatjet_SF_branches = self.fatjet.getSF(
-                df, isCentral, return_variations
-            )
+            df, fatjet_SF_branches = self.fatjet.getSF(df, isCentral, return_variations)
             all_weights.extend(fatjet_SF_branches)
 
         return df, all_weights
