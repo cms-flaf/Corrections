@@ -8,14 +8,28 @@ class FatJetCorrProducer:
 
     period = None
 
-    base_file_path = os.path.join(os.environ["ANALYSIS_PATH"], "Corrections/data/AK8Jet/HHbbWW")
+    base_file_path = os.path.join(
+        os.environ["ANALYSIS_PATH"], "Corrections/data/AK8Jet/bbWW"
+    )
     fatjet_corr_dict = {
         "particleNetWithMass_HbbvsQCD": {
             "file_name": {
-                "2022_Summer22": os.path.join(base_file_path, "ak8_sf_corrections_bbww_combined_2022_preEE.json.gz"),
-                "2022_Summer22EE": os.path.join(base_file_path, "ak8_sf_corrections_bbww_combined_2022_postEE.json.gz"),
-                "2023_Summer23": os.path.join(base_file_path, "ak8_sf_corrections_bbww_combined_2023_preBPix.json.gz"),
-                "2023_Summer23BPix": os.path.join(base_file_path, "ak8_sf_corrections_bbww_combined_2023_postBPix.json.gz"),
+                "2022_Summer22": os.path.join(
+                    base_file_path,
+                    "ak8_sf_corrections_bbww_combined_2022_preEE.json.gz",
+                ),
+                "2022_Summer22EE": os.path.join(
+                    base_file_path,
+                    "ak8_sf_corrections_bbww_combined_2022_postEE.json.gz",
+                ),
+                "2023_Summer23": os.path.join(
+                    base_file_path,
+                    "ak8_sf_corrections_bbww_combined_2023_preBPix.json.gz",
+                ),
+                "2023_Summer23BPix": os.path.join(
+                    base_file_path,
+                    "ak8_sf_corrections_bbww_combined_2023_postBPix.json.gz",
+                ),
             },
             "keys_bb": {
                 "2022_Summer22": "HHbbww_2022_preEE_SF_bb",
