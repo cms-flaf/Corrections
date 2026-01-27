@@ -39,9 +39,9 @@ class MuonScaReCorrProducer:
             for scale in sf_scales:
                 for leg_idx in [1, 2]:
                     mu_pt = f"mu{leg_idx}_{self.pt_for_ScaRe}"
-                    # print("mu_pt:", mu_pt)
+                    syst_name = f"ScaRe{scale}" if scale != central else f"ScaRe"
                     df = df.Define(
-                        f"mu{leg_idx}_p4_corr",
+                        f"mu{leg_idx}_p4_{syst_name}",
                         f"""::correction::MuonScaReCorrProvider::getGlobal().getES({mu_pt}, mu{leg_idx}_eta, mu{leg_idx}_phi, mu{leg_idx}_mass, mu{leg_idx}_charge, mu{leg_idx}_nTrackerLayers, isData, event, luminosityBlock, ::correction::MuonScaReCorrProvider::UncSource::{source}, ::correction::UncScale::{scale})""",
                     )
         return df
