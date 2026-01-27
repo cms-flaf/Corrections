@@ -142,7 +142,8 @@ class EleCorrProducer:
 
     def getES(self, df, source_dict):
         for source in EleCorrProducer.energyScaleSources_ele:
-            updateSourceDict(source_dict, source, "Electron")
+            if not self.isData:
+                updateSourceDict(source_dict, source, "Electron")
             for scale in getScales(source):
                 syst_name = getSystName(source, scale)
                 # if self.period.split("_")[0] == "2024" or self.period.split("_")[0] == "2023" or self.period.split("_")[0] == "2023BPix":
