@@ -191,7 +191,13 @@ class Corrections:
         if self.fatjet_ is None:
             from .fatjet import FatJetCorrProducer
 
-            self.fatjet_ = FatJetCorrProducer(period_names[self.period], self.isData)
+            self.fatjet_ = FatJetCorrProducer(
+                period=period_names[self.period],
+                ana=self.to_apply.get("fatjet", {}).get("ana", ""),
+                tagger=self.to_apply.get("fatjet", {}).get("tagger", ""),
+                fatjetName=self.to_apply.get("fatjet", {}).get("fatJetName", ""),
+                isData=self.isData,
+            )
         return self.fatjet_
 
     @property
@@ -289,7 +295,7 @@ class Corrections:
             df, source_dict = self.jet.getP4Variations(
                 df, source_dict, apply_jer, apply_jes, apply_jet_horns_fix_
             )
-        if "muScaRe" in self.to_apply:
+        if "muScaRe" in self.to_apply and not self.isData:
             df, source_dict = (
                 self.muScaRe.getP4Variations(df, source_dict)
                 if self.stage == "AnaTuple"
@@ -526,6 +532,11 @@ class Corrections:
                 raise RuntimeError(
                     f"Trigger correction mode {mode} not recognized. Supported modes are 'SF' and 'efficiency'."
                 )
+        if "fatjet" in self.to_apply:
+            # bbWW fatjet corrections taken from here
+            # https://indico.cern.ch/event/1573622/#6-updates-on-ak8-calibration-f
+            df, fatjet_SF_branches = self.fatjet.getSF(df, isCentral, return_variations)
+            all_weights.extend(fatjet_SF_branches)
 
         return df, all_weights
 
