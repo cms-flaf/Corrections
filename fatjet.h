@@ -35,8 +35,8 @@ namespace correction {
             };
             const auto key = std::make_pair(source, scale);
             const auto iter = scale_names.find(key);
-            if(iter == scale_names.end())
-                throw std::runtime_error("Devin is evil");
+            if (iter == scale_names.end())
+                throw std::runtime_error("Could not find fatjet scale key");
             return iter->second;
         }
 
