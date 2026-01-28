@@ -71,39 +71,33 @@ class FatJetCorrProducer:
         self.columns = {}
 
     def getSF(self, df, isCentral, return_variations):
-        sf_sources = FatJetCorrProducer.fatjet_Sources
+        sf_sources = [central]
+        if isCentral and return_variations:
+            sf_sources += FatJetCorrProducer.fatjet_Sources
         SF_branches = []
-        sf_scales = [up, down] if return_variations else []
+        syst_name_central = getSystName(central, central)
+        branch_central = f"""{self.fatjetName}_weight_FatJetSF_{syst_name_central}"""
         for source in sf_sources:
-            for scale in [central] + sf_scales:
-                if not isCentral and scale != central:
-                    continue
+            for scale in getScales(source):
                 syst_name = getSystName(source, scale)
-                syst_name_central = getSystName(source, central)
-                branch_name = f"weight_{self.fatjetName}_FatJetSF_{syst_name}"
-                branch_central = (
-                    f"""weight_{self.fatjetName}_FatJetSF_{syst_name_central}"""
-                )
+                branch_name = f"{self.fatjetName}_weight_FatJetSF_{syst_name}"
 
                 df = df.Define(
                     f"{branch_name}",
-                    f"""{self.fatjetName}_isValid ? ::correction::FatJetCorrProvider::getGlobal().get_SF(
+                    f"""::correction::FatJetCorrProvider::getGlobal().get_SF({self.fatjetName}_isValid,
                             {self.fatjetName}_pt, {self.fatjetName}_hadronFlavour,
                             ::correction::FatJetCorrProvider::UncSource::{source},
-                            ::correction::UncScale::{scale})
-                        : 1.""",
+                            ::correction::UncScale::{scale})""",
                 )
 
                 if scale != central:
                     branch_name_final = branch_name + "_rel"
                     df = df.Define(
                         branch_name_final,
-                        f"static_cast<float>({branch_name}/{branch_central})",
+                        f"({branch_name}/{branch_central})",
                     )
                 else:
-                    branch_name_final = (
-                        f"""weight_{self.fatjetName}_FatJetSF_{central}"""
-                    )
+                    branch_name_final = branch_name
 
                 SF_branches.append(branch_name_final)
         return df, SF_branches
