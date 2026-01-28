@@ -141,7 +141,10 @@ class EleCorrProducer:
             self.columns[col] = columns.get(col, col)
 
     def getES(self, df, source_dict):
-        for source in EleCorrProducer.energyScaleSources_ele:
+        sources = [central]
+        if not self.isData:
+            sources += EleCorrProducer.energyScaleSources_ele
+        for source in sources:
             updateSourceDict(source_dict, source, "Electron")
             for scale in getScales(source):
                 syst_name = getSystName(source, scale)
