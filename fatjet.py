@@ -78,13 +78,15 @@ class FatJetCorrProducer:
             for scale in [central] + sf_scales:
                 if not isCentral and scale != central:
                     continue
-                branch_name = f"weight_{self.fatjetName}_FatJetSF_{source+scale}"
+                syst_name = getSystName(source, scale)
+                syst_name_central = getSystName(source, central)
+                branch_name = f"weight_{self.fatjetName}_FatJetSF_{syst_name}"
                 branch_central = (
-                    f"""weight_{self.fatjetName}_FatJetSF_{source+central}"""
+                    f"""weight_{self.fatjetName}_FatJetSF_{syst_name_central}"""
                 )
 
                 df = df.Define(
-                    f"{branch_name}_double",
+                    f"{branch_name}",
                     f"""{self.fatjetName}_isValid ? ::correction::FatJetCorrProvider::getGlobal().get_SF(
                             {self.fatjetName}_pt, {self.fatjetName}_hadronFlavour,
                             ::correction::FatJetCorrProvider::UncSource::{source},
@@ -96,18 +98,11 @@ class FatJetCorrProducer:
                     branch_name_final = branch_name + "_rel"
                     df = df.Define(
                         branch_name_final,
-                        f"static_cast<float>({branch_name}_double/{branch_central})",
+                        f"static_cast<float>({branch_name}/{branch_central})",
                     )
                 else:
-                    if source == central:
-                        branch_name_final = (
-                            f"""weight_{self.fatjetName}_FatJetSF_{central}"""
-                        )
-                    else:
-                        branch_name_final = branch_name
-                    df = df.Define(
-                        branch_name_final,
-                        f"static_cast<float>({branch_name}_double)",
+                    branch_name_final = (
+                        f"""weight_{self.fatjetName}_FatJetSF_{central}"""
                     )
 
                 SF_branches.append(branch_name_final)
