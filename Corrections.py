@@ -191,7 +191,13 @@ class Corrections:
         if self.fatjet_ is None:
             from .fatjet import FatJetCorrProducer
 
-            self.fatjet_ = FatJetCorrProducer(period_names[self.period], self.isData)
+            self.fatjet_ = FatJetCorrProducer(
+                period=period_names[self.period],
+                ana=self.to_apply.get("fatjet", {}).get("ana", ""),
+                tagger=self.to_apply.get("fatjet", {}).get("tagger", ""),
+                fatjetName=self.to_apply.get("fatjet", {}).get("fatJetName", ""),
+                isData=self.isData,
+            )
         return self.fatjet_
 
     @property
@@ -206,6 +212,7 @@ class Corrections:
                 tagger=params["tagger"],
                 loadEfficiency=params.get("loadEfficiency", False),
                 useSplitJes=params.get("useSplitJes", False),
+                wantShape=params.get("wantShape", True),
             )
         return self.btag_
 
@@ -247,6 +254,7 @@ class Corrections:
             self.ele_ = EleCorrProducer(
                 period=period_names[self.period],
                 columns=self.to_apply.get("ele", {}).get("columns", {}),
+                isData=self.isData,
             )
         return self.ele_
 
@@ -287,7 +295,7 @@ class Corrections:
             df, source_dict = self.jet.getP4Variations(
                 df, source_dict, apply_jer, apply_jes, apply_jet_horns_fix_
             )
-        if "muScaRe" in self.to_apply:
+        if "muScaRe" in self.to_apply and not self.isData:
             df, source_dict = (
                 self.muScaRe.getP4Variations(df, source_dict)
                 if self.stage == "AnaTuple"
@@ -323,9 +331,9 @@ class Corrections:
                         ):
                             continue
                         if f"{obj}_p4_{syst_name}" not in df.GetColumnNames():
-                            print(
-                                f"Defining nominal {obj}_p4_{syst_name} as {obj}_p4_{suffix}"
-                            )
+                            # print(
+                            #     f"Defining nominal {obj}_p4_{syst_name} as {obj}_p4_{suffix}"
+                            # )
                             df = df.Define(
                                 f"{obj}_p4_{syst_name}", f"{obj}_p4_{suffix}"
                             )
@@ -534,6 +542,11 @@ class Corrections:
                 raise RuntimeError(
                     f"Trigger correction mode {mode} not recognized. Supported modes are 'SF' and 'efficiency'."
                 )
+        if "fatjet" in self.to_apply:
+            # bbWW fatjet corrections taken from here
+            # https://indico.cern.ch/event/1573622/#6-updates-on-ak8-calibration-f
+            df, fatjet_SF_branches = self.fatjet.getSF(df, isCentral, return_variations)
+            all_weights.extend(fatjet_SF_branches)
 
         return df, all_weights
 
