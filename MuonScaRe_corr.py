@@ -55,7 +55,6 @@ class MuonScaReCorrProducer:
                 )
         return df, source_dict
 
-
     def getP4VariationsForLegs(self, df):
         sources = [central]
         if not self.isData:
@@ -71,4 +70,3 @@ class MuonScaReCorrProducer:
                         f"""::correction::MuonScaReCorrProvider::getGlobal().getES({mu_pt}, mu{leg_idx}_eta, mu{leg_idx}_phi, mu{leg_idx}_mass, mu{leg_idx}_charge, mu{leg_idx}_nTrackerLayers, isData, event, luminosityBlock, ::correction::MuonScaReCorrProvider::UncSource::{source}, ::correction::UncScale::{scale})""",
                     )
         return df
-
