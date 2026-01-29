@@ -431,11 +431,13 @@ class Corrections:
 
         shape_weights_dict = {(central, central): []}
         if "pu" in self.to_apply:
+            pu_enabled = self.to_apply["pu"].get("enabled", {}).get(self.stage, True)
             df, weight_pu_branches = self.pu.getWeight(
                 df,
                 shape_weights_dict=shape_weights_dict,
                 return_variations=return_variations and isCentral,
                 return_list_of_branches=True,
+                enabled=pu_enabled
             )
             all_weights.extend(weight_pu_branches)
 
