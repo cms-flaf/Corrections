@@ -295,7 +295,7 @@ class Corrections:
             df, source_dict = self.jet.getP4Variations(
                 df, source_dict, apply_jer, apply_jes, apply_jet_horns_fix_
             )
-        if "muScaRe" in self.to_apply: 
+        if "muScaRe" in self.to_apply:
             df, source_dict = (
                 self.muScaRe.getP4Variations(df, source_dict)
                 if self.stage == "AnaTuple"
