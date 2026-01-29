@@ -432,7 +432,7 @@ class Corrections:
             )
             all_weights.extend(weight_pu_branches)
 
-        if "MC" in self.to_apply:
+        if "base" in self.to_apply:
             for (
                 shape_unc_source,
                 shape_unc_scale,
@@ -445,7 +445,7 @@ class Corrections:
                 shape_weights_product = (
                     " * ".join(shape_weights) if len(shape_weights) > 0 else "1.0"
                 )
-                weight_name_central= "weight_MC"
+                weight_name_central= "weight_base"
                 if shape_unc_name == central:
                     weight_name = weight_name_central
                     weight_out_name = weight_name
