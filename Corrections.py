@@ -408,7 +408,7 @@ class Corrections:
     ):
         isCentral = unc_source == central
         all_weights = []
-        lumi_weight_name = 'weight_lumi'
+        lumi_weight_name = "weight_lumi"
         if "lumi" in self.to_apply:
             lumi = self.global_params["luminosity"]
             df = df.Define(lumi_weight_name, f"float({lumi})")
@@ -428,7 +428,6 @@ class Corrections:
             )
             df = df.Define(gen_weight_name, genWeight_def)
             all_weights.append(gen_weight_name)
-
 
         shape_weights_dict = {(central, central): []}
         if "pu" in self.to_apply:
@@ -453,7 +452,7 @@ class Corrections:
                 shape_weights_product = (
                     " * ".join(shape_weights) if len(shape_weights) > 0 else "1.0"
                 )
-                weight_name_central= "weight_base"
+                weight_name_central = "weight_base"
                 if shape_unc_name == central:
                     weight_name = weight_name_central
                     weight_out_name = weight_name

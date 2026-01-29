@@ -42,7 +42,13 @@ class puWeightProducer:
             )
             puWeightProducer.initialized = True
 
-    def getWeight(self, df, shape_weights_dict=None, return_variations=True, return_list_of_branches=False):
+    def getWeight(
+        self,
+        df,
+        shape_weights_dict=None,
+        return_variations=True,
+        return_list_of_branches=False,
+    ):
         sf_sources = puWeightProducer.uncSource if return_variations else []
         branches = []
         for source in [central] + sf_sources:
