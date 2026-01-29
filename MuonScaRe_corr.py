@@ -14,7 +14,7 @@ class MuonScaReCorrProducer:
 
     period = None
 
-    def __init__(self, period, isData, pt_for_ScaRe, return_variations=False):
+    def __init__(self, period, isData, pt_for_ScaRe, return_variations=True):
         self.period = period
         self.pt_for_ScaRe = pt_for_ScaRe
         jsonFile_path = MuonScaReCorrProducer.jsonPath.format(
@@ -35,7 +35,7 @@ class MuonScaReCorrProducer:
 
     def getP4VariationsForLegs(self, df):
         sf_scales = [central, up, down] if self.return_variations else [central]
-        # if self.isData: sf_scales = [central] # variations exist also for data!! 
+        # if self.isData: sf_scales = [central] # variations exist also for data!!
         for source in ["ScaRe"]:
             for scale in sf_scales:
                 for leg_idx in [1, 2]:
@@ -48,7 +48,6 @@ class MuonScaReCorrProducer:
         return df
 
     def getP4Variations(self, df, source_dict):
-        # print(f"return variations? {self.return_variations}")
         sf_scales = [central, up, down] if self.return_variations else [central]
         # variations exist also for data!!
         for source in ["ScaRe"]:
@@ -56,9 +55,9 @@ class MuonScaReCorrProducer:
             p4 = f"Muon_p4_{self.pt_for_ScaRe}"
             for scale in sf_scales:
                 syst_name = f"ScaRe{scale}" if scale != central else f"ScaRe"
-                # print(
-                #     f"computing ScaRe on {p4} and defining the scare varied p4 as Muon_p4_{syst_name}"
-                # )
+                print(
+                    f"computing ScaRe on {p4} and defining the scare varied p4 as Muon_p4_{syst_name}"
+                )
                 df = df.Define(
                     f"Muon_p4_{syst_name}",
                     f"""::correction::MuonScaReCorrProvider::getGlobal().getES(v_ops::pt({p4}), v_ops::eta({p4}), v_ops::phi({p4}), v_ops::mass({p4}), Muon_charge, Muon_nTrackerLayers, isData, event, luminosityBlock, ::correction::MuonScaReCorrProvider::UncSource::{source}, ::correction::UncScale::{scale})""",
