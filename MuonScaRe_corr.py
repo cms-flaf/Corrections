@@ -14,7 +14,7 @@ class MuonScaReCorrProducer:
 
     period = None
 
-    def __init__(self, period, isData, pt_for_ScaRe, return_variations=False):
+    def __init__(self, period, isData, pt_for_ScaRe, return_variations=True):
         self.period = period
         self.pt_for_ScaRe = pt_for_ScaRe
         jsonFile_path = MuonScaReCorrProducer.jsonPath.format(
@@ -33,32 +33,40 @@ class MuonScaReCorrProducer:
             )
             MuonScaReCorrProducer.initialized = True
 
-    def getP4VariationsForLegs(self, df):
-        sf_scales = [central, up, down] if self.return_variations else [central]
-        for source in ["ScaRe"]:
-            for scale in sf_scales:
-                for leg_idx in [1, 2]:
-                    mu_pt = f"mu{leg_idx}_{self.pt_for_ScaRe}"
-                    # print("mu_pt:", mu_pt)
-                    df = df.Define(
-                        f"mu{leg_idx}_p4_corr",
-                        f"""::correction::MuonScaReCorrProvider::getGlobal().getES({mu_pt}, mu{leg_idx}_eta, mu{leg_idx}_phi, mu{leg_idx}_mass, mu{leg_idx}_charge, mu{leg_idx}_nTrackerLayers, isData, event, luminosityBlock, ::correction::MuonScaReCorrProvider::UncSource::{source}, ::correction::UncScale::{scale})""",
-                    )
-        return df
-
     def getP4Variations(self, df, source_dict):
-        # print(f"return variations? {self.return_variations}")
-        sf_scales = [central, up, down]
-        for source in ["ScaRe"]:
+        sources = [central]
+        if not self.isData:
+            sources += MuonScaReCorrProducer.uncSources
+        for source in sources:
             updateSourceDict(source_dict, source, "Muon")
-            p4 = f"Muon_p4_{self.pt_for_ScaRe}"
-            for scale in sf_scales:
-                syst_name = f"ScaRe{scale}" if scale != central else f"ScaRe"
-                # print(
-                #     f"computing ScaRe on {p4} and defining the scare varied p4 as Muon_p4_{syst_name}"
-                # )
+            for scale in getScales(source):
+                syst_name = getSystName(source, scale)
+                p4 = f"Muon_p4_{self.pt_for_ScaRe}"
+                print(
+                    f"computing ScaRe on {p4} and defining the scare varied p4 as Muon_p4_{syst_name}"
+                )
                 df = df.Define(
                     f"Muon_p4_{syst_name}",
                     f"""::correction::MuonScaReCorrProvider::getGlobal().getES(v_ops::pt({p4}), v_ops::eta({p4}), v_ops::phi({p4}), v_ops::mass({p4}), Muon_charge, Muon_nTrackerLayers, isData, event, luminosityBlock, ::correction::MuonScaReCorrProvider::UncSource::{source}, ::correction::UncScale::{scale})""",
                 )
+                df = df.Define(
+                    f"Muon_p4_{syst_name}_delta",
+                    f"Muon_p4_{syst_name} - Muon_p4_{nano}",
+                )
         return df, source_dict
+
+    def getP4VariationsForLegs(self, df):
+        sources = [central]
+        if not self.isData:
+            sources += MuonScaReCorrProducer.uncSources
+        for source in sources:
+            updateSourceDict(source_dict, source, "Muon")
+            for scale in getScales(source):
+                syst_name = getSystName(source, scale)
+                for leg_idx in [1, 2]:
+                    mu_pt = f"mu{leg_idx}_{self.pt_for_ScaRe}"
+                    df = df.Define(
+                        f"mu{leg_idx}_p4_{syst_name}",
+                        f"""::correction::MuonScaReCorrProvider::getGlobal().getES({mu_pt}, mu{leg_idx}_eta, mu{leg_idx}_phi, mu{leg_idx}_mass, mu{leg_idx}_charge, mu{leg_idx}_nTrackerLayers, isData, event, luminosityBlock, ::correction::MuonScaReCorrProvider::UncSource::{source}, ::correction::UncScale::{scale})""",
+                    )
+        return df

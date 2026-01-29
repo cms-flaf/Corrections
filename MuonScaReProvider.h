@@ -41,8 +41,7 @@ namespace correction {
                      const int lumiNumber,
                      UncSource source,
                      UncScale scale) const {
-                const UncScale mu_scale = sourceApplies(source) ? scale : UncScale::Central;
-                const UncSource mu_source = mu_scale == UncScale::Central ? UncSource::Central : source;
+                const UncScale mu_scale = sourceApplies(source) ? scale : UncScale::Central; 
                 const std::string& scale_str = getScaleStr(mu_scale);
                 const int isData = is_data ? 1 : 0;
                 const double muon_pt_scaled = mu_scale == UncScale::Central ? pt_scale(is_data, Muon_pt, Muon_eta, Muon_phi, Muon_charge) : pt_scale_var(Muon_pt, Muon_eta, Muon_phi, Muon_charge, scale_str);
