@@ -35,6 +35,7 @@ class MuonScaReCorrProducer:
 
     def getP4VariationsForLegs(self, df):
         sf_scales = [central, up, down] if self.return_variations else [central]
+        if self.isData: sf_scales = [central]
         for source in ["ScaRe"]:
             for scale in sf_scales:
                 for leg_idx in [1, 2]:
@@ -48,7 +49,8 @@ class MuonScaReCorrProducer:
 
     def getP4Variations(self, df, source_dict):
         # print(f"return variations? {self.return_variations}")
-        sf_scales = [central, up, down]
+        sf_scales = [central, up, down] if self.return_variations else [central]
+        if self.isData: sf_scales = [central]
         for source in ["ScaRe"]:
             updateSourceDict(source_dict, source, "Muon")
             p4 = f"Muon_p4_{self.pt_for_ScaRe}"
