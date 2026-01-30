@@ -437,7 +437,7 @@ class Corrections:
                 shape_weights_dict=shape_weights_dict,
                 return_variations=return_variations and isCentral,
                 return_list_of_branches=True,
-                enabled=pu_enabled
+                enabled=pu_enabled,
             )
             all_weights.extend(weight_pu_branches)
 
