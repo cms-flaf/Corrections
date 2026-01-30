@@ -120,6 +120,7 @@ class JetCorrProducer:
         "2023_Summer23BPix": "Summer23BPixPrompt23_RunD_JRV1_MC",
         "2023_Summer23": "Summer23Prompt23_RunCv1234_JRV1_MC",
         "2024_Summer24": "Summer23BPixPrompt23_RunD_JRV1_MC",  # For the time being, use the Summer23BPix JERs for 2024 data. The JER MC_ScaleFactor and MC_PtResolution for the Summer24 samples will be announced soon. from https://cms-jerc.web.cern.ch/Recommendations/#2024
+        "2025_Winter25": "Summer23BPixPrompt23_RunD_JRV1_MC",  # For the time being, use the Summer23BPix JERs for 2024 data. The JER MC_ScaleFactor and MC_PtResolution for the Summer24 samples will be announced soon. from https://cms-jerc.web.cern.ch/Recommendations/#2024
     }
 
     # maps period to JEC tag
@@ -153,8 +154,8 @@ class JetCorrProducer:
             "Summer23Prompt23_V2_DATA",
         ],  # Summer23Prompt23_V3 still TBA, so keep v2 for the moment... https://cms-jerc.web.cern.ch/Recommendations/#202
         "2022_Summer22EE": ["Summer22EE_22Sep2023_Run{}_V3_DATA"],
-        "2024_Summer2024": [
-            "Summer24Prompt24_{}_V2_DATA"
+        "2024_Summer24": [
+            "Summer24Prompt24_V2_DATA"
         ],  # https://cms-jerc.web.cern.ch/Recommendations/#2024
         "2025_Winter25": [
             "Winter25Prompt25_Run{}_V2_DATA"
@@ -201,8 +202,8 @@ class JetCorrProducer:
             "Summer23Prompt23_V2_DATA",
         ],  # Summer23Prompt23_V3 still TBA, so keep v2 for the moment... https://cms-jerc.web.cern.ch/Recommendations/#202
         "2022_Summer22EE": ["Summer22EE_22Sep2023_Run{}_V3_DATA"],
-        "2024_Summer2024": [
-            "Summer24Prompt24_{}_V2_DATA"
+        "2024_Summer24": [
+            "Summer24Prompt24_V2_DATA"
         ],  # https://cms-jerc.web.cern.ch/Recommendations/#2024
         "2025_Winter25": [
             "Winter25Prompt25_Run{}_V2_DATA"
@@ -213,7 +214,7 @@ class JetCorrProducer:
         "2022_Summer22": [],
         "2023_Summer23BPix": [],
         "2022_Prompt": [],
-        "2023_Summer23": ["v123", "v4", "v1234"],
+        "2023_Summer23": ["v123", "v4"],
         "2022_Summer22EE": [],
         "2024_Winter24": [],
         "2024_Summer24": [],
@@ -229,7 +230,6 @@ class JetCorrProducer:
         "2024_Winter24": ["BCD", "E", "F", "G", "H"],
         "2024_Summer24": ["CDEReprocessing", "FGHIPrompt"],
         "2025_Winter25": ["C", "D", "E", "F"],
-        # "2024_Summer24": ["CDE", "FGHI"],
     }
 
     # Sources = []
