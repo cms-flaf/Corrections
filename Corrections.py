@@ -408,26 +408,40 @@ class Corrections:
     ):
         isCentral = unc_source == central
         all_weights = []
-        if "MC_Lumi_pu" in self.to_apply:
+        lumi_weight_name = "weight_lumi"
+        if "lumi" in self.to_apply:
             lumi = self.global_params["luminosity"]
+            df = df.Define(lumi_weight_name, f"float({lumi})")
+            all_weights.append(lumi_weight_name)
 
-            genWeight_def = (
-                "std::copysign<double>(1., genWeight)"
-                if use_genWeight_sign_only
-                else "double(genWeight)"
-            )
-            df = df.Define("genWeightD", genWeight_def)
-            crossSectionBranch = "crossSection"
+        crossSectionBranch = "weight_xs"
+        if "xs" in self.to_apply:
             df = self.defineCrossSection(df, crossSectionBranch)
+            all_weights.append(crossSectionBranch)
 
-            shape_weights_dict = {(central, central): []}
-            if "pu" in self.to_apply:
-                df = self.pu.getWeight(
-                    df,
-                    shape_weights_dict=shape_weights_dict,
-                    return_variations=return_variations and isCentral,
-                )
+        gen_weight_name = "weight_gen"
+        if "gen" in self.to_apply:
+            genWeight_def = (
+                "std::copysign<float>(1.f, genWeight)"
+                if use_genWeight_sign_only
+                else "genWeight"
+            )
+            df = df.Define(gen_weight_name, genWeight_def)
+            all_weights.append(gen_weight_name)
 
+        shape_weights_dict = {(central, central): []}
+        if "pu" in self.to_apply:
+            pu_enabled = self.to_apply["pu"].get("enabled", {}).get(self.stage, True)
+            df, weight_pu_branches = self.pu.getWeight(
+                df,
+                shape_weights_dict=shape_weights_dict,
+                return_variations=return_variations and isCentral,
+                return_list_of_branches=True,
+                enabled=pu_enabled,
+            )
+            all_weights.extend(weight_pu_branches)
+
+        if "base" in self.to_apply:
             for (
                 shape_unc_source,
                 shape_unc_scale,
@@ -440,22 +454,19 @@ class Corrections:
                 shape_weights_product = (
                     " * ".join(shape_weights) if len(shape_weights) > 0 else "1.0"
                 )
-                weight_name = (
-                    f"weight_{shape_unc_name}"
-                    if shape_unc_name != central
-                    else "weight_MC_Lumi_pu"
-                )
-                weight_rel_name = f"weight_MC_Lumi_{shape_unc_name}_rel"
-                weight_out_name = (
-                    weight_name if shape_unc_name == central else weight_rel_name
-                )
-                weight_formula = f"genWeightD * {lumi} * {crossSectionBranch} * {shape_weights_product} / {denomBranch}"
+                weight_name_central = "weight_base"
+                if shape_unc_name == central:
+                    weight_name = weight_name_central
+                    weight_out_name = weight_name
+                else:
+                    weight_name = f"{weight_name_central}_{shape_unc_name}"
+                    weight_out_name = f"{weight_name}_rel"
+                weight_formula = f"{gen_weight_name} * {lumi_weight_name} * {crossSectionBranch} * {shape_weights_product} / {denomBranch}"
                 df = df.Define(weight_name, f"static_cast<float>({weight_formula})")
-
                 if shape_unc_name != central:
                     df = df.Define(
                         weight_out_name,
-                        f"static_cast<float>(weight_{shape_unc_name}/weight_MC_Lumi_pu)",
+                        f"static_cast<float>({weight_name}/{weight_name_central})",
                     )
                 all_weights.append(weight_out_name)
 
