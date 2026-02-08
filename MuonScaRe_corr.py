@@ -60,7 +60,6 @@ class MuonScaReCorrProducer:
         if not self.isData:
             sources += MuonScaReCorrProducer.uncSources
         for source in sources:
-            updateSourceDict(source_dict, source, "Muon")
             for scale in getScales(source):
                 syst_name = getSystName(source, scale)
                 for leg_idx in [1, 2]:
