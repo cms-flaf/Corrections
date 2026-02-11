@@ -285,16 +285,6 @@ class Corrections:
     def btag_norm(self):
         if self.btag_norm_ is None:
             if self.stage == "HistTuple" and not self.isData:
-                def transform_path(path):
-                    pattern = r'^/store/user/([^/]+)/'
-                    
-                    def replace(match):
-                        username = match.group(1)
-                        first_letter = username[0].lower()
-                        return f'/eos/user/{first_letter}/{username}/'
-                    
-                    return re.sub(pattern, replace, path)
-
                 from .btag import btagShapeWeightCorrector
                 params = self.to_apply["btag"]
                 pattern = params["normFilePattern"]
@@ -303,9 +293,7 @@ class Corrections:
                     period=self.period,
                     version=self.law_run_version,
                 )
-                fs_anaTuple = self.global_params["fs_anaTuple"][0]
-                fs_anaTuple = fs_anaTuple.split(":")[1]
-                norm_file_path = os.path.join(transform_path(fs_anaTuple), formatted_pattern)
+                norm_file_path = os.path.join(os.environ["ANALYSIS_PATH"], formatted_pattern)
                 print(f"Applying shape weight normalization from {norm_file_path}")
                 self.btag_norm_ = btagShapeWeightCorrector(norm_file_path=norm_file_path)
             else:
