@@ -153,7 +153,7 @@ namespace correction {
             double sf_product = 1.;
             std::string source_str = getUncName().at(source);
             for (size_t jet_idx = 0; jet_idx < Jet_p4.size(); jet_idx++) {
-                if (Jet_bTag_score[jet_idx] < 0.0)
+                if ((Jet_bTag_score[jet_idx] > 1.0 || Jet_bTag_score[jet_idx] < 0.0) || std::abs(Jet_p4[jet_idx].eta()) >= 2.5 ||  Jet_p4[jet_idx].pt() < 20.0)
                     continue;
                 const UncScale jet_tag_scale = sourceApplies(source, Jet_Flavour[jet_idx]) ? scale : UncScale::Central;
                 const std::string& scale_str = getScaleStr(jet_tag_scale);
@@ -186,7 +186,6 @@ namespace correction {
             return sf_product;
         }
 
-      private:
       private:
         std::unique_ptr<CorrectionSet> corrections_;
         Correction::Ref shape_corr_;
