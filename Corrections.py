@@ -525,7 +525,7 @@ class Corrections:
             )
             all_weights.extend(tau_SF_branches)
         if "btag" in self.to_apply:
-            btag_sf_mode = self.to_apply["btag"]["modes"][self.stage]
+            btag_sf_mode = self.to_apply["btag"]["modes"].get(self.stage, "none")
             if btag_sf_mode in ["shape", "wp"]:
                 if btag_sf_mode == "shape":
                     df, bTagSF_branches = self.btag.getBTagShapeSF(
