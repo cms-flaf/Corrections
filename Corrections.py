@@ -21,13 +21,17 @@ def findLibLocation(lib_name, first_guess=None):
 
 class Corrections:
     _global_instance = None
+    _corr_lib_loaded = False
 
     @staticmethod
     def initializeGlobal(load_corr_lib=False, **kwargs):
         if Corrections._global_instance is not None:
-            raise RuntimeError("Global instance is already initialized")
+            print(
+                f"WARNING: Global instance of Corrections was already initialized. Overwriting it.",
+                file=sys.stderr,
+            )
 
-        if load_corr_lib:
+        if load_corr_lib and not Corrections._corr_lib_loaded:
             returncode, output, err = ps_call(
                 ["correction", "config", "--cflags", "--ldflags"],
                 catch_stdout=True,
@@ -47,6 +51,7 @@ class Corrections:
             # ROOT.gInterpreter.AddIncludePath(os.environ['FLAF_ENVIRONMENT_PATH']+"/include")
             corr_lib = findLibLocation(lib_name, lib_path)
             ROOT.gSystem.Load(corr_lib)
+            Corrections._corr_lib_loaded = True
 
         Corrections._global_instance = Corrections(**kwargs)
 
