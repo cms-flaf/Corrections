@@ -294,8 +294,8 @@ class btagShapeWeightCorrector:
 
         pieces = []
         for name, cut in self.bins.items():
-            pieces.append(f"({cut}) ? std::string("{name}") : ")
-        binname_expr = "".join(pieces) + "std::string("__default__")"
+            pieces.append(f'({cut}) ? std::string("{name}") : ')
+        binname_expr = "".join(pieces) + 'std::string("__default__")'
 
         df = df.Redefine("btag_bin", binname_expr) if "btag_bin" in df.GetColumnNames() \
              else df.Define("btag_bin", binname_expr)
