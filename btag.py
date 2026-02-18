@@ -258,80 +258,52 @@ class bTagCorrProducer:
 
 
 class btagShapeWeightCorrector:
-    cat_to_channelId = {"e": 1, "mu": 2, "eE": 11, "eMu": 12, "muMu": 22}
-
-    def __init__(
-        self,
-        *,
-        norm_file_path
-    ): 
+    def __init__(self, *, norm_file_path, bins):
+        self.norm_file_path = norm_file_path
         with open(norm_file_path, "r") as norm_file:
             self.shape_weight_corr_dict = json.load(norm_file)
-
-        self.initialized = []
-        for key in self.shape_weight_corr_dict.keys():
-            if key not in self.initialized:
-                self._InitCppMap(key)
-                self.initialized.append(key)
+        self.bins = bins
+        ROOT.gInterpreter.Declare("#include <map>")
+        self._declared = set()
 
     def _InitCppMap(self, unc_src_scale):
         correction_factors = self.shape_weight_corr_dict[unc_src_scale]
+        self._map_name = f"_btag_corr_map_{unc_src_scale}"
 
-        ROOT.gInterpreter.Declare("#include <map>")
+        if self._map_name not in self._declared:
+            ROOT.gInterpreter.Declare(f"""
+            static const std::map<std::string, double> {self._map_name};
+            """)
+            self._declared.add(self._map_name)
 
-        # init c++ map
-        cpp_map_entries = []
-        for cat, multipl_dict in correction_factors.items():
-            channelId = btagShapeWeightCorrector.cat_to_channelId[cat]
-            for key, ratio in multipl_dict.items():
-                # key has structure f"ratio_ncetnralJet_{number}""
-                num_jet = int(key.split("_")[-1])
-                cpp_map_entries.append(f"{{{{{channelId}, {num_jet}}}, {ratio}}}")
-        cpp_init = ", ".join(cpp_map_entries)
+        m = getattr(ROOT, self._map_name)
+        m.clear()
+        m["__default__"] = 1.0
+        for k, v in correction_factors.items():
+            m[k] = float(v)
 
-        ROOT.gInterpreter.Declare(
-            f"""
-            static const std::map<std::pair<int, int>, float> ratios_{unc_src_scale} = {{
-                {cpp_init}
-            }};
+        self._m = m
 
-            float integral_correction_ratio_{unc_src_scale}(int ncentralJet, int channelId) {{
-                std::pair<int, int> key{{channelId, ncentralJet}};
-                try 
-                {{
-                    float ratio = ratios_{unc_src_scale}.at(key);
-                    return ratio;
-                }}
-                catch (...)
-                {{
-                    return 1.0f;
-                }}
-            }}"""
-        )
+    def UpdateBtagWeight(self, *, df, unc_src, unc_scale):
+        unc_src_scale = f"{unc_src}_{unc_scale}" if unc_src != unc_scale else unc_src
 
-    def UpdateBtagWeight(
-            self,
-            *, 
-            df, 
-            unc_src, 
-            unc_scale,
-        ):
-        
-        if unc_src != unc_scale:
-            unc_src_scale = f"{unc_src}_{unc_scale}"
-        else:
-            unc_src_scale = unc_src
-
-        if unc_src_scale not in self.shape_weight_corr_dict.keys():
-            raise RuntimeError(
-                f"`BtagShapeWeightCorrection.json` does not contain key `{unc_src_scale}`."
+        if unc_src_scale not in self.shape_weight_corr_dict:
+            raise KeyError(
+                f"Key `{unc_src_scale}` not found in `{self.norm_file_path}`."
             )
+
+        pieces = []
+        for name, cut in self.bins.items():
+            pieces.append(f"({cut}) ? std::string("{name}") : ")
+        binname_expr = "".join(pieces) + "std::string("__default__")"
+
+        df = df.Redefine("btag_bin", binname_expr) if "btag_bin" in df.GetColumnNames() \
+             else df.Define("btag_bin", binname_expr)
+
+        self._InitCppMap(unc_src_scale)
 
         df = df.Redefine(
             "weight_bTagShape_Central",
-            f"""if (ncentralJet >= 2 && ncentralJet <= 8) 
-                    return integral_correction_ratio_{unc_src_scale}(ncentralJet, channelId)*weight_bTagShape_Central;
-                return weight_bTagShape_Central;""",
+            f"weight_bTagShape_Central * {self._map_name}.at(btag_bin)"
         )
-
         return df

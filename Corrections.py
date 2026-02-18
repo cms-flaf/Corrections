@@ -315,9 +315,12 @@ class Corrections:
                     period=self.period,
                     version=self.law_run_version,
                 )
+                producers = self.global_params["payload_producers"]
+                btag_shape_producer_cfg = producers["BtagShape"]
+                bins = btag_shape_producer_cfg["bins"]
                 norm_file_path = os.path.join(os.environ["ANALYSIS_PATH"], formatted_pattern)
                 print(f"Applying shape weight normalization from {norm_file_path}")
-                self.btag_norm_ = btagShapeWeightCorrector(norm_file_path=norm_file_path)
+                self.btag_norm_ = btagShapeWeightCorrector(norm_file_path=norm_file_path, bins=bins)
             else:
                 return None
         return self.btag_norm_
