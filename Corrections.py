@@ -26,8 +26,10 @@ class Corrections:
     @staticmethod
     def initializeGlobal(load_corr_lib=False, **kwargs):
         if Corrections._global_instance is not None:
-            print(f'WARNING: Global instance of Corrections was already initialized. Overwriting it.', file=sys.stderr)
-
+            print(
+                f"WARNING: Global instance of Corrections was already initialized. Overwriting it.",
+                file=sys.stderr,
+            )
 
         if load_corr_lib and not Corrections._corr_lib_loaded:
             returncode, output, err = ps_call(
