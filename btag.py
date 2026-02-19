@@ -297,13 +297,16 @@ class btagShapeWeightCorrector:
             pieces.append(f'({cut}) ? std::string("{name}") : ')
         binname_expr = "".join(pieces) + 'std::string("__default__")'
 
-        df = df.Redefine("btag_bin", binname_expr) if "btag_bin" in df.GetColumnNames() \
-             else df.Define("btag_bin", binname_expr)
+        df = (
+            df.Redefine("btag_bin", binname_expr)
+            if "btag_bin" in df.GetColumnNames()
+            else df.Define("btag_bin", binname_expr)
+        )
 
         self._InitCppMap(unc_src_scale)
 
         df = df.Redefine(
             "weight_bTagShape_Central",
-            f"weight_bTagShape_Central * {self._map_name}.at(btag_bin)"
+            f"weight_bTagShape_Central * {self._map_name}.at(btag_bin)",
         )
         return df

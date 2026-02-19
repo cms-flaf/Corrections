@@ -87,7 +87,7 @@ class Corrections:
         self.period = self.global_params["era"]
         self.stage = stage
         self.law_run_version = setup.law_run_version
-        
+
         self.to_apply = {}
         correction_origins = {}
         for cfg_name, cfg in [
@@ -115,7 +115,7 @@ class Corrections:
                         f"Warning: correction {corr_name} is already defined in {correction_origins[corr_name]}. Skipping definition from {cfg_name}",
                         file=sys.stderr,
                     )
-            
+
         corr_cfg = self.global_params["corrections"]
         btag_required = "btag" in corr_cfg
         btag_skipped = "btag" not in self.to_apply
@@ -134,7 +134,9 @@ class Corrections:
                 self.to_apply["btag"] = btag_cfg
             else:
                 if not required_at_histTuple and not required_at_analysisCache:
-                    print(f"Btag shape not required at HistTuple or AnalysisCache stages, appending btag config")
+                    print(
+                        f"Btag shape not required at HistTuple or AnalysisCache stages, appending btag config"
+                    )
                     self.to_apply["btag"] = btag_cfg
 
         if len(self.to_apply) > 0:
@@ -313,6 +315,7 @@ class Corrections:
         if self.btag_norm_ is None:
             if self.stage == "HistTuple" and not self.isData:
                 from .btag import btagShapeWeightCorrector
+
                 params = self.to_apply["btag"]
                 pattern = params["normFilePattern"]
                 formatted_pattern = pattern.format(
@@ -323,9 +326,13 @@ class Corrections:
                 producers = self.global_params["payload_producers"]
                 btag_shape_producer_cfg = producers["BtagShape"]
                 bins = btag_shape_producer_cfg["bins"]
-                norm_file_path = os.path.join(os.environ["ANALYSIS_PATH"], formatted_pattern)
+                norm_file_path = os.path.join(
+                    os.environ["ANALYSIS_PATH"], formatted_pattern
+                )
                 print(f"Applying shape weight normalization from {norm_file_path}")
-                self.btag_norm_ = btagShapeWeightCorrector(norm_file_path=norm_file_path, bins=bins)
+                self.btag_norm_ = btagShapeWeightCorrector(
+                    norm_file_path=norm_file_path, bins=bins
+                )
             else:
                 return None
         return self.btag_norm_
@@ -540,8 +547,12 @@ class Corrections:
                         df, unc_source, unc_scale, isCentral, return_variations
                     )
                     if self.stage == "HistTuple":
-                        assert self.btag_norm is not None, "btagShapeWeightCorrector must be initialzied at HistTuple stage"
-                        df = self.btag_norm.UpdateBtagWeight(df=df, unc_src="Central", unc_scale="Central")
+                        assert (
+                            self.btag_norm is not None
+                        ), "btagShapeWeightCorrector must be initialzied at HistTuple stage"
+                        df = self.btag_norm.UpdateBtagWeight(
+                            df=df, unc_src="Central", unc_scale="Central"
+                        )
                 else:
                     df, bTagSF_branches = self.btag.getBTagWPSF(
                         df, isCentral and return_variations, isCentral
