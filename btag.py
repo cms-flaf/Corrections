@@ -3,6 +3,7 @@ import ROOT
 from .CorrectionsCore import *
 from FLAF.Common.Utilities import WorkingPointsbTag
 import yaml
+import json
 
 # https://twiki.cern.ch/twiki/bin/viewauth/CMS/BTagShapeCalibration
 # https://twiki.cern.ch/twiki/bin/view/CMS/BTagCalibration
@@ -254,3 +255,58 @@ class bTagCorrProducer:
                     )
                 SF_branches.append(branch_name_final)
         return df, SF_branches
+
+
+class btagShapeWeightCorrector:
+    def __init__(self, *, norm_file_path, bins):
+        self.norm_file_path = norm_file_path
+        with open(norm_file_path, "r") as norm_file:
+            self.shape_weight_corr_dict = json.load(norm_file)
+        self.bins = bins
+        ROOT.gInterpreter.Declare("#include <map>")
+        self._declared = set()
+
+    def _InitCppMap(self, unc_src_scale):
+        correction_factors = self.shape_weight_corr_dict[unc_src_scale]
+        self._map_name = f"_btag_corr_map_{unc_src_scale}"
+
+        if self._map_name not in self._declared:
+            ROOT.gInterpreter.Declare(f"""
+            static const std::map<std::string, double> {self._map_name};
+            """)
+            self._declared.add(self._map_name)
+
+        m = getattr(ROOT, self._map_name)
+        m.clear()
+        m["__default__"] = 1.0
+        for k, v in correction_factors.items():
+            m[k] = float(v)
+
+        self._m = m
+
+    def UpdateBtagWeight(self, *, df, unc_src, unc_scale):
+        unc_src_scale = f"{unc_src}_{unc_scale}" if unc_src != unc_scale else unc_src
+
+        if unc_src_scale not in self.shape_weight_corr_dict:
+            raise KeyError(
+                f"Key `{unc_src_scale}` not found in `{self.norm_file_path}`."
+            )
+
+        pieces = []
+        for name, cut in self.bins.items():
+            pieces.append(f'({cut}) ? std::string("{name}") : ')
+        binname_expr = "".join(pieces) + 'std::string("__default__")'
+
+        df = (
+            df.Redefine("btag_bin", binname_expr)
+            if "btag_bin" in df.GetColumnNames()
+            else df.Define("btag_bin", binname_expr)
+        )
+
+        self._InitCppMap(unc_src_scale)
+
+        df = df.Redefine(
+            "weight_bTagShape_Central",
+            f"weight_bTagShape_Central * {self._map_name}.at(btag_bin)",
+        )
+        return df
