@@ -116,29 +116,6 @@ class Corrections:
                         file=sys.stderr,
                     )
 
-        corr_cfg = self.global_params["corrections"]
-        btag_required = "btag" in corr_cfg
-        btag_skipped = "btag" not in self.to_apply
-        if btag_skipped and btag_required:
-            print(f"Skipped btag")
-            btag_cfg = corr_cfg["btag"]
-            btag_stages = btag_cfg.get("stages", [])
-            if not btag_stages:
-                btag_stages.append(btag_cfg["stage"])
-            required_at_histTuple = "HistTuple" in btag_stages
-            required_at_analysisCache = "AnalysisCache" in btag_stages
-            shape_mode = "shape" in btag_cfg["modes"].values()
-            # btag shape normalization doesn't need to be applied to working points
-            if not shape_mode:
-                print(f"Btag mode not shape, appending btag config")
-                self.to_apply["btag"] = btag_cfg
-            else:
-                if not required_at_histTuple and not required_at_analysisCache:
-                    print(
-                        f"Btag shape not required at HistTuple or AnalysisCache stages, appending btag config"
-                    )
-                    self.to_apply["btag"] = btag_cfg
-
         if len(self.to_apply) > 0:
             print(
                 f'Corrections to apply: {", ".join(self.to_apply.keys())}',
