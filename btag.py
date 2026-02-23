@@ -284,7 +284,7 @@ class btagShapeWeightCorrector:
 
         self._m = m
 
-    def UpdateBtagWeight(self, *, df, unc_src, unc_scale):
+    def UpdateBtagWeight(self, *, df, unc_src, unc_scale, sf_branches):
         unc_src_scale = f"{unc_src}_{unc_scale}" if unc_src != unc_scale else unc_src
 
         if unc_src_scale not in self.shape_weight_corr_dict:
@@ -292,21 +292,39 @@ class btagShapeWeightCorrector:
                 f"Key `{unc_src_scale}` not found in `{self.norm_file_path}`."
             )
 
+        # btag branches have format weight_bTagShape_{syst}_rel
+        # need to extract syst => need token #2
+        systs = [b.split("_")[2] for b in sf_branches]
         pieces = []
-        for name, cut in self.bins.items():
-            pieces.append(f'({cut}) ? std::string("{name}") : ')
+        for bin_name, cut in self.bins.items():
+            for syst in systs:
+                pieces.append(f'({cut}) ? std::string("norm_{syst}_{bin_name}") : ')
         binname_expr = "".join(pieces) + 'std::string("__default__")'
 
         df = (
-            df.Redefine("btag_bin", binname_expr)
-            if "btag_bin" in df.GetColumnNames()
-            else df.Define("btag_bin", binname_expr)
+            df.Redefine("btag_shape_norm_corr_bin", binname_expr)
+            if "btag_shape_norm_corr_bin" in df.GetColumnNames()
+            else df.Define("btag_shape_norm_corr_bin", binname_expr)
         )
 
         self._InitCppMap(unc_src_scale)
 
+        for syst in systs:
+            # only correct weights for uncertainty variations
+            # branches are defined as relative, i.e. branch/central
+            # to correct, need to first multiply by central
+            if syst == "Central":
+                continue
+
+            branch_name = f"weight_bTagShape_{syst}_rel"
+            df = df.Redefine(
+                branch_name,
+                f"{branch_name} * weight_bTagShape_Central * {self._map_name}.at(btag_shape_norm_corr_bin)",
+            )
+
+        # correct central separately after everything else was corrected and central is not needed
         df = df.Redefine(
             "weight_bTagShape_Central",
-            f"weight_bTagShape_Central * {self._map_name}.at(btag_bin)",
+            f"weight_bTagShape_Central * {self._map_name}.at(btag_shape_norm_corr_bin)",
         )
         return df
