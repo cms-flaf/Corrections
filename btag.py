@@ -257,36 +257,46 @@ class bTagCorrProducer:
         return df, SF_branches
 
 
+ROOT.gInterpreter.Declare(r"""
+#include <map>
+#include <string>
+
+struct BTagMapApplier {
+  std::map<std::string,float> corr;
+
+  float operator()(float w, const std::string &key) const {
+    auto it = corr.find(key);
+    const float r = (it != corr.end()) ? it->second : 1.0;
+    return w * r;
+  }
+};
+""")
+
+
 class btagShapeWeightCorrector:
     def __init__(self, *, norm_file_path, bins):
         self.norm_file_path = norm_file_path
         with open(norm_file_path, "r") as norm_file:
             self.shape_weight_corr_dict = json.load(norm_file)
         self.bins = bins
-        ROOT.gInterpreter.Declare("#include <map>")
-        self._declared = set()
+        self._appliers = []
 
-    def _InitCppMap(self, unc_src_scale):
-        correction_factors = self.shape_weight_corr_dict[unc_src_scale]
-        self._map_name = f"_btag_corr_map_{unc_src_scale}"
+    def _define_key_column(self, df, keycol, syst):
+        # key = norm_<syst>_<bin_name>
+        pieces = []
+        for bin_name, cut in self.bins.items():
+            pieces.append(f'({cut}) ? std::string("norm_{syst}_{bin_name}") : ')
+        key_expr = "".join(pieces) + 'std::string("__default__")'
 
-        if self._map_name not in self._declared:
-            ROOT.gInterpreter.Declare(f"""
-            static const std::map<std::string, double> {self._map_name};
-            """)
-            self._declared.add(self._map_name)
-
-        m = getattr(ROOT, self._map_name)
-        m.clear()
-        m["__default__"] = 1.0
-        for k, v in correction_factors.items():
-            m[k] = float(v)
-
-        self._m = m
+        cols = set(df.GetColumnNames())
+        return (
+            df.Redefine(keycol, key_expr)
+            if keycol in cols
+            else df.Define(keycol, key_expr)
+        )
 
     def UpdateBtagWeight(self, *, df, unc_src, unc_scale, sf_branches):
         unc_src_scale = f"{unc_src}_{unc_scale}" if unc_src != unc_scale else unc_src
-
         if unc_src_scale not in self.shape_weight_corr_dict:
             raise KeyError(
                 f"Key `{unc_src_scale}` not found in `{self.norm_file_path}`."
@@ -295,36 +305,34 @@ class btagShapeWeightCorrector:
         # btag branches have format weight_bTagShape_{syst}_rel
         # need to extract syst => need token #2
         systs = [b.split("_")[2] for b in sf_branches]
-        pieces = []
-        for bin_name, cut in self.bins.items():
-            for syst in systs:
-                pieces.append(f'({cut}) ? std::string("norm_{syst}_{bin_name}") : ')
-        binname_expr = "".join(pieces) + 'std::string("__default__")'
 
-        df = (
-            df.Redefine("btag_shape_norm_corr_bin", binname_expr)
-            if "btag_shape_norm_corr_bin" in df.GetColumnNames()
-            else df.Define("btag_shape_norm_corr_bin", binname_expr)
-        )
+        applier = ROOT.BTagMapApplier()
+        applier.corr["__default__"] = 1.0
+        for k, v in self.shape_weight_corr_dict[unc_src_scale].items():
+            applier.corr[k] = float(v)
+        self._appliers.append(applier)
 
-        self._InitCppMap(unc_src_scale)
-
+        # only correct weights for uncertainty variations
+        # branches are defined as relative, i.e. branch/central
+        # to correct, need to first multiply by central
         for syst in systs:
-            # only correct weights for uncertainty variations
-            # branches are defined as relative, i.e. branch/central
-            # to correct, need to first multiply by central
             if syst == "Central":
                 continue
+            keycol = f"btag_shape_norm_key_{syst}"
+            df = self._define_key_column(df, keycol, syst)
 
             branch_name = f"weight_bTagShape_{syst}_rel"
+            # rel := rel * central * corr(norm_<syst>_<bin>)
             df = df.Redefine(
-                branch_name,
-                f"{branch_name} * weight_bTagShape_Central * {self._map_name}.at(btag_shape_norm_corr_bin)",
-            )
+                branch_name, f"(float){branch_name} * weight_bTagShape_Central"
+            ).Redefine(branch_name, applier, [branch_name, keycol])
 
         # correct central separately after everything else was corrected and central is not needed
+        df = self._define_key_column(df, "btag_shape_norm_key_Central", "Central")
         df = df.Redefine(
             "weight_bTagShape_Central",
-            f"weight_bTagShape_Central * {self._map_name}.at(btag_shape_norm_corr_bin)",
+            applier,
+            ["weight_bTagShape_Central", "btag_shape_norm_key_Central"],
         )
+
         return df

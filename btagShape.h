@@ -154,9 +154,10 @@ namespace correction {
                              UncScale scale) const {
             double sf_product = 1.;
             std::string source_str = getUncName().at(source);
-            for (size_t jet_idx = 0; jet_idx < Jet_p4.size(); jet_idx++) {
+            for (size_t jet_idx = 0; jet_idx < Jet_p4.size(); ++jet_idx) {
                 if ((Jet_bTag_score[jet_idx] > 1.0 || Jet_bTag_score[jet_idx] < 0.0) ||
-                    std::abs(Jet_p4[jet_idx].eta()) >= 2.5 || Jet_p4[jet_idx].pt() < 20.0)
+                    std::abs(Jet_p4[jet_idx].eta()) >= 2.5 || Jet_p4[jet_idx].pt() < 20.0 ||
+                    (Jet_Flavour[jet_idx] != 0 || Jet_Flavour[jet_idx] != 4 || Jet_Flavour[jet_idx] != 5))
                     continue;
                 const UncScale jet_tag_scale = sourceApplies(source, Jet_Flavour[jet_idx]) ? scale : UncScale::Central;
                 const std::string& scale_str = getScaleStr(jet_tag_scale);
@@ -183,6 +184,12 @@ namespace correction {
                 } catch (...) {
                     std::cerr << "bTagShapeCorrProvider::getBTagShapeSF : Unknown error occurred when evaluating "
                                  "correction\n";
+                    std::cerr << "\tunc_name=" << unc_name << "\n"
+                              << "\tjet_idx=" << jet_idx << "\n"
+                              << "\tJet_Flavour=" << Jet_Flavour[jet_idx] << "\n"
+                              << "\tabs(Jet_eta)=" << std::abs(Jet_p4[jet_idx].eta()) << "\n"
+                              << "\tJet_pt=" << Jet_p4[jet_idx].pt() << "\n"
+                              << "\tJetbtag_score=" << Jet_bTag_score[jet_idx] << "\n";
                     throw;
                 }
             }
