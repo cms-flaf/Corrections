@@ -1,4 +1,5 @@
 import os
+import re
 import itertools
 
 from .CorrectionsCore import *
@@ -64,7 +65,7 @@ class Corrections:
     def __init__(
         self,
         *,
-        global_params,
+        setup,
         stage,
         dataset_name,
         dataset_cfg,
@@ -74,7 +75,7 @@ class Corrections:
         isData,
         trigger_class,
     ):
-        self.global_params = global_params
+        self.global_params = setup.global_params
         self.dataset_name = dataset_name
         self.dataset_cfg = dataset_cfg
         self.process_name = process_name
@@ -83,15 +84,16 @@ class Corrections:
         self.isData = isData
         self.trigger_dict = trigger_class.trigger_dict if trigger_class else {}
 
-        self.period = global_params["era"]
+        self.period = self.global_params["era"]
         self.stage = stage
+        self.law_run_version = setup.law_run_version
 
         self.to_apply = {}
         correction_origins = {}
         for cfg_name, cfg in [
             ("dataset", dataset_cfg),
             ("process", process_cfg),
-            ("global", global_params),
+            ("global", self.global_params),
         ]:
             if not cfg:
                 continue
@@ -113,6 +115,7 @@ class Corrections:
                         f"Warning: correction {corr_name} is already defined in {correction_origins[corr_name]}. Skipping definition from {cfg_name}",
                         file=sys.stderr,
                     )
+
         if len(self.to_apply) > 0:
             print(
                 f'Corrections to apply: {", ".join(self.to_apply.keys())}',
@@ -133,6 +136,7 @@ class Corrections:
         self.fatjet_ = None
         self.Vpt_ = None
         self.JetVetoMap_ = None
+        self.btag_shape_norm_ = None
 
     @property
     def xs_db(self):
@@ -282,6 +286,33 @@ class Corrections:
                 period_names[self.period], self.global_params, self.trigger_dict
             )
         return self.trg_
+
+    @property
+    def btag_norm(self):
+        if self.btag_shape_norm_ is None:
+            if not self.isData:
+                from .btag import btagShapeWeightCorrector
+
+                params = self.to_apply["btag"]
+                pattern = params["normFilePattern"]
+                formatted_pattern = pattern.format(
+                    dataset_name=self.dataset_name,
+                    period=self.period,
+                    version=self.law_run_version,
+                )
+                producers = self.global_params["payload_producers"]
+                btag_shape_producer_cfg = producers["BtagShape"]
+                bins = btag_shape_producer_cfg["bins"]
+                norm_file_path = os.path.join(
+                    os.environ["ANALYSIS_PATH"], formatted_pattern
+                )
+                print(f"Applying shape weight normalization from {norm_file_path}")
+                self.btag_shape_norm_ = btagShapeWeightCorrector(
+                    norm_file_path=norm_file_path, bins=bins
+                )
+            else:
+                raise RuntimeError("btag_shape_norm not applicable to data.")
+        return self.btag_shape_norm_
 
     def applyScaleUncertainties(self, df, ana_reco_objects):
         source_dict = {central: []}
@@ -486,11 +517,26 @@ class Corrections:
             )
             all_weights.extend(tau_SF_branches)
         if "btag" in self.to_apply:
-            btag_sf_mode = self.to_apply["btag"]["modes"][self.stage]
-            if btag_sf_mode in ["shape", "wp"]:
+            btag_sf_mode = self.to_apply["btag"]["modes"].get(self.stage, "none")
+            if btag_sf_mode in ["shape", "shape_and_norm", "wp"]:
                 if btag_sf_mode == "shape":
                     df, bTagSF_branches = self.btag.getBTagShapeSF(
                         df, unc_source, unc_scale, isCentral, return_variations
+                    )
+                elif btag_sf_mode == "shape_and_norm":
+                    assert (
+                        self.btag_norm is not None
+                    ), "btagShapeWeightCorrector must be initialzied at in `shape_and_norm` mode."
+
+                    df, bTagSF_branches = self.btag.getBTagShapeSF(
+                        df, unc_source, unc_scale, isCentral, return_variations
+                    )
+
+                    df = self.btag_norm.UpdateBtagWeight(
+                        df=df,
+                        unc_src=unc_source,
+                        unc_scale=unc_scale,
+                        sf_branches=bTagSF_branches,
                     )
                 else:
                     df, bTagSF_branches = self.btag.getBTagWPSF(
@@ -499,7 +545,7 @@ class Corrections:
                 all_weights.extend(bTagSF_branches)
             elif btag_sf_mode != "none":
                 raise RuntimeError(
-                    f"btag mode {btag_sf_mode} not recognized. Supported modes are 'shape', 'wp' and 'none'."
+                    f"btag mode {btag_sf_mode} not recognized. Supported modes are 'shape', 'shape_and_norm', 'wp' and 'none'."
                 )
         if "mu" in self.to_apply:
             if self.mu.low_available:
