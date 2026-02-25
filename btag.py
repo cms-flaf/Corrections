@@ -315,6 +315,8 @@ class btagShapeWeightCorrector:
         # only correct weights for uncertainty variations
         # branches are defined as relative, i.e. branch/central
         # to correct, need to first multiply by central
+        # after this loop _rel branches will have the full value
+        # => will have to divide them by central after it is corrected
         for syst in systs:
             if syst == "Central":
                 continue
@@ -334,5 +336,14 @@ class btagShapeWeightCorrector:
             applier,
             ["weight_bTagShape_Central", "btag_shape_norm_key_Central"],
         )
+
+        # redefine all _rel branches by dividing them by updated Central to make them contain relative value
+        for syst in systs:
+            if syst == "Central":
+                continue
+            branch_name = f"weight_bTagShape_{syst}_rel"
+            df = df.Redefine(
+                branch_name, f"(float){branch_name} / weight_bTagShape_Central"
+            )
 
         return df
