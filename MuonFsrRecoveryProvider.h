@@ -4,21 +4,6 @@
 #include "corrections.h"
 
 namespace correction {
-    float DeltaPhi(float phi1, float phi2) {
-        float dPhi = phi1 - phi2;
-        if (dPhi > M_PI)
-            dPhi -= 2 * M_PI;
-        else if (dPhi < -M_PI)
-            dPhi += 2 * M_PI;
-        return dPhi;
-    }
-
-    float DeltaR(const float eta1, const float phi1, const float eta2, const float phi2) {
-        float dEta = eta1 - eta2;
-        float dPhi = DeltaPhi(phi1, phi2);
-        return sqrt(dEta * dEta + dPhi * dPhi);
-    }
-
     LorentzVectorM fsr_corrected_p4(float mu_pt,
                                     float mu_eta,
                                     float mu_phi,
@@ -36,7 +21,7 @@ namespace correction {
             return res;
         }
 
-        float deltaR_mu_fsr = DeltaR(mu_eta, mu_phi, fsr_eta[mu_fsrIdx], fsr_phi[mu_fsrIdx]);
+        float deltaR_mu_fsr = ROOT::VecOps::DeltaR(mu_eta, fsr_eta[mu_fsrIdx], mu_phi, fsr_phi[mu_fsrIdx]);
 
         if (!((deltaR_mu_fsr > 0.0001) && (deltaR_mu_fsr < 0.5))) {
             return res;

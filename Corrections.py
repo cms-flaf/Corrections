@@ -118,7 +118,7 @@ class Corrections:
 
         if len(self.to_apply) > 0:
             print(
-                f'Corrections to apply: {", ".join(self.to_apply.keys())}',
+                f"Corrections to apply: {', '.join(self.to_apply.keys())}",
                 file=sys.stderr,
             )
 
@@ -252,6 +252,10 @@ class Corrections:
                 period_names[self.period],
                 self.isData,
                 self.to_apply["muScaRe"].get("mu_pt_for_ScaReApplication", "pt_nano"),
+                apply_scare=self.to_apply["muScaRe"].get("apply_scare", True),
+                apply_fsr_recovery=self.to_apply["muScaRe"].get(
+                    "apply_fsr_recovery", True
+                ),
             )
         return self.muScaRe_
 
@@ -524,9 +528,9 @@ class Corrections:
                         df, unc_source, unc_scale, isCentral, return_variations
                     )
                 elif btag_sf_mode == "shape_and_norm":
-                    assert (
-                        self.btag_norm is not None
-                    ), "btagShapeWeightCorrector must be initialzied at in `shape_and_norm` mode."
+                    assert self.btag_norm is not None, (
+                        "btagShapeWeightCorrector must be initialzied at in `shape_and_norm` mode."
+                    )
 
                     df, bTagSF_branches = self.btag.getBTagShapeSF(
                         df, unc_source, unc_scale, isCentral, return_variations
