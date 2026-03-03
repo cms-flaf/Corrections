@@ -246,9 +246,9 @@ class Corrections:
     @property
     def muScaRe(self):
         if self.muScaRe_ is None:
-            from .MuonScaRe_corr import MuonScaReCorrProducer
+            from .MuonEnergyScale_corr import MuonEnergyScaleProducer
 
-            self.muScaRe_ = MuonScaReCorrProducer(
+            self.muScaRe_ = MuonEnergyScaleProducer(
                 period_names[self.period],
                 self.isData,
                 self.to_apply["muScaRe"].get("mu_pt_for_ScaReApplication", "pt_nano"),
