@@ -442,6 +442,7 @@ class Corrections:
         return_variations=True,
         use_genWeight_sign_only=True,
     ):
+        print(f"corrections to apply {self.to_apply}")
         isCentral = unc_source == central
         all_weights = []
         lumi_weight_name = "weight_lumi"
@@ -517,7 +518,9 @@ class Corrections:
             )
             all_weights.extend(tau_SF_branches)
         if "btag" in self.to_apply:
+            print(f"going to apply btag")
             btag_sf_mode = self.to_apply["btag"]["modes"].get(self.stage, "none")
+            print(btag_sf_mode)
             if btag_sf_mode in ["shape", "shape_and_norm", "wp"]:
                 if btag_sf_mode == "shape":
                     df, bTagSF_branches = self.btag.getBTagShapeSF(
@@ -548,6 +551,7 @@ class Corrections:
                     f"btag mode {btag_sf_mode} not recognized. Supported modes are 'shape', 'shape_and_norm', 'wp' and 'none'."
                 )
         if "mu" in self.to_apply:
+            print(f"going to apply muId sf")
             if self.mu.low_available:
                 df, lowPtmuID_SF_branches = self.mu.getLowPtMuonIDSF(
                     df, lepton_legs, isCentral, return_variations
@@ -574,7 +578,9 @@ class Corrections:
             )
             all_weights.extend(puJetID_SF_branches)
         if "trigger" in self.to_apply:
+            print(f"going to apply trg sf")
             mode = self.to_apply["trigger"]["mode"]
+            print(f"mode is {mode}")
             if mode == "SF":
                 df, trg_SF_branches = self.trg.getSF(
                     df,

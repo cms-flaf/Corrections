@@ -137,7 +137,7 @@ namespace correction {
                         // for run3_2023BPix data and 2024 they want also phi ..
                         if (wantPhi) {
                             cmpd_sf = cmpd_corr_->evaluate(
-                                {Jet_area[i], Jet_eta[i], Jet_pt[i], rho, Jet_phi[i], static_cast<float>(run)});
+                            {Jet_area[i], Jet_eta[i], Jet_pt[i], rho, Jet_phi[i], static_cast<float>(run)});
                         } else {
                             cmpd_sf = cmpd_corr_->evaluate(
                                 {Jet_area[i],
@@ -150,6 +150,10 @@ namespace correction {
                         if (wantPhi) {
                             cmpd_sf = cmpd_corr_->evaluate(
                                 {Jet_area[i], Jet_eta[i], Jet_pt[i], rho, Jet_phi[i]}); // for 2024 MC, need phi but NOT run number...
+                            if (year_=="2024" && Jet_pt[i] < 30 && (Jet_eta[i] < 2.5 && Jet_eta[i] > 2) ){ // for 2024 -> https://indico.cern.ch/event/1624984/contributions/6896120/attachments/3208048/5713070/20260127_JetMET_PerformanceRun3_HIGMeeting.pdf
+                                cmpd_sf = cmpd_corr_->evaluate(
+                                    {Jet_area[i], Jet_eta[i], 30., rho, Jet_phi[i]});
+                            }
                         } else {
                             cmpd_sf = cmpd_corr_->evaluate(
                                 {Jet_area[i],
