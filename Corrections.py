@@ -528,9 +528,9 @@ class Corrections:
                         df, unc_source, unc_scale, isCentral, return_variations
                     )
                 elif btag_sf_mode == "shape_and_norm":
-                    assert self.btag_norm is not None, (
-                        "btagShapeWeightCorrector must be initialzied at in `shape_and_norm` mode."
-                    )
+                    assert (
+                        self.btag_norm is not None
+                    ), "btagShapeWeightCorrector must be initialzied at in `shape_and_norm` mode."
 
                     df, bTagSF_branches = self.btag.getBTagShapeSF(
                         df, unc_source, unc_scale, isCentral, return_variations
