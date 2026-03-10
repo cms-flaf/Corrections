@@ -553,19 +553,19 @@ class Corrections:
                 )
 
         if "mu" in self.to_apply:
-            lowPt = self.to_apply["mu"].get("lowPt", False)
+            lowPt = self.to_apply["mu"].get("lowPt", True)
             if self.mu.low_available and lowPt:
                 df, lowPtmuID_SF_branches = self.mu.getLowPtMuonIDSF(
                     df, lepton_legs, isCentral, return_variations
                 )
                 all_weights.extend(lowPtmuID_SF_branches)
-            midPt = self.to_apply["mu"].get("midPt", False)
+            midPt = self.to_apply["mu"].get("midPt", True)
             if self.mu.med_available:
                 df, muID_SF_branches = self.mu.getMuonIDSF(
                     df, lepton_legs, isCentral, return_variations
                 )
                 all_weights.extend(muID_SF_branches)
-            hiPt = self.to_apply["mu"].get("hiPt", False)
+            hiPt = self.to_apply["mu"].get("hiPt", True)
             if self.mu.high_available:
                 df, highPtmuID_SF_branches = self.mu.getHighPtMuonIDSF(
                     df, lepton_legs, isCentral, return_variations
