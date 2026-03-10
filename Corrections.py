@@ -118,7 +118,7 @@ class Corrections:
 
         if len(self.to_apply) > 0:
             print(
-                f'Corrections to apply: {", ".join(self.to_apply.keys())}',
+                f"Corrections to apply: {', '.join(self.to_apply.keys())}",
                 file=sys.stderr,
             )
 
@@ -246,12 +246,16 @@ class Corrections:
     @property
     def muScaRe(self):
         if self.muScaRe_ is None:
-            from .MuonScaRe_corr import MuonScaReCorrProducer
+            from .MuonEnergyScale_corr import MuonEnergyScaleProducer
 
-            self.muScaRe_ = MuonScaReCorrProducer(
+            self.muScaRe_ = MuonEnergyScaleProducer(
                 period_names[self.period],
                 self.isData,
                 self.to_apply["muScaRe"].get("mu_pt_for_ScaReApplication", "pt_nano"),
+                apply_scare=self.to_apply["muScaRe"].get("apply_scare", True),
+                apply_fsr_recovery=self.to_apply["muScaRe"].get(
+                    "apply_fsr_recovery", True
+                ),
             )
         return self.muScaRe_
 
