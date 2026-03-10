@@ -448,7 +448,7 @@ class MuCorrProducer:
 
                     df = df.Define(
                         f"{branch_name}_double",
-                        f"""{legType} == Leg::mu && ({genMatch_bool}) && {p4}.Pt() > 30  && {p4}.Pt() < 200
+                        f"""{legType} == Leg::mu && ({genMatch_bool})
                             ? ::correction::MuCorrProvider::getGlobal().getMuonSF(
                                 {p4}, {pfRelIso04_all}, {tightId}, {tkRelIso}, {highPtId}, {mediumId},{looseId},
                                 ::correction::MuCorrProvider::UncSource::{source},
@@ -527,7 +527,7 @@ class MuCorrProducer:
 
                     df = df.Define(
                         f"{branch_name}_double",
-                        f"""{legType} == Leg::mu && ({genMatch_bool}) && {p4}.Pt() > 200
+                        f"""{legType} == Leg::mu && ({genMatch_bool})
                             ? ::correction::HighPtMuCorrProvider::getGlobal().getHighPtMuonSF(
                                 {p4}, {pfRelIso04_all}, {tightId}, {highPtId}, {tkRelIso}, {mediumId},
                                 ::correction::HighPtMuCorrProvider::UncSource::{source},
@@ -597,7 +597,7 @@ class MuCorrProducer:
 
                     df = df.Define(
                         f"{branch_name}_double",
-                        f"""{legType} == Leg::mu && ({genMatch_bool}) && {p4}.Pt() < 30
+                        f"""{legType} == Leg::mu && ({genMatch_bool}) 
                             ? ::correction::LowPtMuCorrProvider::getGlobal().getLowPtMuonSF(
                                 {p4}, {pfRelIso04_all}, {tightId}, {tkRelIso}, {highPtId}, {mediumId},
                                 ::correction::LowPtMuCorrProvider::UncSource::{source},
