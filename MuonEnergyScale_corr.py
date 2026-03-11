@@ -8,7 +8,8 @@ from FLAF.Common.Utilities import DeclareHeader
 class MuonEnergyScaleProducer:
     initialized = False
     # jsonPath = "Corrections/data/MUO/MuonScaRe/{}.json.gz"
-    jsonPath = "/cvmfs/cms-griddata.cern.ch/cat/metadata/MUO/{}/latest/muon_scalesmearing.json.gz"
+    # jsonPath = "/cvmfs/cms-griddata.cern.ch/cat/metadata/MUO/{}/latest/muon_scalesmearing.json.gz"
+    jsonPath = "Corrections/data/MUO/MuonScaRe/{}/muon_scalesmearing.json.gz"  # tmp patch because currently VXBS ScaRe are copied from /afs/cern.ch/user/f/ferrico/cmsonly/MUON_JSON_VXBS/
     initialized = False
     uncSources = ["ScaRe"]
 
