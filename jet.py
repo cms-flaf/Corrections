@@ -131,8 +131,9 @@ class JetCorrProducer:
         "2022_Summer22EE": ["Summer22EE_22Sep2023_V3_MC"],
         "2023_Summer23BPix": ["Summer23BPixPrompt23_V3_MC"],
         "2023_Summer23": [
-            "Summer23Prompt23_V3_MC"
-        ],  # Summer23Prompt23_V3_MC still TBA, so keep v2 for the moment... https://cms-jerc.web.cern.ch/Recommendations/#2023
+            "Summer23Prompt23_V2_MC",
+            # "Summer23Prompt23_V3_MC",
+        ],  # Summer23Prompt23_V3_MC should be there (https://cms-jerc.web.cern.ch/Recommendations/#2023-postbpix) but it does not find any key, so keep ALSO v2 for the moment... https://cms-jerc.web.cern.ch/Recommendations/#2023
         "2024_Summer24": [
             "Summer24Prompt24_V2_MC"
         ],  # https://cms-jerc.web.cern.ch/Recommendations/#2024
@@ -154,9 +155,11 @@ class JetCorrProducer:
         ],
         "2022_Prompt": ["Winter22Run3_Run{}_V3_DATA"],
         "2023_Summer23": [
-            "Summer23Prompt23_Run{}_V3_DATA",
-            "Summer23Prompt23_V3_DATA",
-        ],  # Summer23Prompt23_V3 still TBA, so keep v2 for the moment... https://cms-jerc.web.cern.ch/Recommendations/#202
+            # "Summer23Prompt23_Run{}_V3_DATA",
+            # "Summer23Prompt23_V3_DATA",
+            "Summer23Prompt23_Run{}_V2_DATA",
+            "Summer23Prompt23_V2_DATA",
+        ],  # Summer23Prompt23_V3 DATA should be there (https://cms-jerc.web.cern.ch/Recommendations/#2023) but it does not find any key, so keep v2 for the moment... https://cms-jerc.web.cern.ch/Recommendations/#2023
         "2022_Summer22EE": ["Summer22EE_22Sep2023_Run{}_V3_DATA"],
         "2024_Summer24": [
             "Summer24Prompt24_V2_DATA"
@@ -190,8 +193,9 @@ class JetCorrProducer:
         "2022_Summer22EE": ["Summer22EE_22Sep2023_V3_MC"],
         "2023_Summer23BPix": ["Summer23BPixPrompt23_V3_MC"],
         "2023_Summer23": [
-            "Summer23Prompt23_V2_MC"
-        ],  # Summer23Prompt23_V3 still TBA, so keep v2 for the moment... https://cms-jerc.web.cern.ch/Recommendations/#202
+            "Summer23Prompt23_V2_MC",
+            # "Summer23Prompt23_V3_MC",
+        ],  # Summer23Prompt23_V3_MC should be there (https://cms-jerc.web.cern.ch/Recommendations/#2023) but it does not find any key, so keep v2 for the moment... https://cms-jerc.web.cern.ch/Recommendations/#2023
         "2024_Summer24": [
             "Summer24Prompt24_V2_MC"
         ],  # https://cms-jerc.web.cern.ch/Recommendations/#2024
@@ -213,7 +217,7 @@ class JetCorrProducer:
         "2023_Summer23": [
             "Summer23Prompt23_Run{}_V2_DATA",
             "Summer23Prompt23_V2_DATA",
-        ],  # Summer23Prompt23_V3 still TBA, so keep v2 for the moment... https://cms-jerc.web.cern.ch/Recommendations/#202
+        ],  # Summer23Prompt23_V3_DATA should be there (https://cms-jerc.web.cern.ch/Recommendations/#2023) but it does not find any key, so keep v2 for the moment... https://cms-jerc.web.cern.ch/Recommendations/#2023
         "2022_Summer22EE": ["Summer22EE_22Sep2023_Run{}_V3_DATA"],
         "2024_Summer24": [
             "Summer24Prompt24_V2_DATA"
