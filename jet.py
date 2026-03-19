@@ -162,10 +162,12 @@ class JetCorrProducer:
             "Summer24Prompt24_V2_DATA"
         ],  # https://cms-jerc.web.cern.ch/Recommendations/#2024
         "2025_Summer24": [
-            "Winter25Prompt25_Run{}_V3_DATA"
+            "Winter25Prompt25_Run{}_V3_DATA",
+            "Winter25Prompt25_V3_DATA",
         ],  # https://cms-jerc.web.cern.ch/Recommendations/#2025 # tmp patch because 2025_Summer24 does not exist
         "2025_Winter25": [
-            "Winter25Prompt25_Run{}_V3_DATA"
+            "Winter25Prompt25_Run{}_V3_DATA",
+            "Winter25Prompt25_V3_DATA",
         ],  # https://cms-jerc.web.cern.ch/Recommendations/#2025
     }
 
@@ -217,10 +219,12 @@ class JetCorrProducer:
             "Summer24Prompt24_V2_DATA"
         ],  # https://cms-jerc.web.cern.ch/Recommendations/#2024
         "2025_Summer24": [
-            "Winter25Prompt25_Run{}_V2_DATA"
+            "Winter25Prompt25_Run{}_V3_DATA",
+            "Winter25Prompt25_V3_DATA",
         ],  # https://cms-jerc.web.cern.ch/Recommendations/#2025
         "2025_Winter25": [
-            "Winter25Prompt25_Run{}_V2_DATA"
+            "Winter25Prompt25_Run{}_V3_DATA",
+            "Winter25Prompt25_V3_DATA",
         ],  # https://cms-jerc.web.cern.ch/Recommendations/#2025
     }
 
@@ -231,7 +235,7 @@ class JetCorrProducer:
         "2023_Summer23": ["v123", "v4"],
         "2022_Summer22EE": [],
         "2024_Winter24": [],
-        "2024_Summer24": [],
+        "2024_Summer24": ["nib1", "nib2", "nib3"],
         "2025_Summer24": [],
         "2025_Winter25": [],
     }
@@ -318,7 +322,7 @@ class JetCorrProducer:
             other_jec_tag = (
                 jec_tag_array[1] if len(jec_tag_array) > 1 else jec_tag_array[0]
             )
-
+            print(f"jec_tag is {jec_tag}")
             fatjet_path = JetCorrProducer.fatjet_jsonPath.format(
                 pog_folder_names["JERC"][period]
             )
@@ -348,6 +352,12 @@ class JetCorrProducer:
                     tokens = sample_name.split("_")
                     sample_version = tokens[-1]
                     sample_letter = tokens[-2][-1]
+                if period == "2025_Summer24":
+                    sample_version = ""
+
+                print(
+                    f"sample version = {sample_version}, sample letter = {sample_letter}"
+                )
 
                 # in some cases, sample letter can be compound:
                 # e.g. for 2022_Summer22 run letter is CD
@@ -379,9 +389,11 @@ class JetCorrProducer:
                     )
                 jec_tag = jec_tag.format(letters)
                 other_jec_tag = other_jec_tag.format(letters)
+                print(f"jec_tag is {jec_tag}")
 
                 fatjec_tag = fatjec_tag.format(letters)
                 other_fatjec_tag = other_fatjec_tag.format(letters)
+                print(f"fatjec_tag is {fatjec_tag}")
 
             jer_tag = JetCorrProducer.jer_tag_map[period]
             algo = JetCorrProducer.jet_algorithm
@@ -426,7 +438,9 @@ class JetCorrProducer:
             apply_jer = "true" if apply_JER and not self.isData else "false"
             require_run_number = "false"
             if (
-                self.period == "2023_Summer23" or self.period == "2024_Summer24"
+                self.period == "2023_Summer23"
+                or self.period == "2024_Summer24"
+                or self.period == "2025_Summer24"
             ) and self.isData:
                 require_run_number = "true"
             if self.period == "2023_Summer23BPix":
@@ -434,7 +448,7 @@ class JetCorrProducer:
             wantPhi = (
                 "true"
                 if (self.period == "2023_Summer23BPix" and self.isData)
-                or (self.period == "2024_Summer24")
+                or (self.period == "2024_Summer24" or self.period == "2025_Summer24")
                 else "false"
             )
             if not self.isData:
