@@ -75,6 +75,8 @@ class TrigCorrProducer:
             "2023_Summer23": "2023_preBPix",
             "2023_Summer23BPix": "2023_postBPix",
             "2024_Summer24": "2023_postBPix",  # tmp patch since it is currently missing
+            "2025_Summer24": "2023_postBPix",  # tmp patch since it is currently missing
+            "2025_Winter25": "2023_postBPix",  # tmp patch since it is currently missing
         }
 
         self.period = period
