@@ -103,8 +103,9 @@ namespace correction {
             RVecLV central_p4(sz);
             for (size_t i = 0; i < sz; ++i) {
                 bool is_jet_in_horn =
-                    std::abs(Jet_eta[i]) >= 2.5 && std::abs(Jet_eta[i]) <= 3 && Jet_genJetIdx[i] != -1;
+                    std::abs(Jet_eta[i]) >= 2.5 && std::abs(Jet_eta[i]) <= 3 ;
                 // uscaling
+                bool is_gen_matched = Jet_genJetIdx[i] >= 0;
                 if (apply_cmpd_) {
                     Jet_pt[i] *= 1.0 - Jet_rawFactor[i];
                     Jet_mass[i] *= 1.0 - Jet_rawFactor[i];
@@ -121,7 +122,7 @@ namespace correction {
                         jersmear_corr_->evaluate({Jet_pt[i], Jet_eta[i], genjet_pt, rho, event, jer_pt_res, jer_sf});
                     // temporary fix for jet horn issue --> do not apply JER for eta range and jet matched to genjet
 
-                    if (is_jet_in_horn) {
+                    if (is_jet_in_horn && ! (is_gen_matched)) {
                         jersmear_factor = 1.0;  // do not apply JER for jets in the horn
                     }
 
