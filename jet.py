@@ -239,7 +239,7 @@ class JetCorrProducer:
         "2023_Summer23": ["v123", "v4"],
         "2022_Summer22EE": [],
         "2024_Winter24": [],
-        "2024_Summer24": ["nib1", "nib2", "nib3"],
+        "2024_Summer24": [],  # ["nib1", "nib2", "nib3"],
         "2025_Summer24": [],
         "2025_Winter25": [],
     }
