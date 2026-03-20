@@ -53,6 +53,9 @@ namespace correction {
               corr_jer_sf_(corrset_->at(jer_tag + "_ScaleFactor_" + algo)),
               corr_jer_res_(corrset_->at(jer_tag + "_PtResolution_" + algo)),
               cmpd_corr_(corrset_->compound().at(other_jec_tag + "_L1L2L3Res_" + algo)),
+              corr_l1_(corrset_->at(jec_tag + "_L1FastJet_" + algo)),
+              corr_l2_(corrset_->at(jec_tag + "_L2Relative_" + algo)),
+              corr_l2l3res_(corrset_->at(jec_tag + "_L2L3Residual_" + algo)),
               fat_corrset_(CorrectionSet::from_file(fatjson_file_name)),
               fat_jersmear_corr_(CorrectionSet::from_file(jetsmear_file_name)->at("JERSmear")),
               fat_corr_jer_sf_(fat_corrset_->at(fatjer_tag + "_ScaleFactor_" + fatalgo)),
@@ -80,6 +83,108 @@ namespace correction {
             }
         }
 
+        float evaluateJECCompound(float pt,
+                       float eta,
+                       float phi,
+                       float mass,
+                       float rawFactor,
+                       float area,
+                       float rho,
+                       unsigned int run,
+                       bool require_run_number,
+                       bool wantPhi) const {
+
+            float pt_corr = pt * (1.0 - rawFactor);
+
+            float sf = 1.0;
+
+            if (require_run_number) {
+                if (wantPhi) {
+                    sf = cmpd_corr_->evaluate({area, eta, pt_corr, rho, phi, (float)run});
+                } else {
+                    sf = cmpd_corr_->evaluate({area, eta, pt_corr, rho, (float)run});
+                }
+            } else {
+                if (wantPhi) {
+                    sf = cmpd_corr_->evaluate({area, eta, pt_corr, rho, phi});
+                } else {
+                    sf = cmpd_corr_->evaluate({area, eta, pt_corr, rho});
+                }
+            }
+
+            return sf;
+        }
+
+        float evaluateJECSeparately(float pt,
+                                         float eta,
+                                         float phi,
+                                         float mass,
+                                         float rawFactor,
+                                         float area,
+                                         float rho,
+                                         unsigned int run,
+                                         bool require_run_number,
+                                         bool wantPhi,
+                                        bool is2024Eta2To2p5) const {
+
+            if (pt <= 0.0) return 1.0;
+
+            // 1) Undo NanoAOD
+            const float raw_sf = 1.0 - rawFactor;
+            float pt_raw = pt * raw_sf;
+            float mass_raw = mass * raw_sf;
+
+            float pt_after = pt_raw;
+            float mass_after = mass_raw;
+
+            // 2) L1FastJet
+            float c1 = corr_l1_->evaluate({area, eta, pt_after, rho});
+            pt_after *= c1;
+            mass_after *= c1;
+
+            // 3) L2Relative
+            float c2 = 1.0;
+            if (wantPhi) {
+                c2 = corr_l2_->evaluate({eta, phi, pt_after});
+            } else {
+                c2 = corr_l2_->evaluate({eta, pt_after});
+            }
+            pt_after *= c2;
+            mass_after *= c2;
+
+            // 4) Residual 
+            // For MC-truth corrected pT < 30 GeV use L2L3Residual correction factor of MC-truth corrected pT = 30 GeV in 2.0 < |eta| < 2.5
+
+            float cRes = 1.0;
+            if(is2024Eta2To2p5 and pt_after < 30. ){
+                pt_after = 30.;
+            }
+            cRes = corr_l2l3res_->evaluate({eta, pt_after});
+
+            pt_after *= cRes;
+            mass_after *= cRes;
+
+
+            return pt_after / pt_raw;
+        }
+
+        float getJERSmearFactor(float pt,
+                        float eta,
+                        float rho,
+                        float gen_pt,
+                        int event,
+                        float& jer_res_out) const {
+
+            float jer_sf = corr_jer_sf_->evaluate({eta, pt, "nom"});
+            float jer_res = corr_jer_res_->evaluate({eta, pt, rho});
+            jer_res_out = jer_res;
+
+            float smear = jersmear_corr_->evaluate({
+                pt, eta, gen_pt, rho, event, jer_res, jer_sf
+            });
+
+            return smear;
+        }
         std::map<std::pair<UncSource, UncScale>, RVecLV> getShiftedP4(RVecF Jet_pt,
                                                                       const RVecF& Jet_eta,
                                                                       const RVecF& Jet_phi,
@@ -100,19 +205,49 @@ namespace correction {
 
             size_t sz = Jet_pt.size();
             std::vector<float> jer_pt_resolutions(sz);
+            std::vector<float> jet_pt_corr(sz);
+            std::vector<float> jet_m_corr(sz);
             RVecLV central_p4(sz);
             for (size_t i = 0; i < sz; ++i) {
+                float jec_sf = 1.;
+                bool is2024Eta2To2p5 = (year_ == "2024" && Jet_eta[i] > 2 && Jet_eta[i] < 2.5);
+                if (apply_cmpd_ && !(is2024Eta2To2p5)){
+                    jec_sf = evaluateJECCompound(Jet_pt[i],
+                                        Jet_eta[i],
+                                        Jet_phi[i],
+                                        Jet_mass[i],
+                                        Jet_rawFactor[i],
+                                        Jet_area[i],
+                                        rho,
+                                        run,
+                                        require_run_number,
+                                        wantPhi);
+                    jet_pt_corr[i] *= 1.0 - Jet_rawFactor[i];
+                    jet_m_corr[i] *= 1.0 - Jet_rawFactor[i];
+                }
+                else{
+                    jec_sf = evaluateJECSeparately(Jet_pt[i],
+                                        Jet_eta[i],
+                                        Jet_phi[i],
+                                        Jet_mass[i],
+                                        Jet_rawFactor[i],
+                                        Jet_area[i],
+                                        rho,
+                                        run,
+                                        require_run_number,
+                                        wantPhi,
+                                        is2024Eta2To2p5
+                                    );
+                }
+                Jet_pt[i] *= jec_sf;
+                Jet_mass[i] *= jec_sf;
+
                 bool is_jet_in_horn =
                     std::abs(Jet_eta[i]) > 2.5 && std::abs(Jet_eta[i]) < 3 ; // JET in horn: 2.5 < |eta| <3
-                // uscaling
-                bool is_gen_matched = Jet_genJetIdx[i] >= 0;
-
-                if (apply_cmpd_) {
-                    Jet_pt[i] *= 1.0 - Jet_rawFactor[i];
-                    Jet_mass[i] *= 1.0 - Jet_rawFactor[i];
-                }
                 if (!is_data_ && apply_jer) {
-                    // extract jer scale factor and resolution
+                    bool is_gen_matched = Jet_genJetIdx[i] >= 0;
+                    float gen_pt = is_gen_matched ? GenJet_pt[Jet_genJetIdx[i]] : -1.f;
+
                     float jer_sf = corr_jer_sf_->evaluate({Jet_eta[i], Jet_pt[i], "nom"});
                     float jer_pt_res = corr_jer_res_->evaluate({Jet_eta[i], Jet_pt[i], rho});
                     jer_pt_resolutions[i] = jer_pt_res;
@@ -131,43 +266,6 @@ namespace correction {
                     Jet_pt[i] *= jersmear_factor;
                     Jet_mass[i] *= jersmear_factor;
                 }
-
-                // evaluate and apply compound correction
-                if (apply_cmpd_) {
-                    float cmpd_sf = 1.0;
-                    if (require_run_number) {
-                        // for run3_2023BPix data and 2024 they want also phi ..
-                        if (wantPhi) {
-                            cmpd_sf = cmpd_corr_->evaluate(
-                            {Jet_area[i], Jet_eta[i], Jet_pt[i], rho, Jet_phi[i], static_cast<float>(run)});
-                        } else {
-                            cmpd_sf = cmpd_corr_->evaluate(
-                                {Jet_area[i],
-                                 Jet_eta[i],
-                                 Jet_pt[i],
-                                 rho,
-                                 static_cast<float>(run)});  // for 2023, 2024 data and 2023BPix data&MC, need also run number
-                        }
-                    } else {
-                        if (wantPhi) {
-                            cmpd_sf = cmpd_corr_->evaluate(
-                                {Jet_area[i], Jet_eta[i], Jet_pt[i], rho, Jet_phi[i]}); // for 2024 MC, need phi but NOT run number...
-                            if (year_=="2024" && Jet_pt[i] < 30 && (Jet_eta[i] < 2.5 && Jet_eta[i] > 2) ){ // for 2024 -> https://indico.cern.ch/event/1624984/contributions/6896120/attachments/3208048/5713070/20260127_JetMET_PerformanceRun3_HIGMeeting.pdf
-                                cmpd_sf = cmpd_corr_->evaluate(
-                                    {Jet_area[i], Jet_eta[i], 30., rho, Jet_phi[i]});
-                            }
-                        } else {
-                            cmpd_sf = cmpd_corr_->evaluate(
-                                {Jet_area[i],
-                                 Jet_eta[i],
-                                 Jet_pt[i],
-                                 rho});
-                        }
-                    }
-                    Jet_pt[i] *= cmpd_sf;
-                    Jet_mass[i] *= cmpd_sf;
-                }
-
                 central_p4[i] = LorentzVectorM(Jet_pt[i], Jet_eta[i], Jet_phi[i], Jet_mass[i]);
             }
 
@@ -175,6 +273,7 @@ namespace correction {
 
             // apply uncertainties from uncertainty map
             // this part should not be executed for data
+
             if (!is_data_) {
                 for (auto const& uncScale : uncScales) {
                     for (auto const& [unc_source, unc_name] : unc_map_) {
@@ -198,13 +297,13 @@ namespace correction {
                                 all_shifted_p4.insert({{unc_source, uncScale}, shifted_p4});
                             }
                         } else {
-                            for (size_t jet_idx = 0; jet_idx < sz; ++jet_idx) {
+                            for (size_t i = 0; i < sz; ++i) {
                                 float sf = 1.0;
                                 Correction::Ref corr = corrset_->at(unc_name);
-                                float unc = corr->evaluate({Jet_eta[jet_idx], Jet_pt[jet_idx]});
+                                float unc = corr->evaluate({Jet_eta[i], Jet_pt[i]});
                                 sf += static_cast<int>(uncScale) * unc;
-                                shifted_p4[jet_idx] = LorentzVectorM(
-                                    sf * Jet_pt[jet_idx], Jet_eta[jet_idx], Jet_phi[jet_idx], sf * Jet_mass[jet_idx]);
+                                shifted_p4[i] = LorentzVectorM(
+                                    sf * Jet_pt[i], Jet_eta[i], Jet_phi[i], sf * Jet_mass[i]);
                             }
                             all_shifted_p4.insert({{unc_source, uncScale}, shifted_p4});
                         }
@@ -357,6 +456,9 @@ namespace correction {
         std::map<UncSource, std::string> unc_map_;
         std::unique_ptr<CorrectionSet> corrset_;
         Correction::Ref jersmear_corr_;  // aka shared_ptr<Correction const>, sizeof = 8
+        Correction::Ref corr_l1_;
+        Correction::Ref corr_l2_;
+        Correction::Ref corr_l2l3res_;
         Correction::Ref corr_jer_sf_;
         Correction::Ref corr_jer_res_;
         CompoundCorrection::Ref cmpd_corr_;
