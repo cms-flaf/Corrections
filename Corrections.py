@@ -471,7 +471,9 @@ class Corrections:
 
         crossSectionBranchBase = "weight_xs"
         if "xs" in self.to_apply:
-            df, crossSectionBranches = self.defineCrossSection(df, crossSectionBranchBase)
+            df, crossSectionBranches = self.defineCrossSection(
+                df, crossSectionBranchBase
+            )
             all_weights.extend(crossSectionBranches)
 
         gen_weight_name = "weight_gen"
