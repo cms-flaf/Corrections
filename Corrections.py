@@ -122,29 +122,32 @@ class Corrections:
             )
 
         self.all_processors = processors
-        self.xs_denom_processors = {}
-        for p_name, proc in self.all_processors.items():
-            has_xs = hasattr(proc, "onAnaTuple_defineCrossSection")
-            has_denom = hasattr(proc, "onAnaTuple_defineDenominator")
-            if not (has_xs or has_denom):
-                continue
-            if not (has_xs and has_denom):
+
+        if "xs" in self.to_apply or "base" in self.to_apply:
+            self.xs_denom_processors = {}
+            self.xs_print_history = set()
+            self.denom_print_history = set()
+
+            for p_name, proc in self.all_processors.items():
+                has_xs = hasattr(proc, "onAnaTuple_defineCrossSection")
+                has_denom = hasattr(proc, "onAnaTuple_defineDenominator")
+                if not (has_xs or has_denom):
+                    continue
+                if not (has_xs and has_denom):
+                    raise RuntimeError(
+                        f"Processor {p_name} must implement both onAnaTuple_defineCrossSection and onAnaTuple_defineDenominator or neither of them."
+                    )
+                is_default = proc.default_denom_processor
+                suffix = "" if is_default else f"_{p_name}"
+                if suffix in self.xs_denom_processors:
+                    raise RuntimeError(
+                        f"Multiple processors have the same suffix {suffix} for cross section and denominator definition. This is not supported."
+                    )
+                self.xs_denom_processors[suffix] = p_name
+            if len(self.xs_denom_processors) > 0 and "" not in self.xs_denom_processors:
                 raise RuntimeError(
-                    f"Processor {p_name} must implement both onAnaTuple_defineCrossSection and onAnaTuple_defineDenominator or neither of them."
+                    "No processor is set as default for cross section and denominator definition."
                 )
-            is_default = proc.default_denom_processor
-            suffix = "" if is_default else f"_{p_name}"
-            if suffix in self.xs_denom_processors:
-                raise RuntimeError(
-                    f"Multiple processors have the same suffix {suffix} for cross section and denominator definition. This is not supported."
-                )
-            self.xs_denom_processors[suffix] = p_name
-        if len(self.xs_denom_processors) > 0 and "" not in self.xs_denom_processors:
-            raise RuntimeError(
-                "No processor is set as default for cross section and denominator definition."
-            )
-        self.xs_print_history = set()
-        self.denom_print_history = set()
 
         self.xs_db_ = None
         self.tau_ = None
