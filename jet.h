@@ -53,9 +53,9 @@ namespace correction {
               corr_jer_sf_(corrset_->at(jer_tag + "_ScaleFactor_" + algo)),
               corr_jer_res_(corrset_->at(jer_tag + "_PtResolution_" + algo)),
               cmpd_corr_(corrset_->compound().at(other_jec_tag + "_L1L2L3Res_" + algo)),
-              corr_l1_(corrset_->at(jec_tag + "_L1FastJet_" + algo)),
-              corr_l2_(corrset_->at(jec_tag + "_L2Relative_" + algo)),
-              corr_l2l3res_(corrset_->at(jec_tag + "_L2L3Residual_" + algo)),
+              corr_l1_(corrset_->at(other_jec_tag + "_L1FastJet_" + algo)),
+              corr_l2_(corrset_->at(other_jec_tag + "_L2Relative_" + algo)),
+              corr_l2l3res_(corrset_->at(other_jec_tag + "_L2L3Residual_" + algo)),
               fat_corrset_(CorrectionSet::from_file(fatjson_file_name)),
               fat_jersmear_corr_(CorrectionSet::from_file(jetsmear_file_name)->at("JERSmear")),
               fat_corr_jer_sf_(fat_corrset_->at(fatjer_tag + "_ScaleFactor_" + fatalgo)),
@@ -125,6 +125,7 @@ namespace correction {
                                          unsigned int run,
                                          bool require_run_number,
                                          bool wantPhi,
+                                         bool isdata_,
                                         bool is2024Eta2To2p5) const {
 
             if (pt <= 0.0) return 1.0;
@@ -152,14 +153,20 @@ namespace correction {
             pt_after *= c2;
             mass_after *= c2;
 
-            // 4) Residual 
+            // 4) Residual (solo data)
             // For MC-truth corrected pT < 30 GeV use L2L3Residual correction factor of MC-truth corrected pT = 30 GeV in 2.0 < |eta| < 2.5
 
             float cRes = 1.0;
+
             if(is2024Eta2To2p5 and pt_after < 30. ){
                 pt_after = 30.;
             }
-            cRes = corr_l2l3res_->evaluate({eta, pt_after});
+            if (isdata_ && require_run_number) {
+                    cRes = corr_l2l3res_->evaluate({float(run),eta,pt_after});
+                // }
+            } else {
+                cRes = corr_l2l3res_->evaluate({eta,pt_after});
+            }
 
             pt_after *= cRes;
             mass_after *= cRes;
@@ -236,6 +243,7 @@ namespace correction {
                                         run,
                                         require_run_number,
                                         wantPhi,
+                                        is_data_,
                                         is2024Eta2To2p5
                                     );
                 }

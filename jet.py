@@ -193,8 +193,8 @@ class JetCorrProducer:
         "2022_Summer22EE": ["Summer22EE_22Sep2023_V3_MC"],
         "2023_Summer23BPix": ["Summer23BPixPrompt23_V3_MC"],
         "2023_Summer23": [
-            "Summer23Prompt23_V2_MC",
-            # "Summer23Prompt23_V3_MC",
+            # "Summer23Prompt23_V2_MC",
+            "Summer23Prompt23_V3_MC",
         ],  # Summer23Prompt23_V3_MC should be there (https://cms-jerc.web.cern.ch/Recommendations/#2023) but it does not find any key, so keep v2 for the moment... https://cms-jerc.web.cern.ch/Recommendations/#2023
         "2024_Summer24": [
             "Summer24Prompt24_V2_MC"
@@ -217,6 +217,8 @@ class JetCorrProducer:
         "2023_Summer23": [
             "Summer23Prompt23_Run{}_V2_DATA",
             "Summer23Prompt23_V2_DATA",
+            # "Summer23Prompt23_Run{}_V3_DATA",
+            # "Summer23Prompt23_V3_DATA",
         ],  # Summer23Prompt23_V3_DATA should be there (https://cms-jerc.web.cern.ch/Recommendations/#2023) but it does not find any key, so keep v2 for the moment... https://cms-jerc.web.cern.ch/Recommendations/#2023
         "2022_Summer22EE": ["Summer22EE_22Sep2023_Run{}_V3_DATA"],
         "2024_Summer24": [
@@ -326,7 +328,7 @@ class JetCorrProducer:
             other_jec_tag = (
                 jec_tag_array[1] if len(jec_tag_array) > 1 else jec_tag_array[0]
             )
-            print(f"jec_tag is {jec_tag}")
+            # print(f"jec_tag is {jec_tag}")
             fatjet_path = JetCorrProducer.fatjet_jsonPath.format(
                 pog_folder_names["JERC"][period]
             )
@@ -359,9 +361,9 @@ class JetCorrProducer:
                 if period == "2025_Summer24":
                     sample_version = ""
 
-                print(
-                    f"sample version = {sample_version}, sample letter = {sample_letter}"
-                )
+                # print(
+                #     f"sample version = {sample_version}, sample letter = {sample_letter}"
+                # )
 
                 # in some cases, sample letter can be compound:
                 # e.g. for 2022_Summer22 run letter is CD
@@ -393,11 +395,11 @@ class JetCorrProducer:
                     )
                 jec_tag = jec_tag.format(letters)
                 other_jec_tag = other_jec_tag.format(letters)
-                print(f"jec_tag is {jec_tag}")
+                # print(f"jec_tag is {jec_tag}")
 
                 fatjec_tag = fatjec_tag.format(letters)
                 other_fatjec_tag = other_fatjec_tag.format(letters)
-                print(f"fatjec_tag is {fatjec_tag}")
+                # print(f"fatjec_tag is {fatjec_tag}")
 
             jer_tag = JetCorrProducer.jer_tag_map[period]
             algo = JetCorrProducer.jet_algorithm
@@ -462,6 +464,7 @@ class JetCorrProducer:
                                                                                                                        Jet_rawFactor, Jet_area, Rho_fixedGridRhoFastjetAll, event, {apply_jer}, {require_run_number},run,{wantPhi},{apply_forward_jet_horns_fix},
                                                                                                                        GenJet_pt, Jet_genJetIdx)""",
                 )
+                print(df.Count().GetValue())
                 df = df.Define(
                     "FatJet_p4_shifted_map",
                     f"""::correction::JetCorrectionProvider::getGlobal().getShiftedP4(FatJet_pt, FatJet_eta, FatJet_phi, FatJet_mass,
@@ -471,13 +474,11 @@ class JetCorrProducer:
             else:
                 df = df.Define(
                     "Jet_p4_shifted_map",
-                    f"""::correction::JetCorrectionProvider::getGlobal().getShiftedP4(Jet_pt, Jet_eta, Jet_phi, Jet_mass,
-                                                                                                                       Jet_rawFactor, Jet_area, Rho_fixedGridRhoFastjetAll,event, {apply_jer}, {require_run_number}, run,{wantPhi},{apply_forward_jet_horns_fix})""",
+                    f"""::correction::JetCorrectionProvider::getGlobal().getShiftedP4(Jet_pt, Jet_eta, Jet_phi, Jet_mass, Jet_rawFactor, Jet_area, Rho_fixedGridRhoFastjetAll,event, {apply_jer}, {require_run_number}, run,{wantPhi},{apply_forward_jet_horns_fix})""",
                 )
                 df = df.Define(
                     "FatJet_p4_shifted_map",
-                    f"""::correction::JetCorrectionProvider::getGlobal().getShiftedP4(FatJet_pt, FatJet_eta, FatJet_phi, FatJet_mass,
-                                                                                                                       FatJet_rawFactor, FatJet_area, Rho_fixedGridRhoFastjetAll, event, {apply_jer}, {require_run_number},run,{wantPhi},{apply_forward_jet_horns_fix})""",
+                    f"""::correction::JetCorrectionProvider::getGlobal().getShiftedP4(FatJet_pt, FatJet_eta, FatJet_phi, FatJet_mass, FatJet_rawFactor, FatJet_area, Rho_fixedGridRhoFastjetAll, event, {apply_jer}, {require_run_number},run,{wantPhi},{apply_forward_jet_horns_fix})""",
                 )
             class_name = "JetCorrectionProvider"
         else:
