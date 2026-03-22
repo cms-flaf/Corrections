@@ -193,8 +193,8 @@ class JetCorrProducer:
         "2022_Summer22EE": ["Summer22EE_22Sep2023_V3_MC"],
         "2023_Summer23BPix": ["Summer23BPixPrompt23_V3_MC"],
         "2023_Summer23": [
-            # "Summer23Prompt23_V2_MC",
-            "Summer23Prompt23_V3_MC",
+            "Summer23Prompt23_V2_MC",
+            # "Summer23Prompt23_V3_MC",
         ],  # Summer23Prompt23_V3_MC should be there (https://cms-jerc.web.cern.ch/Recommendations/#2023) but it does not find any key, so keep v2 for the moment... https://cms-jerc.web.cern.ch/Recommendations/#2023
         "2024_Summer24": [
             "Summer24Prompt24_V2_MC"
