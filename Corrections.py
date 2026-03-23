@@ -129,13 +129,14 @@ class Corrections:
             self.denom_print_history = set()
 
             for p_name, proc in self.all_processors.items():
-                has_xs = hasattr(proc, "onAnaTuple_defineCrossSection")
-                has_denom = hasattr(proc, "onAnaTuple_defineDenominator")
-                if not (has_xs or has_denom):
+                has_xs_fn = hasattr(proc, "onAnaTuple_defineCrossSection")
+                has_denom_fn = hasattr(proc, "onAnaTuple_defineDenominator")
+                has_default_denom_attr = hasattr(proc, "default_denom_processor")
+                if not (has_xs_fn or has_denom_fn or has_default_denom_attr):
                     continue
-                if not (has_xs and has_denom):
+                if not (has_xs_fn and has_denom_fn and has_default_denom_attr):
                     raise RuntimeError(
-                        f"Processor {p_name} must implement both onAnaTuple_defineCrossSection and onAnaTuple_defineDenominator or neither of them."
+                        f"Processor {p_name} must implementonAnaTuple_defineCrossSection, onAnaTuple_defineDenominator and default_denom_processor, or neither of them."
                     )
                 is_default = proc.default_denom_processor
                 suffix = "" if is_default else f"_{p_name}"
