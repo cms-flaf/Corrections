@@ -115,6 +115,8 @@ class MuCorrProducer:
         "2023_Summer23BPix": [],
         "2024_Winter24": [],
         "2024_Summer24": [],
+        "2025_Summer24": [],
+        "2025_Winter25": [],
     }
     MediumMuIDIso_SF_Sources = {
         "2016preVFP_UL": [
@@ -289,6 +291,58 @@ class MuCorrProducer:
             # "NUM_MediumMiniIso_DEN_MediumID",
             # "NUM_TightMiniIso_DEN_MediumID",
         ],
+        "2025_Summer24": [
+            "NUM_LooseID_DEN_TrackerMuons",
+            # "NUM_MediumID_DEN_genTracks",
+            # "NUM_MediumPromptID_DEN_TrackerMuons",
+            "NUM_MediumID_DEN_TrackerMuons",
+            "NUM_TightID_DEN_TrackerMuons",
+            # "NUM_SoftID_DEN_TrackerMuons",
+            # "NUM_HighPtID_DEN_TrackerMuons",
+            # "NUM_TrkHighPtID_DEN_TrackerMuons",
+            "NUM_LoosePFIso_DEN_LooseID",
+            "NUM_LoosePFIso_DEN_MediumID",
+            # "NUM_LoosePFIso_DEN_MediumPromptID",
+            "NUM_LoosePFIso_DEN_TightID",
+            # "NUM_LooseRelTkIso_DEN_HighPtID",
+            # "NUM_LooseRelTkIso_DEN_TrkHighPtID",
+            # "NUM_LooseRelIso_DEN_MediumID",
+            # "NUM_TightPFIso_DEN_MediumID",
+            # "NUM_TightPFIso_DEN_MediumPromptID",
+            # "NUM_TightRelTkIso_DEN_HighPtID",
+            # "NUM_TightRelTkIso_DEN_TrkHighPtID",
+            "NUM_TightPFIso_DEN_TightID",
+            "NUM_LooseMiniIso_DEN_LooseID",
+            "NUM_LooseMiniIso_DEN_MediumID",
+            # "NUM_MediumMiniIso_DEN_MediumID",
+            # "NUM_TightMiniIso_DEN_MediumID",
+        ],
+        "2025_Winter25": [
+            "NUM_LooseID_DEN_TrackerMuons",
+            # "NUM_MediumID_DEN_genTracks",
+            # "NUM_MediumPromptID_DEN_TrackerMuons",
+            "NUM_MediumID_DEN_TrackerMuons",
+            "NUM_TightID_DEN_TrackerMuons",
+            # "NUM_SoftID_DEN_TrackerMuons",
+            # "NUM_HighPtID_DEN_TrackerMuons",
+            # "NUM_TrkHighPtID_DEN_TrackerMuons",
+            "NUM_LoosePFIso_DEN_LooseID",
+            "NUM_LoosePFIso_DEN_MediumID",
+            # "NUM_LoosePFIso_DEN_MediumPromptID",
+            "NUM_LoosePFIso_DEN_TightID",
+            # "NUM_LooseRelTkIso_DEN_HighPtID",
+            # "NUM_LooseRelTkIso_DEN_TrkHighPtID",
+            # "NUM_LooseRelIso_DEN_MediumID",
+            # "NUM_TightPFIso_DEN_MediumID",
+            # "NUM_TightPFIso_DEN_MediumPromptID",
+            # "NUM_TightRelTkIso_DEN_HighPtID",
+            # "NUM_TightRelTkIso_DEN_TrkHighPtID",
+            "NUM_TightPFIso_DEN_TightID",
+            "NUM_LooseMiniIso_DEN_LooseID",
+            "NUM_LooseMiniIso_DEN_MediumID",
+            # "NUM_MediumMiniIso_DEN_MediumID",
+            # "NUM_TightMiniIso_DEN_MediumID",
+        ],
     }
 
     # for high pt muons
@@ -348,6 +402,14 @@ class MuCorrProducer:
             "NUM_IsoMu24_DEN_CutBasedIdMedium_and_PFIsoMedium",
         ],
         "2024_Summer24": [
+            "NUM_IsoMu24_DEN_CutBasedIdTight_and_PFIsoTight",
+            "NUM_IsoMu24_DEN_CutBasedIdMedium_and_PFIsoMedium",
+        ],
+        "2025_Winter25": [
+            "NUM_IsoMu24_DEN_CutBasedIdTight_and_PFIsoTight",
+            "NUM_IsoMu24_DEN_CutBasedIdMedium_and_PFIsoMedium",
+        ],
+        "2025_Summer24": [
             "NUM_IsoMu24_DEN_CutBasedIdTight_and_PFIsoTight",
             "NUM_IsoMu24_DEN_CutBasedIdMedium_and_PFIsoMedium",
         ],
@@ -597,7 +659,7 @@ class MuCorrProducer:
 
                     df = df.Define(
                         f"{branch_name}_double",
-                        f"""{legType} == Leg::mu && ({genMatch_bool}) 
+                        f"""{legType} == Leg::mu && ({genMatch_bool})
                             ? ::correction::LowPtMuCorrProvider::getGlobal().getLowPtMuonSF(
                                 {p4}, {pfRelIso04_all}, {tightId}, {tkRelIso}, {highPtId}, {mediumId},
                                 ::correction::LowPtMuCorrProvider::UncSource::{source},

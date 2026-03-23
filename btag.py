@@ -33,6 +33,7 @@ def IsInJESList(src_name, jes_list):
 
 class bTagCorrProducer:
     jsonPath = "/cvmfs/cms-griddata.cern.ch/cat/metadata/BTV/{}/latest/btagging.json.gz"
+    alternative_jsonPath = "/cvmfs/cms-griddata.cern.ch/cat/metadata/BTV/{}/add_2025_b_and_c_WPs/btagging.json.gz"
     bTagEff_JsonPath = "Corrections/data/BTV/{}/btagEff.root"
     initialized = False
     uncSource_bTagWP = [
@@ -88,7 +89,13 @@ class bTagCorrProducer:
         self.btag_branch = bTagCorrProducer.tagger_to_brag_branch[tagger]
         self.jetCollection = jetCollection
         self.useSplitJes = useSplitJes
-        jsonFile = bTagCorrProducer.jsonPath.format(pog_folder_names["BTV"][period])
+        jsonFile = bTagCorrProducer.jsonPath.format(
+            pog_folder_names["BTV"][period]
+        )  # for 2025 latest is not available, but files are in this folder available: add_2025_b_and_c_WPs (?) bah
+        if not os.path.exists(jsonFile):
+            jsonFile = bTagCorrProducer.alternative_jsonPath.format(
+                pog_folder_names["BTV"][period]
+            )
         jsonFile_eff = os.path.join(
             os.environ["ANALYSIS_PATH"],
             bTagCorrProducer.bTagEff_JsonPath.format(period),
