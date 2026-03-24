@@ -343,27 +343,31 @@ namespace correction {
             std::vector<UncScale> uncScales = {UncScale::Up, UncScale::Down};
 
             size_t sz = FatJet_pt.size();
+            std::vector<float> fatjet_pt_corr(sz);
+            std::vector<float> fatjet_m_corr(sz);
             std::vector<float> fatjer_pt_resolutions(sz);
             RVecLV central_p4(sz);
             for (size_t i = 0; i < sz; ++i) {
+                fatjet_pt_corr[i]= FatJet_pt[i];
+                fatjet_m_corr[i]= FatJet_mass[i];
                 bool is_jet_in_horn =
                     std::abs(FatJet_eta[i]) >= 2.5 && std::abs(FatJet_eta[i]) <= 3 ;
                 // uscaling
                 bool is_gen_matched = FatJet_genJetIdx[i] >= 0;
                 if (apply_cmpd_) {
-                    FatJet_pt[i] *= 1.0 - FatJet_rawFactor[i];
-                    FatJet_mass[i] *= 1.0 - FatJet_rawFactor[i];
+                    fatjet_pt_corr[i] *= 1.0 - FatJet_rawFactor[i];
+                    fatjet_m_corr[i] *= 1.0 - FatJet_rawFactor[i];
                 }
                 if (!is_data_ && apply_jer) {
                     // extract jer scale factor and resolution
-                    float fatjer_sf = fat_corr_jer_sf_->evaluate({FatJet_eta[i], FatJet_pt[i], "nom"});
-                    float fatjer_pt_res = fat_corr_jer_res_->evaluate({FatJet_eta[i], FatJet_pt[i], rho});
+                    float fatjer_sf = fat_corr_jer_sf_->evaluate({FatJet_eta[i], fatjet_pt_corr[i], "nom"});
+                    float fatjer_pt_res = fat_corr_jer_res_->evaluate({FatJet_eta[i], fatjet_pt_corr[i], rho});
                     fatjer_pt_resolutions[i] = fatjer_pt_res;
 
                     int genjet_idx = FatJet_genJetIdx[i];
                     float genjet_pt = genjet_idx != -1 ? GenFatJet_pt[genjet_idx] : -1.0;
                     float jersmear_factor = fat_jersmear_corr_->evaluate(
-                        {FatJet_pt[i], FatJet_eta[i], genjet_pt, rho, event, fatjer_pt_res, fatjer_sf});
+                        {fatjet_pt_corr[i], FatJet_eta[i], genjet_pt, rho, event, fatjer_pt_res, fatjer_sf});
                     // temporary fix for jet horn issue --> do not apply JER for eta range and jet matched to genjet
 
                     if (is_jet_in_horn && !(is_gen_matched)) {
@@ -371,8 +375,8 @@ namespace correction {
                     }
 
                     // // apply jer smearing (only for MC)
-                    FatJet_pt[i] *= jersmear_factor;
-                    FatJet_mass[i] *= jersmear_factor;
+                    fatjet_pt_corr[i] *= jersmear_factor;
+                    fatjet_m_corr[i] *= jersmear_factor;
                 }
 
                 // evaluate and apply compound correction
@@ -383,7 +387,7 @@ namespace correction {
                         if (wantPhi) {
                             cmpd_sf = fat_cmpd_corr_->evaluate({FatJet_area[i],
                                                                 FatJet_eta[i],
-                                                                FatJet_pt[i],
+                                                                fatjet_pt_corr[i],
                                                                 rho,
                                                                 FatJet_phi[i],
                                                                 static_cast<float>(run)});
@@ -391,18 +395,18 @@ namespace correction {
                             cmpd_sf = fat_cmpd_corr_->evaluate(
                                 {FatJet_area[i],
                                  FatJet_eta[i],
-                                 FatJet_pt[i],
+                                 fatjet_pt_corr[i],
                                  rho,
                                  static_cast<float>(run)});  // for 2023 data and 2023BPix data&MC, need also run number
                         }
                     } else {
-                        cmpd_sf = cmpd_corr_->evaluate({FatJet_area[i], FatJet_eta[i], FatJet_pt[i], rho});
+                        cmpd_sf = cmpd_corr_->evaluate({FatJet_area[i], FatJet_eta[i], fatjet_pt_corr[i], rho});
                     }
-                    FatJet_pt[i] *= cmpd_sf;
-                    FatJet_mass[i] *= cmpd_sf;
+                    fatjet_pt_corr[i] *= cmpd_sf;
+                    fatjet_m_corr[i] *= cmpd_sf;
                 }
 
-                central_p4[i] = LorentzVectorM(FatJet_pt[i], FatJet_eta[i], FatJet_phi[i], FatJet_mass[i]);
+                central_p4[i] = LorentzVectorM(fatjet_pt_corr[i], FatJet_eta[i], FatJet_phi[i], fatjet_m_corr[i]);
             }
 
             all_shifted_p4.insert({{UncSource::Central, UncScale::Central}, central_p4});
