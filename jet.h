@@ -157,15 +157,16 @@ namespace correction {
             // For MC-truth corrected pT < 30 GeV use L2L3Residual correction factor of MC-truth corrected pT = 30 GeV in 2.0 < |eta| < 2.5
 
             float cRes = 1.0;
+            float pt_for_corr = pt_after;
 
             if(is2024Eta2To2p5 and pt_after < 30. ){
-                pt_after = 30.;
+                pt_for_corr = 30.;
             }
             if (isdata_ && require_run_number) {
-                    cRes = corr_l2l3res_->evaluate({float(run),eta,pt_after});
+                    cRes = corr_l2l3res_->evaluate({float(run),eta,pt_for_corr});
                 // }
             } else {
-                cRes = corr_l2l3res_->evaluate({eta,pt_after});
+                cRes = corr_l2l3res_->evaluate({eta,pt_for_corr});
             }
 
             pt_after *= cRes;
@@ -216,8 +217,10 @@ namespace correction {
             std::vector<float> jet_m_corr(sz);
             RVecLV central_p4(sz);
             for (size_t i = 0; i < sz; ++i) {
+                jet_pt_corr[i] = Jet_pt[i];
+                jet_m_corr[i] = Jet_mass[i];
                 float jec_sf = 1.;
-                bool is2024Eta2To2p5 = (year_ == "2024" && Jet_eta[i] > 2 && Jet_eta[i] < 2.5);
+                bool is2024Eta2To2p5 = (year_ == "2024" && std::abs(Jet_eta[i]) > 2 && std::abs(Jet_eta[i]) < 2.5);
                 if (apply_cmpd_ && !(is2024Eta2To2p5)){
                     jec_sf = evaluateJECCompound(Jet_pt[i],
                                         Jet_eta[i],
@@ -247,8 +250,8 @@ namespace correction {
                                         is2024Eta2To2p5
                                     );
                 }
-                Jet_pt[i] *= jec_sf;
-                Jet_mass[i] *= jec_sf;
+                jet_pt_corr[i] *= jec_sf;
+                jet_m_corr[i] *= jec_sf;
 
                 bool is_jet_in_horn =
                     std::abs(Jet_eta[i]) > 2.5 && std::abs(Jet_eta[i]) < 3 ; // JET in horn: 2.5 < |eta| <3
@@ -256,14 +259,14 @@ namespace correction {
                     bool is_gen_matched = Jet_genJetIdx[i] >= 0;
                     float gen_pt = is_gen_matched ? GenJet_pt[Jet_genJetIdx[i]] : -1.f;
 
-                    float jer_sf = corr_jer_sf_->evaluate({Jet_eta[i], Jet_pt[i], "nom"});
-                    float jer_pt_res = corr_jer_res_->evaluate({Jet_eta[i], Jet_pt[i], rho});
+                    float jer_sf = corr_jer_sf_->evaluate({Jet_eta[i], jet_pt_corr[i], "nom"});
+                    float jer_pt_res = corr_jer_res_->evaluate({Jet_eta[i], jet_pt_corr[i], rho});
                     jer_pt_resolutions[i] = jer_pt_res;
 
                     int genjet_idx = Jet_genJetIdx[i];
                     float genjet_pt = genjet_idx != -1 ? GenJet_pt[genjet_idx] : -1.0;
                     float jersmear_factor =
-                        jersmear_corr_->evaluate({Jet_pt[i], Jet_eta[i], genjet_pt, rho, event, jer_pt_res, jer_sf});
+                        jersmear_corr_->evaluate({jet_pt_corr[i], Jet_eta[i], genjet_pt, rho, event, jer_pt_res, jer_sf});
                     // temporary fix for jet horn issue --> do not apply JER for eta range and jet matched to genjet
 
                     if (is_jet_in_horn && ! (is_gen_matched)) { // for jets in horn: JER for gen-matched only (2022-2023-2024. 2025 is still in doubt ??)
@@ -271,10 +274,10 @@ namespace correction {
                     }
 
                     // // apply jer smearing (only for MC)
-                    Jet_pt[i] *= jersmear_factor;
-                    Jet_mass[i] *= jersmear_factor;
+                    jet_pt_corr[i] *= jersmear_factor;
+                    jet_m_corr[i] *= jersmear_factor;
                 }
-                central_p4[i] = LorentzVectorM(Jet_pt[i], Jet_eta[i], Jet_phi[i], Jet_mass[i]);
+                central_p4[i] = LorentzVectorM(jet_pt_corr[i], Jet_eta[i], Jet_phi[i], jet_m_corr[i]);
             }
 
             all_shifted_p4.insert({{UncSource::Central, UncScale::Central}, central_p4});
