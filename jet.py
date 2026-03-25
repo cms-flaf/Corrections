@@ -442,6 +442,7 @@ class JetCorrProducer:
         )
         if self.use_corrlib:
             apply_jer = "true" if apply_JER and not self.isData else "false"
+            reapply_jec = "true"  # by the time being
             require_run_number = "false"
             if (
                 self.period == "2023_Summer23"
@@ -461,24 +462,26 @@ class JetCorrProducer:
                 df = df.Define(
                     "Jet_p4_shifted_map",
                     f"""::correction::JetCorrectionProvider::getGlobal().getShiftedP4(Jet_pt, Jet_eta, Jet_phi, Jet_mass,
-                                                                                                                       Jet_rawFactor, Jet_area, Rho_fixedGridRhoFastjetAll, event, {apply_jer}, {require_run_number},run,{wantPhi},{apply_forward_jet_horns_fix},
+                                                                                                                       Jet_rawFactor, Jet_area, Rho_fixedGridRhoFastjetAll, event, {apply_jer},
+                                                                                                                       {reapply_jec},{require_run_number},run,{wantPhi},{apply_forward_jet_horns_fix},
                                                                                                                        GenJet_pt, Jet_genJetIdx)""",
                 )
                 print(df.Count().GetValue())
                 df = df.Define(
                     "FatJet_p4_shifted_map",
                     f"""::correction::JetCorrectionProvider::getGlobal().getShiftedP4(FatJet_pt, FatJet_eta, FatJet_phi, FatJet_mass,
-                                                                                                                       FatJet_rawFactor, FatJet_area, Rho_fixedGridRhoFastjetAll, event, {apply_jer}, {require_run_number},run,{wantPhi},{apply_forward_jet_horns_fix},
+                                                                                                                       FatJet_rawFactor, FatJet_area, Rho_fixedGridRhoFastjetAll, event, {apply_jer},
+                                                                                                                       {reapply_jec},{require_run_number},run,{wantPhi},{apply_forward_jet_horns_fix},
                                                                                                                        GenJetAK8_pt, FatJet_genJetAK8Idx)""",
                 )
             else:
                 df = df.Define(
                     "Jet_p4_shifted_map",
-                    f"""::correction::JetCorrectionProvider::getGlobal().getShiftedP4(Jet_pt, Jet_eta, Jet_phi, Jet_mass, Jet_rawFactor, Jet_area, Rho_fixedGridRhoFastjetAll,event, {apply_jer}, {require_run_number}, run,{wantPhi},{apply_forward_jet_horns_fix})""",
+                    f"""::correction::JetCorrectionProvider::getGlobal().getShiftedP4(Jet_pt, Jet_eta, Jet_phi, Jet_mass, Jet_rawFactor, Jet_area, Rho_fixedGridRhoFastjetAll,event, {apply_jer},{reapply_jec}, {require_run_number}, run,{wantPhi},{apply_forward_jet_horns_fix})""",
                 )
                 df = df.Define(
                     "FatJet_p4_shifted_map",
-                    f"""::correction::JetCorrectionProvider::getGlobal().getShiftedP4(FatJet_pt, FatJet_eta, FatJet_phi, FatJet_mass, FatJet_rawFactor, FatJet_area, Rho_fixedGridRhoFastjetAll, event, {apply_jer}, {require_run_number},run,{wantPhi},{apply_forward_jet_horns_fix})""",
+                    f"""::correction::JetCorrectionProvider::getGlobal().getShiftedP4(FatJet_pt, FatJet_eta, FatJet_phi, FatJet_mass, FatJet_rawFactor, FatJet_area, Rho_fixedGridRhoFastjetAll, event, {apply_jer},{reapply_jec}, {require_run_number},run,{wantPhi},{apply_forward_jet_horns_fix})""",
                 )
             class_name = "JetCorrectionProvider"
         else:
