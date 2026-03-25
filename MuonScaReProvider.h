@@ -100,13 +100,7 @@ namespace correction {
 
             // instantiate CB and get random number following the CB
             analysis::CrystalBall cb(mean, sigma, alpha, n);
-            int64_t phi_seed = static_cast<int64_t>((phi / M_PI) * ((1LL << 31) - 1)) & 0xFFF;
-            analysis::SeedSequence seq{static_cast<uint32_t>(evtNumber), static_cast<uint32_t>(lumiNumber), static_cast<uint32_t>(phi_seed)};
-            uint32_t seed;
-            seq.generate(&seed, &seed + 1);
-
-            TRandom3 rnd(seed);
-            double rndm = rnd.Rndm();
+            double rndm = cset->at("RandomSmearing")->evaluate({(int)evtNumber, (int)lumiNumber, phi});
             return cb.invcdf(rndm);
         }
 
