@@ -321,6 +321,7 @@ namespace correction {
                                                                              const float rho,
                                                                              int event,
                                                                              bool apply_jer,
+                                                                             bool reapply_jec,
                                                                              bool require_run_number,
                                                                              const unsigned int run,
                                                                              bool wantPhi,
@@ -337,16 +338,17 @@ namespace correction {
             RVecLV central_p4(sz);
 
             for (size_t i = 0; i < sz; ++i) {
-                fatjet_pt_corr[i]= FatJet_pt[i];
-                fatjet_m_corr[i]= FatJet_mass[i];
+                fatjet_pt_corr[i] = FatJet_pt[i];
+                fatjet_m_corr[i] = FatJet_mass[i];
+                float fatjec_sf = 1.;
                 if (reapply_jec){
                     // undo Nano, common place
                     const float fatjet_raw_sf = 1.0 - FatJet_rawFactor[i];
-                    float fatjet_pt_raw = FatJet_pt[i] * raw_sf;
-                    float fatjet_mass_raw = FatJet_mass[i] * raw_sf;
+                    float fatjet_pt_raw = FatJet_pt[i] * fatjet_raw_sf;
+                    float fatjet_mass_raw = FatJet_mass[i] * fatjet_raw_sf;
                     bool is2024Eta2To2p5 = (year_ == "2024" && std::abs(FatJet_eta[i]) > 2 && std::abs(FatJet_eta[i]) < 2.5);
                     if (use_cmpd_jec_ && !(is2024Eta2To2p5)){
-                        jec_sf = evaluateJECCompound(fatjet_pt_raw,
+                        fatjec_sf = evaluateJECCompound(fatjet_pt_raw,
                                             FatJet_eta[i],
                                             FatJet_phi[i],
                                             FatJet_area[i],
@@ -356,7 +358,7 @@ namespace correction {
                                             wantPhi);
                     }
                     else{
-                        jec_sf = evaluateJECSeparately(fatjet_pt_raw,
+                        fatjec_sf = evaluateJECSeparately(fatjet_pt_raw,
                                             FatJet_eta[i],
                                             FatJet_phi[i],
                                             FatJet_area[i],
@@ -368,8 +370,8 @@ namespace correction {
                                             is2024Eta2To2p5
                                         );
                     }
-                    fatjet_pt_corr[i] = pt_raw * jec_sf;
-                    fatjet_m_corr[i] = mass_raw * jec_sf;
+                    fatjet_pt_corr[i] = fatjet_pt_raw * fatjec_sf;
+                    fatjet_m_corr[i] = fatjet_mass_raw * fatjec_sf;
                 }
 
                 bool is_fatjet_in_horn =
