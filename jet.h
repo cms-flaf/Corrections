@@ -376,11 +376,6 @@ namespace correction {
 
                 bool is_fatjet_in_horn =
                     std::abs(FatJet_eta[i]) >= 2.5 && std::abs(FatJet_eta[i]) <= 3 ;
-                // uscaling
-                if (use_cmpd_jec_) {
-                    fatjet_pt_corr[i] *= 1.0 - FatJet_rawFactor[i];
-                    fatjet_m_corr[i] *= 1.0 - FatJet_rawFactor[i];
-                }
                 if (!is_data_ && apply_jer) {
                     // extract jer scale factor and resolution
                     float fatjer_sf = fat_corr_jer_sf_->evaluate({FatJet_eta[i], fatjet_pt_corr[i], "nom"});
