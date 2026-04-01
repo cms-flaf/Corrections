@@ -22,7 +22,8 @@ class JetVetoMapProvider:
         "2023_Summer23BPix": "Summer23BPixPrompt23_RunD_V1",
         "2023_Summer23": "Summer23Prompt23_RunC_V1",
         "2024_Summer24": "Summer24Prompt24_RunBCDEFGHI_V1",
-        "Winter25Prompt25": "Winter25Prompt25_RunBCDE_V1",
+        "2025_Winter25": "Winter25Prompt25_RunCDEFG_V1",
+        "2025_Summer24": "Winter25Prompt25_RunCDEFG_V1",
     }
 
     def __init__(self, era):
