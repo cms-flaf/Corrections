@@ -524,7 +524,6 @@ class JetCorrProducer:
                 )
 
         return df, source_dict
-
     def getEnergyResolution(self, df):
         if self.use_corrlib:
             df = df.Define(
