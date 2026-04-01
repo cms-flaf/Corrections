@@ -66,6 +66,12 @@ ele_files_names = {
         "eleID_highPt": "electronID_highPt",
         "eleES_EtDependent": "electronSS_EtDependent",  # The 2022, 2023, and 2024 Scale and Smearing corrections are provided separately for electrons and photons. In addition, two "flavours" can be used for 2022 and 2023: a standard one, and an eT-dependent one (marked as such in the json file name). The eT-dependent corrections generally yield a better data/MC agreement for objects in the phase space they were derived upon. For 2024, only eT-dependent corrections are available. The Scale and Smearing corrections should not be used for electrons and photons below ~15 GeV and should be used with caution between 15 and 20 GeV, as they were not tuned for this pT range. They might also be ineffective at very high pT (hundreds of GeV).
     },
+    "2025_Summer24": {
+        "eleID": "",  # currently not available
+        "eleHLT": "",  # currently not available
+        "eleID_highPt": "",  # currently not available
+        "eleES_EtDependent": "electronSS_EtDependent",  # The 2022, 2023, and 2024 Scale and Smearing corrections are provided separately for electrons and photons. In addition, two "flavours" can be used for 2022 and 2023: a standard one, and an eT-dependent one (marked as such in the json file name). The eT-dependent corrections generally yield a better data/MC agreement for objects in the phase space they were derived upon. For 2024, only eT-dependent corrections are available. The Scale and Smearing corrections should not be used for electrons and photons below ~15 GeV and should be used with caution between 15 and 20 GeV, as they were not tuned for this pT range. They might also be ineffective at very high pT (hundreds of GeV).
+    },
 }
 
 
