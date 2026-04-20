@@ -126,14 +126,19 @@ class JetCorrProducer:
 
     # maps period to JEC tag
     jec_tag_map_mc = {
-        "2022_Summer22": ["Summer22_22Sep2023_V3_MC"],
         "2022_Prompt": ["Winter22Run3_V3_MC"],
-        "2022_Summer22EE": ["Summer22EE_22Sep2023_V3_MC"],
-        "2023_Summer23BPix": ["Summer23BPixPrompt23_V3_MC"],
+        "2022_Summer22": [
+            "Summer22_22Sep2023_V3_MC"
+        ],  # https://cms-jerc.web.cern.ch/Recommendations/#2022-preee
+        "2022_Summer22EE": [
+            "Summer22EE_22Sep2023_V3_MC"
+        ],  # https://cms-jerc.web.cern.ch/Recommendations/#2022-postee
+        "2023_Summer23BPix": [
+            "Summer23BPixPrompt23_V3_MC"
+        ],  # https://cms-jerc.web.cern.ch/Recommendations/#2023-postbpix
         "2023_Summer23": [
-            "Summer23Prompt23_V2_MC",
-            # "Summer23Prompt23_V3_MC",
-        ],  # Summer23Prompt23_V3_MC should be there (https://cms-jerc.web.cern.ch/Recommendations/#2023-postbpix) but it does not find any key, so keep ALSO v2 for the moment... https://cms-jerc.web.cern.ch/Recommendations/#2023
+            "Summer23Prompt23_V3_MC",
+        ],  # https://cms-jerc.web.cern.ch/Recommendations/#2023-prebpix
         "2024_Summer24": [
             "Summer24Prompt24_V2_MC"
         ],  # https://cms-jerc.web.cern.ch/Recommendations/#2024
@@ -148,19 +153,23 @@ class JetCorrProducer:
     # maps period to base tag
     # for DATA: jec_tag = {base_tag}_Run{letters}_V{version}_DATA
     jec_tag_map_data = {
-        "2022_Summer22": ["Summer22_22Sep2023_Run{}_V3_DATA"],
+        "2022_Prompt": ["Winter22Run3_Run{}_V3_DATA"],
+        "2022_Summer22": [
+            # "Summer22_22Sep2023_Run{}_V3_DATA",
+            "Summer22_22Sep2023_V3_DATA"
+        ],  # https://cms-jerc.web.cern.ch/Recommendations/#2022-preee
+        "2022_Summer22EE": [
+            "Summer22EE_22Sep2023_Run{}_V3_DATA",
+            "Summer22EE_22Sep2023_V3_DATA",
+        ],  # https://cms-jerc.web.cern.ch/Recommendations/#2022-postee
         "2023_Summer23BPix": [
             "Summer23BPixPrompt23_Run{}_V3_DATA",
             "Summer23BPixPrompt23_V3_DATA",
-        ],
-        "2022_Prompt": ["Winter22Run3_Run{}_V3_DATA"],
+        ],  # https://cms-jerc.web.cern.ch/Recommendations/#2023-postbpix
         "2023_Summer23": [
-            # "Summer23Prompt23_Run{}_V3_DATA",
-            # "Summer23Prompt23_V3_DATA",
-            "Summer23Prompt23_Run{}_V2_DATA",
-            "Summer23Prompt23_V2_DATA",
-        ],  # Summer23Prompt23_V3 DATA should be there (https://cms-jerc.web.cern.ch/Recommendations/#2023) but it does not find any key, so keep v2 for the moment... https://cms-jerc.web.cern.ch/Recommendations/#2023
-        "2022_Summer22EE": ["Summer22EE_22Sep2023_Run{}_V3_DATA"],
+            "Summer23Prompt23_Run{}_V3_DATA",
+            "Summer23Prompt23_V3_DATA",
+        ],  # https://cms-jerc.web.cern.ch/Recommendations/#2023
         "2024_Summer24": [
             "Summer24Prompt24_V2_DATA"
         ],  # https://cms-jerc.web.cern.ch/Recommendations/#2024
@@ -193,8 +202,7 @@ class JetCorrProducer:
         "2022_Summer22EE": ["Summer22EE_22Sep2023_V3_MC"],
         "2023_Summer23BPix": ["Summer23BPixPrompt23_V3_MC"],
         "2023_Summer23": [
-            "Summer23Prompt23_V2_MC",
-            # "Summer23Prompt23_V3_MC",
+            "Summer23Prompt23_V3_MC",
         ],  # Summer23Prompt23_V3_MC should be there (https://cms-jerc.web.cern.ch/Recommendations/#2023) but it does not find any key, so keep v2 for the moment... https://cms-jerc.web.cern.ch/Recommendations/#2023
         "2024_Summer24": [
             "Summer24Prompt24_V2_MC"
@@ -208,19 +216,22 @@ class JetCorrProducer:
     }
 
     fatjec_tag_map_data = {
-        "2022_Summer22": ["Summer22_22Sep2023_Run{}_V3_DATA"],
+        "2022_Summer22": [
+            "Summer22_22Sep2023_V3_DATA"
+        ],  # "Summer22_22Sep2023_Run{}_V3_DATA",
         "2023_Summer23BPix": [
             "Summer23BPixPrompt23_Run{}_V3_DATA",
             "Summer23BPixPrompt23_V3_DATA",
         ],
         "2022_Prompt": ["Winter22Run3_Run{}_V3_DATA"],
         "2023_Summer23": [
-            "Summer23Prompt23_Run{}_V2_DATA",
-            "Summer23Prompt23_V2_DATA",
-            # "Summer23Prompt23_Run{}_V3_DATA",
-            # "Summer23Prompt23_V3_DATA",
+            "Summer23Prompt23_Run{}_V3_DATA",
+            "Summer23Prompt23_V3_DATA",
         ],  # Summer23Prompt23_V3_DATA should be there (https://cms-jerc.web.cern.ch/Recommendations/#2023) but it does not find any key, so keep v2 for the moment... https://cms-jerc.web.cern.ch/Recommendations/#2023
-        "2022_Summer22EE": ["Summer22EE_22Sep2023_Run{}_V3_DATA"],
+        "2022_Summer22EE": [
+            "Summer22EE_22Sep2023_Run{}_V3_DATA",
+            "Summer22EE_22Sep2023_V3_DATA",
+        ],
         "2024_Summer24": [
             "Summer24Prompt24_V2_DATA"
         ],  # https://cms-jerc.web.cern.ch/Recommendations/#2024
@@ -444,11 +455,7 @@ class JetCorrProducer:
             apply_jer = "true" if apply_JER and not self.isData else "false"
             reapply_jec = "true"  # by the time being
             require_run_number = "false"
-            if (
-                self.period == "2023_Summer23"
-                or self.period == "2024_Summer24"
-                or self.period == "2025_Summer24"
-            ) and self.isData:
+            if self.isData:
                 require_run_number = "true"
             if self.period == "2023_Summer23BPix":
                 require_run_number = "true"
@@ -466,7 +473,7 @@ class JetCorrProducer:
                                                                                                                        {reapply_jec},{require_run_number},run,{wantPhi},{apply_forward_jet_horns_fix},
                                                                                                                        GenJet_pt, Jet_genJetIdx)""",
                 )
-                print(df.Count().GetValue())
+
                 df = df.Define(
                     "FatJet_p4_shifted_map",
                     f"""::correction::JetCorrectionProvider::getGlobal().getShiftedP4(FatJet_pt, FatJet_eta, FatJet_phi, FatJet_mass,
