@@ -128,6 +128,7 @@ class Corrections:
         self.trg_ = None
         self.btag_ = None
         self.pu_ = None
+        self.dy_hhbbtautau_ = None ## <<=============
         self.mu_ = None
         self.muScaRe_ = None
         self.ele_ = None
@@ -157,6 +158,16 @@ class Corrections:
             self.pu_ = puWeightProducer(period=period_names[self.period])
         return self.pu_
 
+#############################################################################
+
+    @property
+    def dy_hhbbtautau(self):
+        if self.dy_hhbbtautau_ is None:
+            from .DYbbtautau import DYbbtautauCorrProducer
+            self.dy_hhbbtautau_ = DYbbtautauCorrProducer(period=self.period)
+        return self.dy_hhbbtautau_
+
+#############################################################################
     @property
     def Vpt(self):
         if self.Vpt_ is None:
@@ -476,6 +487,18 @@ class Corrections:
                 enabled=pu_enabled,
             )
             all_weights.extend(weight_pu_branches)
+
+###################################################################
+
+        if "dy_hhbbtautau" in self.to_apply:
+            df, dy_branches = self.dy_hhbbtautau.getWeight(
+                df,
+                return_variations=return_variations and isCentral,
+                return_list_of_branches=True,
+            )
+            all_weights.extend(dy_branches)
+
+######################################################################
 
         if "base" in self.to_apply:
             for (
