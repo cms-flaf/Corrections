@@ -163,8 +163,8 @@ class Corrections:
     @property
     def dy_hhbbtautau(self):
         if self.dy_hhbbtautau_ is None:
-            from .DYbbtautau import DYbbtautauCorrProducer
-            self.dy_hhbbtautau_ = DYbbtautauCorrProducer(period=self.period)
+            from .DY_hhbbtautau import DYbbtautauCorrProducer
+            self.dy_hhbbtautau_ = DYbbtautauCorrProducer(era=self.period)
         return self.dy_hhbbtautau_
 
 #############################################################################
