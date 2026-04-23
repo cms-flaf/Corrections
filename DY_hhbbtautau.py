@@ -36,11 +36,19 @@ class DYbbtautauCorrProducer:
         self,
         era,
         *,
+        sampleType,
         njets_branch="nJet",
         ntags_branch="nBJets",
         variations=None,
     ):
         self.era = era
+        
+        if "DY" in sampleType:
+            is_dy = True
+        else:
+            is_dy = False
+            
+        self.is_dy = is_dy
         if self.era not in self.era_map:
             raise RuntimeError(
                 f"DYbbtautauCorrProducer: unsupported era '{self.era}'. "
@@ -76,7 +84,7 @@ class DYbbtautauCorrProducer:
         for idx in [0, 1]:
             df = defineP4(df, f"tau{idx+1}_gen_vis")
             
-        df = df.Define("pt_ll", "(tau1_gen_vis_p4+tau2_gen_vis_p4).Pt()")
+        # df = df.Define("pt_ll", "(tau1_gen_vis_p4+tau2_gen_vis_p4).Pt()")
 
         systs = ["nominal"]
         if return_variations:
@@ -91,8 +99,10 @@ class DYbbtautauCorrProducer:
                         "{self.era_map[self.era]}",
                         static_cast<int>({self.njets_branch}),
                         static_cast<int>({self.ntags_branch}),
-                        static_cast<float>(pt_ll),
-                        "{syst}"
+                        tau1_gen_vis_p4,
+                        tau2_gen_vis_p4,
+                        "{syst}",
+                        {"true" if self.is_dy else "false"}
                     )'''
             )
             branches.append(branch_name)

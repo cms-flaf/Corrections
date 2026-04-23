@@ -10,17 +10,23 @@ class DYbbtautauCorrProvider : public CorrectionsBase<DYbbtautauCorrProvider> {
     explicit DYbbtautauCorrProvider(const std::string& fileName)
         : corrections_(CorrectionSet::from_file(fileName)),
           dyWeight_(corrections_->at("dy_weight")) {}
-
-    float getWeight(const std::string& era,
+    
+    template <typename LV1, typename LV2>
+    double getWeight(const std::string& era,
                     int njets,
                     int ntags,
-                    float ptll,
-                    const std::string& syst) const {
-        if (njets < 2) {
-            return 1.f;
-        }
+                    const LV1& tau1_gen_p4,
+                    const LV2& tau2_gen_p4,
+                    const std::string& syst,
+                    bool isDY) const {
+        
+        float weight = 1.0f;
+        if(!isDY) return weight;
 
-        return dyWeight_->evaluate({era, njets, ntags, ptll, syst});
+        const float ptll = static_cast<float>((tau1_gen_p4 + tau2_gen_p4).Pt());
+        // return dyWeight_->safeEvaluate({era, njets, ntags, ptll, syst});
+        return safeEvaluate(dyWeight_, era, njets, ntags, ptll, syst);
+        // return correction::safeEvaluate(dyWeight_, era, njets, ntags, ptll, syst);
     }
 
   private:

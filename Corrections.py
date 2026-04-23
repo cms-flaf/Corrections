@@ -164,7 +164,7 @@ class Corrections:
     def dy_hhbbtautau(self):
         if self.dy_hhbbtautau_ is None:
             from .DY_hhbbtautau import DYbbtautauCorrProducer
-            self.dy_hhbbtautau_ = DYbbtautauCorrProducer(era=self.period)
+            self.dy_hhbbtautau_ = DYbbtautauCorrProducer(sampleType=self.dataset_name, era=self.period)
         return self.dy_hhbbtautau_
 
 #############################################################################
