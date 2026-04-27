@@ -44,12 +44,12 @@ class DYbbtautauCorrProducer:
     ):
         self.era = era
         self.valid = valid
-        
+
         if "DY" in sampleType:
             is_dy = True
         else:
             is_dy = False
-            
+
         self.is_dy = is_dy
         if self.era not in self.era_map:
             raise RuntimeError(
@@ -60,7 +60,9 @@ class DYbbtautauCorrProducer:
         self.json_path = self.JsonPath
         self.njets_branch = njets_branch
         self.ntags_branch = ntags_branch
-        self.variations = list(self.default_variations if variations is None else variations)
+        self.variations = list(
+            self.default_variations if variations is None else variations
+        )
 
         if not DYbbtautauCorrProducer.initialized:
             headers_dir = os.path.dirname(os.path.abspath(__file__))
@@ -82,7 +84,7 @@ class DYbbtautauCorrProducer:
             if return_list_of_branches:
                 return df, []
             return df
-        
+
         for idx in [0, 1]:
             df = defineP4(df, f"tau{idx+1}_gen_vis")
 
@@ -92,10 +94,12 @@ class DYbbtautauCorrProducer:
 
         branches = []
         for syst in systs:
-            branch_name = "weight_dy_central" if syst == "nominal" else f"weight_dy_{syst}"
+            branch_name = (
+                "weight_dy_central" if syst == "nominal" else f"weight_dy_{syst}"
+            )
             df = df.Define(
                 branch_name,
-                f'''::correction::DYbbtautauCorrProvider::getGlobal().getWeight(
+                f"""::correction::DYbbtautauCorrProvider::getGlobal().getWeight(
                         "{self.era_map[self.era]}",
                         static_cast<int>({self.njets_branch}),
                         static_cast<int>({self.ntags_branch}),
@@ -104,7 +108,7 @@ class DYbbtautauCorrProducer:
                         "{syst}",
                         {"true" if self.is_dy else "false"},
                         {"true" if self.valid else "false"}
-                    )'''
+                    )""",
             )
             branches.append(branch_name)
 
