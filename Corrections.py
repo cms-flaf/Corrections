@@ -128,7 +128,7 @@ class Corrections:
         self.trg_ = None
         self.btag_ = None
         self.pu_ = None
-        self.dy_hhbbtautau_ = None ## <<=============
+        self.dy_hhbbtautau_ = None
         self.mu_ = None
         self.muScaRe_ = None
         self.ele_ = None
@@ -158,8 +158,6 @@ class Corrections:
             self.pu_ = puWeightProducer(period=period_names[self.period])
         return self.pu_
 
-#############################################################################
-
     @property
     def dy_hhbbtautau(self):
         if self.dy_hhbbtautau_ is None:
@@ -167,7 +165,6 @@ class Corrections:
             self.dy_hhbbtautau_ = DYbbtautauCorrProducer(sampleType=self.dataset_name, era=self.period)
         return self.dy_hhbbtautau_
 
-#############################################################################
     @property
     def Vpt(self):
         if self.Vpt_ is None:
@@ -488,7 +485,6 @@ class Corrections:
             )
             all_weights.extend(weight_pu_branches)
 
-###################################################################
 
         if "dy_hhbbtautau" in self.to_apply:
             df, dy_branches = self.dy_hhbbtautau.getWeight(
@@ -498,7 +494,6 @@ class Corrections:
             )
             all_weights.extend(dy_branches)
 
-######################################################################
 
         if "base" in self.to_apply:
             for (

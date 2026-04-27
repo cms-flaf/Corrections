@@ -39,9 +39,11 @@ class DYbbtautauCorrProducer:
         sampleType,
         njets_branch="nJet",
         ntags_branch="nBJets",
+        valid="valid",
         variations=None,
     ):
         self.era = era
+        self.valid = valid
         
         if "DY" in sampleType:
             is_dy = True
@@ -80,11 +82,9 @@ class DYbbtautauCorrProducer:
             if return_list_of_branches:
                 return df, []
             return df
-
+        
         for idx in [0, 1]:
             df = defineP4(df, f"tau{idx+1}_gen_vis")
-            
-        # df = df.Define("pt_ll", "(tau1_gen_vis_p4+tau2_gen_vis_p4).Pt()")
 
         systs = ["nominal"]
         if return_variations:
@@ -102,7 +102,8 @@ class DYbbtautauCorrProducer:
                         tau1_gen_vis_p4,
                         tau2_gen_vis_p4,
                         "{syst}",
-                        {"true" if self.is_dy else "false"}
+                        {"true" if self.is_dy else "false"},
+                        {"true" if self.valid else "false"}
                     )'''
             )
             branches.append(branch_name)
