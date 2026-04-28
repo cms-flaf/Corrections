@@ -22,15 +22,12 @@ namespace correction {
                          const std::string& syst,
                          bool isDY,
                          bool isValid) const {
-
-
             const float ptll = static_cast<float>((tau1_gen_p4 + tau2_gen_p4).Pt());
 
             double weight = 1.0;  // Declare outside the if-else
             if (!isDY || !isValid) {
                 weight = 1.0;
-            } 
-            else {
+            } else {
                 weight = safeEvaluate(dyWeight_, era, njets, ntags, ptll, syst);
             }
             return weight;
