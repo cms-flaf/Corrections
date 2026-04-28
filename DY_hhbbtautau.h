@@ -22,27 +22,17 @@ namespace correction {
                          const std::string& syst,
                          bool isDY,
                          bool isValid) const {
-            double weight = 1.0;
-            if (!isDY)
-                return weight;
-            if (!isValid)
-                return weight;
+
 
             const float ptll = static_cast<float>((tau1_gen_p4 + tau2_gen_p4).Pt());
 
-            weight = safeEvaluate(dyWeight_, era, njets, ntags, ptll, syst);
-
-            // if (std::abs(weight) < 0.00005) {
-            //     std::cout << "[DYbbtautauCorrProvider] zero weight:"
-            //               << " era=" << era
-            //               << " njets=" << njets
-            //               << " ntags=" << ntags
-            //               << " ptll=" << ptll
-            //               << " syst=" << syst
-            //               << " weight=" << weight
-            //               << std::endl;
-            // }
-
+            double weight = 1.0;  // Declare outside the if-else
+            if (!isDY || !isValid) {
+                weight = 1.0;
+            } 
+            else {
+                weight = safeEvaluate(dyWeight_, era, njets, ntags, ptll, syst);
+            }
             return weight;
         }
 
