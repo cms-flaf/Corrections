@@ -24,7 +24,7 @@ namespace correction {
                          bool isValid) const {
             const float ptll = static_cast<float>((tau1_gen_p4 + tau2_gen_p4).Pt());
 
-            double weight = 1.0;  // Declare outside the if-else
+            double weight = 1.0;
             if (!isDY || !isValid) {
                 weight = 1.0;
             } else {
