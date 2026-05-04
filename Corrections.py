@@ -163,6 +163,7 @@ class Corrections:
         if self.dy_hhbbtautau_ is None:
             if "DY" in self.dataset_name:
                 from .DY_hhbbtautau import DYbbtautauCorrProducer
+
                 self.dy_hhbbtautau_ = DYbbtautauCorrProducer(era=self.period)
             else:
                 self.dy_hhbbtautau_ = None

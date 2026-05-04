@@ -44,7 +44,7 @@ class DYbbtautauCorrProducer:
     ):
         self.era = era
         self.valid = valid
-        
+
         if self.era not in self.era_map:
             raise RuntimeError(
                 f"DYbbtautauCorrProducer: unsupported era '{self.era}'. "
