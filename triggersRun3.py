@@ -286,6 +286,8 @@ class TrigCorrProducer:
                     VSjetWP[trg] = "placeholder"
         SF_branches = []
         for trg_name in trigger_names:
+            if not trigger_dict[trg_name].get("apply_corrections", True):
+                continue
             trigger_legs = trigger_dict[trg_name]["legs"]
             for trg_leg_idx, trg_leg in enumerate(trigger_legs):
                 electron_input = trigger_dict[trg_name]["legs"][trg_leg_idx][
