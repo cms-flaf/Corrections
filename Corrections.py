@@ -161,12 +161,9 @@ class Corrections:
     @property
     def dy_hhbbtautau(self):
         if self.dy_hhbbtautau_ is None:
-            if "DY" in self.dataset_name:
-                from .DY_hhbbtautau import DYbbtautauCorrProducer
+            from .DY_hhbbtautau import DYbbtautauCorrProducer
 
-                self.dy_hhbbtautau_ = DYbbtautauCorrProducer(era=self.period)
-            else:
-                self.dy_hhbbtautau_ = None
+            self.dy_hhbbtautau_ = DYbbtautauCorrProducer(era=self.period)
         return self.dy_hhbbtautau_
 
     @property
@@ -489,7 +486,7 @@ class Corrections:
             )
             all_weights.extend(weight_pu_branches)
 
-        if "dy_hhbbtautau" in self.to_apply:
+        if "dy_hhbbtautau" in self.to_apply and "DY" in self.dataset_name:
             df, dy_branches = self.dy_hhbbtautau.getWeight(
                 df,
                 return_variations=return_variations and isCentral,
