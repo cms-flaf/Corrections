@@ -1,11 +1,11 @@
 import os
 import ROOT
 from .CorrectionsCore import *
-from FLAF.Common.Utilities import defineP4
 
 
 class DYbbtautauCorrProducer:
-    JsonPath = "/afs/cern.ch/work/m/mrieger/public/hbt/external_files/custom_dy_files/hbt_corrections.json.gz"
+    # JsonPath = "/afs/cern.ch/work/m/mrieger/public/hbt/external_files/custom_dy_files/hbt_corrections.json.gz"
+    JsonPath = "Corrections/data/DY_corr_hbt/hbt_corrections_v2.json.gz"
     initialized = False
 
     era_map = {
@@ -13,6 +13,7 @@ class DYbbtautauCorrProducer:
         "Run3_2022EE": "2022postEE",
         "Run3_2023": "2023preBPix",
         "Run3_2023BPix": "2023postBPix",
+        "Run3_2024": "2024",
     }
 
     default_variations = [
@@ -36,7 +37,6 @@ class DYbbtautauCorrProducer:
         self,
         era,
         *,
-        sampleType,
         njets_branch="nJet",
         ntags_branch="nBJets",
         valid="valid",
@@ -44,13 +44,7 @@ class DYbbtautauCorrProducer:
     ):
         self.era = era
         self.valid = valid
-
-        if "DY" in sampleType:
-            is_dy = True
-        else:
-            is_dy = False
-
-        self.is_dy = is_dy
+        
         if self.era not in self.era_map:
             raise RuntimeError(
                 f"DYbbtautauCorrProducer: unsupported era '{self.era}'. "
@@ -85,9 +79,6 @@ class DYbbtautauCorrProducer:
                 return df, []
             return df
 
-        for idx in [0, 1]:
-            df = defineP4(df, f"tau{idx+1}_gen_vis")
-
         systs = ["nominal"]
         if return_variations:
             systs += self.variations
@@ -106,7 +97,6 @@ class DYbbtautauCorrProducer:
                         tau1_gen_vis_p4,
                         tau2_gen_vis_p4,
                         "{syst}",
-                        {"true" if self.is_dy else "false"},
                         {"true" if self.valid else "false"}
                     )""",
             )

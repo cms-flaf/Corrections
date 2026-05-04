@@ -161,11 +161,11 @@ class Corrections:
     @property
     def dy_hhbbtautau(self):
         if self.dy_hhbbtautau_ is None:
-            from .DY_hhbbtautau import DYbbtautauCorrProducer
-
-            self.dy_hhbbtautau_ = DYbbtautauCorrProducer(
-                sampleType=self.dataset_name, era=self.period
-            )
+            if "DY" in self.dataset_name:
+                from .DY_hhbbtautau import DYbbtautauCorrProducer
+                self.dy_hhbbtautau_ = DYbbtautauCorrProducer(era=self.period)
+            else:
+                self.dy_hhbbtautau_ = None
         return self.dy_hhbbtautau_
 
     @property
