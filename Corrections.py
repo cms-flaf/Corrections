@@ -165,6 +165,7 @@ class Corrections:
         self.Vpt_ = None
         self.JetVetoMap_ = None
         self.btag_shape_norm_ = None
+        self.recoil_ = None
 
     @property
     def xs_db(self):
@@ -192,6 +193,12 @@ class Corrections:
 
             self.Vpt_ = VptCorrProducer(self.to_apply["Vpt"]["type"], self.period)
         return self.Vpt_
+
+    @property
+    def recoil(self):
+        if self.recoil_ is None:
+            self.recoil_ = BosonicRecoilCorrection()
+        return self.recoil_
 
     @property
     def JetVetoMap(self):
