@@ -54,29 +54,37 @@ class MuonEnergyScaleProducer:
             updateSourceDict(source_dict, source, "Muon")
             for scale in getScales(source):
                 syst_name = getSystName(source, scale)
-                p4 = f"Muon_p4_{self.pt_for_ScaRe}"
-                print(
-                    f"computing ScaRe on {p4} and defining the scare varied p4 as Muon_p4_{syst_name}"
-                )
-                scare_branch = f"Muon_p4_scare_{syst_name}"
-                if not self.apply_fsr_recovery:
-                    # output to the main branch
-                    scare_branch = f"Muon_p4_{syst_name}"
-                if self.apply_scare:
-                    df = df.Define(
-                        scare_branch,
-                        f"""::correction::MuonScaReCorrProvider::getGlobal().getES(v_ops::pt({p4}), v_ops::eta({p4}), v_ops::phi({p4}), v_ops::mass({p4}), Muon_charge, Muon_nTrackerLayers, isData, event, luminosityBlock, ::correction::MuonScaReCorrProvider::UncSource::{source}, ::correction::UncScale::{scale})""",
+                for suffix in ["nano", "bsConstrainedPt"]:
+                    p4 = f"Muon_p4_{suffix}"
+                    scare_branch = f"Muon_p4_{syst_name}_{suffix}"
+                    scare_FSR_branch = f"Muon_p4_FSR_{syst_name}_{suffix}"
+                    if suffix == self.pt_for_ScaRe:
+                        scare_branch = f"Muon_p4_{syst_name}"
+                        scare_FSR_branch = f"Muon_p4_FSR_{syst_name}"
+                    print(
+                        f"computing ScaRe on {p4} and defining the scare varied p4 as Muon_p4_{syst_name}"
                     )
-                    p4 = f"Muon_p4_scare_{syst_name}"
-                if self.apply_fsr_recovery:
+                    print(scare_branch)
+                    if self.apply_scare:
+                        df = df.Define(
+                            scare_branch,
+                            f"""::correction::MuonScaReCorrProvider::getGlobal().getES(v_ops::pt({p4}), v_ops::eta({p4}), v_ops::phi({p4}), v_ops::mass({p4}), Muon_charge, Muon_nTrackerLayers, isData, event, luminosityBlock, ::correction::MuonScaReCorrProvider::UncSource::{source}, ::correction::UncScale::{scale})""",
+                        )
+                        p4 = scare_branch
+                    if self.apply_fsr_recovery:
+                        df = df.Define(
+                            scare_FSR_branch,
+                            f"""::correction::MuonFsrRecoveryProvider::fsr_corrected_p4(v_ops::pt({p4}), v_ops::eta({p4}), v_ops::phi({p4}), v_ops::mass({p4}), Muon_fsrPhotonIdx, FsrPhoton_pt, FsrPhoton_eta, FsrPhoton_phi, FsrPhoton_dROverEt2, FsrPhoton_relIso03, FsrPhoton_electronIdx)""",
+                        )
+                        df = df.Define(
+                            f"{scare_FSR_branch}_delta",
+                            f"{scare_FSR_branch} - Muon_p4_{nano}",
+                        )
                     df = df.Define(
-                        f"Muon_p4_{syst_name}",
-                        f"""::correction::MuonFsrRecoveryProvider::fsr_corrected_p4(v_ops::pt({p4}), v_ops::eta({p4}), v_ops::phi({p4}), v_ops::mass({p4}), Muon_fsrPhotonIdx, FsrPhoton_pt, FsrPhoton_eta, FsrPhoton_phi, FsrPhoton_dROverEt2, FsrPhoton_relIso03, FsrPhoton_electronIdx)""",
+                        f"{scare_branch}_delta",
+                        f"{scare_branch} - Muon_p4_{nano}",
                     )
-                df = df.Define(
-                    f"Muon_p4_{syst_name}_delta",
-                    f"Muon_p4_{syst_name} - Muon_p4_{nano}",
-                )
+
         return df, source_dict
 
     def getP4VariationsForLegs(self, df):
@@ -87,19 +95,38 @@ class MuonEnergyScaleProducer:
             for scale in getScales(source):
                 syst_name = getSystName(source, scale)
                 for leg_idx in [1, 2]:
-                    mu_pt = f"mu{leg_idx}_{self.pt_for_ScaRe}"
-                    scare_branch = f"mu{leg_idx}_p4_scare_{syst_name}"
-                    if not self.apply_fsr_recovery:
+                    for suffix in ["nano", "bsConstrainedPt"]:
+                    p4 = f"mu{leg_idx}_p4_{suffix}"
+                    if p4 not in df.GetColumnNames():
+                        mu_pt_name = f"mu{mu_idx}_pt_{suffix}" if suffix !="_bsConstrainedPt" else f"mu{mu_idx}_{suffix}"
+                        df= df.Define(p4, "ROOT::Math::LorentzVector<ROOT::Math::PtEtaPhiM4D<double>>({mu_pt_name},mu{leg_idx}_eta,mu{leg_idx}_phi,mu{leg_idx}_mass)")
+                    scare_branch = f"mu{leg_idx}_p4_{syst_name}_{suffix}"
+                    scare_FSR_branch = f"mu{leg_idx}_p4_FSR_{syst_name}_{suffix}"
+                    if suffix == self.pt_for_ScaRe:
                         scare_branch = f"mu{leg_idx}_p4_{syst_name}"
+                        scare_FSR_branch = f"mu{leg_idx}_p4_FSR_{syst_name}"
+                    print(
+                        f"computing ScaRe on {p4} and defining the scare varied p4 as mu{leg_idx}_p4_{syst_name}"
+                    )
+                    print(scare_branch)
                     if self.apply_scare:
                         df = df.Define(
                             scare_branch,
-                            f"""::correction::MuonScaReCorrProvider::getGlobal().getES({mu_pt}, mu{leg_idx}_eta, mu{leg_idx}_phi, mu{leg_idx}_mass, mu{leg_idx}_charge, mu{leg_idx}_nTrackerLayers, isData, event, luminosityBlock, ::correction::MuonScaReCorrProvider::UncSource::{source}, ::correction::UncScale::{scale})""",
+                            f"""::correction::MuonScaReCorrProvider::getGlobal().getES(v_ops::pt({p4}), v_ops::eta({p4}), v_ops::phi({p4}), v_ops::mass({p4}), Muon_charge, Muon_nTrackerLayers, isData, event, luminosityBlock, ::correction::MuonScaReCorrProvider::UncSource::{source}, ::correction::UncScale::{scale})""",
                         )
-                        mu_pt = f"mu{leg_idx}_{self.pt_for_ScaRe}"
+                        p4 = scare_branch
                     if self.apply_fsr_recovery:
                         df = df.Define(
-                            f"mu{leg_idx}_p4_{syst_name}",
-                            f"""::correction::MuonFsrRecoveryProvider::fsr_corrected_p4({mu_pt}, mu{leg_idx}_eta, mu{leg_idx}_phi, mu{leg_idx}_mass, mu{leg_idx}_fsrPhotonIdx, FsrPhoton_pt, FsrPhoton_eta, FsrPhoton_phi, FsrPhoton_dROverEt2, FsrPhoton_relIso03, FsrPhoton_electronIdx)""",
+                            scare_FSR_branch,
+                            f"""::correction::MuonFsrRecoveryProvider::fsr_corrected_p4(v_ops::pt({p4}), v_ops::eta({p4}), v_ops::phi({p4}), v_ops::mass({p4}), Muon_fsrPhotonIdx, FsrPhoton_pt, FsrPhoton_eta, FsrPhoton_phi, FsrPhoton_dROverEt2, FsrPhoton_relIso03, FsrPhoton_electronIdx)""",
                         )
+                        df = df.Define(
+                            f"{scare_FSR_branch}_delta",
+                            f"{scare_FSR_branch} - mu{leg_idx}_p4_{nano}",
+                        )
+                    df = df.Define(
+                        f"{scare_branch}_delta",
+                        f"{scare_branch} - mu{leg_idx}_p4_{nano}",
+                    )
+
         return df
