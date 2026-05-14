@@ -17,20 +17,20 @@ class DYbbtautauCorrProducer:
     }
 
     default_variations = [
-        "stat_up",
-        "stat_down",
+        # "stat_up",
+        # "stat_down",
         # "syst_up",
         # "syst_down",
-        # "stat_btag0_up",
-        # "stat_btag0_down",
-        # "stat_btag1_up",
-        # "stat_btag1_down",
-        # "stat_btag2_up",
-        # "stat_btag2_down",
-        # "syst_gauss_up",
-        # "syst_gauss_down",
-        # "syst_linear_up",
-        # "syst_linear_down",
+        "stat_btag0_up",
+        "stat_btag0_down",
+        "stat_btag1_up",
+        "stat_btag1_down",
+        "stat_btag2_up",
+        "stat_btag2_down",
+        "syst_gauss_up",
+        "syst_gauss_down",
+        "syst_linear_up",
+        "syst_linear_down",
     ]
 
     def __init__(
