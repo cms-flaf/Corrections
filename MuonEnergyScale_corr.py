@@ -127,5 +127,4 @@ class MuonEnergyScaleProducer:
                             f"{scare_branch}_delta",
                             f"{scare_branch} - mu{leg_idx}_p4_{nano}",
                         )
-
         return df, source_dict
