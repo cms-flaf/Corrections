@@ -108,26 +108,26 @@ namespace correction {
         std::unique_ptr<CorrectionSet> cset_vxbs;
 
       private:
-        double get_rndm(double eta, double phi, float nL, int evtNumber, int lumiNumber) const {
+        double get_rndm(double eta, double phi, float nL, int evtNumber, int lumiNumber, bool useVXBS = false) const {
             const auto& cs = getCSet(useVXBS);
             // obtain parameters from correctionlib
-            double mean = cs->at("cb_params")->evaluate({abs(eta), nL, 0});
-            double sigma = cs->at("cb_params")->evaluate({abs(eta), nL, 1});
-            double n = cs->at("cb_params")->evaluate({abs(eta), nL, 2});
-            double alpha = cs->at("cb_params")->evaluate({abs(eta), nL, 3});
+            double mean = cs.at("cb_params")->evaluate({abs(eta), nL, 0});
+            double sigma = cs.at("cb_params")->evaluate({abs(eta), nL, 1});
+            double n = cs.at("cb_params")->evaluate({abs(eta), nL, 2});
+            double alpha = cs.at("cb_params")->evaluate({abs(eta), nL, 3});
 
             // instantiate CB and get random number following the CB
             analysis::CrystalBall cb(mean, sigma, alpha, n);
-            double rndm = cs->at("RandomSmearing")->evaluate({(int)evtNumber, (int)lumiNumber, phi});
+            double rndm = cs.at("RandomSmearing")->evaluate({(int)evtNumber, (int)lumiNumber, phi});
             return cb.invcdf(rndm);
         }
 
-        double get_std(double pt, double eta, float nL) const {
+        double get_std(double pt, double eta, float nL,bool useVXBS = false) const {
             const auto& cs = getCSet(useVXBS);
             // obtain paramters from correctionlib
-            double param_0 = cs->at("poly_params")->evaluate({abs(eta), nL, 0});
-            double param_1 = cs->at("poly_params")->evaluate({abs(eta), nL, 1});
-            double param_2 = cs->at("poly_params")->evaluate({abs(eta), nL, 2});
+            double param_0 = cs.at("poly_params")->evaluate({abs(eta), nL, 0});
+            double param_1 = cs.at("poly_params")->evaluate({abs(eta), nL, 1});
+            double param_2 = cs.at("poly_params")->evaluate({abs(eta), nL, 2});
 
             // calculate value and return max(0, val)
             double sigma = param_0 + param_1 * pt + param_2 * pt*pt;
@@ -135,11 +135,11 @@ namespace correction {
             return sigma;
         }
 
-        double get_k(double eta, string var) const {
+        double get_k(double eta, string var,bool useVXBS = false) const {
             const auto& cs = getCSet(useVXBS);
             // obtain parameters from correctionlib
-            double k_data = cs->at("k_data")->evaluate({abs(eta), var});
-            double k_mc = cs->at("k_mc")->evaluate({abs(eta), var});
+            double k_data = cs.at("k_data")->evaluate({abs(eta), var});
+            double k_mc = cs.at("k_mc")->evaluate({abs(eta), var});
 
             // calculate residual smearing factor
             // return 0 if smearing in MC already larger than in data
@@ -174,7 +174,7 @@ namespace correction {
 
             if (k==0) return pt_wresol;
 
-            double k_unc = cs->at("k_mc")->evaluate({abs(eta), "stat"});
+            double k_unc = cs.at("k_mc")->evaluate({abs(eta), "stat"});
 
             double std_x_rndm = (pt_wresol / pt_woresol - 1) / k;
 
@@ -202,8 +202,8 @@ namespace correction {
             string dtmc = "mc";
             if (is_data) dtmc = "data";
 
-            double a = cs->at("a_"+dtmc)->evaluate({eta, phi, "nom"});
-            double m = cs->at("m_"+dtmc)->evaluate({eta, phi, "nom"});
+            double a = cs.at("a_"+dtmc)->evaluate({eta, phi, "nom"});
+            double m = cs.at("m_"+dtmc)->evaluate({eta, phi, "nom"});
             if(pt < low_pt_threshold)
                 return pt;
 
@@ -213,9 +213,9 @@ namespace correction {
 
         double pt_scale_var(double pt, double eta, double phi, int charge, string updn, bool useVXBS = false) const {
             const auto& cs = getCSet(useVXBS);
-            double stat_a = cs->at("a_mc")->evaluate({eta, phi, "stat"});
-            double stat_m = cs->at("m_mc")->evaluate({eta, phi, "stat"});
-            double stat_rho = cs->at("m_mc")->evaluate({eta, phi, "rho_stat"});
+            double stat_a = cs.at("a_mc")->evaluate({eta, phi, "stat"});
+            double stat_m = cs.at("m_mc")->evaluate({eta, phi, "stat"});
+            double stat_rho = cs.at("m_mc")->evaluate({eta, phi, "rho_stat"});
 
             double unc = pt*pt*sqrt(stat_m*stat_m / (pt*pt) + stat_a*stat_a + 2*charge*stat_rho*stat_m/pt*stat_a);
 
