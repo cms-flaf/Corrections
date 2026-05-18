@@ -163,7 +163,9 @@ class Corrections:
         if self.dy_hhbbtautau_ is None:
             from .DY_hhbbtautau import DYbbtautauCorrProducer
 
-            self.dy_hhbbtautau_ = DYbbtautauCorrProducer(era=self.period)
+            self.dy_hhbbtautau_ = DYbbtautauCorrProducer(
+                self.to_apply["dy_hhbbtautau"]["type"], era=self.period
+            )
         return self.dy_hhbbtautau_
 
     @property
@@ -486,15 +488,7 @@ class Corrections:
             )
             all_weights.extend(weight_pu_branches)
 
-        # is_dy_sample = (
-        #     self.process_name == "DY"
-        #     or self.dataset_name.startswith("DY")
-        #     or "DYto" in self.dataset_name
-        # )
-
-        if "dy_hhbbtautau" in self.to_apply and self.dataset_name.startswith(
-            "DY"
-        ):  # and is_dy_sample:
+        if "dy_hhbbtautau" in self.to_apply:
             df, dy_branches = self.dy_hhbbtautau.getWeight(
                 df,
                 return_variations=return_variations and isCentral,
