@@ -28,26 +28,40 @@ namespace correction {
             return false;
         }
 
-        MuonScaReCorrProvider(const std::string& jsonFile) : cset(CorrectionSet::from_file(jsonFile)) {}
+        MuonScaReCorrProvider(
+        const std::string& jsonFile,
+        const std::string& jsonFileVXBS
+        ) :
+            cset(CorrectionSet::from_file(jsonFile)),
+            cset_vxbs(CorrectionSet::from_file(jsonFileVXBS))
+        {}
 
-        LorentzVectorM getES(const float Muon_pt,
-                     const float Muon_eta,
-                     const float Muon_phi,
-                     const float Muon_mass,
-                     const int Muon_charge,
-                     const unsigned char Muon_nTrackerLayers,
-                     const bool is_data,
-                     const int evtNumber,
-                     const int lumiNumber,
-                     UncSource source,
-                     UncScale scale) const {
-                const UncScale mu_scale = sourceApplies(source) ? scale : UncScale::Central; 
+        const CorrectionSet& getCSet(bool useVXBS) const {
+            return useVXBS ? *cset_vxbs : *cset;
+        }
+
+            LorentzVectorM getES(
+                const float Muon_pt,
+                const float Muon_eta,
+                const float Muon_phi,
+                const float Muon_mass,
+                const int Muon_charge,
+                const unsigned char Muon_nTrackerLayers,
+                const bool is_data,
+                const int evtNumber,
+                const int lumiNumber,
+                UncSource source,
+                UncScale scale,
+                bool useVXBS = false) const {
+                const UncScale mu_scale = sourceApplies(source) ? scale : UncScale::Central;
                 const std::string& scale_str = getScaleStr(mu_scale);
+
                 const int isData = is_data ? 1 : 0;
-                const double muon_pt_scaled = mu_scale == UncScale::Central ? pt_scale(is_data, Muon_pt, Muon_eta, Muon_phi, Muon_charge) : pt_scale_var(Muon_pt, Muon_eta, Muon_phi, Muon_charge, scale_str);
+                const double muon_pt_scaled = mu_scale == UncScale::Central ? pt_scale(is_data, Muon_pt, Muon_eta, Muon_phi, Muon_charge,useVXBS) : pt_scale_var(Muon_pt, Muon_eta, Muon_phi, Muon_charge, scale_str,useVXBS);
                 double muon_pt_resol = muon_pt_scaled;
+
                 if (!isData) {
-                    muon_pt_resol = mu_scale == UncScale::Central ? pt_resol(muon_pt_scaled, Muon_eta, Muon_phi, Muon_nTrackerLayers, evtNumber, lumiNumber) : pt_resol_var(muon_pt_scaled, muon_pt_resol, Muon_eta, scale_str);
+                    muon_pt_resol = mu_scale == UncScale::Central ? pt_resol(muon_pt_scaled, Muon_eta, Muon_phi, Muon_nTrackerLayers, evtNumber, lumiNumber,useVXBS) : pt_resol_var(muon_pt_scaled, muon_pt_resol, Muon_eta, scale_str,useVXBS);
 
                 }
                 const LorentzVectorM muon_p4_ScaRe = LorentzVectorM(muon_pt_resol, Muon_eta, Muon_phi, Muon_mass);
@@ -63,7 +77,8 @@ namespace correction {
                 const int evtNumber,
                 const int lumiNumber,
                 UncSource source,
-                UncScale scale) const
+                UncScale scale,
+                bool useVXBS = false) const
             {
                 const size_t nMuons = Muon_pt.size();
                 RVecLV out(nMuons);
@@ -80,7 +95,8 @@ namespace correction {
                         evtNumber,
                         lumiNumber,
                         source,
-                        scale
+                        scale,
+                        useVXBS
                     );
                 }
 
@@ -89,27 +105,29 @@ namespace correction {
 
       private:
         std::unique_ptr<CorrectionSet> cset;
+        std::unique_ptr<CorrectionSet> cset_vxbs;
 
       private:
         double get_rndm(double eta, double phi, float nL, int evtNumber, int lumiNumber) const {
+            const auto& cs = getCSet(useVXBS);
             // obtain parameters from correctionlib
-            double mean = cset->at("cb_params")->evaluate({abs(eta), nL, 0});
-            double sigma = cset->at("cb_params")->evaluate({abs(eta), nL, 1});
-            double n = cset->at("cb_params")->evaluate({abs(eta), nL, 2});
-            double alpha = cset->at("cb_params")->evaluate({abs(eta), nL, 3});
+            double mean = cs->at("cb_params")->evaluate({abs(eta), nL, 0});
+            double sigma = cs->at("cb_params")->evaluate({abs(eta), nL, 1});
+            double n = cs->at("cb_params")->evaluate({abs(eta), nL, 2});
+            double alpha = cs->at("cb_params")->evaluate({abs(eta), nL, 3});
 
             // instantiate CB and get random number following the CB
             analysis::CrystalBall cb(mean, sigma, alpha, n);
-            double rndm = cset->at("RandomSmearing")->evaluate({(int)evtNumber, (int)lumiNumber, phi});
+            double rndm = cs->at("RandomSmearing")->evaluate({(int)evtNumber, (int)lumiNumber, phi});
             return cb.invcdf(rndm);
         }
 
         double get_std(double pt, double eta, float nL) const {
-
+            const auto& cs = getCSet(useVXBS);
             // obtain paramters from correctionlib
-            double param_0 = cset->at("poly_params")->evaluate({abs(eta), nL, 0});
-            double param_1 = cset->at("poly_params")->evaluate({abs(eta), nL, 1});
-            double param_2 = cset->at("poly_params")->evaluate({abs(eta), nL, 2});
+            double param_0 = cs->at("poly_params")->evaluate({abs(eta), nL, 0});
+            double param_1 = cs->at("poly_params")->evaluate({abs(eta), nL, 1});
+            double param_2 = cs->at("poly_params")->evaluate({abs(eta), nL, 2});
 
             // calculate value and return max(0, val)
             double sigma = param_0 + param_1 * pt + param_2 * pt*pt;
@@ -118,10 +136,10 @@ namespace correction {
         }
 
         double get_k(double eta, string var) const {
-
+            const auto& cs = getCSet(useVXBS);
             // obtain parameters from correctionlib
-            double k_data = cset->at("k_data")->evaluate({abs(eta), var});
-            double k_mc = cset->at("k_mc")->evaluate({abs(eta), var});
+            double k_data = cs->at("k_data")->evaluate({abs(eta), var});
+            double k_mc = cs->at("k_mc")->evaluate({abs(eta), var});
 
             // calculate residual smearing factor
             // return 0 if smearing in MC already larger than in data
@@ -132,11 +150,11 @@ namespace correction {
 
 
 
-        double pt_resol(double pt, double eta, double phi, float nL, int evtNumber, int lumiNumber, double low_pt_threshold = 26) const {
+        double pt_resol(double pt, double eta, double phi, float nL, int evtNumber, int lumiNumber, bool useVXBS = false, double low_pt_threshold = 26) const {
             // load correction values
-            double rndm = (double) get_rndm(eta, phi, nL, evtNumber, lumiNumber);
-            double std = (double) get_std(pt, eta, nL);
-            double k = (double) get_k(eta, "nom");
+            double rndm = (double) get_rndm(eta, phi, nL, evtNumber, lumiNumber,useVXBS);
+            double std = (double) get_std(pt, eta, nL,useVXBS);
+            double k = (double) get_k(eta, "nom", useVXBS);
 
             // calculate corrected value and return original value if a parameter is nan
             double ptc = pt * ( 1 + k * std * rndm);
@@ -150,13 +168,13 @@ namespace correction {
             return ptc;
         }
 
-        double pt_resol_var(double pt_woresol, double pt_wresol, double eta, string updn) const {
-
-            double k = (double) get_k(eta, "nom");
+        double pt_resol_var(double pt_woresol, double pt_wresol, double eta, string updn,bool useVXBS = false) const {
+            const auto& cs = getCSet(useVXBS);
+            double k = (double) get_k(eta, "nom",useVXBS);
 
             if (k==0) return pt_wresol;
 
-            double k_unc = cset->at("k_mc")->evaluate({abs(eta), "stat"});
+            double k_unc = cs->at("k_mc")->evaluate({abs(eta), "stat"});
 
             double std_x_rndm = (pt_wresol / pt_woresol - 1) / k;
 
@@ -178,14 +196,14 @@ namespace correction {
             return pt_var;
         }
 
-        double pt_scale(bool is_data, double pt, double eta, double phi, int charge, double low_pt_threshold = 26) const {
-
+        double pt_scale(bool is_data, double pt, double eta, double phi, int charge, bool useVXBS = false, double low_pt_threshold = 26) const {
+            const auto& cs = getCSet(useVXBS);
             // use right correction
             string dtmc = "mc";
             if (is_data) dtmc = "data";
 
-            double a = cset->at("a_"+dtmc)->evaluate({eta, phi, "nom"});
-            double m = cset->at("m_"+dtmc)->evaluate({eta, phi, "nom"});
+            double a = cs->at("a_"+dtmc)->evaluate({eta, phi, "nom"});
+            double m = cs->at("m_"+dtmc)->evaluate({eta, phi, "nom"});
             if(pt < low_pt_threshold)
                 return pt;
 
@@ -193,11 +211,11 @@ namespace correction {
         }
 
 
-        double pt_scale_var(double pt, double eta, double phi, int charge, string updn) const {
-
-            double stat_a = cset->at("a_mc")->evaluate({eta, phi, "stat"});
-            double stat_m = cset->at("m_mc")->evaluate({eta, phi, "stat"});
-            double stat_rho = cset->at("m_mc")->evaluate({eta, phi, "rho_stat"});
+        double pt_scale_var(double pt, double eta, double phi, int charge, string updn, bool useVXBS = false) const {
+            const auto& cs = getCSet(useVXBS);
+            double stat_a = cs->at("a_mc")->evaluate({eta, phi, "stat"});
+            double stat_m = cs->at("m_mc")->evaluate({eta, phi, "stat"});
+            double stat_rho = cs->at("m_mc")->evaluate({eta, phi, "rho_stat"});
 
             double unc = pt*pt*sqrt(stat_m*stat_m / (pt*pt) + stat_a*stat_a + 2*charge*stat_rho*stat_m/pt*stat_a);
 
