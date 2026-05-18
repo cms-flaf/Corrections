@@ -22,9 +22,10 @@ namespace correction {
                          const std::string& syst,
                          bool isValid) const {
             const float ptll = static_cast<float>((tau1_gen_p4 + tau2_gen_p4).Pt());
+            static constexpr int kMinNJets = 2;
 
             double weight = 1.0;
-            if (!isValid) {
+            if (!isValid || njets < kMinNJets) {
                 weight = 1.0;
             } else {
                 weight = safeEvaluate(dyWeight_, era, njets, ntags, ptll, syst);

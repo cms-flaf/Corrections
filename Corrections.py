@@ -486,12 +486,21 @@ class Corrections:
             )
             all_weights.extend(weight_pu_branches)
 
-        if "dy_hhbbtautau" in self.to_apply and "DY" in self.dataset_name:
+        # is_dy_sample = (
+        #     self.process_name == "DY"
+        #     or self.dataset_name.startswith("DY")
+        #     or "DYto" in self.dataset_name
+        # )
+
+        if "dy_hhbbtautau" in self.to_apply and self.dataset_name.startswith(
+            "DY"
+        ):  # and is_dy_sample:
             df, dy_branches = self.dy_hhbbtautau.getWeight(
                 df,
                 return_variations=return_variations and isCentral,
                 return_list_of_branches=True,
             )
+
             all_weights.extend(dy_branches)
 
         if "base" in self.to_apply:
