@@ -201,6 +201,11 @@ class bTagCorrProducer:
         if isCentral and return_variations:
             src_list = [central] + bTagCorrProducer.uncSources_bTagShape_norm
             scale_list = [central] + sf_scales
+        elif isCentral and not return_variations:
+            # central weights must be loaded in order for the
+            # BtagShape producer to work
+            src_list = [central]
+            scale_list = [central]
 
         if not isCentral:
             if IsInJESList(src_name, bTagCorrProducer.uncSources_bTagShape_jes):
