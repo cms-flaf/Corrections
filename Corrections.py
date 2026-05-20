@@ -327,6 +327,20 @@ class Corrections:
         return self.trg_
 
     @property
+    def recoil(self):
+        if self.recoil_ is None:
+            from .recoil import BosonicRecoilCorrection
+            self.recoil_ = BosonicRecoilCorrection(
+                period = self.period,
+                config = self.to_apply.get("recoil", {}),
+                isData = self.isData,
+                dataset_name = self.dataset_name,
+                process_name = self.process_name,
+                process_cfg = self.process_cfg
+            )
+        return self.recoil_
+
+    @property
     def btag_norm(self):
         if self.btag_shape_norm_ is None:
             if not self.isData:
