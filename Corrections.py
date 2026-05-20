@@ -195,12 +195,6 @@ class Corrections:
         return self.Vpt_
 
     @property
-    def recoil(self):
-        if self.recoil_ is None:
-            self.recoil_ = BosonicRecoilCorrection()
-        return self.recoil_
-
-    @property
     def JetVetoMap(self):
         if self.JetVetoMap_ is None:
             from .JetVetoMap import JetVetoMapProvider
