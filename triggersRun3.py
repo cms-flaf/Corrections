@@ -75,6 +75,8 @@ class TrigCorrProducer:
             "2023_Summer23": "2023_preBPix",
             "2023_Summer23BPix": "2023_postBPix",
             "2024_Summer24": "2023_postBPix",  # tmp patch since it is currently missing
+            "2025_Summer24": "2023_postBPix",  # tmp patch since it is currently missing
+            "2025_Winter25": "2023_postBPix",  # tmp patch since it is currently missing
         }
 
         self.period = period
@@ -284,6 +286,8 @@ class TrigCorrProducer:
                     VSjetWP[trg] = "placeholder"
         SF_branches = []
         for trg_name in trigger_names:
+            if not trigger_dict[trg_name].get("apply_corrections", True):
+                continue
             trigger_legs = trigger_dict[trg_name]["legs"]
             for trg_leg_idx, trg_leg in enumerate(trigger_legs):
                 electron_input = trigger_dict[trg_name]["legs"][trg_leg_idx][

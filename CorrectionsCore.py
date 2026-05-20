@@ -17,6 +17,7 @@ pog_folder_names = {
         "2023_Summer23": "Run3-23CSep23-Summer23-NanoAODv12",
         "2023_Summer23BPix": "Run3-23DSep23-Summer23BPix-NanoAODv12",
         "2024_Summer24": "Run3-24CDEReprocessingFGHIPrompt-Summer24-NanoAODv15",
+        "2025_Summer24": "Run3-25Prompt-Summer24-NanoAODv15",
         "2025_Winter25": "",
     },
     "JERC": {
@@ -32,6 +33,7 @@ pog_folder_names = {
         "2023_Summer23": "Run3-23CSep23-Summer23-NanoAODv12",
         "2024_Winter24": "Run3-24Prompt-Winter24-NanoAODv14",
         "2024_Summer24": "Run3-24CDEReprocessingFGHIPrompt-Summer24-NanoAODv15",  # https://cms-jerc.web.cern.ch/Recommendations/#2024
+        "2025_Summer24": "Run3-25Prompt-Winter25-NanoAODv15",  # TMP PATCH # --> Run3-25Prompt-Summer24-NanoAODv15 IS NOT AVAILABLE FOR JME but JME is the only one having Winter25 available. So by the time being we can have this tmp fix
         "2025_Winter25": "Run3-25Prompt-Winter25-NanoAODv15",
     },
     "EGM": {
@@ -48,7 +50,8 @@ pog_folder_names = {
         "2023_Summer23": "Run3-23CSep23-Summer23-NanoAODv12",
         "2023_Summer23BPix": "Run3-23DSep23-Summer23BPix-NanoAODv12",
         "2024_Summer24": "Run3-24CDEReprocessingFGHIPrompt-Summer24-NanoAODv15",
-        "2025_Winter25": "Run3-25Prompt-Summer24-NanoAODv15",
+        "2025_Summer24": "Run3-25Prompt-Summer24-NanoAODv15",
+        "2025_Winter25": "",
     },
     "LUM": {
         "2016postVFP_UL": "Run2-2016postVFP-UL-NanoAODv9",
@@ -60,6 +63,7 @@ pog_folder_names = {
         "2023_Summer23": "Run3-23CSep23-Summer23-NanoAODv12",
         "2023_Summer23BPix": "Run3-23DSep23-Summer23BPix-NanoAODv12",
         "2024_Summer24": "Run3-24CDEReprocessingFGHIPrompt-Summer24-NanoAODv15",
+        "2025_Summer24": "",
         "2025_Winter25": "",
     },
     "MUO": {
@@ -72,6 +76,7 @@ pog_folder_names = {
         "2023_Summer23": "Run3-23CSep23-Summer23-NanoAODv12",
         "2023_Summer23BPix": "Run3-23DSep23-Summer23BPix-NanoAODv12",
         "2024_Summer24": "Run3-24CDEReprocessingFGHIPrompt-Summer24-NanoAODv15",
+        "2025_Summer24": "Run3-25Prompt-Summer24-NanoAODv15",
         "2025_Winter25": "",
     },
     "TAU": {
@@ -88,6 +93,7 @@ pog_folder_names = {
         "2023_Summer23": "Run3-23CSep23-Summer23-NanoAODv12",
         "2023_Summer23BPix": "Run3-23DSep23-Summer23BPix-NanoAODv12",
         "2024_Summer24": "Run3-24CDEReprocessingFGHIPrompt-Summer24-NanoAODv15",
+        "2025_Summer24": "",
         "2025_Winter25": "",
     },
 }
@@ -102,11 +108,12 @@ period_names = {
     "Run3_2023": "2023_Summer23",
     "Run3_2023BPix": "2023_Summer23BPix",
     "Run3_2024": "2024_Summer24",  # 2024_Winter24
-    "Run3_2025": "2025_Winter25",
+    "Run3_2025": "2025_Summer24",  # "2025_Winter25" is also a valid entry, but has files only only for JME
 }
 
 periods = {
     "2025_Winter25": "2025",
+    "2025_Summer24": "2025",
     "2024_Summer24": "2024",
     "2023_Summer23BPix": "2023",
     "2023_Summer23": "2023",

@@ -80,7 +80,6 @@ class Corrections:
         self.dataset_cfg = dataset_cfg
         self.process_name = process_name
         self.process_cfg = process_cfg
-        self.processors = processors
         self.isData = isData
         self.trigger_dict = trigger_class.trigger_dict if trigger_class else {}
 
@@ -118,9 +117,38 @@ class Corrections:
 
         if len(self.to_apply) > 0:
             print(
-                f'Corrections to apply: {", ".join(self.to_apply.keys())}',
+                f"Corrections to apply: {', '.join(self.to_apply.keys())}",
                 file=sys.stderr,
             )
+
+        self.all_processors = processors
+
+        if "xs" in self.to_apply or "base" in self.to_apply:
+            self.xs_denom_processors = {}
+            self.xs_print_history = set()
+            self.denom_print_history = set()
+
+            for p_name, proc in self.all_processors.items():
+                has_xs_fn = hasattr(proc, "onAnaTuple_defineCrossSection")
+                has_denom_fn = hasattr(proc, "onAnaTuple_defineDenominator")
+                has_default_denom_attr = hasattr(proc, "default_denom_processor")
+                if not (has_xs_fn or has_denom_fn or has_default_denom_attr):
+                    continue
+                if not (has_xs_fn and has_denom_fn and has_default_denom_attr):
+                    raise RuntimeError(
+                        f"Processor {p_name} must implementonAnaTuple_defineCrossSection, onAnaTuple_defineDenominator and default_denom_processor, or neither of them."
+                    )
+                is_default = proc.default_denom_processor
+                suffix = "" if is_default else f"_{p_name}"
+                if suffix in self.xs_denom_processors:
+                    raise RuntimeError(
+                        f"Multiple processors have the same suffix {suffix} for cross section and denominator definition. This is not supported."
+                    )
+                self.xs_denom_processors[suffix] = p_name
+            if len(self.xs_denom_processors) > 0 and "" not in self.xs_denom_processors:
+                raise RuntimeError(
+                    "No processor is set as default for cross section and denominator definition."
+                )
 
         self.xs_db_ = None
         self.tau_ = None
@@ -257,12 +285,16 @@ class Corrections:
     @property
     def muScaRe(self):
         if self.muScaRe_ is None:
-            from .MuonScaRe_corr import MuonScaReCorrProducer
+            from .MuonEnergyScale_corr import MuonEnergyScaleProducer
 
-            self.muScaRe_ = MuonScaReCorrProducer(
+            self.muScaRe_ = MuonEnergyScaleProducer(
                 period_names[self.period],
                 self.isData,
                 self.to_apply["muScaRe"].get("mu_pt_for_ScaReApplication", "pt_nano"),
+                apply_scare=self.to_apply["muScaRe"].get("apply_scare", True),
+                apply_fsr_recovery=self.to_apply["muScaRe"].get(
+                    "apply_fsr_recovery", True
+                ),
             )
         return self.muScaRe_
 
@@ -371,7 +403,6 @@ class Corrections:
                             if f"{obj}_p4_Central" in df.GetColumnNames()
                             else "nano"
                         )
-                        # suffix = 'nano'
                         if (
                             obj == "boostedTau"
                             and "{obj}_p4_{suffix}" not in df.GetColumnNames()
@@ -386,59 +417,50 @@ class Corrections:
                             )
         return df, syst_dict
 
-    def defineCrossSection(self, df, crossSectionBranch):
-        xs_processor_names = []
-        for p_name, proc in self.processors.items():
-            if hasattr(proc, "onAnaTuple_defineCrossSection"):
-                xs_processor_names.append(p_name)
-        if len(xs_processor_names) == 0:
+    def defineCrossSection(self, df, crossSectionBranchBase):
+        branches = []
+        if len(self.xs_denom_processors) == 0:
             raise RuntimeError(
                 "No processor implements onAnaTuple_defineCrossSection method"
             )
-        if len(xs_processor_names) > 1:
-            raise RuntimeError(
-                "Multiple processors implement onAnaTuple_defineCrossSection method. Not supported."
+        for suffix, p_name in self.xs_denom_processors.items():
+            branch = f"{crossSectionBranchBase}{suffix}"
+            if branch not in self.xs_print_history:
+                print(f"Using processor {p_name} to define {branch}.", file=sys.stderr)
+                self.xs_print_history.add(branch)
+            xs_processor = self.all_processors[p_name]
+            df = xs_processor.onAnaTuple_defineCrossSection(
+                df, branch, self.xs_db, self.dataset_name, self.dataset_cfg
             )
-        p_name = xs_processor_names[0]
-        print(
-            f'Using processor "{p_name}" to define cross section for dataset "{self.dataset_name}"'
-        )
-        xs_processor = self.processors[p_name]
-        return xs_processor.onAnaTuple_defineCrossSection(
-            df, crossSectionBranch, self.xs_db, self.dataset_name, self.dataset_cfg
-        )
+            branches.append(branch)
+        return df, branches
 
     def defineDenominator(self, df, denomBranch, unc_source, unc_scale, ana_caches):
-        denom_processor_names = []
-        for p_name, proc in self.processors.items():
-            if hasattr(proc, "onAnaTuple_defineDenominator"):
-                denom_processor_names.append(p_name)
-        if len(denom_processor_names) == 0:
+        branches = []
+        if len(self.xs_denom_processors) == 0:
             raise RuntimeError(
                 "No processor implements onAnaTuple_defineDenominator method"
             )
-        if len(denom_processor_names) > 1:
-            raise RuntimeError(
-                "Multiple processors implement onAnaTuple_defineDenominator method. Not supported."
+        for suffix, p_name in self.xs_denom_processors.items():
+            branch = f"{denomBranch}{suffix}"
+            if branch not in self.denom_print_history:
+                print(
+                    f"Using processor {p_name} to define {branch}.",
+                    file=sys.stderr,
+                )
+                self.denom_print_history.add(branch)
+            denom_processor = self.all_processors[p_name]
+            df = denom_processor.onAnaTuple_defineDenominator(
+                df,
+                branch,
+                p_name,
+                self.dataset_name,
+                unc_source,
+                unc_scale,
+                ana_caches,
             )
-        p_name = denom_processor_names[0]
-        print(
-            f'Using processor "{p_name}" to define denominator for dataset "{self.dataset_name}"'
-        )
-        if len(ana_caches) > 1:
-            print(
-                f"Available ana_caches for denominator calculation: {list(ana_caches.keys())}"
-            )
-        denom_processor = self.processors[p_name]
-        return denom_processor.onAnaTuple_defineDenominator(
-            df,
-            denomBranch,
-            p_name,
-            self.dataset_name,
-            unc_source,
-            unc_scale,
-            ana_caches,
-        )
+            branches.append((suffix, branch))
+        return df, branches
 
     def getNormalisationCorrections(
         self,
@@ -453,6 +475,7 @@ class Corrections:
         return_variations=True,
         use_genWeight_sign_only=True,
     ):
+        # print(f"corrections to apply {self.to_apply}")
         isCentral = unc_source == central
         all_weights = []
         lumi_weight_name = "weight_lumi"
@@ -461,10 +484,12 @@ class Corrections:
             df = df.Define(lumi_weight_name, f"float({lumi})")
             all_weights.append(lumi_weight_name)
 
-        crossSectionBranch = "weight_xs"
+        crossSectionBranchBase = "weight_xs"
         if "xs" in self.to_apply:
-            df = self.defineCrossSection(df, crossSectionBranch)
-            all_weights.append(crossSectionBranch)
+            df, crossSectionBranches = self.defineCrossSection(
+                df, crossSectionBranchBase
+            )
+            all_weights.extend(crossSectionBranches)
 
         gen_weight_name = "weight_gen"
         if "gen" in self.to_apply:
@@ -503,28 +528,30 @@ class Corrections:
                 shape_unc_scale,
             ), shape_weights in shape_weights_dict.items():
                 shape_unc_name = getSystName(shape_unc_source, shape_unc_scale)
-                denomBranch = f"__denom_{shape_unc_name}"
-                df = self.defineDenominator(
-                    df, denomBranch, shape_unc_source, shape_unc_scale, ana_caches
+                denomBranchBase = f"__denom_{shape_unc_name}"
+                df, denom_branches = self.defineDenominator(
+                    df, denomBranchBase, shape_unc_source, shape_unc_scale, ana_caches
                 )
                 shape_weights_product = (
                     " * ".join(shape_weights) if len(shape_weights) > 0 else "1.0"
                 )
-                weight_name_central = "weight_base"
-                if shape_unc_name == central:
-                    weight_name = weight_name_central
-                    weight_out_name = weight_name
-                else:
-                    weight_name = f"{weight_name_central}_{shape_unc_name}"
-                    weight_out_name = f"{weight_name}_rel"
-                weight_formula = f"{gen_weight_name} * {lumi_weight_name} * {crossSectionBranch} * {shape_weights_product} / {denomBranch}"
-                df = df.Define(weight_name, f"static_cast<float>({weight_formula})")
-                if shape_unc_name != central:
-                    df = df.Define(
-                        weight_out_name,
-                        f"static_cast<float>({weight_name}/{weight_name_central})",
-                    )
-                all_weights.append(weight_out_name)
+                for suffix, denomBranch in denom_branches:
+                    weight_name_central = f"weight_base{suffix}"
+                    crossSectionBranch = f"{crossSectionBranchBase}{suffix}"
+                    if shape_unc_name == central:
+                        weight_name = weight_name_central
+                        weight_out_name = weight_name
+                    else:
+                        weight_name = f"{weight_name_central}_{shape_unc_name}"
+                        weight_out_name = f"{weight_name}_rel"
+                    weight_formula = f"{gen_weight_name} * {lumi_weight_name} * {crossSectionBranch} * {shape_weights_product} / {denomBranch}"
+                    df = df.Define(weight_name, f"static_cast<float>({weight_formula})")
+                    if shape_unc_name != central:
+                        df = df.Define(
+                            weight_out_name,
+                            f"static_cast<float>({weight_name}/{weight_name_central})",
+                        )
+                    all_weights.append(weight_out_name)
 
         if "Vpt" in self.to_apply:
             df, Vpt_SF_branches = self.Vpt.getSF(df, isCentral, return_variations)
@@ -567,27 +594,33 @@ class Corrections:
                 raise RuntimeError(
                     f"btag mode {btag_sf_mode} not recognized. Supported modes are 'shape', 'shape_and_norm', 'wp' and 'none'."
                 )
+
         if "mu" in self.to_apply:
-            if self.mu.low_available:
+            lowPt = self.to_apply["mu"].get("lowPt", True)
+            if self.mu.low_available and lowPt:
                 df, lowPtmuID_SF_branches = self.mu.getLowPtMuonIDSF(
                     df, lepton_legs, isCentral, return_variations
                 )
                 all_weights.extend(lowPtmuID_SF_branches)
-            if self.mu.med_available:
+            midPt = self.to_apply["mu"].get("midPt", True)
+            if self.mu.med_available and midPt:
                 df, muID_SF_branches = self.mu.getMuonIDSF(
                     df, lepton_legs, isCentral, return_variations
                 )
                 all_weights.extend(muID_SF_branches)
-            if self.mu.high_available:
+            hiPt = self.to_apply["mu"].get("hiPt", True)
+            if self.mu.high_available and hiPt:
                 df, highPtmuID_SF_branches = self.mu.getHighPtMuonIDSF(
                     df, lepton_legs, isCentral, return_variations
                 )
                 all_weights.extend(highPtmuID_SF_branches)
+
         if "ele" in self.to_apply:
             df, eleID_SF_branches = self.ele.getIDSF(
                 df, lepton_legs, isCentral, return_variations
             )
             all_weights.extend(eleID_SF_branches)
+
         if "puJetID" in self.to_apply:
             df, puJetID_SF_branches = self.puJetID.getPUJetIDEff(
                 df, isCentral, return_variations
@@ -614,6 +647,7 @@ class Corrections:
                 raise RuntimeError(
                     f"Trigger correction mode {mode} not recognized. Supported modes are 'SF' and 'efficiency'."
                 )
+
         if "fatjet" in self.to_apply:
             # bbWW fatjet corrections taken from here
             # https://indico.cern.ch/event/1573622/#6-updates-on-ak8-calibration-f
