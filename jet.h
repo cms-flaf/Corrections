@@ -140,6 +140,8 @@ namespace correction {
             pt_after *= c2;
             // mass_after *= c2;
 
+
+            // add L3
             // 4) Residual (solo data)
             // For MC-truth corrected pT < 30 GeV use L2L3Residual correction factor of MC-truth corrected pT = 30 GeV in 2.0 < |eta| < 2.5
 
@@ -155,14 +157,14 @@ namespace correction {
             } else {
                 cRes = corr_l2l3res_->evaluate({eta,pt_for_corr});
             }
-
-            pt_after *= cRes;
+            if(isdata_)
+                pt_after *= cRes;
             // mass_after *= cRes;
 
 
             return pt_after / pt_raw ;
         }
-
+        // fix to scaled values
         float getJERSmearFactor(float pt,
                         float eta,
                         float rho,
@@ -283,7 +285,7 @@ namespace correction {
                                     float sf = 1.0;
                                     bool is_jet_in_horn = std::abs(Jet_eta[jet_idx]) >= 2.5 &&
                                                           std::abs(Jet_eta[jet_idx]) <= 3;
-                                    bool is_gen_matched = Jet_genJetIdx[jet_idx] >= 0;
+                                    bool is_gen_matched = Jet_genJetIdx[jet_idx] >= 0; // recalculate it by hand
                                     sf += static_cast<int>(uncScale) * jer_pt_resolutions[jet_idx];
                                     if (is_jet_in_horn && !(is_gen_matched)) {
                                         sf = 1.0;  //for jets in horn: JER for gen-matched only
@@ -446,7 +448,7 @@ namespace correction {
             }
             return all_shifted_p4;
         }
-
+        // fix to scaled values
         RVecF GetResolutions(RVecF pt, RVecF mass, RVecF const& raw_factor, RVecF const& eta, float rho) const {
             size_t sz = pt.size();
             RVecF res(sz);
