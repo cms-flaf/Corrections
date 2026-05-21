@@ -190,7 +190,7 @@ namespace correction {
                 const auto deta = gen_eta - eta;
                 return dphi*dphi + deta*deta;
             };
-            auto check_resolution = [resolution](float pt, float gen_pt) -> bool {
+            auto check_resolution = [resolution, m_genMatch_dPtmax](float pt, float gen_pt) -> bool {
                 return std::abs(gen_pt - pt) < m_genMatch_dPtmax*resolution;
             };
 
