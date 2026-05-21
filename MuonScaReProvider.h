@@ -150,7 +150,7 @@ namespace correction {
 
 
 
-        double pt_resol(double pt, double eta, double phi, float nL, int evtNumber, int lumiNumber, bool useVXBS = false, double low_pt_threshold = 26) const {
+        double pt_resol(double pt, double eta, double phi, float nL, int evtNumber, int lumiNumber, bool useVXBS = false, double low_pt_threshold = 20) const {
             // load correction values
             double rndm = (double) get_rndm(eta, phi, nL, evtNumber, lumiNumber,useVXBS);
             double std = (double) get_std(pt, eta, nL,useVXBS);
@@ -196,7 +196,7 @@ namespace correction {
             return pt_var;
         }
 
-        double pt_scale(bool is_data, double pt, double eta, double phi, int charge, bool useVXBS = false, double low_pt_threshold = 26) const {
+        double pt_scale(bool is_data, double pt, double eta, double phi, int charge, bool useVXBS = false, double low_pt_threshold = 20) const {
             const auto& cs = getCSet(useVXBS);
             // use right correction
             string dtmc = "mc";

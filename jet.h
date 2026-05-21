@@ -128,7 +128,6 @@ namespace correction {
             // 2) L1FastJet
             float c1 = corr_l1_->evaluate({area, eta, pt_after, rho});
             pt_after *= c1;
-            // mass_after *= c1;
 
             // 3) L2Relative
             float c2 = 1.0;
@@ -138,10 +137,9 @@ namespace correction {
                 c2 = corr_l2_->evaluate({eta, pt_after});
             }
             pt_after *= c2;
-            // mass_after *= c2;
 
+            // add L3 --> it's always 1
 
-            // add L3
             // 4) Residual (solo data)
             // For MC-truth corrected pT < 30 GeV use L2L3Residual correction factor of MC-truth corrected pT = 30 GeV in 2.0 < |eta| < 2.5
 
@@ -153,166 +151,500 @@ namespace correction {
             }
             if (isdata_ && require_run_number) {
                     cRes = corr_l2l3res_->evaluate({float(run),eta,pt_for_corr});
-                // }
             } else {
                 cRes = corr_l2l3res_->evaluate({eta,pt_for_corr});
             }
             if(isdata_)
                 pt_after *= cRes;
-            // mass_after *= cRes;
 
 
             return pt_after / pt_raw ;
         }
-        // fix to scaled values
-        float getJERSmearFactor(float pt,
-                        float eta,
-                        float rho,
-                        float gen_pt,
-                        int event,
-                        float& jer_res_out) const {
 
-            float jer_sf = corr_jer_sf_->evaluate({eta, pt, "nom"});
-            float jer_res = corr_jer_res_->evaluate({eta, pt, rho});
-            jer_res_out = jer_res;
+        std::size_t findGenMatch(
+        const double pt, const float eta, const float phi,
+        const std::size_t genJetIdx, const p4compv_t& gen_pt,
+        const p4compv_t& gen_eta, const p4compv_t& gen_phi,
+        const double resolution, const bool isAK4=True ) const
+        {
+            const float m_genMatch_dR2max = isAK4 ? 0.2*0.2 : 0.4*0.4; // half cone squared
+            const float m_genMatch_dPtmax = 3; // 3 times the resolution
+            auto get_dr2 = [](float phi, float eta, float gen_phi, float gen_eta) -> float {
+                const auto dphi = phi_mpi_pi(gen_phi - phi);
+                const auto deta = gen_eta - eta;
+                return dphi*dphi + deta*deta;
+            };
+            auto check_resolution = [this, resolution](float pt, float gen_pt) -> bool {
+                return std::abs(gen_pt - pt) < m_genMatch_dPtmax*resolution;
+            };
 
-            float smear = jersmear_corr_->evaluate({
-                pt, eta, gen_pt, rho, event, jer_res, jer_sf
-            });
-
-            return smear;
-        }
-        std::map<std::pair<UncSource, UncScale>, RVecLV> getShiftedP4(RVecF Jet_pt,
-                                                                      const RVecF& Jet_eta,
-                                                                      const RVecF& Jet_phi,
-                                                                      RVecF Jet_mass,
-                                                                      const RVecF& Jet_rawFactor,
-                                                                      const RVecF& Jet_area,
-                                                                      const float rho,
-                                                                      int event,
-                                                                      bool apply_jer,
-                                                                      bool reapply_jec,
-                                                                      bool require_run_number,
-                                                                      const unsigned int run,
-                                                                      bool wantPhi,
-                                                                      bool apply_forward_jet_horns_fix,
-                                                                      const RVecF& GenJet_pt = {},
-                                                                      const RVecI& Jet_genJetIdx = {}) const {
-            std::map<std::pair<UncSource, UncScale>, RVecLV> all_shifted_p4;
-            std::vector<UncScale> uncScales = {UncScale::Up, UncScale::Down};
-
-            size_t sz = Jet_pt.size();
-            std::vector<float> jer_pt_resolutions(sz);
-            std::vector<float> jet_pt_corr(sz);
-            std::vector<float> jet_m_corr(sz);
-            RVecLV central_p4(sz);
-            for (size_t i = 0; i < sz; ++i) {
-                jet_pt_corr[i] = Jet_pt[i];
-                jet_m_corr[i] = Jet_mass[i];
-                float jec_sf = 1.;
-                if (reapply_jec){
-                    // undo Nano, common place
-                    const float raw_sf = 1.0 - Jet_rawFactor[i];
-                    float pt_raw = Jet_pt[i] * raw_sf;
-                    float mass_raw = Jet_mass[i] * raw_sf;
-                    bool is2024Eta2To2p5 = (year_ == "2024" && std::abs(Jet_eta[i]) > 2 && std::abs(Jet_eta[i]) < 2.5);
-                    if (use_cmpd_jec_ && !(is2024Eta2To2p5)){
-                        jec_sf = evaluateJECCompound(pt_raw,
-                                            Jet_eta[i],
-                                            Jet_phi[i],
-                                            Jet_area[i],
-                                            rho,
-                                            run,
-                                            require_run_number,
-                                            wantPhi);
-                    }
-                    else{
-                        jec_sf = evaluateJECSeparately(pt_raw,
-                                            Jet_eta[i],
-                                            Jet_phi[i],
-                                            Jet_area[i],
-                                            rho,
-                                            run,
-                                            require_run_number,
-                                            wantPhi,
-                                            is_data_,
-                                            is2024Eta2To2p5
-                                        );
-                    }
-                    jet_pt_corr[i] = pt_raw * jec_sf;
-                    jet_m_corr[i] = mass_raw * jec_sf;
+            // First check if matched genJet from NanoAOD is acceptable
+            if (genJetIdx >= 0) {
+                const float dr2 = get_dr2(phi, eta, gen_phi[genJetIdx], gen_eta[genJetIdx]);
+                if ((dr2 < m_genMatch_dR2max) && check_resolution(pt, gen_pt[genJetIdx])) {
+                    return genJetIdx;
                 }
-
-                bool is_jet_in_horn =
-                    std::abs(Jet_eta[i]) > 2.5 && std::abs(Jet_eta[i]) < 3 ; // JET in horn: 2.5 < |eta| <3
-                if (!is_data_ && apply_jer) {
-                    bool is_gen_matched = Jet_genJetIdx[i] >= 0;
-                    float gen_pt = is_gen_matched ? GenJet_pt[Jet_genJetIdx[i]] : -1.f;
-
-                    float jer_sf = corr_jer_sf_->evaluate({Jet_eta[i], jet_pt_corr[i], "nom"});
-                    float jer_pt_res = corr_jer_res_->evaluate({Jet_eta[i], jet_pt_corr[i], rho});
-                    jer_pt_resolutions[i] = jer_pt_res;
-
-                    int genjet_idx = Jet_genJetIdx[i];
-                    float genjet_pt = genjet_idx != -1 ? GenJet_pt[genjet_idx] : -1.0;
-                    float jersmear_factor =
-                        jersmear_corr_->evaluate({jet_pt_corr[i], Jet_eta[i], genjet_pt, rho, event, jer_pt_res, jer_sf});
-                    // temporary fix for jet horn issue --> do not apply JER for eta range and jet matched to genjet
-
-                    if (is_jet_in_horn && ! (is_gen_matched)) { // for jets in horn: JER for gen-matched only (2022-2023-2024. 2025 is still in doubt ??)
-                        jersmear_factor = 1.0;  // do not apply JER for jets in the horn
-                    }
-
-                    // // apply jer smearing (only for MC)
-                    jet_pt_corr[i] *= jersmear_factor;
-                    jet_m_corr[i] *= jersmear_factor;
-                }
-                central_p4[i] = LorentzVectorM(jet_pt_corr[i], Jet_eta[i], Jet_phi[i], jet_m_corr[i]);
             }
 
-            all_shifted_p4.insert({{UncSource::Central, UncScale::Central}, central_p4});
+            std::size_t igBest{gen_pt.size()};
+            auto dr2Min = std::numeric_limits<float>::max();
+            for ( std::size_t ig{0}; ig != gen_pt.size(); ++ig ) {
+                const auto dr2 = get_dr2(phi, eta, gen_phi[ig], gen_eta[ig]);
+                if ( ( dr2 < dr2Min ) && ( dr2 < m_genMatch_dR2max ) ) {
+                    if (check_resolution(pt, gen_pt[ig])) {
+                        dr2Min = dr2;
+                        igBest = ig;
+                    }
+                }
+            }
+            return igBest;
+        }
 
-            // apply uncertainties from uncertainty map
-            // this part should not be executed for data
 
-            if (!is_data_) {
-                for (auto const& uncScale : uncScales) {
-                    for (auto const& [unc_source, unc_name] : unc_map_) {
-                        RVecLV shifted_p4(sz);
-                        if (unc_source == UncSource::JER) {
-                            if (apply_jer) {
-                                for (size_t jet_idx = 0; jet_idx < sz; ++jet_idx) {
-                                    float sf = 1.0;
-                                    bool is_jet_in_horn = std::abs(Jet_eta[jet_idx]) >= 2.5 &&
-                                                          std::abs(Jet_eta[jet_idx]) <= 3;
-                                    bool is_gen_matched = Jet_genJetIdx[jet_idx] >= 0; // recalculate it by hand
-                                    sf += static_cast<int>(uncScale) * jer_pt_resolutions[jet_idx];
-                                    if (is_jet_in_horn && !(is_gen_matched)) {
-                                        sf = 1.0;  //for jets in horn: JER for gen-matched only
-                                    }
-                                    shifted_p4[jet_idx] = LorentzVectorM(sf * Jet_pt[jet_idx],
-                                                                         Jet_eta[jet_idx],
-                                                                         Jet_phi[jet_idx],
-                                                                         sf * Jet_mass[jet_idx]);
-                                }
-                                all_shifted_p4.insert({{unc_source, uncScale}, shifted_p4});
-                            }
-                        } else {
-                            for (size_t i = 0; i < sz; ++i) {
-                                float sf = 1.0;
-                                Correction::Ref corr = corrset_->at(unc_name);
-                                float unc = corr->evaluate({Jet_eta[i], Jet_pt[i]});
-                                sf += static_cast<int>(uncScale) * unc;
-                                shifted_p4[i] = LorentzVectorM(
-                                    sf * Jet_pt[i], Jet_eta[i], Jet_phi[i], sf * Jet_mass[i]);
-                            }
-                            all_shifted_p4.insert({{unc_source, uncScale}, shifted_p4});
+
+    std::map<std::pair<UncSource, UncScale>, RVecLV> getShiftedP4(
+        const RVecF& Jet_pt,
+        const RVecF& Jet_eta,
+        const RVecF& Jet_phi,
+        const RVecF& Jet_mass,
+        const RVecF& Jet_rawFactor,
+        const RVecF& Jet_area,
+        const float rho,
+        int event,
+        bool apply_jer,
+        bool reapply_jec,
+        bool require_run_number,
+        const unsigned int run,
+        bool wantPhi,
+        bool apply_forward_jet_horns_fix,
+        const RVecF& GenJet_pt = {},
+        const RVecF& GenJet_eta = {},
+        const RVecF& GenJet_phi = {},
+        const RVecI& Jet_genJetIdx = {}
+    ) const
+    {
+        std::map<std::pair<UncSource, UncScale>, RVecLV> all_shifted_p4;
+
+        const size_t sz = Jet_pt.size();
+
+        std::vector<std::pair<UncSource, UncScale>> variations;
+
+        variations.emplace_back(
+            UncSource::Central,
+            UncScale::Central
+        );
+
+        if (!is_data_) {
+
+            for (const auto& unc_scale : {UncScale::Up, UncScale::Down}) {
+
+                for (const auto& [unc_source, unc_name] : unc_map_) {
+
+                    variations.emplace_back(
+                        unc_source,
+                        unc_scale
+                    );
+                }
+            }
+        }
+        for (const auto& [unc_source, unc_scale] : variations) {
+
+            RVecLV shifted_p4(sz);
+
+            for (size_t i = 0; i < sz; ++i) {
+
+                const float eta = Jet_eta[i];
+                const float phi = Jet_phi[i];
+                const float abs_eta = std::abs(eta);
+
+
+                float corrected_pt = Jet_pt[i];
+                float corrected_mass = Jet_mass[i];
+
+                if (reapply_jec) {
+
+                    const float raw_sf = 1.f - Jet_rawFactor[i];
+
+                    const float pt_raw = Jet_pt[i] * raw_sf;
+                    const float mass_raw = Jet_mass[i] * raw_sf;
+
+                    const bool is2024Eta2To2p5 =
+                        (year_ == "2024" &&
+                        abs_eta > 2.f &&
+                        abs_eta < 2.5f);
+
+                    float jec_sf = 1.f;
+
+                    if (use_cmpd_jec_ && !is2024Eta2To2p5) {
+
+                        jec_sf = evaluateJECCompound(
+                            pt_raw,
+                            eta,
+                            phi,
+                            Jet_area[i],
+                            rho,
+                            run,
+                            require_run_number,
+                            wantPhi
+                        );
+
+                    } else {
+
+                        jec_sf = evaluateJECSeparately(
+                            pt_raw,
+                            eta,
+                            phi,
+                            Jet_area[i],
+                            rho,
+                            run,
+                            require_run_number,
+                            wantPhi,
+                            is_data_,
+                            is2024Eta2To2p5
+                        );
+                    }
+
+                    corrected_pt = pt_raw * jec_sf;
+                    corrected_mass = mass_raw * jec_sf;
+                }
+
+
+                float jersmear_factor = 1.f;
+
+                if (apply_jer && !is_data_) {
+
+
+                    const float jer_pt_res =
+                        corr_jer_res_->evaluate({
+                            eta,
+                            corrected_pt,
+                            rho
+                        });
+
+
+                    float genjet_pt = -1.f;
+
+                    if (!GenJet_pt.empty()) {
+
+                        const auto matched_idx = findGenMatch(
+                            corrected_pt,
+                            eta,
+                            phi,
+                            (
+                                i < Jet_genJetIdx.size() &&
+                                Jet_genJetIdx[i] >= 0
+                            )
+                            ? static_cast<size_t>(Jet_genJetIdx[i])
+                            : GenJet_pt.size(),
+                            GenJet_pt,
+                            GenJet_eta,
+                            GenJet_phi,
+                            jer_pt_res * corrected_pt
+                        );
+
+                        if (matched_idx < GenJet_pt.size()) {
+                            genjet_pt = GenJet_pt[matched_idx];
                         }
                     }
+
+                    std::string jer_tag = "nom";
+
+                    if (unc_source == UncSource::JER) {
+
+                        if (unc_scale == UncScale::Up) {
+                            jer_tag = "up";
+                        }
+                        else if (unc_scale == UncScale::Down) {
+                            jer_tag = "down";
+                        }
+                    }
+
+
+                    const float jer_sf =
+                        corr_jer_sf_->evaluate({
+                            eta,
+                            corrected_pt,
+                            jer_tag
+                        });
+
+                    jersmear_factor =
+                        jersmear_corr_->evaluate({
+                            corrected_pt,
+                            eta,
+                            genjet_pt,
+                            rho,
+                            event,
+                            jer_pt_res,
+                            jer_sf
+                        });
+
+
+                    const bool is_jet_in_horn =
+                        (abs_eta > 2.5f &&
+                        abs_eta < 3.f);
+
+                    const bool has_gen_match =
+                        (genjet_pt > 0.f);
+
+                    if (
+                        apply_forward_jet_horns_fix &&
+                        is_jet_in_horn &&
+                        !has_gen_match &&
+                        year_ != "2025"
+                    ) {
+                        jersmear_factor = 1.f;
+                    }
+
+                    corrected_pt *= jersmear_factor;
+                    corrected_mass *= jersmear_factor;
                 }
+
+                if (
+                    unc_source != UncSource::Central &&
+                    unc_source != UncSource::JER
+                ) {
+
+                    const auto corr =
+                        corrset_->at(
+                            unc_map_.at(unc_source)
+                        );
+
+                    const float unc =
+                        corr->evaluate({
+                            eta,
+                            corrected_pt
+                        });
+
+                    const float sf =
+                        1.f +
+                        static_cast<int>(unc_scale) * unc;
+
+                    corrected_pt *= sf;
+                    corrected_mass *= sf;
+                }
+
+                shifted_p4[i] = LorentzVectorM(
+                    corrected_pt,
+                    eta,
+                    phi,
+                    corrected_mass
+                );
             }
-            return all_shifted_p4;
+
+            all_shifted_p4.insert({
+                {unc_source, unc_scale},
+                shifted_p4
+            });
         }
+
+        return all_shifted_p4;
+    }
+
+        // fix to scaled values
+        // float getJERSmearFactor(float pt,
+        //                 float eta,
+        //                 float rho,
+        //                 float gen_pt,
+        //                 int event,
+        //                 float& jer_res_out) const {
+
+        //     float jer_sf = corr_jer_sf_->evaluate({eta, pt, "nom"});
+        //     float jer_res = corr_jer_res_->evaluate({eta, pt, rho});
+        //     jer_res_out = jer_res;
+
+        //     float smear = jersmear_corr_->evaluate({
+        //         pt, eta, gen_pt, rho, event, jer_res, jer_sf
+        //     });
+
+        //     return smear;
+        // // }
+        // std::map<std::pair<UncSource, UncScale>, RVecLV> getShiftedP4(RVecF Jet_pt,
+        //                                                               const RVecF& Jet_eta,
+        //                                                               const RVecF& Jet_phi,
+        //                                                               RVecF Jet_mass,
+        //                                                               const RVecF& Jet_rawFactor,
+        //                                                               const RVecF& Jet_area,
+        //                                                               const float rho,
+        //                                                               int event,
+        //                                                               bool apply_jer,
+        //                                                               bool reapply_jec,
+        //                                                               bool require_run_number,
+        //                                                               const unsigned int run,
+        //                                                               bool wantPhi,
+        //                                                               bool apply_forward_jet_horns_fix,
+        //                                                               const RVecF& GenJet_pt = {},
+        //                                                               const RVecI& Jet_genJetIdx = {}) const {
+        //     std::map<std::pair<UncSource, UncScale>, RVecLV> all_shifted_p4;
+        //     std::vector<UncScale> uncScales = {UncScale::Up, UncScale::Down};
+
+        //     size_t sz = Jet_pt.size();
+        //     std::vector<float> central_jer_pt_resolutions(sz);
+        //     std::vector<float> central_jet_pt_corr(sz);
+        //     std::vector<float> central_jet_m_corr(sz);
+        //     RVecLV central_p4(sz);
+        //     // CENTRAL
+        //     for (size_t i = 0; i < sz; ++i) {
+        //         central_jet_pt_corr[i] = Jet_pt[i];
+        //         central_jet_m_corr[i] = Jet_mass[i];
+        //         float central_jec_sf = 1.;
+        //         if (reapply_jec){
+        //             // undo Nano, common place
+        //             const float raw_sf = 1.0 - Jet_rawFactor[i];
+        //             float pt_raw = Jet_pt[i] * raw_sf;
+        //             float mass_raw = Jet_mass[i] * raw_sf;
+        //             bool is2024Eta2To2p5 = (year_ == "2024" && std::abs(Jet_eta[i]) > 2 && std::abs(Jet_eta[i]) < 2.5);
+        //             if (use_cmpd_jec_ && !(is2024Eta2To2p5)){
+        //                 central_jec_sf = evaluateJECCompound(pt_raw,
+        //                                     Jet_eta[i],
+        //                                     Jet_phi[i],
+        //                                     Jet_area[i],
+        //                                     rho,
+        //                                     run,
+        //                                     require_run_number,
+        //                                     wantPhi);
+        //             }
+        //             else{
+        //                 central_jec_sf = evaluateJECSeparately(pt_raw,
+        //                                     Jet_eta[i],
+        //                                     Jet_phi[i],
+        //                                     Jet_area[i],
+        //                                     rho,
+        //                                     run,
+        //                                     require_run_number,
+        //                                     wantPhi,
+        //                                     is_data_,
+        //                                     is2024Eta2To2p5
+        //                                 );
+        //             }
+        //             jet_pt_corr[i] = pt_raw * central_jec_sf;
+        //             jet_m_corr[i] = mass_raw * central_jec_sf;
+        //         }
+
+        //         bool is_jet_in_horn =
+        //             std::abs(Jet_eta[i]) > 2.5 && std::abs(Jet_eta[i]) < 3 ; // JET in horn: 2.5 < |eta| <3
+
+        //         if (apply_jer) {
+        //             if (!is_data_){
+        //                 bool is_gen_matched = Jet_genJetIdx[i] >= 0;
+        //                 float gen_pt = is_gen_matched ? GenJet_pt[Jet_genJetIdx[i]] : -1.f;
+
+        //                 float jer_sf = corr_jer_sf_->evaluate({Jet_eta[i], jet_pt_corr[i], "nom"}); // to be changed when JER UP and JER DOWN
+        //                 float jer_pt_res = corr_jer_res_->evaluate({Jet_eta[i], jet_pt_corr[i], rho});
+        //                 jer_pt_resolutions[i] = jer_pt_res;
+        //                 // to be fixed with central code
+        //                 int genjet_idx = Jet_genJetIdx[i];
+        //                 float genjet_pt = genjet_idx != -1 ? GenJet_pt[genjet_idx] : -1.0;
+
+        //                 float jersmear_factor =
+        //                     jersmear_corr_->evaluate({jet_pt_corr[i], Jet_eta[i], genjet_pt, rho, event, jer_pt_res, jer_sf});
+        //                 // temporary fix for jet horn issue --> do not apply JER for eta range and jet matched to genjet
+
+        //                 if (is_jet_in_horn && ! (is_gen_matched) && year!="2025") {
+        //                     jersmear_factor = 1.0;  // do not apply JER for non-majets in the horn
+        //                 }
+        //             }
+        //         }
+
+        //         central_p4[i] = LorentzVectorM(jet_pt_corr[i]*jersmear_factor, Jet_eta[i], Jet_phi[i], jet_m_corr[i]*jersmear_factor);
+        //     }
+
+        //     all_shifted_p4.insert({{UncSource::Central, UncScale::Central}, central_p4});
+        //     // end of CENTRAL
+
+
+        //     if (!is_data_) {
+        //         for (auto const& uncScale : uncScales) {
+        //             for (auto const& [unc_source, unc_name] : unc_map_) {
+
+        //                 std::vector<float> shifted_jer_pt_resolutions(sz);
+        //                 std::vector<float> shifted_jet_pt_corr(sz);
+        //                 std::vector<float> shifted_jet_m_corr(sz);
+        //                 RVecLV shifted_p4(sz);
+        //                 for (size_t i = 0; i < sz; ++i) {
+        //                     shifted_jet_pt_corr[i] = Jet_pt[i];
+        //                     shifted_jet_m_corr[i] = Jet_mass[i];
+        //                     float shifted_jec_sf = 1.;
+        //                     if (reapply_jec){
+        //                         // undo Nano, common place
+        //                         const float raw_sf = 1.0 - Jet_rawFactor[i];
+        //                         float pt_raw = Jet_pt[i] * raw_sf;
+        //                         float mass_raw = Jet_mass[i] * raw_sf;
+        //                         bool is2024Eta2To2p5 = (year_ == "2024" && std::abs(Jet_eta[i]) > 2 && std::abs(Jet_eta[i]) < 2.5);
+        //                         if (use_cmpd_jec_ && !(is2024Eta2To2p5)){
+        //                             shifted_jec_sf = evaluateJECCompound(pt_raw,
+        //                                                 Jet_eta[i],
+        //                                                 Jet_phi[i],
+        //                                                 Jet_area[i],
+        //                                                 rho,
+        //                                                 run,
+        //                                                 require_run_number,
+        //                                                 wantPhi);
+        //                         }
+        //                         else{
+        //                             shifted_jec_sf = evaluateJECSeparately(pt_raw,
+        //                                                 Jet_eta[i],
+        //                                                 Jet_phi[i],
+        //                                                 Jet_area[i],
+        //                                                 rho,
+        //                                                 run,
+        //                                                 require_run_number,
+        //                                                 wantPhi,
+        //                                                 is_data_,
+        //                                                 is2024Eta2To2p5
+        //                                             );
+        //                         }
+        //                         shifted_jet_pt_corr[i] = pt_raw * shifted_jec_sf;
+        //                         shifted_jet_m_corr[i] = mass_raw * shifted_jec_sf;
+        //                     }
+
+        //                     bool is_jet_in_horn =
+        //                         std::abs(Jet_eta[i]) > 2.5 && std::abs(Jet_eta[i]) < 3 ; // JET in horn: 2.5 < |eta| <3
+
+        //                     if (apply_jer){
+        //                         bool is_gen_matched = Jet_genJetIdx[i] >= 0;
+        //                         float gen_pt = is_gen_matched ? GenJet_pt[Jet_genJetIdx[i]] : -1.f;
+
+        //                         float jer_sf = corr_jer_sf_->evaluate({Jet_eta[i], shifted_jet_pt_corr[i], "nom"}); // to be changed when JER UP and JER DOWN
+        //                         if (unc_source == UncSource::JER) {
+        //                             jer_sf = unc_scale==UncScale::Up ? corr_jer_sf_->evaluate({Jet_eta[i], shifted_jet_pt_corr[i], "up"}) : corr_jer_sf_->evaluate({Jet_eta[i], shifted_jet_pt_corr[i], "down"});
+        //                         }
+        //                         float shifted_jer_pt_res = corr_jer_res_->evaluate({Jet_eta[i], shifted_jet_pt_corr[i], rho});
+        //                         shifted_jer_pt_resolutions[i] = shifted_jer_pt_res;
+
+        //                         // to be fixed with central code
+        //                         int genjet_idx = Jet_genJetIdx[i];
+        //                         float genjet_pt = genjet_idx != -1 ? GenJet_pt[genjet_idx] : -1.0;
+
+        //                         float jersmear_factor =
+        //                             jersmear_corr_->evaluate({shifted_jet_pt_corr[i], Jet_eta[i], genjet_pt, rho, event, shifted_jer_pt_res, jer_sf}); // temporary fix for jet horn issue --> do not apply JER for eta range and jet matched to genjet
+
+        //                         if (is_jet_in_horn && ! (is_gen_matched) && year!="2025") {
+        //                             jersmear_factor = 1.0;  // do not apply JER for non-majets in the horn
+        //                         }
+
+        //                         shifted_jet_pt_corr[i]*=jersmear_factor
+        //                         shifted_jet_m_corr[i]*=jersmear_factor;
+        //                     }
+        //                     if (unc_source == UncSource::JER){
+        //                         shifted_p4[i] = LorentzVectorM(
+        //                                 shifted_jet_pt_corr[i], Jet_eta[i], Jet_phi[i], shifted_jet_m_corr[i]);
+        //                     }
+        //                     else{
+        //                             float sf = 1.0;
+        //                             Correction::Ref corr = corrset_->at(unc_name);
+        //                             float unc = corr->evaluate({Jet_eta[i], shifted_jet_pt_corr[i]});
+        //                             sf += static_cast<int>(uncScale) * unc;
+        //                             shifted_p4[i] = LorentzVectorM(
+        //                                 sf * shifted_jet_pt_corr[i], Jet_eta[i], Jet_phi[i], sf * shifted_jet_m_corr[i]);
+        //                         }
+        //                     }
+        //                 all_shifted_p4.insert({{unc_source, uncScale}, shifted_p4});
+
+        //             }
+        //         }
+        //     }
+        //     return all_shifted_p4;
+        // }
 
         std::map<std::pair<UncSource, UncScale>, RVecLV> getShiftedP4_FatJet(RVecF FatJet_pt,
                                                                              const RVecF& FatJet_eta,
