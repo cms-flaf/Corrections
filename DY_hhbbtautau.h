@@ -27,7 +27,7 @@ namespace correction {
             double weight = 1.0;
 
             if (!isValid) {
-                weight = 0.0;
+                weight = 1.0;
             } else {
                 if (njets < kMinNJets) {
                     weight = 1.0;
