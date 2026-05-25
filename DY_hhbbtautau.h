@@ -25,10 +25,15 @@ namespace correction {
             static constexpr int kMinNJets = 2;
 
             double weight = 1.0;
-            if (!isValid || njets < kMinNJets) {
-                weight = 1.0;
+
+            if (!isValid) {
+                weight = 0.0;
             } else {
-                weight = safeEvaluate(dyWeight_, era, njets, ntags, ptll, syst);
+                if (njets < kMinNJets) {
+                    weight = 1.0;
+                } else {
+                    weight = safeEvaluate(dyWeight_, era, njets, ntags, ptll, syst);
+                }
             }
             return weight;
         }

@@ -55,6 +55,21 @@ class DYbbtautauCorrProducer:
                 f"DYbbtautauCorrProducer: unsupported era '{self.era}'. "
                 f"Supported eras: {list(self.era_map.keys())}"
             )
+        
+        analysis_path = os.environ.get("ANALYSIS_PATH")
+        if analysis_path is None:
+            raise RuntimeError(
+                "DYbbtautauCorrProducer: ANALYSIS_PATH is not set. "
+                "Cannot resolve DY correction JSON path."
+            )
+
+        if os.path.isabs(self.JsonPath):
+            self.json_path = self.JsonPath
+        else:
+            self.json_path = os.path.join(analysis_path, self.JsonPath)
+
+        if not os.path.exists(self.json_path):
+            raise FileNotFoundError(f"DYbbtautauCorrProducer: DY correction JSON not found: {self.json_path}")
 
         self.json_path = self.JsonPath
         self.njets_branch = njets_branch
@@ -71,6 +86,11 @@ class DYbbtautauCorrProducer:
                 f'::correction::DYbbtautauCorrProvider::Initialize("{self.json_path}")'
             )
             DYbbtautauCorrProducer.initialized = True
+
+    def _valid_expr(self):
+        if isinstance(self.valid, bool):
+            return "true" if self.valid else "false"
+        return f"static_cast<bool>({self.valid})"
 
     def getWeight(
         self,
@@ -89,6 +109,8 @@ class DYbbtautauCorrProducer:
             systs += self.variations
 
         branches = []
+        valid_expr = self._valid_expr()
+        
         for syst in systs:
             branch_name = (
                 "weight_dy_central" if syst == "nominal" else f"weight_dy_{syst}"
@@ -96,18 +118,21 @@ class DYbbtautauCorrProducer:
             if self.isDY:
                 df = df.Define(
                     branch_name,
-                    f"""::correction::DYbbtautauCorrProvider::getGlobal().getWeight(
-                            "{self.era_map[self.era]}",
+                    f"""static_cast<float>(
+                        ::correction::DYbbtautauCorrProvider::getGlobal().getWeight(
+                            \"{self.era_map[self.era]}\",
                             static_cast<int>({self.njets_branch}),
                             static_cast<int>({self.ntags_branch}),
                             tau1_gen_vis_p4,
                             tau2_gen_vis_p4,
-                            "{syst}",
-                            {"true" if self.valid else "false"}
-                        )""",
+                            \"{syst}\",
+                            {valid_expr}
+                        )
+                    )""",
                 )
             else:
                 df = df.Define(branch_name, f"""1.f""")
+
             branches.append(branch_name)
 
         if return_list_of_branches:
