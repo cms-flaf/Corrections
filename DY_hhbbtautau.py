@@ -55,7 +55,7 @@ class DYbbtautauCorrProducer:
                 f"DYbbtautauCorrProducer: unsupported era '{self.era}'. "
                 f"Supported eras: {list(self.era_map.keys())}"
             )
-        
+
         analysis_path = os.environ.get("ANALYSIS_PATH")
         if analysis_path is None:
             raise RuntimeError(
@@ -69,7 +69,9 @@ class DYbbtautauCorrProducer:
             self.json_path = os.path.join(analysis_path, self.JsonPath)
 
         if not os.path.exists(self.json_path):
-            raise FileNotFoundError(f"DYbbtautauCorrProducer: DY correction JSON not found: {self.json_path}")
+            raise FileNotFoundError(
+                f"DYbbtautauCorrProducer: DY correction JSON not found: {self.json_path}"
+            )
 
         self.json_path = self.JsonPath
         self.njets_branch = njets_branch
@@ -110,7 +112,7 @@ class DYbbtautauCorrProducer:
 
         branches = []
         valid_expr = self._valid_expr()
-        
+
         for syst in systs:
             branch_name = (
                 "weight_dy_central" if syst == "nominal" else f"weight_dy_{syst}"
