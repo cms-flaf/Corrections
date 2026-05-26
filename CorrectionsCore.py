@@ -109,6 +109,7 @@ period_names = {
     "Run3_2023BPix": "2023_Summer23BPix",
     "Run3_2024": "2024_Summer24",  # 2024_Winter24
     "Run3_2025": "2025_Summer24",  # "2025_Winter25" is also a valid entry, but has files only only for JME
+    "Run3_2026": "2025_Summer24",  # TEMPORARY PATCH TO CHECK THAT WORKS FOR 2026 DATA
 }
 
 periods = {

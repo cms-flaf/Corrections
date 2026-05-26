@@ -457,14 +457,15 @@ class MuCorrProducer:
             ROOT.gInterpreter.ProcessLine(
                 f'::correction::HighPtMuCorrProvider::Initialize("{jsonFile_eff_highPt}")'
             )
-            if era != "Run3_2025" or era != "Run3_2026":
+            if era not in ("Run3_2025", "Run3_2026"):
                 ROOT.gInterpreter.ProcessLine(
                     f'::correction::LowPtMuCorrProvider::Initialize("{jsonFile_eff_lowPt}")'
                 )
             MuCorrProducer.period = period
             MuCorrProducer.initialized = True
-        self.low_available = era.startswith("Run3") and (
-            era != "Run3_2025" or era != "Run3_2026"
+        self.low_available = era.startswith("Run3") and era not in (
+            "Run3_2025",
+            "Run3_2026",
         )
         self.med_available = True
         self.high_available = True

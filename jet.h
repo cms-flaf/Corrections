@@ -2,20 +2,6 @@
 
 #include "correction.h"
 #include "corrections.h"
-template<typename T>
-T phi_mpi_pi(T angle) {
-    if ( angle <= M_PI && angle > -M_PI ) {
-    return angle;
-    }
-    if ( angle > 0 ) {
-    const int n = static_cast<int>(.5*(angle*M_1_PI+1.));
-    angle -= 2*n*M_PI;
-    } else {
-    const int n = static_cast<int>(-.5*(angle*M_1_PI-1.));
-    angle += 2*n*M_PI;
-    }
-    return angle;
-}
 
 namespace correction {
     class JetCorrectionProvider : public CorrectionsBase<JetCorrectionProvider> {
@@ -159,17 +145,18 @@ namespace correction {
 
             float cRes = 1.0;
             float pt_for_corr = pt_after;
-
-            if(is2024Eta2To2p5 and pt_after < 30. ){
-                pt_for_corr = 30.;
-            }
-            if (isdata_ && require_run_number) {
+            if (isdata_){
+                if(is2024Eta2To2p5 and pt_after < 30. ){
+                    pt_for_corr = 30.;
+                }
+                if (require_run_number) {
                     cRes = corr_l2l3res_->evaluate({float(run),eta,pt_for_corr});
-            } else {
-                cRes = corr_l2l3res_->evaluate({eta,pt_for_corr});
+                } else {
+                    cRes = corr_l2l3res_->evaluate({eta,pt_for_corr});
+                }
             }
-            if(isdata_)
-                pt_after *= cRes;
+
+            pt_after *= cRes;
 
 
             return pt_after / pt_raw ;
@@ -186,7 +173,7 @@ namespace correction {
             const float m_genMatch_dR2max = isAK4 ? 0.2*0.2 : 0.4*0.4; // half cone squared
             const float m_genMatch_dPtmax = 3; // 3 times the resolution
             auto get_dr2 = [](float phi, float eta, float gen_phi, float gen_eta) -> float {
-                const auto dphi = phi_mpi_pi(gen_phi - phi);
+                const auto dphi = ROOT::Math::VectorUtil::Phi_mpi_pi(gen_phi - phi);
                 const auto deta = gen_eta - eta;
                 return dphi*dphi + deta*deta;
             };
@@ -341,17 +328,14 @@ namespace correction {
                     float genjet_pt = -1.f;
 
                     if (!GenJet_pt.empty()) {
-
+                        const size_t genJetIdx_nano_size = Jet_genJetIdx.size();
+                        const size_t genJet_pt_size = GenJet_pt.size();
+                        const size_t GenJet_size =(i < genJetIdx_nano_size && Jet_genJetIdx[i] >= 0) ? static_cast<size_t>(Jet_genJetIdx[i]) : genJet_pt_size,
                         const auto matched_idx = findGenMatch(
                             corrected_pt,
                             eta,
                             phi,
-                            (
-                                i < Jet_genJetIdx.size() &&
-                                Jet_genJetIdx[i] >= 0
-                            )
-                            ? static_cast<size_t>(Jet_genJetIdx[i])
-                            : GenJet_pt.size(),
+                            GenJet_size,
                             GenJet_pt,
                             GenJet_eta,
                             GenJet_phi,

@@ -280,12 +280,12 @@ class Corrections:
                 self.to_apply["muScaRe"].get("scare_enabled", {}).get(self.stage, True)
             )
             apply_FSR = (
-                self.to_apply["muScaRe"].get("fsr_enabled", {}).get(self.stage, True)
+                self.to_apply["muScaRe"].get("fsr_enabled", {}).get(self.stage, False)
             )
             self.muScaRe_ = MuonEnergyScaleProducer(
                 period_names[self.period],
                 self.isData,
-                self.to_apply["muScaRe"].get("mu_pt_for_ScaReApplication", "pt_nano"),
+                self.to_apply["muScaRe"].get("mu_pt_for_ScaReApplication", "nano"),
                 apply_scare=apply_scare,
                 apply_fsr_recovery=apply_FSR,
             )
@@ -370,6 +370,10 @@ class Corrections:
         if "muScaRe" in self.to_apply:
             if self.stage == "AnaTuple":
                 df, source_dict = self.muScaRe.getP4Variations(df, source_dict)
+            elif self.stage == "HistTuple" or self.stage == "AnalysisCache":
+                df = self.muScaRe.getP4VariationsForLegs(df)
+            else:
+                raise RuntimeError("No known stages for muon ScaRe application")
         if (
             "tauES" in self.to_apply
             or "JEC" in self.to_apply
