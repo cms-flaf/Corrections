@@ -370,7 +370,7 @@ class Corrections:
             return df
 
         # process-level configuration must provide recoil order
-        recoil_cfg = process_cfg.get("corrections", {}).get("recoil", {})
+        recoil_cfg = process_cfg.get("recoil", {})
         if not recoil_cfg.get("enabled", False):
             return df
 
@@ -384,10 +384,10 @@ class Corrections:
             f"corrections::getGlobal().recoil.correctMET("
             f'"{recoil_order}", '
             f"static_cast<double>(recoil_njet), "
-            f"static_cast<double>(recoil_genboson_pt), "
-            f"static_cast<double>(recoil_genboson_phi), "
-            f"static_cast<double>(recoil_genboson_vis_pt), "
-            f"static_cast<double>(recoil_genboson_vis_phi), "
+            f"static_cast<double>(recoil_GenBoson_pt), "
+            f"static_cast<double>(recoil_GenBoson_phi), "
+            f"static_cast<double>(recoil_GenBoson_vis_pt), "
+            f"static_cast<double>(recoil_GenBoson_vis_phi), "
             f"static_cast<double>(PuppiMET_pt), "
             f"static_cast<double>(PuppiMET_phi), "
             f'"{recoil_method}")',
