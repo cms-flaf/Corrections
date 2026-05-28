@@ -40,6 +40,7 @@ class DYbbtautauCorrProducer:
         *,
         njets_branch="nJet",
         ntags_branch="nBJets",
+        pt_ll_gen="pt_ll_gen",
         valid="valid",
         variations=None,
     ):
@@ -76,6 +77,7 @@ class DYbbtautauCorrProducer:
         self.json_path = self.JsonPath
         self.njets_branch = njets_branch
         self.ntags_branch = ntags_branch
+        self.pt_ll_gen = pt_ll_gen
         self.variations = list(
             self.default_variations if variations is None else variations
         )
@@ -125,8 +127,7 @@ class DYbbtautauCorrProducer:
                             \"{self.era_map[self.era]}\",
                             static_cast<int>({self.njets_branch}),
                             static_cast<int>({self.ntags_branch}),
-                            tau1_gen_vis_p4,
-                            tau2_gen_vis_p4,
+                            static_cast<float>({self.pt_ll_gen}),
                             \"{syst}\",
                             {valid_expr}
                         )
