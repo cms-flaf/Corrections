@@ -208,10 +208,10 @@ class JetCorrProducer:
             "Summer24Prompt24_V2_MC"
         ],  # https://cms-jerc.web.cern.ch/Recommendations/#2024
         "2025_Summer24": [
-            "Winter25Prompt25_V2_MC"
+            "Winter25Prompt25_V3_MC"
         ],  # https://cms-jerc.web.cern.ch/Recommendations/#2024 # tmp patch because 2025_Summer24 does not exist
         "2025_Winter25": [
-            "Winter25Prompt25_V2_MC"
+            "Winter25Prompt25_V3_MC"
         ],  # https://cms-jerc.web.cern.ch/Recommendations/#2024
     }
 

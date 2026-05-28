@@ -440,12 +440,13 @@ class MuCorrProducer:
                 pog_folder_names["MUO"][period]
             ),
         )
-        jsonFile_eff_lowPt = os.path.join(
-            os.environ["ANALYSIS_PATH"],
-            MuCorrProducer.LowPtmuIDEff_JsonPath.format(
-                pog_folder_names["MUO"][period]
-            ),
-        )
+        if era != "Run3_2025" or era != "Run3_2026":
+            jsonFile_eff_lowPt = os.path.join(
+                os.environ["ANALYSIS_PATH"],
+                MuCorrProducer.LowPtmuIDEff_JsonPath.format(
+                    pog_folder_names["MUO"][period]
+                ),
+            )
         if not MuCorrProducer.initialized:
             headers_dir = os.path.dirname(os.path.abspath(__file__))
             header_path = os.path.join(headers_dir, "mu.h")
@@ -456,12 +457,16 @@ class MuCorrProducer:
             ROOT.gInterpreter.ProcessLine(
                 f'::correction::HighPtMuCorrProvider::Initialize("{jsonFile_eff_highPt}")'
             )
-            ROOT.gInterpreter.ProcessLine(
-                f'::correction::LowPtMuCorrProvider::Initialize("{jsonFile_eff_lowPt}")'
-            )
+            if era not in ("Run3_2025", "Run3_2026"):
+                ROOT.gInterpreter.ProcessLine(
+                    f'::correction::LowPtMuCorrProvider::Initialize("{jsonFile_eff_lowPt}")'
+                )
             MuCorrProducer.period = period
             MuCorrProducer.initialized = True
-        self.low_available = era.startswith("Run3")
+        self.low_available = era.startswith("Run3") and era not in (
+            "Run3_2025",
+            "Run3_2026",
+        )
         self.med_available = True
         self.high_available = True
         self.columns = {}
