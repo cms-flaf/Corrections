@@ -40,7 +40,7 @@ class DYbbtautauCorrProducer:
         *,
         njets_branch="nJet",
         ntags_branch="nBJets",
-        pt_ll_gen = "pt_ll_gen",
+        pt_ll_gen="pt_ll_gen",
         valid="valid",
         variations=None,
     ):

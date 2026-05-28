@@ -20,7 +20,6 @@ namespace correction {
                          float pt_ll_gen,
                          const std::string& syst,
                          bool isValid) const {
-                            
             const float ptll = pt_ll_gen;
             static constexpr int kMinNJets = 2;
 
