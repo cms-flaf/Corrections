@@ -21,7 +21,6 @@ struct RecoilSystematics {
 
 class BosonicRecoilCorrection {
 public:
-ic:
     explicit BosonicRecoilCorrection(const std::string& period, const std::string& analysis_path) {
         static const std::map<std::string, std::string> json_map = {
             {"Run3_2022", "Recoil_corrections_2022preEE_v5.json.gz"},
@@ -169,7 +168,7 @@ ic:
         return {upara, uperp, uparaCorr, uperpCorr, metCorr.pt, metCorr.phi};
     }
 
-    RecoilSystResult applyUncertainty(
+    RecoilSystematics applyUncertainty(
         const std::string& order,
         double njet,
         double genPt, double genPhi,
@@ -201,6 +200,6 @@ private:
     const correction::Correction* corr_qmpfit_{nullptr};
     const correction::Correction* corr_unc_{nullptr};
 
-} // BosonicRecoilCorrection
+};
 
 } //namespace recoil

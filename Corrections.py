@@ -381,9 +381,13 @@ class Corrections:
             return df
 
         # process-level configuration must provide recoil order
-        recoil_cfg = process_cfg.get("recoil", {})
-        if not recoil_cfg.get("enabled", False):
-            return df
+        for key in process_cfg.keys():
+            print(f"Checking recoil config for process level key {key}")
+            if not process_cfg[key].get("recoil", False):
+                return df
+            recoil_cfg = process_cfg.get("recoil", {})
+            if not recoil_cfg.get("enabled", False):
+                return df
 
         recoil_order = recoil_cfg["order"]  # "NLO" or "NNLO"
         recoil_method = self.to_apply["recoil"].get("method", "QuantileMapHist")
@@ -432,10 +436,10 @@ class Corrections:
                     f"corrections::getGlobal().recoil.applyUncertainty("
                     f'"{recoil_order}", '
                     f"static_cast<double>(recoil_njet), "
-                    f"static_cast<double>(recoil_genboson_pt), "
-                    f"static_cast<double>(recoil_genboson_phi), "
-                    f"static_cast<double>(recoil_genboson_vis_pt), "
-                    f"static_cast<double>(recoil_genboson_vis_phi), "
+                    f"static_cast<double>(recoil_GenBoson_pt), "
+                    f"static_cast<double>(recoil_GenBoson_phi), "
+                    f"static_cast<double>(recoil_GenBoson_vis_pt), "
+                    f"static_cast<double>(recoil_GenBoson_vis_phi), "
                     f"static_cast<double>(PuppiMET_pt_recoil), "
                     f"static_cast<double>(PuppiMET_phi_recoil), "
                     f'"{syst}")',

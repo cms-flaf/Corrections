@@ -94,7 +94,7 @@ class BosonicRecoilCorrection:
     def met_from_u(cls, gen_pt, gen_phi, vis_pt, vis_phi, upara, uperp):
         vx, vy = cls._xy_from_pt_phi(gen_pt, gen_phi)
         v_vis_x, v_vis_y = cls._xy_from_pt_phi(vis_pt, vis_phi)
-        ucx, ucy = cls._build_from_para_perp(upara, uperp, vx, vy)
+        ucx, ucy = cls._reconstruct_from_para_perp(upara, uperp, vx, vy)
 
         # U = MET + V_vis - V --> MET = U - V_vis + V
         metx = ucx - v_vis_x + vx
@@ -103,9 +103,9 @@ class BosonicRecoilCorrection:
 
     @classmethod
     def met_from_h(cls, gen_pt, gen_phi, vis_pt, vis_phi, hpara, hperp):
-        vx, vy = cls._xy_from_pt_phi(vis_pt, vis_phi)
+        vx, vy = cls._xy_from_pt_phi(gen_pt, gen_phi)
         v_vis_x, v_vis_y = cls._xy_from_pt_phi(vis_pt, vis_phi)
-        hcx, hcy = cls._build_from_para_perp(hpara, hperp, vx, vy)
+        hcx, hcy = cls._reconstruct_from_para_perp(hpara, hperp, vx, vy)
 
         # H = -V_vis - MET --> MET = -H - V_vis
         metx = -hcx - v_vis_x
@@ -171,7 +171,7 @@ class BosonicRecoilCorrection:
         met_phi_nominal,
         syst,
     ):
-        if syst not in ("RespUp", "RespDown", "ResoUp", "ResoDown"):
+        if syst not in ("RespUp", "RespDown", "ResolUp", "ResolDown"):
             raise ValueError(
                 f"Unknown systematic variation {syst} for recoil uncertainty"
             )
@@ -181,8 +181,8 @@ class BosonicRecoilCorrection:
             gen_pt, gen_phi, vis_pt, vis_phi, met_pt_nominal, met_phi_nominal
         )
 
-        hpara_variation = self.unc.evaluate(order, float(njet), ptll, "Hpara", syst)
-        hperp_variation = self.unc.evaluate(order, float(njet), ptll, "Hperp", syst)
+        hpara_variation = self.unc.evaluate(order, float(njet), ptll, "Hpara", hpara, syst)
+        hperp_variation = self.unc.evaluate(order, float(njet), ptll, "Hperp", hperp, syst)
 
         met_pt_variation, met_phi_variation = self.met_from_h(
             gen_pt, gen_phi, vis_pt, vis_phi, hpara_variation, hperp_variation
