@@ -74,7 +74,6 @@ class DYbbtautauCorrProducer:
                 f"DYbbtautauCorrProducer: DY correction JSON not found: {self.json_path}"
             )
 
-        self.json_path = self.JsonPath
         self.njets_branch = njets_branch
         self.ntags_branch = ntags_branch
         self.pt_ll_gen = pt_ll_gen
