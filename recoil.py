@@ -181,8 +181,12 @@ class BosonicRecoilCorrection:
             gen_pt, gen_phi, vis_pt, vis_phi, met_pt_nominal, met_phi_nominal
         )
 
-        hpara_variation = self.unc.evaluate(order, float(njet), ptll, "Hpara", hpara, syst)
-        hperp_variation = self.unc.evaluate(order, float(njet), ptll, "Hperp", hperp, syst)
+        hpara_variation = self.unc.evaluate(
+            order, float(njet), ptll, "Hpara", hpara, syst
+        )
+        hperp_variation = self.unc.evaluate(
+            order, float(njet), ptll, "Hperp", hperp, syst
+        )
 
         met_pt_variation, met_phi_variation = self.met_from_h(
             gen_pt, gen_phi, vis_pt, vis_phi, hpara_variation, hperp_variation
