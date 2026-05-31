@@ -384,7 +384,15 @@ class Corrections:
         if not isinstance(recoil_cfg, dict):
             return df
 
-        recoil_order = recoil_cfg.get("order", "NLO")  # "NLO" or "NNLO"
+        if not recoil_cfg.get("enabled", False):
+            return df
+
+        recoil_order = recoil_cfg.get("order", "None")
+        if recoil_order not in ["LO", "NLO", "NNLO"]:
+            raise RuntimeError(
+                f"Recoil correction order {recoil_order} not recognized. Supported values are 'LO', 'NLO', 'NNLO'."
+            )
+
         print(f"Applying bosonic recoil corrections with order {recoil_order}.")
         recoil_method = self.to_apply["recoil"].get("method", "QuantileMapHist")
         apply_systematics = self.to_apply["recoil"].get("apply_systematics", True)
