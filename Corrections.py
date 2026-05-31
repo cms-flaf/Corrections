@@ -166,6 +166,7 @@ class Corrections:
         self.Vpt_ = None
         self.JetVetoMap_ = None
         self.btag_shape_norm_ = None
+        self.recoil_ = None
 
     @property
     def xs_db(self):
@@ -331,6 +332,21 @@ class Corrections:
         return self.trg_
 
     @property
+    def recoil(self):
+        if self.recoil_ is None:
+            from .recoil import BosonicRecoilCorrection
+
+            self.recoil_ = BosonicRecoilCorrection(
+                period=self.period,
+                config=self.to_apply.get("recoil", {}),
+                isData=self.isData,
+                dataset_name=self.dataset_name,
+                process_name=self.process_name,
+                process_cfg=self.process_cfg,
+            )
+        return self.recoil_
+
+    @property
     def btag_norm(self):
         if self.btag_shape_norm_ is None:
             if not self.isData:
@@ -356,6 +372,139 @@ class Corrections:
             else:
                 raise RuntimeError("btag_shape_norm not applicable to data.")
         return self.btag_shape_norm_
+
+    def applyRecoilCorrections(self, df, process_cfg):
+        if self.isData:
+            return df
+
+        if "recoil" not in self.to_apply:
+            return df
+
+        recoil_cfg = process_cfg.get("recoil", {})
+        if not isinstance(recoil_cfg, dict):
+            return df
+
+        if not recoil_cfg.get("enabled", False):
+            return df
+
+        recoil_order = recoil_cfg.get("order", "None")
+        if recoil_order not in ["LO", "NLO", "NNLO"]:
+            raise RuntimeError(
+                f"Recoil correction order {recoil_order} not recognized. Supported values are 'LO', 'NLO', 'NNLO'."
+            )
+
+        print(f"Applying bosonic recoil corrections with order {recoil_order}.")
+        recoil_method = self.to_apply["recoil"].get("method", "QuantileMapHist")
+        apply_systematics = self.to_apply["recoil"].get("apply_systematics", True)
+
+        df = df.Define(
+            "recoil_lhe_boson_p4",
+            "::correction::BosonicRecoilCorrectionProvider::GetLHEBosonP4("
+            "LHEPart_pt, LHEPart_eta, LHEPart_phi, LHEPart_mass, "
+            "LHEPart_pdgId, LHEPart_status)",
+        )
+
+        df = df.Define(
+            "recoil_lhe_boson_vis_p4",
+            "::correction::BosonicRecoilCorrectionProvider::GetLHEBosonVisP4("
+            "LHEPart_pt, LHEPart_eta, LHEPart_phi, LHEPart_mass, "
+            "LHEPart_pdgId, LHEPart_status)",
+        )
+
+        df = df.Define(
+            "recoil_boson_pt", "static_cast<double>(recoil_lhe_boson_p4.pt())"
+        )
+        df = df.Define(
+            "recoil_boson_phi", "static_cast<double>(recoil_lhe_boson_p4.phi())"
+        )
+        df = df.Define(
+            "recoil_boson_vis_pt", "static_cast<double>(recoil_lhe_boson_vis_p4.pt())"
+        )
+        df = df.Define(
+            "recoil_boson_vis_phi", "static_cast<double>(recoil_lhe_boson_vis_p4.phi())"
+        )
+
+        df = df.Define("recoil_ptll", "static_cast<double>(LHE_Vpt)")
+
+        df = df.Define(
+            "recoil_njet",
+            f"::correction::BosonicRecoilCorrectionProvider::GetRecoilNJetCategoryFromReco("
+            f"static_cast<float>(b1_pt), "
+            f"static_cast<float>(b1_eta), "
+            f"static_cast<float>(b2_pt), "
+            f"static_cast<float>(b2_eta), "
+            f"VBFJet_pt, "
+            f"VBFJet_eta)",
+        )
+
+        df = df.Define(
+            "recoil_nom_result",
+            f"::correction::BosonicRecoilCorrectionProvider::getGlobal().correctMET("
+            f'"{recoil_order}", '
+            f"static_cast<double>(recoil_njet), "
+            f"static_cast<double>(recoil_ptll), "
+            f"static_cast<double>(recoil_boson_pt), "
+            f"static_cast<double>(recoil_boson_phi), "
+            f"static_cast<double>(recoil_boson_vis_pt), "
+            f"static_cast<double>(recoil_boson_vis_phi), "
+            f"static_cast<double>(PuppiMET_pt), "
+            f"static_cast<double>(PuppiMET_phi), "
+            f'"{recoil_method}")',
+        )
+
+        df = df.DefineAndAppend(
+            "PuppiMET_pt_recoil", "static_cast<float>(recoil_nom_result.met_pt_corr)"
+        )
+
+        df = df.DefineAndAppend(
+            "PuppiMET_phi_recoil", "static_cast<float>(recoil_nom_result.met_phi_corr)"
+        )
+
+        df = df.DefineAndAppend(
+            "recoil_upara", "static_cast<float>(recoil_nom_result.upara)"
+        )
+
+        df = df.DefineAndAppend(
+            "recoil_uperp", "static_cast<float>(recoil_nom_result.uperp)"
+        )
+
+        df = df.DefineAndAppend(
+            "recoil_upara_corr", "static_cast<float>(recoil_nom_result.upara_corr)"
+        )
+
+        df = df.DefineAndAppend(
+            "recoil_uperp_corr", "static_cast<float>(recoil_nom_result.uperp_corr)"
+        )
+
+        if apply_systematics:
+            for syst in ["RespUp", "RespDown", "ResolUp", "ResolDown"]:
+                result_name = f"recoil_{syst}"
+                df = df.Define(
+                    result_name,
+                    f"::correction::BosonicRecoilCorrectionProvider::getGlobal().applyUncertainty("
+                    f'"{recoil_order}", '
+                    f"static_cast<double>(recoil_njet), "
+                    f"static_cast<double>(recoil_ptll), "
+                    f"static_cast<double>(recoil_boson_pt), "
+                    f"static_cast<double>(recoil_boson_phi), "
+                    f"static_cast<double>(recoil_boson_vis_pt), "
+                    f"static_cast<double>(recoil_boson_vis_phi), "
+                    f"static_cast<double>(PuppiMET_pt_recoil), "
+                    f"static_cast<double>(PuppiMET_phi_recoil), "
+                    f'"{syst}")',
+                )
+
+                df = df.DefineAndAppend(
+                    f"PuppiMET_pt_recoil_{syst}",
+                    f"static_cast<float>({result_name}.met_pt)",
+                )
+
+                df = df.DefineAndAppend(
+                    f"PuppiMET_phi_recoil_{syst}",
+                    f"static_cast<float>({result_name}.met_phi)",
+                )
+
+        return df
 
     def applyScaleUncertainties(self, df, ana_reco_objects):
         source_dict = {central: []}
