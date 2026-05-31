@@ -380,29 +380,67 @@ class Corrections:
         if "recoil" not in self.to_apply:
             return df
 
-        # process-level configuration must provide recoil order
-        for key in process_cfg.keys():
-            print(f"Checking recoil config for process level key {key}")
-            if not process_cfg[key].get("recoil", False):
-                return df
-            recoil_cfg = process_cfg.get("recoil", {})
-            if not recoil_cfg.get("enabled", False):
-                return df
+        recoil_cfg = process_cfg.get("recoil", {})
+        if not isinstance(recoil_cfg, dict):
+            return df
 
-        recoil_order = recoil_cfg["order"]  # "NLO" or "NNLO"
+        recoil_order = recoil_cfg.get("order", "NLO")  # "NLO" or "NNLO"
+        print(f"Applying bosonic recoil corrections with order {recoil_order}.")
         recoil_method = self.to_apply["recoil"].get("method", "QuantileMapHist")
         apply_systematics = self.to_apply["recoil"].get("apply_systematics", True)
 
-        # Define nominal recoil-corrected MET
+        bjet_pt_cut = float(self.to_apply["recoil"].get("bjet_pt_cut", 30.0))
+        vbfjet_pt_cut = float(self.to_apply["recoil"].get("vbfjet_pt_cut", 30.0))
+
+        df = df.Define(
+            "recoil_lhe_boson_p4",
+            "::correction::BosonicRecoilCorrectionProvider::GetLHEBosonP4("
+            "LHEPart_pt, LHEPart_eta, LHEPart_phi, LHEPart_mass, "
+            "LHEPart_pdgId, LHEPart_status)",
+        )
+
+        df = df.Define(
+            "recoil_lhe_boson_vis_p4",
+            "::correction::BosonicRecoilCorrectionProvider::GetLHEBosonVisP4("
+            "LHEPart_pt, LHEPart_eta, LHEPart_phi, LHEPart_mass, "
+            "LHEPart_pdgId, LHEPart_status)",
+        )
+
+        df = df.Define(
+            "recoil_boson_pt", "static_cast<double>(recoil_lhe_boson_p4.pt())"
+        )
+        df = df.Define(
+            "recoil_boson_phi", "static_cast<double>(recoil_lhe_boson_p4.phi())"
+        )
+        df = df.Define(
+            "recoil_boson_vis_pt", "static_cast<double>(recoil_lhe_boson_vis_p4.pt())"
+        )
+        df = df.Define(
+            "recoil_boson_vis_phi", "static_cast<double>(recoil_lhe_boson_vis_p4.phi())"
+        )
+
+        df = df.Define("recoil_ptll", "static_cast<double>(LHE_Vpt)")
+
+        df = df.Define(
+            "recoil_njet",
+            f"::correction::BosonicRecoilCorrectionProvider::GetRecoilNJetCategoryFromReco("
+            f"static_cast<float>(b1_pt), "
+            f"static_cast<float>(b2_pt), "
+            f"VBFJet_pt, "
+            f"{bjet_pt_cut}f, "
+            f"{vbfjet_pt_cut}f)",
+        )
+
         df = df.Define(
             "recoil_nom_result",
-            f"corrections::getGlobal().recoil.correctMET("
+            f"::correction::BosonicRecoilCorrectionProvider::getGlobal().correctMET("
             f'"{recoil_order}", '
             f"static_cast<double>(recoil_njet), "
-            f"static_cast<double>(recoil_GenBoson_pt), "
-            f"static_cast<double>(recoil_GenBoson_phi), "
-            f"static_cast<double>(recoil_GenBoson_vis_pt), "
-            f"static_cast<double>(recoil_GenBoson_vis_phi), "
+            f"static_cast<double>(recoil_ptll), "
+            f"static_cast<double>(recoil_boson_pt), "
+            f"static_cast<double>(recoil_boson_phi), "
+            f"static_cast<double>(recoil_boson_vis_pt), "
+            f"static_cast<double>(recoil_boson_vis_phi), "
             f"static_cast<double>(PuppiMET_pt), "
             f"static_cast<double>(PuppiMET_phi), "
             f'"{recoil_method}")',
@@ -411,6 +449,7 @@ class Corrections:
         df = df.DefineAndAppend(
             "PuppiMET_pt_recoil", "static_cast<float>(recoil_nom_result.met_pt_corr)"
         )
+
         df = df.DefineAndAppend(
             "PuppiMET_phi_recoil", "static_cast<float>(recoil_nom_result.met_phi_corr)"
         )
@@ -418,12 +457,15 @@ class Corrections:
         df = df.DefineAndAppend(
             "recoil_upara", "static_cast<float>(recoil_nom_result.upara)"
         )
+
         df = df.DefineAndAppend(
             "recoil_uperp", "static_cast<float>(recoil_nom_result.uperp)"
         )
+
         df = df.DefineAndAppend(
             "recoil_upara_corr", "static_cast<float>(recoil_nom_result.upara_corr)"
         )
+
         df = df.DefineAndAppend(
             "recoil_uperp_corr", "static_cast<float>(recoil_nom_result.uperp_corr)"
         )
@@ -433,13 +475,14 @@ class Corrections:
                 result_name = f"recoil_{syst}"
                 df = df.Define(
                     result_name,
-                    f"corrections::getGlobal().recoil.applyUncertainty("
+                    f"::correction::BosonicRecoilCorrectionProvider::getGlobal().applyUncertainty("
                     f'"{recoil_order}", '
                     f"static_cast<double>(recoil_njet), "
-                    f"static_cast<double>(recoil_GenBoson_pt), "
-                    f"static_cast<double>(recoil_GenBoson_phi), "
-                    f"static_cast<double>(recoil_GenBoson_vis_pt), "
-                    f"static_cast<double>(recoil_GenBoson_vis_phi), "
+                    f"static_cast<double>(recoil_ptll), "
+                    f"static_cast<double>(recoil_boson_pt), "
+                    f"static_cast<double>(recoil_boson_phi), "
+                    f"static_cast<double>(recoil_boson_vis_pt), "
+                    f"static_cast<double>(recoil_boson_vis_phi), "
                     f"static_cast<double>(PuppiMET_pt_recoil), "
                     f"static_cast<double>(PuppiMET_phi_recoil), "
                     f'"{syst}")',
@@ -449,6 +492,7 @@ class Corrections:
                     f"PuppiMET_pt_recoil_{syst}",
                     f"static_cast<float>({result_name}.met_pt)",
                 )
+
                 df = df.DefineAndAppend(
                     f"PuppiMET_phi_recoil_{syst}",
                     f"static_cast<float>({result_name}.met_phi)",
