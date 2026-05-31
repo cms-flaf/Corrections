@@ -397,9 +397,6 @@ class Corrections:
         recoil_method = self.to_apply["recoil"].get("method", "QuantileMapHist")
         apply_systematics = self.to_apply["recoil"].get("apply_systematics", True)
 
-        bjet_pt_cut = float(self.to_apply["recoil"].get("bjet_pt_cut", 30.0))
-        vbfjet_pt_cut = float(self.to_apply["recoil"].get("vbfjet_pt_cut", 30.0))
-
         df = df.Define(
             "recoil_lhe_boson_p4",
             "::correction::BosonicRecoilCorrectionProvider::GetLHEBosonP4("
@@ -433,10 +430,11 @@ class Corrections:
             "recoil_njet",
             f"::correction::BosonicRecoilCorrectionProvider::GetRecoilNJetCategoryFromReco("
             f"static_cast<float>(b1_pt), "
+            f"static_cast<float>(b1_eta), "
             f"static_cast<float>(b2_pt), "
+            f"static_cast<float>(b2_eta), "
             f"VBFJet_pt, "
-            f"{bjet_pt_cut}f, "
-            f"{vbfjet_pt_cut}f)",
+            f"VBFJet_eta)",
         )
 
         df = df.Define(

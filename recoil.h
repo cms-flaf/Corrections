@@ -99,18 +99,31 @@ public:
         return p4;
     }
 
+    static bool PassRecoilJetHornLogic(const float pt, const float eta) {
+        const float abs_eta = std::abs(eta);
+        const bool in_horn = (abs_eta > 2.5f && abs_eta < 3.0f);
+        if (in_horn) return pt > 50.f;
+        return pt > 30.f;
+    }
+
     static float GetRecoilNJetFromReco(const float b1_pt,
+                                        const float b1_eta,
                                         const float b2_pt,
+                                        const float b2_eta,
                                         const RVecF& vbf_pt,
-                                        const float bjet_pt_cut = 30.f,
-                                        const float vbfjet_pt_cut = 30.f) {
+                                        const RVecF& vbf_eta) {
+        if (vbf_pt.size() != vbf_eta.size()) {
+            throw std::runtime_error(
+                "GetRecoilNJetCategoryFromReco: inconsistent VBF jet collection size"
+            );
+        }
         int nbjet = 0;
-        if (b1_pt > bjet_pt_cut) ++nbjet;
-        if (b2_pt > bjet_pt_cut) ++nbjet;
+        if (PassRecoilJetHornLogic(b1_pt, b1_eta)) ++nbjet;
+        if (PassRecoilJetHornLogic(b2_pt, b2_eta)) ++nbjet;
 
         int nvbfjet = 0;
         for (std::size_t i = 0; i < vbf_pt.size(); ++i) {
-            if (vbf_pt[i] > vbfjet_pt_cut) ++nvbfjet;
+            if (PassRecoilJetHornLogic(vbf_pt[i], vbf_eta[i])) ++nvbfjet;
         }
 
         const int njet = nbjet + nvbfjet;

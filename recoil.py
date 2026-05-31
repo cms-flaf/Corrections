@@ -45,11 +45,3 @@ class BosonicRecoilCorrection:
     @property
     def apply_systematics(self):
         return self.config.get("apply_systematics", True)
-
-    @property
-    def bjet_pt_cut(self):
-        return float(self.config.get("bjet_pt_cut", 30.0))
-
-    @property
-    def vbfjet_pt_cut(self):
-        return float(self.config.get("vbfjet_pt_cut", 30.0))
