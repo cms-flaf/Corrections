@@ -157,6 +157,7 @@ class Corrections:
         self.btag_ = None
         self.pu_ = None
         self.dy_hhbbtautau_ = None
+        self.dy_hhbbww_ = None
         self.mu_ = None
         self.muScaRe_ = None
         self.ele_ = None
@@ -201,6 +202,15 @@ class Corrections:
                 dy_hbbtautau_corr_type, era=self.period
             )
         return self.dy_hhbbtautau_
+
+    @property
+    def dy_hhbbww(self):
+        if self.dy_hhbbww_ is None:
+            from .DY_hhbbww import DYbbwwCorrProducer
+
+            dy_hhbbww_corr_type = self.process_cfg.get("dy_hhbbww_corr_type", "default")
+            self.dy_hhbbww_ = DYbbwwCorrProducer(dy_hhbbww_corr_type, era=self.period)
+        return self.dy_hhbbww_
 
     @property
     def Vpt(self):
@@ -529,6 +539,15 @@ class Corrections:
             )
 
             all_weights.extend(dy_branches)
+
+        if "dy_hhbbww" in self.to_apply:
+            df, dy_bbww_branches = self.dy_hhbbww.getWeight(
+                df,
+                return_variations=return_variations and isCentral,
+                return_list_of_branches=True,
+            )
+
+            all_weights.extend(dy_bbww_branches)
 
         if "base" in self.to_apply:
             for (
