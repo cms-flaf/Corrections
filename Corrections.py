@@ -399,14 +399,14 @@ class Corrections:
 
         df = df.Define(
             "recoil_lhe_boson_p4",
-            "::correction::BosonicRecoilCorrectionProvider::GetLHEBosonP4("
+            "::correction::BosonicRecoilProvider::GetLHEBosonP4("
             "LHEPart_pt, LHEPart_eta, LHEPart_phi, LHEPart_mass, "
             "LHEPart_pdgId, LHEPart_status)",
         )
 
         df = df.Define(
             "recoil_lhe_boson_vis_p4",
-            "::correction::BosonicRecoilCorrectionProvider::GetLHEBosonVisP4("
+            "::correction::BosonicRecoilProvider::GetLHEBosonVisP4("
             "LHEPart_pt, LHEPart_eta, LHEPart_phi, LHEPart_mass, "
             "LHEPart_pdgId, LHEPart_status)",
         )
@@ -428,7 +428,7 @@ class Corrections:
 
         df = df.Define(
             "recoil_njet",
-            f"::correction::BosonicRecoilCorrectionProvider::GetRecoilNJetCategoryFromReco("
+            f"::correction::BosonicRecoilProvider::GetRecoilNJetCategoryFromReco("
             f"static_cast<float>(b1_pt), "
             f"static_cast<float>(b1_eta), "
             f"static_cast<float>(b2_pt), "
@@ -439,7 +439,7 @@ class Corrections:
 
         df = df.Define(
             "recoil_nom_result",
-            f"::correction::BosonicRecoilCorrectionProvider::getGlobal().correctMET("
+            f"::correction::BosonicRecoilProvider::getGlobal().correctMET("
             f'"{recoil_order}", '
             f"static_cast<double>(recoil_njet), "
             f"static_cast<double>(recoil_ptll), "
@@ -481,7 +481,7 @@ class Corrections:
                 result_name = f"recoil_{syst}"
                 df = df.Define(
                     result_name,
-                    f"::correction::BosonicRecoilCorrectionProvider::getGlobal().applyUncertainty("
+                    f"::correction::BosonicRecoilProvider::getGlobal().applyUncertainty("
                     f'"{recoil_order}", '
                     f"static_cast<double>(recoil_njet), "
                     f"static_cast<double>(recoil_ptll), "

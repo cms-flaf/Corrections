@@ -34,7 +34,7 @@ class BosonicRecoilCorrection:
             header_path = os.path.join(headers_dir, "recoil.h")
             ROOT.gInterpreter.Declare(f'#include "{header_path}"')
             ROOT.gInterpreter.ProcessLine(
-                f'::correction::BosonicRecoilCorrectionProvider::Initialize("{json_file}")'
+                f'::correction::BosonicRecoilProvider::Initialize("{json_file}")'
             )
             BosonicRecoilCorrection.initialized = True
 
