@@ -114,7 +114,7 @@ public:
                                         const RVecF& vbf_eta) {
         if (vbf_pt.size() != vbf_eta.size()) {
             throw std::runtime_error(
-                "GetRecoilNJetCategoryFromReco: inconsistent VBF jet collection size"
+                "GetRecoilNJetFromReco: inconsistent VBF jet collection size"
             );
         }
         int nbjet = 0;

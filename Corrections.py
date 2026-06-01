@@ -428,7 +428,7 @@ class Corrections:
 
         df = df.Define(
             "recoil_njet",
-            f"::correction::BosonicRecoilProvider::GetRecoilNJetCategoryFromReco("
+            f"::correction::BosonicRecoilProvider::GetRecoilNJetFromReco("
             f"static_cast<float>(b1_pt), "
             f"static_cast<float>(b1_eta), "
             f"static_cast<float>(b2_pt), "
