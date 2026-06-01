@@ -197,12 +197,7 @@ class Corrections:
         if self.dy_hhbbtautau_ is None:
             from .DY_hhbbtautau import DYbbtautauCorrProducer
 
-            apply_this_proc = self.process_name in self.to_apply.get(
-                "dy_hhbbtautau", {}
-            ).get("processes", [])
-            self.dy_hhbbtautau_ = DYbbtautauCorrProducer(
-                apply_this_proc, era=self.period
-            )
+            self.dy_hhbbtautau_ = DYbbtautauCorrProducer(era=self.period)
         return self.dy_hhbbtautau_
 
     @property
@@ -210,10 +205,7 @@ class Corrections:
         if self.dy_hhbbww_ is None:
             from .DY_hhbbww import DYbbwwCorrProducer
 
-            apply_this_proc = self.process_name in self.to_apply.get(
-                "dy_hhbbww", {}
-            ).get("processes", [])
-            self.dy_hhbbww_ = DYbbwwCorrProducer(apply_this_proc, era=self.period)
+            self.dy_hhbbww_ = DYbbwwCorrProducer(era=self.period)
         return self.dy_hhbbww_
 
     @property

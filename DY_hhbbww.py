@@ -19,7 +19,6 @@ class DYbbwwCorrProducer:
 
     def __init__(
         self,
-        apply_this_proc,
         era,
         *,
         njets_branch="nJet",
@@ -29,7 +28,6 @@ class DYbbwwCorrProducer:
     ):
         self.era = era
         self.valid = valid
-        self.apply_this_proc = apply_this_proc
 
         if self.era not in self.era_map:
             raise RuntimeError(
@@ -99,21 +97,18 @@ class DYbbwwCorrProducer:
                 if syst == "nominal"
                 else f"weight_dy_hhbbww_{syst}"
             )
-            if self.apply_this_proc:
-                df = df.Define(
-                    branch_name,
-                    f"""static_cast<float>(
-                        ::correction::DYbbwwCorrProvider::getGlobal().getWeight(
-                            \"{self.era_map[self.era]}\",
-                            static_cast<int>({self.njets_branch}),
-                            static_cast<float>({self.pt_ll}),
-                            \"{syst}\",
-                            {valid_expr}
-                        )
-                    )""",
-                )
-            else:
-                df = df.Define(branch_name, f"""1.f""")
+            df = df.Define(
+                branch_name,
+                f"""static_cast<float>(
+                    ::correction::DYbbwwCorrProvider::getGlobal().getWeight(
+                        \"{self.era_map[self.era]}\",
+                        static_cast<int>({self.njets_branch}),
+                        static_cast<float>({self.pt_ll}),
+                        \"{syst}\",
+                        {valid_expr}
+                    )
+                )""",
+            )
 
             branches.append(branch_name)
 
