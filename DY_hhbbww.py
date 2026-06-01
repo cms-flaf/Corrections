@@ -19,7 +19,7 @@ class DYbbwwCorrProducer:
 
     def __init__(
         self,
-        sampleType,
+        apply_this_proc,
         era,
         *,
         njets_branch="nJet",
@@ -29,10 +29,7 @@ class DYbbwwCorrProducer:
     ):
         self.era = era
         self.valid = valid
-        if sampleType == "DY":
-            self.isDY = True
-        else:
-            self.isDY = False
+        self.apply_this_proc = apply_this_proc
 
         if self.era not in self.era_map:
             raise RuntimeError(
@@ -102,7 +99,7 @@ class DYbbwwCorrProducer:
                 if syst == "nominal"
                 else f"weight_dy_hhbbww_{syst}"
             )
-            if self.isDY:
+            if self.apply_this_proc:
                 df = df.Define(
                     branch_name,
                     f"""static_cast<float>(

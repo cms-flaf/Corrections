@@ -192,14 +192,11 @@ class Corrections:
         if self.dy_hhbbtautau_ is None:
             from .DY_hhbbtautau import DYbbtautauCorrProducer
 
-            dy_hbbtautau_corr_type = self.process_cfg.get(
-                "dy_hbbtautau_corr_type", "default"
-            )
-            # self.dy_hhbbtautau_ = DYbbtautauCorrProducer(
-            #     self.to_apply["dy_hhbbtautau"]["type"], era=self.period
-            # )
+            apply_this_proc = self.process_name in self.to_apply.get(
+                "dy_hhbbtautau", {}
+            ).get("processes", [])
             self.dy_hhbbtautau_ = DYbbtautauCorrProducer(
-                dy_hbbtautau_corr_type, era=self.period
+                apply_this_proc, era=self.period
             )
         return self.dy_hhbbtautau_
 
@@ -208,8 +205,10 @@ class Corrections:
         if self.dy_hhbbww_ is None:
             from .DY_hhbbww import DYbbwwCorrProducer
 
-            dy_hhbbww_corr_type = self.process_cfg.get("dy_hhbbww_corr_type", "default")
-            self.dy_hhbbww_ = DYbbwwCorrProducer(dy_hhbbww_corr_type, era=self.period)
+            apply_this_proc = self.process_name in self.to_apply.get(
+                "dy_hhbbww", {}
+            ).get("processes", [])
+            self.dy_hhbbww_ = DYbbwwCorrProducer(apply_this_proc, era=self.period)
         return self.dy_hhbbww_
 
     @property
@@ -217,9 +216,7 @@ class Corrections:
         if self.Vpt_ is None:
             from .Vpt import VptCorrProducer
 
-            Vpt_corr_type = self.process_cfg.get("Vpt_corr_type", "default")
-            # self.Vpt_ = VptCorrProducer(self.to_apply["Vpt"]["type"], self.period)
-            self.Vpt_ = VptCorrProducer(Vpt_corr_type, self.period)
+            self.Vpt_ = VptCorrProducer(self.to_apply["Vpt"]["type"], self.period)
         return self.Vpt_
 
     @property
