@@ -103,7 +103,6 @@ class DYbbwwCorrProducer:
                 else f"weight_dy_hhbbww_{syst}"
             )
             if self.isDY:
-                print(f"Hey this is DY, filling a branch {branch_name}")
                 df = df.Define(
                     branch_name,
                     f"""static_cast<float>(
