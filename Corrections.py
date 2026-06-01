@@ -107,6 +107,8 @@ class Corrections:
                 if stage not in corr_stages:
                     continue
                 if corr_name not in self.to_apply:
+                    if "processes" in corr_params and process_name not in corr_params["processes"]:
+                        continue
                     self.to_apply[corr_name] = corr_params
                     correction_origins[corr_name] = cfg_name
                 else:
