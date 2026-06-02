@@ -1,4 +1,5 @@
 import os
+import ROOT
 from .CorrectionsCore import *
 
 # Bosonic recoil corrections following recommendations from https://cms-higgs-leprare.docs.cern.ch/htt-common/V_recoil/
@@ -25,13 +26,13 @@ class BosonicRecoilCorrection:
 
         json_file = os.path.join(
             os.environ["ANALYSIS_PATH"],
-            "Corrections/data/hleprare/recoil",
+            "Corrections/data/hleprare/bosonicRecoil",
             self.json_map[period],
         )
 
         if not BosonicRecoilCorrection.initialized:
             headers_dir = os.path.dirname(os.path.abspath(__file__))
-            header_path = os.path.join(headers_dir, "recoil.h")
+            header_path = os.path.join(headers_dir, "bosonicRecoil.h")
             ROOT.gInterpreter.Declare(f'#include "{header_path}"')
             ROOT.gInterpreter.ProcessLine(
                 f'::correction::BosonicRecoilProvider::Initialize("{json_file}")'

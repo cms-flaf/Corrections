@@ -5,7 +5,7 @@
 
 namespace correction {
 
-// Bosonic recoil corrections following Higgs LepRare recommenation: https://cms-higgs-leprare.docs.cern.ch/htt-common/V_recoil/
+// Bosonic recoil corrections following Higgs LepRare recommendation: https://cms-higgs-leprare.docs.cern.ch/htt-common/V_recoil/
 
 class BosonicRecoilProvider : public CorrectionsBase<BosonicRecoilProvider> {
 public:
@@ -129,7 +129,7 @@ public:
         const int njet = nbjet + nvbfjet;
         if (njet <= 0) return 0.f;
         if (njet == 1) return 1.f;
-        return 2.f; // 
+        return 2.f;
     }
 
     static XYVector ptPhiToXY(double pt, double phi) {

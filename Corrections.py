@@ -166,7 +166,7 @@ class Corrections:
         self.Vpt_ = None
         self.JetVetoMap_ = None
         self.btag_shape_norm_ = None
-        self.recoil_ = None
+        self.bosonicRecoil_ = None
 
     @property
     def xs_db(self):
@@ -332,19 +332,19 @@ class Corrections:
         return self.trg_
 
     @property
-    def recoil(self):
-        if self.recoil_ is None:
-            from .recoil import BosonicRecoilCorrection
+    def bosonicRecoil(self):
+        if self.bosonicRecoil_ is None:
+            from .bosonicRecoil import BosonicRecoilCorrection
 
-            self.recoil_ = BosonicRecoilCorrection(
+            self.bosonicRecoil_ = BosonicRecoilCorrection(
                 period=self.period,
-                config=self.to_apply.get("recoil", {}),
+                config=self.to_apply.get("bosonicRecoil", {}),
                 isData=self.isData,
                 dataset_name=self.dataset_name,
                 process_name=self.process_name,
                 process_cfg=self.process_cfg,
             )
-        return self.recoil_
+        return self.bosonicRecoil_
 
     @property
     def btag_norm(self):
@@ -373,14 +373,14 @@ class Corrections:
                 raise RuntimeError("btag_shape_norm not applicable to data.")
         return self.btag_shape_norm_
 
-    def applyRecoilCorrections(self, df, process_cfg):
+    def applyBosonicRecoilCorrections(self, df, process_cfg):
         if self.isData:
             return df
 
-        if "recoil" not in self.to_apply:
+        if "bosonicRecoil" not in self.to_apply:
             return df
 
-        recoil_cfg = process_cfg.get("recoil", {})
+        recoil_cfg = process_cfg.get("corrections", {}).get("bosonicRecoil", {})
         if not isinstance(recoil_cfg, dict):
             return df
 
@@ -390,12 +390,14 @@ class Corrections:
         recoil_order = recoil_cfg.get("order", "None")
         if recoil_order not in ["LO", "NLO", "NNLO"]:
             raise RuntimeError(
-                f"Recoil correction order {recoil_order} not recognized. Supported values are 'LO', 'NLO', 'NNLO'."
+                f"Bosonic Recoil correction order {recoil_order} not recognized. Supported values are 'LO', 'NLO', 'NNLO'."
             )
 
         print(f"Applying bosonic recoil corrections with order {recoil_order}.")
-        recoil_method = self.to_apply["recoil"].get("method", "QuantileMapHist")
-        apply_systematics = self.to_apply["recoil"].get("apply_systematics", True)
+        recoil_method = self.to_apply["bosonicRecoil"].get("method", "QuantileMapHist")
+        apply_systematics = self.to_apply["bosonicRecoil"].get(
+            "apply_systematics", True
+        )
 
         df = df.Define(
             "recoil_lhe_boson_p4",
@@ -539,6 +541,8 @@ class Corrections:
             df, source_dict = self.met.getMET(
                 df, source_dict, self.global_params["met_type"]
             )
+        if "bosonicRecoil" in self.to_apply and not self.isData:
+            df = self.applyBosonicRecoilCorrections(df, self.process_cfg)
 
         syst_dict = {}
         for source, source_objs in source_dict.items():
