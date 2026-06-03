@@ -91,7 +91,7 @@ class DYbbwwCorrProducer:
                         \"{self.era_map[self.era]}\",
                         static_cast<int>({self.njets_branch}),
                         static_cast<float>({self.pt_ll}),
-                        \"{syst}\",
+                        \"{syst}\"
                     )
                 )""",
             )

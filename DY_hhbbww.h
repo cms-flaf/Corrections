@@ -17,19 +17,16 @@ namespace correction {
         double getWeight(const std::string& era,
                          int njets,
                          float pt_ll,
-                         const std::string& syst,
-                         ) const {
-            const float ptll = pt_ll;
+                         const std::string& syst) const {
             static constexpr int kMinNJets = 2;
-
-            const int MaxJets = 10;
+            static constexpr int MaxJets = 10;
 
             double weight = 1.0;
 
             if (njets < kMinNJets) {
                 weight = 1.0;
             } else {
-                weight = safeEvaluate(dy_hhbbww_Weight_, era, std::min(njets, MaxJets), ptll, syst);
+                weight = safeEvaluate(dy_hhbbww_Weight_, era, std::min(njets, MaxJets), pt_ll, syst);
             }
             return weight;
         }
