@@ -18,7 +18,7 @@ namespace correction {
                          int njets,
                          float pt_ll,
                          const std::string& syst,
-                         bool isValid) const {
+                         ) const {
             const float ptll = pt_ll;
             static constexpr int kMinNJets = 2;
 
@@ -26,14 +26,10 @@ namespace correction {
 
             double weight = 1.0;
 
-            if (!isValid) {
+            if (njets < kMinNJets) {
                 weight = 1.0;
             } else {
-                if (njets < kMinNJets) {
-                    weight = 1.0;
-                } else {
-                    weight = safeEvaluate(dy_hhbbww_Weight_, era, std::min(njets, MaxJets), ptll, syst);
-                }
+                weight = safeEvaluate(dy_hhbbww_Weight_, era, std::min(njets, MaxJets), ptll, syst);
             }
             return weight;
         }

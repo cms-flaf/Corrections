@@ -23,11 +23,9 @@ class DYbbwwCorrProducer:
         *,
         njets_branch="nJet",
         pt_ll="pt_lep1_lep2",
-        valid="valid",
         variations=None,
     ):
         self.era = era
-        self.valid = valid
 
         if self.era not in self.era_map:
             raise RuntimeError(
@@ -67,29 +65,18 @@ class DYbbwwCorrProducer:
             )
             DYbbwwCorrProducer.initialized = True
 
-    def _valid_expr(self):
-        if isinstance(self.valid, bool):
-            return "true" if self.valid else "false"
-        return f"static_cast<bool>({self.valid})"
-
     def getWeight(
         self,
         df,
         return_variations=True,
         return_list_of_branches=False,
-        enabled=True,
     ):
-        if not enabled:
-            if return_list_of_branches:
-                return df, []
-            return df
 
         systs = ["nominal"]
         if return_variations:
             systs += self.variations
 
         branches = []
-        valid_expr = self._valid_expr()
 
         for syst in systs:
             branch_name = (
@@ -105,7 +92,6 @@ class DYbbwwCorrProducer:
                         static_cast<int>({self.njets_branch}),
                         static_cast<float>({self.pt_ll}),
                         \"{syst}\",
-                        {valid_expr}
                     )
                 )""",
             )
