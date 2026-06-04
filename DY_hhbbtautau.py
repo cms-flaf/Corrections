@@ -35,7 +35,6 @@ class DYbbtautauCorrProducer:
 
     def __init__(
         self,
-        sampleType,
         era,
         *,
         njets_branch="nJet",
@@ -46,10 +45,6 @@ class DYbbtautauCorrProducer:
     ):
         self.era = era
         self.valid = valid
-        if sampleType == "DY":
-            self.isDY = True
-        else:
-            self.isDY = False
 
         if self.era not in self.era_map:
             raise RuntimeError(
@@ -118,22 +113,19 @@ class DYbbtautauCorrProducer:
             branch_name = (
                 "weight_dy_central" if syst == "nominal" else f"weight_dy_{syst}"
             )
-            if self.isDY:
-                df = df.Define(
-                    branch_name,
-                    f"""static_cast<float>(
-                        ::correction::DYbbtautauCorrProvider::getGlobal().getWeight(
-                            \"{self.era_map[self.era]}\",
-                            static_cast<int>({self.njets_branch}),
-                            static_cast<int>({self.ntags_branch}),
-                            static_cast<float>({self.pt_ll_gen}),
-                            \"{syst}\",
-                            {valid_expr}
-                        )
-                    )""",
-                )
-            else:
-                df = df.Define(branch_name, f"""1.f""")
+            df = df.Define(
+                branch_name,
+                f"""static_cast<float>(
+                    ::correction::DYbbtautauCorrProvider::getGlobal().getWeight(
+                        \"{self.era_map[self.era]}\",
+                        static_cast<int>({self.njets_branch}),
+                        static_cast<int>({self.ntags_branch}),
+                        static_cast<float>({self.pt_ll_gen}),
+                        \"{syst}\",
+                        {valid_expr}
+                    )
+                )""",
+            )
 
             branches.append(branch_name)
 
