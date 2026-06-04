@@ -77,8 +77,10 @@ namespace correction {
                             full_name += year;
                             full_name += '_';
                         }
-                        full_name += algo;
-                        unc_map_[unc_source] = full_name;
+                        std::string full_name_jet = full_name + algo;
+                        std::string full_name_fat = full_name + fatalgo;
+                        unc_map_[unc_source] = full_name_jet;
+                        fat_unc_map_[unc_source] = full_name_fat;
                     }
                 }
             }
@@ -479,7 +481,7 @@ namespace correction {
 
                 for (const auto& unc_scale : {UncScale::Up, UncScale::Down}) {
 
-                    for (const auto& [unc_source, unc_name] : unc_map_) {
+                    for (const auto& [unc_source, unc_name] : fat_unc_map_) {
 
                         variations.emplace_back(
                             unc_source,
@@ -700,7 +702,7 @@ namespace correction {
 
                         const auto corr =
                             fat_corrset_->at(
-                                unc_map_.at(unc_source)
+                                fat_unc_map_.at(unc_source)
                             );
 
                         const float unc =
@@ -761,6 +763,7 @@ namespace correction {
             Correction::Ref corr_jer_sf_;
             Correction::Ref corr_jer_res_;
             CompoundCorrection::Ref cmpd_corr_;
+            std::map<UncSource, std::string> fat_unc_map_;
             std::unique_ptr<CorrectionSet> fat_corrset_;
             Correction::Ref fat_jersmear_corr_;  // aka shared_ptr<Correction const>, sizeof = 8
             Correction::Ref fat_corr_jer_sf_;
