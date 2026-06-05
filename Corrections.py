@@ -197,7 +197,21 @@ class Corrections:
         if self.dy_hhbbtautau_ is None:
             from .DY_hhbbtautau import DYbbtautauCorrProducer
 
-            self.dy_hhbbtautau_ = DYbbtautauCorrProducer(era=self.period)
+            njets_branch = self.to_apply.get("dy_hhbbtautau", {}).get(
+                "njets_branch", "nJet"
+            )
+            ntags_branch = self.to_apply.get("dy_hhbbtautau", {}).get(
+                "ntags_branch", "nBJets"
+            )
+            pt_ll_gen = self.to_apply.get("dy_hhbbtautau", {}).get(
+                "pt_ll_gen", "pt_ll_gen"
+            )
+            self.dy_hhbbtautau_ = DYbbtautauCorrProducer(
+                era=self.period,
+                njets_branch=nJet,
+                ntags_branch=nBJets,
+                pt_ll_gen=pt_ll_gen,
+            )
         return self.dy_hhbbtautau_
 
     @property
@@ -205,7 +219,15 @@ class Corrections:
         if self.dy_hhbbww_ is None:
             from .DY_hhbbww import DYbbwwCorrProducer
 
-            self.dy_hhbbww_ = DYbbwwCorrProducer(era=self.period)
+            njets_branch = self.to_apply.get("dy_hhbbww", {}).get(
+                "njets_branch", "nJet"
+            )
+            pt_ll = self.to_apply.get("dy_hhbbww", {}).get("pt_ll_name", "pt_lep1_lep2")
+            self.dy_hhbbww_ = DYbbwwCorrProducer(
+                era=self.period,
+                njets_branch=njets_branch,
+                pt_ll=pt_ll,
+            )
         return self.dy_hhbbww_
 
     @property
