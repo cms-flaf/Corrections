@@ -24,7 +24,7 @@ class MuonEnergyScaleProducer:
         return_variations=True,
         apply_scare=True,
         apply_fsr_recovery=True,
-        id_selection="Muon_looseId"
+        id_selection="Muon_looseId",
     ):
         self.period = period
         self.pt_for_ScaRe = pt_for_ScaRe
@@ -112,7 +112,7 @@ class MuonEnergyScaleProducer:
                         p4 = f"mu{leg_idx}_p4{suffix}"
                         FSR_branch = f"mu{leg_idx}_p4_FSR{suffix}"
                         scare_branch = f"mu{leg_idx}_p4{suffix}_{syst_name}"
-                        id_branch = f"mu{leg_idx}_looseId" # I don't know what hmumu uses for naming
+                        id_branch = f"mu{leg_idx}_looseId"  # I don't know what hmumu uses for naming
                         if self.apply_scare:
                             if "scare" in suffix:
                                 continue
