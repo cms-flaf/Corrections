@@ -24,11 +24,13 @@ class MuonEnergyScaleProducer:
         return_variations=True,
         apply_scare=True,
         apply_fsr_recovery=True,
+        id_selection="Muon_looseId"
     ):
         self.period = period
         self.pt_for_ScaRe = pt_for_ScaRe
         self.apply_scare = apply_scare
         self.apply_fsr_recovery = apply_fsr_recovery
+        self.id_selection = id_selection
         jsonFile_path = MuonEnergyScaleProducer.jsonPath.format(
             pog_folder_names["MUO"][period]
         )
@@ -73,7 +75,7 @@ class MuonEnergyScaleProducer:
                             scare_FSR_branch = f"Muon_p4_FSR_{syst_name}"
                         df = df.Define(
                             scare_branch,
-                            f"""::correction::MuonScaReCorrProvider::getGlobal().getES(v_ops::pt({p4}), v_ops::eta({p4}), v_ops::phi({p4}), v_ops::mass({p4}), Muon_charge, Muon_nTrackerLayers, isData, event, luminosityBlock, ::correction::MuonScaReCorrProvider::UncSource::{source}, ::correction::UncScale::{scale},{use_VXBS})""",
+                            f"""::correction::MuonScaReCorrProvider::getGlobal().getES({self.id_selection}, v_ops::pt({p4}), v_ops::eta({p4}), v_ops::phi({p4}), v_ops::mass({p4}), Muon_charge, Muon_nTrackerLayers, isData, event, luminosityBlock, ::correction::MuonScaReCorrProvider::UncSource::{source}, ::correction::UncScale::{scale}, {use_VXBS})""",
                         )
                         p4 = scare_branch
                         df = df.Define(
@@ -110,6 +112,7 @@ class MuonEnergyScaleProducer:
                         p4 = f"mu{leg_idx}_p4{suffix}"
                         FSR_branch = f"mu{leg_idx}_p4_FSR{suffix}"
                         scare_branch = f"mu{leg_idx}_p4{suffix}_{syst_name}"
+                        id_branch = f"mu{leg_idx}_looseId" # I don't know what hmumu uses for naming
                         if self.apply_scare:
                             if "scare" in suffix:
                                 continue
@@ -121,7 +124,7 @@ class MuonEnergyScaleProducer:
                             )
                             df = df.Define(
                                 scare_branch,
-                                f"""::correction::MuonScaReCorrProvider::getGlobal().getES({p4}.Pt(), {p4}.Eta(), {p4}.Phi(), {p4}.M(), mu{leg_idx}_charge, mu{leg_idx}_nTrackerLayers, isData, event, luminosityBlock, ::correction::MuonScaReCorrProvider::UncSource::{source}, ::correction::UncScale::{scale}, {use_VXBS})""",
+                                f"""::correction::MuonScaReCorrProvider::getGlobal().getES({id_branch}, {p4}.Pt(), {p4}.Eta(), {p4}.Phi(), {p4}.M(), mu{leg_idx}_charge, mu{leg_idx}_nTrackerLayers, isData, event, luminosityBlock, ::correction::MuonScaReCorrProvider::UncSource::{source}, ::correction::UncScale::{scale}, {use_VXBS})""",
                             )
                             p4 = scare_branch
                             FSR_branch = f"mu{leg_idx}_p4_FSR{suffix}_{syst_name}"

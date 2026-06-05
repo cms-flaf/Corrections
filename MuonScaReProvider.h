@@ -67,11 +67,12 @@ namespace correction {
                 const LorentzVectorM muon_p4_ScaRe = LorentzVectorM(muon_pt_resol, Muon_eta, Muon_phi, Muon_mass);
                 return muon_p4_ScaRe;
         }
-        RVecLV getES(const RVecF& Muon_pt,
+        RVecLV getES(const RVecI& id_selection,
+                const RVecF& Muon_pt,
                 const RVecF& Muon_eta,
                 const RVecF& Muon_phi,
                 const RVecF& Muon_mass,
-                const RVecI   Muon_charge,
+                const RVecI&  Muon_charge,
                 const RVecUC& Muon_nTrackerLayers,
                 const bool is_data,
                 const int evtNumber,
@@ -84,20 +85,25 @@ namespace correction {
                 RVecLV out(nMuons);
 
                 for (size_t i = 0; i < nMuons; ++i) {
-                    out[i] = getES(
-                        Muon_pt[i],
-                        Muon_eta[i],
-                        Muon_phi[i],
-                        Muon_mass[i],
-                        Muon_charge[i],
-                        Muon_nTrackerLayers[i],
-                        is_data,
-                        evtNumber,
-                        lumiNumber,
-                        source,
-                        scale,
-                        useVXBS
-                    );
+                    if (id_selection[i] != 1){
+                        out[i] = LorentzVectorM(Muon_pt[i], Muon_eta[i], Muon_phi[i], Muon_mass[i]);
+                    }
+                    else {
+                        out[i] = getES(
+                            Muon_pt[i],
+                            Muon_eta[i],
+                            Muon_phi[i],
+                            Muon_mass[i],
+                            Muon_charge[i],
+                            Muon_nTrackerLayers[i],
+                            is_data,
+                            evtNumber,
+                            lumiNumber,
+                            source,
+                            scale,
+                            useVXBS
+                        );
+                    }
                 }
 
                 return out;
