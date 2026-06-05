@@ -107,6 +107,11 @@ class Corrections:
                 if stage not in corr_stages:
                     continue
                 if corr_name not in self.to_apply:
+                    if (
+                        "processes" in corr_params
+                        and process_name not in corr_params["processes"]
+                    ):
+                        continue
                     self.to_apply[corr_name] = corr_params
                     correction_origins[corr_name] = cfg_name
                 else:
@@ -156,6 +161,8 @@ class Corrections:
         self.trg_ = None
         self.btag_ = None
         self.pu_ = None
+        self.dy_hhbbtautau_ = None
+        self.dy_hhbbww_ = None
         self.mu_ = None
         self.muScaRe_ = None
         self.ele_ = None
@@ -184,6 +191,22 @@ class Corrections:
 
             self.pu_ = puWeightProducer(period=period_names[self.period])
         return self.pu_
+
+    @property
+    def dy_hhbbtautau(self):
+        if self.dy_hhbbtautau_ is None:
+            from .DY_hhbbtautau import DYbbtautauCorrProducer
+
+            self.dy_hhbbtautau_ = DYbbtautauCorrProducer(era=self.period)
+        return self.dy_hhbbtautau_
+
+    @property
+    def dy_hhbbww(self):
+        if self.dy_hhbbww_ is None:
+            from .DY_hhbbww import DYbbwwCorrProducer
+
+            self.dy_hhbbww_ = DYbbwwCorrProducer(era=self.period)
+        return self.dy_hhbbww_
 
     @property
     def Vpt(self):
@@ -508,6 +531,24 @@ class Corrections:
                 enabled=pu_enabled,
             )
             all_weights.extend(weight_pu_branches)
+
+        if "dy_hhbbtautau" in self.to_apply:
+            df, dy_branches = self.dy_hhbbtautau.getWeight(
+                df,
+                return_variations=return_variations and isCentral,
+                return_list_of_branches=True,
+            )
+
+            all_weights.extend(dy_branches)
+
+        if "dy_hhbbww" in self.to_apply:
+            df, dy_bbww_branches = self.dy_hhbbww.getWeight(
+                df,
+                return_variations=return_variations and isCentral,
+                return_list_of_branches=True,
+            )
+
+            all_weights.extend(dy_bbww_branches)
 
         if "base" in self.to_apply:
             for (
