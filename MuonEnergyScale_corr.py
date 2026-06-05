@@ -112,7 +112,7 @@ class MuonEnergyScaleProducer:
                         p4 = f"mu{leg_idx}_p4{suffix}"
                         FSR_branch = f"mu{leg_idx}_p4_FSR{suffix}"
                         scare_branch = f"mu{leg_idx}_p4{suffix}_{syst_name}"
-                        id_branch = f"mu{leg_idx}_looseId"  # I don't know what hmumu uses for naming
+                        id_branch = f"mu{leg_idx}_pt"  # Just use pT here since all muons at this stage should be real
                         if self.apply_scare:
                             if "scare" in suffix:
                                 continue

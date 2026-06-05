@@ -490,7 +490,7 @@ class JetCorrProducer:
             else:
                 df = df.Define(
                     "Jet_p4_shifted_map",
-                    f"""::correction::JetCorrectionProvider::getGlobal().getShiftedP4(Jet_pt, Jet_eta, Jet_phi, Jet_mass, Jet_rawFactor, Jet_area, Rho_fixedGridRhoFastjetAll, event, {apply_jer}, {reapply_jec}, {require_run_number}, run, {wantPhi}, {apply_forward_jet_horns_fix})""",
+                    f"""::correction::JetCorrectionProvider::getGlobal().getShiftedP4_Jet(Jet_pt, Jet_eta, Jet_phi, Jet_mass, Jet_rawFactor, Jet_area, Rho_fixedGridRhoFastjetAll, event, {apply_jer}, {reapply_jec}, {require_run_number}, run, {wantPhi}, {apply_forward_jet_horns_fix})""",
                 )
                 df = df.Define(
                     "FatJet_p4_shifted_map",

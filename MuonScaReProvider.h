@@ -85,7 +85,8 @@ namespace correction {
                 RVecLV out(nMuons);
 
                 for (size_t i = 0; i < nMuons; ++i) {
-                    if (id_selection[i] != 1){
+                    if (id_selection[i] <= 0){
+                        // id selection is using Muon_looseId at anaTuple, but mu1_pt at histTuple (h_mumu)
                         out[i] = LorentzVectorM(Muon_pt[i], Muon_eta[i], Muon_phi[i], Muon_mass[i]);
                     }
                     else {
