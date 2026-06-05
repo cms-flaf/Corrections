@@ -282,12 +282,14 @@ class Corrections:
             apply_FSR = (
                 self.to_apply["muScaRe"].get("fsr_enabled", {}).get(self.stage, False)
             )
+            id_selection = self.to_apply["muScaRe"].get("id_selection", "Muon_looseId")
             self.muScaRe_ = MuonEnergyScaleProducer(
                 period_names[self.period],
                 self.isData,
                 self.to_apply["muScaRe"].get("mu_pt_for_ScaReApplication", "nano"),
                 apply_scare=apply_scare,
                 apply_fsr_recovery=apply_FSR,
+                id_selection=id_selection,
             )
         return self.muScaRe_
 
