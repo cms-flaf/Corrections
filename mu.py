@@ -440,7 +440,7 @@ class MuCorrProducer:
                 pog_folder_names["MUO"][period]
             ),
         )
-        if era != "Run3_2025" or era != "Run3_2026":
+        if era not in ("Run3_2025", "Run3_2026"):
             jsonFile_eff_lowPt = os.path.join(
                 os.environ["ANALYSIS_PATH"],
                 MuCorrProducer.LowPtmuIDEff_JsonPath.format(

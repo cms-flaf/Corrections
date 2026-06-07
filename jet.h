@@ -186,7 +186,7 @@ namespace correction {
                 };
 
                 // First check if matched genJet from NanoAOD is acceptable
-                if (genJetIdx >= 0) {
+                if (genJetIdx < gen_pt.size()) {
                     const float dr2 = get_dr2(phi, eta, gen_phi[genJetIdx], gen_eta[genJetIdx]);
                     if ((dr2 < m_genMatch_dR2max) && check_resolution(pt, gen_pt[genJetIdx])) {
                         return genJetIdx;
@@ -227,6 +227,7 @@ namespace correction {
             const Correction::Ref& corr_jer_sf,
             const Correction::Ref& corr_jer_sfUnc,
             const Correction::Ref& jersmear_corr,
+            const Correction::Ref& corr_jer_res,
             const RVecF& gen_pt_vec = {},
             const RVecF& gen_eta_vec = {},
             const RVecF& gen_phi_vec = {},
@@ -330,7 +331,7 @@ namespace correction {
                         // ------------------------------------------------
 
                         const float jer_pt_res =
-                            fat_corr_jer_res_->evaluate({
+                            corr_jer_res->evaluate({
                                 eta,
                                 corrected_pt,
                                 rho
@@ -541,6 +542,7 @@ namespace correction {
                 corr_jer_sf_,
                 corr_jer_sfUnc_,
                 jersmear_corr_,
+                corr_jer_res_,
                 GenJet_pt,
                 GenJet_eta,
                 GenJet_phi,
@@ -589,6 +591,7 @@ namespace correction {
                 fat_corr_jer_sf_,
                 fat_corr_jer_sfUnc_,
                 fat_jersmear_corr_,
+                fat_corr_jer_res_,
                 GenFatJet_pt,
                 GenFatJet_eta,
                 GenFatJet_phi,

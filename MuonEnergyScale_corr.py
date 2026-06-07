@@ -120,11 +120,11 @@ class MuonEnergyScaleProducer:
                             #     f"computing ScaRe on leg {leg_idx} on {p4} and defining the scare varied p4 as {scare_branch}"
                             # )
                             use_VXBS = (
-                                "true" if suffix == "bsConstrainedPt" else "false"
+                                "true" if suffix == "_bsConstrainedPt" else "false"
                             )
                             df = df.Define(
                                 scare_branch,
-                                f"""::correction::MuonScaReCorrProvider::getGlobal().getES({id_branch}, {p4}.Pt(), {p4}.Eta(), {p4}.Phi(), {p4}.M(), mu{leg_idx}_charge, mu{leg_idx}_nTrackerLayers, isData, event, luminosityBlock, ::correction::MuonScaReCorrProvider::UncSource::{source}, ::correction::UncScale::{scale}, {use_VXBS})""",
+                                f"""::correction::MuonScaReCorrProvider::getGlobal().getES({p4}.Pt(), {p4}.Eta(), {p4}.Phi(), {p4}.M(), mu{leg_idx}_charge, mu{leg_idx}_nTrackerLayers, isData, event, luminosityBlock, ::correction::MuonScaReCorrProvider::UncSource::{source}, ::correction::UncScale::{scale}, {use_VXBS})""",
                             )
                             p4 = scare_branch
                             FSR_branch = f"mu{leg_idx}_p4_FSR{suffix}_{syst_name}"
