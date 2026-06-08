@@ -105,17 +105,16 @@ class JetCorrProducer:
     uncSources_minimal = ["Total"]
 
     # Freeze from latest so the code doesn't break from new corr styles
-    # Cannot freeze in this format because 24 and 25 do not have something uploaded on date 2026-06-05
     jet_jsonPath = (
-        "/cvmfs/cms-griddata.cern.ch/cat/metadata/JME/{}/latest/jet_jerc.json.gz"
-        # "/cvmfs/cms-griddata.cern.ch/cat/metadata/JME/{}/2026-06-05/jet_jerc.json.gz"
+        # "/cvmfs/cms-griddata.cern.ch/cat/metadata/JME/{}/latest/jet_jerc.json.gz"
+        "/cvmfs/cms-griddata.cern.ch/cat/metadata/JME/{}/jet_jerc.json.gz"
     )
     fatjet_jsonPath = (
-        "/cvmfs/cms-griddata.cern.ch/cat/metadata/JME/{}/latest/fatJet_jerc.json.gz"
-        # "/cvmfs/cms-griddata.cern.ch/cat/metadata/JME/{}/2026-06-05/fatJet_jerc.json.gz"
+        # "/cvmfs/cms-griddata.cern.ch/cat/metadata/JME/{}/latest/fatJet_jerc.json.gz"
+        "/cvmfs/cms-griddata.cern.ch/cat/metadata/JME/{}/fatJet_jerc.json.gz"
     )
-    jersmear_jsonPath = "/cvmfs/cms-griddata.cern.ch/cat/metadata/JME/JER-Smearing/latest/jer_smear.json.gz"
-    # jersmear_jsonPath = "/cvmfs/cms-griddata.cern.ch/cat/metadata/JME/JER-Smearing/2025-11-03/jer_smear.json.gz"
+    # jersmear_jsonPath = "/cvmfs/cms-griddata.cern.ch/cat/metadata/JME/JER-Smearing/latest/jer_smear.json.gz"
+    jersmear_jsonPath = "/cvmfs/cms-griddata.cern.ch/cat/metadata/JME/JER-Smearing/2025-11-03/jer_smear.json.gz"
 
     # maps period to JER tag (only for MC!)
     jer_tag_map = {
