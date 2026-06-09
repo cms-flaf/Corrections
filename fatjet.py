@@ -76,11 +76,11 @@ class FatJetCorrProducer:
             sf_sources += FatJetCorrProducer.fatjet_Sources
         SF_branches = []
         syst_name_central = getSystName(central, central)
-        branch_central = f"""{self.fatjetName}_weight_FatJetSF_{syst_name_central}"""
+        branch_central = f"""weight_FatJetSF_{syst_name_central}"""
         for source in sf_sources:
             for scale in getScales(source):
                 syst_name = getSystName(source, scale)
-                branch_name = f"{self.fatjetName}_weight_FatJetSF_{syst_name}"
+                branch_name = f"weight_FatJetSF_{syst_name}"
 
                 df = df.Define(
                     f"{branch_name}",
