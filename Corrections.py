@@ -393,16 +393,13 @@ class Corrections:
             return df
 
         recoil_cfg = process_cfg.get("corrections", {}).get("bosonicRecoil", {})
-        if not isinstance(recoil_cfg, dict):
-            return df
-
         if not recoil_cfg.get("enabled", False):
             return df
 
         recoil_order = recoil_cfg.get("order", "None")
         if recoil_order not in ["LO", "NLO", "NNLO"]:
             raise RuntimeError(
-                f"Bosonic Recoil correction order {recoil_order} not recognized. Supported values are 'LO', 'NLO', 'NNLO'."
+                f"Process order {recoil_order} not recognized for Bosonic Recoil Corrections. Supported values are 'LO', 'NLO', 'NNLO'."
             )
 
         print(f"Applying bosonic recoil corrections with order {recoil_order}.")
@@ -411,60 +408,122 @@ class Corrections:
             "apply_systematics", True
         )
 
-        df = df.Define(
-            "recoil_lhe_boson_p4",
-            "::correction::BosonicRecoilProvider::GetLHEBosonP4("
-            "LHEPart_pt, LHEPart_eta, LHEPart_phi, LHEPart_mass, "
-            "LHEPart_pdgId, LHEPart_status)",
-        )
-
-        df = df.Define(
-            "recoil_lhe_boson_vis_p4",
-            "::correction::BosonicRecoilProvider::GetLHEBosonVisP4("
-            "LHEPart_pt, LHEPart_eta, LHEPart_phi, LHEPart_mass, "
-            "LHEPart_pdgId, LHEPart_status)",
-        )
-
-        df = df.Define(
-            "recoil_boson_pt", "static_cast<double>(recoil_lhe_boson_p4.pt())"
-        )
-        df = df.Define(
-            "recoil_boson_phi", "static_cast<double>(recoil_lhe_boson_p4.phi())"
-        )
-        df = df.Define(
-            "recoil_boson_vis_pt", "static_cast<double>(recoil_lhe_boson_vis_p4.pt())"
-        )
-        df = df.Define(
-            "recoil_boson_vis_phi", "static_cast<double>(recoil_lhe_boson_vis_p4.phi())"
+        column_names = [str(c) for c in df.GetColumnNames()]
+        has_gen_recoil_inputs = all(
+            c in column_names
+            for c in [
+                "recoil_GenBoson_pt",
+                "recoil_GenBoson_phi",
+                "recoil_GenBoson_vis_pt",
+                "recoil_GenBoson_vis_phi",
+            ]
         )
 
         df = df.Define("recoil_ptll", "static_cast<double>(LHE_Vpt)")
-
         df = df.Define(
             "recoil_njet",
-            f"::correction::BosonicRecoilProvider::GetRecoilNJetFromReco("
-            f"static_cast<float>(b1_pt), "
-            f"static_cast<float>(b1_eta), "
-            f"static_cast<float>(b2_pt), "
-            f"static_cast<float>(b2_eta), "
-            f"VBFJet_pt, "
-            f"VBFJet_eta)",
+            "::correction::BosonicRecoilProvider::GetRecoilNJetFromReco("
+            "static_cast<float>(b1_pt), "
+            "static_cast<float>(b1_eta), "
+            "static_cast<float>(b2_pt), "
+            "static_cast<float>(b2_eta), "
+            "VBFJet_pt, "
+            "VBFJet_eta)",
         )
 
-        df = df.Define(
-            "recoil_nom_result",
-            f"::correction::BosonicRecoilProvider::getGlobal().correctMET("
-            f'"{recoil_order}", '
-            f"static_cast<double>(recoil_njet), "
-            f"static_cast<double>(recoil_ptll), "
-            f"static_cast<double>(recoil_boson_pt), "
-            f"static_cast<double>(recoil_boson_phi), "
-            f"static_cast<double>(recoil_boson_vis_pt), "
-            f"static_cast<double>(recoil_boson_vis_phi), "
-            f"static_cast<double>(PuppiMET_pt), "
-            f"static_cast<double>(PuppiMET_phi), "
-            f'"{recoil_method}")',
-        )
+        if has_gen_recoil_inputs:  # this is following hleprare recommendation
+            df = df.Define("recoil_boson_pt", "static_cast<double>(recoil_GenBoson_pt)")
+            df = df.Define(
+                "recoil_boson_phi", "static_cast<double>(recoil_GenBoson_phi)"
+            )
+            df = df.Define(
+                "recoil_boson_vis_pt", "static_cast<double>(recoil_GenBoson_vis_pt)"
+            )
+            df = df.Define(
+                "recoil_boson_vis_phi", "static_cast<double>(recoil_GenBoson_vis_phi)"
+            )
+            df = df.Define(
+                "recoil_nom_result",
+                f"::correction::BosonicRecoilProvider::getGlobal().correctMET("
+                f'"{recoil_order}", '
+                f"static_cast<double>(recoil_njet), "
+                f"static_cast<double>(recoil_ptll), "
+                f"static_cast<double>(recoil_boson_pt), "
+                f"static_cast<double>(recoil_boson_phi), "
+                f"static_cast<double>(recoil_boson_vis_pt), "
+                f"static_cast<double>(recoil_boson_vis_phi), "
+                f"static_cast<double>(PuppiMET_pt), "
+                f"static_cast<double>(PuppiMET_phi), "
+                f'"{recoil_method}")',
+            )
+        else:  # workaround for when Gen-level recoil inputs are not available
+            df = df.Define(
+                "recoil_lhe_boson_p4",
+                "::correction::BosonicRecoilProvider::GetLHEBosonP4("
+                "LHEPart_pt, LHEPart_eta, LHEPart_phi, LHEPart_mass, "
+                "LHEPart_pdgId, LHEPart_status)",
+            )
+            df = df.Define(
+                "recoil_lep_vis_boson_p4",
+                "::correction::BosonicRecoilProvider::GetVisibleBosonP4FromLepGenVis("
+                "static_cast<float>(tau1_gen_vis_pt), "
+                "static_cast<float>(tau1_gen_vis_eta), "
+                "static_cast<float>(tau1_gen_vis_phi)"
+                "static_cast<float>(tau1_gen_vis_mass), "
+                "static_cast<float>(tau2_gen_vis_pt), "
+                "static_cast<float>(tau2_gen_vis_eta), "
+                "static_cast<float>(tau2_gen_vis_phi), "
+                "static_cast<float>(tau2_gen_vis_mass))",
+            )
+            df = df.Define(
+                "recoil_boson_pt", "static_cast<double>(recoil_lhe_boson_p4.pt())"
+            )
+            df = df.Define(
+                "recoil_boson_phi", "static_cast<double>(recoil_lhe_boson_p4.phi())"
+            )
+            df = df.Define(
+                "recoil_boson_vis_pt",
+                "static_cast<double>(recoil_lep_vis_boson_p4.pt())",
+            )
+            df = df.Define(
+                "recoil_boson_vis_phi",
+                "static_cast<double>(recoil_lep_vis_boson_p4.phi())",
+            )
+
+            df = df.Define(
+                "recoil_valid_lep_vis",
+                "::correction::BosonicRecoilProvider::HasValidLepVisGenMatch("
+                "static_cast<int>(tau1_gen_kind), "
+                "static_cast<int>(tau2_gen_kind))",
+            )
+
+            df = df.Define(
+                "recoil_nom_result",
+                f"""
+                if (!recoil_valid_lep_vis) {{
+                    return ::correction::BosonicRecoilProvider::GetIdentityRecoilResult(
+                        static_cast<double>(recoil_boson_pt),
+                        static_cast<double>(recoil_boson_phi),
+                        static_cast<double>(recoil_boson_vis_pt),
+                        static_cast<double>(recoil_boson_vis_phi),
+                        static_cast<double>(PuppiMET_pt),
+                        static_cast<double>(PuppiMET_phi)
+                    );
+                }}
+                return ::correction::BosonicRecoilProvider::getGlobal().correctMET(
+                    f"{recoil_order}",
+                    static_cast<double>(recoil_njet),
+                    static_cast<double>(recoil_ptll),
+                    static_cast<double>(recoil_boson_pt),
+                    static_cast<double>(recoil_boson_phi),
+                    static_cast<double>(recoil_boson_vis_pt),
+                    static_cast<double>(recoil_boson_vis_phi),
+                    static_cast<double>(PuppiMET_pt),
+                    static_cast<double>(PuppiMET_phi),
+                    f"{recoil_method}"
+                );
+                """,
+            )
 
         df = df.DefineAndAppend(
             "PuppiMET_pt_recoil", "static_cast<float>(recoil_nom_result.met_pt_corr)"
@@ -493,20 +552,49 @@ class Corrections:
         if apply_systematics:
             for syst in ["RespUp", "RespDown", "ResolUp", "ResolDown"]:
                 result_name = f"recoil_{syst}"
-                df = df.Define(
-                    result_name,
-                    f"::correction::BosonicRecoilProvider::getGlobal().applyUncertainty("
-                    f'"{recoil_order}", '
-                    f"static_cast<double>(recoil_njet), "
-                    f"static_cast<double>(recoil_ptll), "
-                    f"static_cast<double>(recoil_boson_pt), "
-                    f"static_cast<double>(recoil_boson_phi), "
-                    f"static_cast<double>(recoil_boson_vis_pt), "
-                    f"static_cast<double>(recoil_boson_vis_phi), "
-                    f"static_cast<double>(PuppiMET_pt_recoil), "
-                    f"static_cast<double>(PuppiMET_phi_recoil), "
-                    f'"{syst}")',
-                )
+                if has_gen_recoil_inputs:
+                    df = df.Define(
+                        result_name,
+                        f"::correction::BosonicRecoilProvider::getGlobal().applyUncertainty("
+                        f'"{recoil_order}", '
+                        f"static_cast<double>(recoil_njet), "
+                        f"static_cast<double>(recoil_ptll), "
+                        f"static_cast<double>(recoil_boson_pt), "
+                        f"static_cast<double>(recoil_boson_phi), "
+                        f"static_cast<double>(recoil_boson_vis_pt), "
+                        f"static_cast<double>(recoil_boson_vis_phi), "
+                        f"static_cast<double>(PuppiMET_pt_recoil), "
+                        f"static_cast<double>(PuppiMET_phi_recoil), "
+                        f'"{syst}")',
+                    )
+                else:
+                    df = df.Define(
+                        result_name,
+                        f"""
+                        if (!recoil_valid_lep_vis) {{
+                            return ::correction::BosonicRecoilProvider::GetIdentityRecoilSystematics(
+                                static_cast<double>(recoil_boson_pt),
+                                static_cast<double>(recoil_boson_phi),
+                                static_cast<double>(recoil_boson_vis_pt),
+                                static_cast<double>(recoil_boson_vis_phi),
+                                static_cast<double>(PuppiMET_pt_recoil),
+                                static_cast<double>(PuppiMET_phi_recoil)
+                            );
+                        }}
+                        return ::correction::BosonicRecoilProvider::getGlobal().applyUncertainty(
+                            f"{recoil_order}",
+                            static_cast<double>(recoil_njet),
+                            static_cast<double>(recoil_ptll),
+                            static_cast<double>(recoil_boson_pt),
+                            static_cast<double>(recoil_boson_phi),
+                            static_cast<double>(recoil_boson_vis_pt),
+                            static_cast<double>(recoil_boson_vis_phi),
+                            static_cast<double>(PuppiMET_pt_recoil),
+                            static_cast<double>(PuppiMET_phi_recoil),
+                            f"{syst}"
+                        );
+                        """,
+                    )
 
                 df = df.DefineAndAppend(
                     f"PuppiMET_pt_recoil_{syst}",
