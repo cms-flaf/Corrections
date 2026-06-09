@@ -104,43 +104,47 @@ class JetCorrProducer:
 
     uncSources_minimal = ["Total"]
 
+    # Freeze from latest so the code doesn't break from new corr styles
     jet_jsonPath = (
-        "/cvmfs/cms-griddata.cern.ch/cat/metadata/JME/{}/latest/jet_jerc.json.gz"
+        # "/cvmfs/cms-griddata.cern.ch/cat/metadata/JME/{}/latest/jet_jerc.json.gz"
+        "/cvmfs/cms-griddata.cern.ch/cat/metadata/JME/{}/jet_jerc.json.gz"
     )
     fatjet_jsonPath = (
-        "/cvmfs/cms-griddata.cern.ch/cat/metadata/JME/{}/latest/fatJet_jerc.json.gz"
+        # "/cvmfs/cms-griddata.cern.ch/cat/metadata/JME/{}/latest/fatJet_jerc.json.gz"
+        "/cvmfs/cms-griddata.cern.ch/cat/metadata/JME/{}/fatJet_jerc.json.gz"
     )
-    jersmear_jsonPath = "/cvmfs/cms-griddata.cern.ch/cat/metadata/JME/JER-Smearing/latest/jer_smear.json.gz"
+    # jersmear_jsonPath = "/cvmfs/cms-griddata.cern.ch/cat/metadata/JME/JER-Smearing/latest/jer_smear.json.gz"
+    jersmear_jsonPath = "/cvmfs/cms-griddata.cern.ch/cat/metadata/JME/JER-Smearing/2025-11-03/jer_smear.json.gz"
 
     # maps period to JER tag (only for MC!)
     jer_tag_map = {
-        "2022_Summer22": "Summer22_22Sep2023_JRV1_MC",
-        "2022_Prompt": "JR_Winter22Run3_V1_MC",
-        "2022_Summer22EE": "Summer22EE_22Sep2023_JRV1_MC",
-        "2023_Summer23BPix": "Summer23BPixPrompt23_RunD_JRV1_MC",
-        "2023_Summer23": "Summer23Prompt23_RunCv1234_JRV1_MC",
-        "2024_Summer24": "Summer23BPixPrompt23_RunD_JRV1_MC",  # For the time being, use the Summer23BPix JERs for 2024 data. The JER MC_ScaleFactor and MC_PtResolution for the Summer24 samples will be announced soon. from https://cms-jerc.web.cern.ch/Recommendations/#2024_1
-        "2025_Summer24": "Summer23BPixPrompt23_RunD_JRV1_MC",  # For the time being, use the Summer23BPix JERs for 2025 data. The JER MC_ScaleFactor and MC_PtResolution for the Winter25 samples will be announced soon.  https://cms-jerc.web.cern.ch/Recommendations/#2025_1 # tmp patch because 2025_Summer24 does not exist
-        "2025_Winter25": "Summer23BPixPrompt23_RunD_JRV1_MC",  # For the time being, use the Summer23BPix JERs for 2025 data. The JER MC_ScaleFactor and MC_PtResolution for the Winter25 samples will be announced soon. https://cms-jerc.web.cern.ch/Recommendations/#2025_1
+        "2022_Summer22": "Summer22_22Sep2023_JRV2_MC",
+        "2022_Prompt": "JR_Winter22Run3_V2_MC",
+        "2022_Summer22EE": "Summer22EE_22Sep2023_JRV2_MC",
+        "2023_Summer23BPix": "Summer23BPixPrompt23_RunD_JRV2_MC",
+        "2023_Summer23": "Summer23Prompt23_RunCv1234_JRV2_MC",
+        "2024_Summer24": "Summer24Prompt24_JRV1_MC",  # For the time being, use the Summer23BPix JERs for 2024 data. The JER MC_ScaleFactor and MC_PtResolution for the Summer24 samples will be announced soon. from https://cms-jerc.web.cern.ch/Recommendations/#2024_1
+        "2025_Summer24": "Summer24Prompt25_JRV1_MC",  # For the time being, use the Summer23BPix JERs for 2025 data. The JER MC_ScaleFactor and MC_PtResolution for the Winter25 samples will be announced soon.  https://cms-jerc.web.cern.ch/Recommendations/#2025_1 # tmp patch because 2025_Summer24 does not exist
+        "2025_Winter25": "Summer24Prompt25_JRV1_MC",  # For the time being, use the Summer23BPix JERs for 2025 data. The JER MC_ScaleFactor and MC_PtResolution for the Winter25 samples will be announced soon. https://cms-jerc.web.cern.ch/Recommendations/#2025_1
     }
 
     # maps period to JEC tag
     jec_tag_map_mc = {
-        "2022_Prompt": ["Winter22Run3_V3_MC"],
+        "2022_Prompt": ["Winter22Run3_V4_MC"],
         "2022_Summer22": [
-            "Summer22_22Sep2023_V3_MC"
+            "Summer22_22Sep2023_V4_MC"
         ],  # https://cms-jerc.web.cern.ch/Recommendations/#2022-preee
         "2022_Summer22EE": [
-            "Summer22EE_22Sep2023_V3_MC"
+            "Summer22EE_22Sep2023_V4_MC"
         ],  # https://cms-jerc.web.cern.ch/Recommendations/#2022-postee
         "2023_Summer23BPix": [
-            "Summer23BPixPrompt23_V3_MC"
+            "Summer23BPixPrompt23_V4_MC"
         ],  # https://cms-jerc.web.cern.ch/Recommendations/#2023-postbpix
         "2023_Summer23": [
-            "Summer23Prompt23_V3_MC",
+            "Summer23Prompt23_V4_MC",
         ],  # https://cms-jerc.web.cern.ch/Recommendations/#2023-prebpix
         "2024_Summer24": [
-            "Summer24Prompt24_V2_MC"
+            "Summer24Prompt24_V3_MC"
         ],  # https://cms-jerc.web.cern.ch/Recommendations/#2024
         "2025_Summer24": [
             "Winter25Prompt25_V3_MC"
@@ -153,25 +157,25 @@ class JetCorrProducer:
     # maps period to base tag
     # for DATA: jec_tag = {base_tag}_Run{letters}_V{version}_DATA
     jec_tag_map_data = {
-        "2022_Prompt": ["Winter22Run3_Run{}_V3_DATA"],
+        "2022_Prompt": ["Winter22Run3_Run{}_V4_DATA"],
         "2022_Summer22": [
             # "Summer22_22Sep2023_Run{}_V3_DATA",
-            "Summer22_22Sep2023_V3_DATA"
+            f"Summer22_22Sep2023_V4_DATA"
         ],  # https://cms-jerc.web.cern.ch/Recommendations/#2022-preee
         "2022_Summer22EE": [
-            "Summer22EE_22Sep2023_Run{}_V3_DATA",
-            "Summer22EE_22Sep2023_V3_DATA",
+            "Summer22EE_22Sep2023_Run{}_V4_DATA",
+            "Summer22EE_22Sep2023_V4_DATA",
         ],  # https://cms-jerc.web.cern.ch/Recommendations/#2022-postee
         "2023_Summer23BPix": [
-            "Summer23BPixPrompt23_Run{}_V3_DATA",
-            "Summer23BPixPrompt23_V3_DATA",
+            "Summer23BPixPrompt23_Run{}_V4_DATA",
+            "Summer23BPixPrompt23_V4_DATA",
         ],  # https://cms-jerc.web.cern.ch/Recommendations/#2023-postbpix
         "2023_Summer23": [
-            "Summer23Prompt23_Run{}_V3_DATA",
-            "Summer23Prompt23_V3_DATA",
+            "Summer23Prompt23_Run{}_V4_DATA",
+            "Summer23Prompt23_V4_DATA",
         ],  # https://cms-jerc.web.cern.ch/Recommendations/#2023
         "2024_Summer24": [
-            "Summer24Prompt24_V2_DATA"
+            "Summer24Prompt24_V3_DATA"
         ],  # https://cms-jerc.web.cern.ch/Recommendations/#2024
         "2025_Summer24": [
             "Winter25Prompt25_Run{}_V3_DATA",
@@ -185,55 +189,55 @@ class JetCorrProducer:
 
     # maps period to JER tag (only for MC!)
     fatjer_tag_map = {
-        "2022_Summer22": "Summer22_22Sep2023_JRV1_MC",
-        "2022_Prompt": "JR_Winter22Run3_V1_MC",
-        "2022_Summer22EE": "Summer22EE_22Sep2023_JRV1_MC",
-        "2023_Summer23BPix": "Summer23BPixPrompt23_RunD_JRV1_MC",
-        "2023_Summer23": "Summer23Prompt23_RunCv1234_JRV1_MC",
-        "2024_Summer24": "Summer23BPixPrompt23_RunD_JRV1_MC",  # For the time being, use the Summer23BPix JERs for 2024 data. The JER MC_ScaleFactor and MC_PtResolution for the Summer24 samples will be announced soon. from https://cms-jerc.web.cern.ch/Recommendations/#2024_1
-        "2025_Summer24": "Summer23BPixPrompt23_RunD_JRV1_MC",  # For the time being, use the Summer23BPix JERs for 2025 data. The JER MC_ScaleFactor and MC_PtResolution for the Winter25 samples will be announced soon.  https://cms-jerc.web.cern.ch/Recommendations/#2025_1 # tmp patch because 2025_Summer24 does not exist
-        "2025_Winter25": "Summer23BPixPrompt23_RunD_JRV1_MC",  # For the time being, use the Summer23BPix JERs for 2025 data. The JER MC_ScaleFactor and MC_PtResolution for the Winter25 samples will be announced soon. https://cms-jerc.web.cern.ch/Recommendations/#2025_1
+        "2022_Summer22": "Summer22_22Sep2023_JRV2_MC",
+        "2022_Prompt": "JR_Winter22Run3_V2_MC",
+        "2022_Summer22EE": "Summer22EE_22Sep2023_JRV2_MC",
+        "2023_Summer23BPix": "Summer23BPixPrompt23_RunD_JRV2_MC",
+        "2023_Summer23": "Summer23Prompt23_RunCv1234_JRV2_MC",
+        "2024_Summer24": "Summer24Prompt24_JRV1_MC",  # For the time being, use the Summer23BPix JERs for 2024 data. The JER MC_ScaleFactor and MC_PtResolution for the Summer24 samples will be announced soon. from https://cms-jerc.web.cern.ch/Recommendations/#2024_1
+        "2025_Summer24": "Summer24Prompt25_JRV1_MC",  # For the time being, use the Summer23BPix JERs for 2025 data. The JER MC_ScaleFactor and MC_PtResolution for the Winter25 samples will be announced soon.  https://cms-jerc.web.cern.ch/Recommendations/#2025_1 # tmp patch because 2025_Summer24 does not exist
+        "2025_Winter25": "Summer24Prompt25_JRV1_MC",  # For the time being, use the Summer23BPix JERs for 2025 data. The JER MC_ScaleFactor and MC_PtResolution for the Winter25 samples will be announced soon. https://cms-jerc.web.cern.ch/Recommendations/#2025_1
     }
 
     # maps period to JEC tag
     fatjec_tag_map_mc = {
-        "2022_Summer22": ["Summer22_22Sep2023_V3_MC"],
-        "2022_Prompt": ["Winter22Run3_V3_MC"],
-        "2022_Summer22EE": ["Summer22EE_22Sep2023_V3_MC"],
-        "2023_Summer23BPix": ["Summer23BPixPrompt23_V3_MC"],
+        "2022_Summer22": ["Summer22_22Sep2023_V4_MC"],
+        "2022_Prompt": ["Winter22Run3_V4_MC"],
+        "2022_Summer22EE": ["Summer22EE_22Sep2023_V4_MC"],
+        "2023_Summer23BPix": ["Summer23BPixPrompt23_V4_MC"],
         "2023_Summer23": [
-            "Summer23Prompt23_V3_MC",
+            "Summer23Prompt23_V4_MC",
         ],  # Summer23Prompt23_V3_MC should be there (https://cms-jerc.web.cern.ch/Recommendations/#2023) but it does not find any key, so keep v2 for the moment... https://cms-jerc.web.cern.ch/Recommendations/#2023
         "2024_Summer24": [
-            "Summer24Prompt24_V2_MC"
+            "Summer24Prompt24_V3_MC"
         ],  # https://cms-jerc.web.cern.ch/Recommendations/#2024
         "2025_Summer24": [
-            "Winter25Prompt25_V2_MC"
+            "Winter25Prompt25_V3_MC"
         ],  # https://cms-jerc.web.cern.ch/Recommendations/#2024 # tmp patch because 2025_Summer24 does not exist
         "2025_Winter25": [
-            "Winter25Prompt25_V2_MC"
+            "Winter25Prompt25_V3_MC"
         ],  # https://cms-jerc.web.cern.ch/Recommendations/#2024
     }
 
     fatjec_tag_map_data = {
         "2022_Summer22": [
-            "Summer22_22Sep2023_V3_DATA"
+            "Summer22_22Sep2023_V4_DATA"
         ],  # "Summer22_22Sep2023_Run{}_V3_DATA",
         "2023_Summer23BPix": [
-            "Summer23BPixPrompt23_Run{}_V3_DATA",
-            "Summer23BPixPrompt23_V3_DATA",
+            "Summer23BPixPrompt23_Run{}_V4_DATA",
+            "Summer23BPixPrompt23_V4_DATA",
         ],
-        "2022_Prompt": ["Winter22Run3_Run{}_V3_DATA"],
+        "2022_Prompt": ["Winter22Run3_Run{}_V4_DATA"],
         "2023_Summer23": [
-            "Summer23Prompt23_Run{}_V3_DATA",
-            "Summer23Prompt23_V3_DATA",
+            "Summer23Prompt23_Run{}_V4_DATA",
+            "Summer23Prompt23_V4_DATA",
         ],  # Summer23Prompt23_V3_DATA should be there (https://cms-jerc.web.cern.ch/Recommendations/#2023) but it does not find any key, so keep v2 for the moment... https://cms-jerc.web.cern.ch/Recommendations/#2023
         "2022_Summer22EE": [
-            "Summer22EE_22Sep2023_Run{}_V3_DATA",
-            "Summer22EE_22Sep2023_V3_DATA",
+            "Summer22EE_22Sep2023_Run{}_V4_DATA",
+            "Summer22EE_22Sep2023_V4_DATA",
         ],
         "2024_Summer24": [
-            "Summer24Prompt24_V2_DATA"
+            "Summer24Prompt24_V3_DATA"
         ],  # https://cms-jerc.web.cern.ch/Recommendations/#2024
         "2025_Summer24": [
             "Winter25Prompt25_Run{}_V3_DATA",
@@ -468,27 +472,27 @@ class JetCorrProducer:
             if not self.isData:
                 df = df.Define(
                     "Jet_p4_shifted_map",
-                    f"""::correction::JetCorrectionProvider::getGlobal().getShiftedP4(Jet_pt, Jet_eta, Jet_phi, Jet_mass,
+                    f"""::correction::JetCorrectionProvider::getGlobal().getShiftedP4_Jet(Jet_pt, Jet_eta, Jet_phi, Jet_mass,
                                                                                                                        Jet_rawFactor, Jet_area, Rho_fixedGridRhoFastjetAll, event, {apply_jer},
-                                                                                                                       {reapply_jec},{require_run_number},run,{wantPhi},{apply_forward_jet_horns_fix},
+                                                                                                                       {reapply_jec}, {require_run_number}, run, {wantPhi}, {apply_forward_jet_horns_fix},
                                                                                                                        GenJet_pt, Jet_genJetIdx)""",
                 )
 
                 df = df.Define(
                     "FatJet_p4_shifted_map",
-                    f"""::correction::JetCorrectionProvider::getGlobal().getShiftedP4(FatJet_pt, FatJet_eta, FatJet_phi, FatJet_mass,
+                    f"""::correction::JetCorrectionProvider::getGlobal().getShiftedP4_FatJet(FatJet_pt, FatJet_eta, FatJet_phi, FatJet_mass,
                                                                                                                        FatJet_rawFactor, FatJet_area, Rho_fixedGridRhoFastjetAll, event, {apply_jer},
-                                                                                                                       {reapply_jec},{require_run_number},run,{wantPhi},{apply_forward_jet_horns_fix},
+                                                                                                                       {reapply_jec}, {require_run_number}, run, {wantPhi}, {apply_forward_jet_horns_fix},
                                                                                                                        GenJetAK8_pt, FatJet_genJetAK8Idx)""",
                 )
             else:
                 df = df.Define(
                     "Jet_p4_shifted_map",
-                    f"""::correction::JetCorrectionProvider::getGlobal().getShiftedP4(Jet_pt, Jet_eta, Jet_phi, Jet_mass, Jet_rawFactor, Jet_area, Rho_fixedGridRhoFastjetAll,event, {apply_jer},{reapply_jec}, {require_run_number}, run,{wantPhi},{apply_forward_jet_horns_fix})""",
+                    f"""::correction::JetCorrectionProvider::getGlobal().getShiftedP4_Jet(Jet_pt, Jet_eta, Jet_phi, Jet_mass, Jet_rawFactor, Jet_area, Rho_fixedGridRhoFastjetAll, event, {apply_jer}, {reapply_jec}, {require_run_number}, run, {wantPhi}, {apply_forward_jet_horns_fix})""",
                 )
                 df = df.Define(
                     "FatJet_p4_shifted_map",
-                    f"""::correction::JetCorrectionProvider::getGlobal().getShiftedP4(FatJet_pt, FatJet_eta, FatJet_phi, FatJet_mass, FatJet_rawFactor, FatJet_area, Rho_fixedGridRhoFastjetAll, event, {apply_jer},{reapply_jec}, {require_run_number},run,{wantPhi},{apply_forward_jet_horns_fix})""",
+                    f"""::correction::JetCorrectionProvider::getGlobal().getShiftedP4_FatJet(FatJet_pt, FatJet_eta, FatJet_phi, FatJet_mass, FatJet_rawFactor, FatJet_area, Rho_fixedGridRhoFastjetAll, event, {apply_jer}, {reapply_jec}, {require_run_number}, run, {wantPhi}, {apply_forward_jet_horns_fix})""",
                 )
             class_name = "JetCorrectionProvider"
         else:
@@ -524,7 +528,6 @@ class JetCorrProducer:
                 df = df.Define(
                     f"Jet_p4_{syst_name}_delta", f"Jet_p4_{syst_name} - Jet_p4_{nano}"
                 )
-
                 df = df.Define(
                     f"FatJet_p4_{syst_name}",
                     f"FatJet_p4_shifted_map.at({{::correction::{class_name}::UncSource::{source}, ::correction::UncScale::{scale}}})",
