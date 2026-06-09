@@ -496,7 +496,7 @@ class Corrections:
                 "::correction::BosonicRecoilProvider::GetVisibleBosonP4FromLepGenVis("
                 "static_cast<float>(tau1_gen_vis_pt), "
                 "static_cast<float>(tau1_gen_vis_eta), "
-                "static_cast<float>(tau1_gen_vis_phi)"
+                "static_cast<float>(tau1_gen_vis_phi), "
                 "static_cast<float>(tau1_gen_vis_mass), "
                 "static_cast<float>(tau2_gen_vis_pt), "
                 "static_cast<float>(tau2_gen_vis_eta), "
@@ -539,7 +539,7 @@ class Corrections:
                     );
                 }}
                 return ::correction::BosonicRecoilProvider::getGlobal().correctMET(
-                    f"{recoil_order}",
+                    "{recoil_order}",
                     static_cast<double>(recoil_njet),
                     static_cast<double>(recoil_ptll),
                     static_cast<double>(recoil_boson_pt),
@@ -548,7 +548,7 @@ class Corrections:
                     static_cast<double>(recoil_boson_vis_phi),
                     static_cast<double>(PuppiMET_pt),
                     static_cast<double>(PuppiMET_phi),
-                    f"{recoil_method}"
+                    "{recoil_method}"
                 );
                 """,
             )
@@ -610,7 +610,7 @@ class Corrections:
                             );
                         }}
                         return ::correction::BosonicRecoilProvider::getGlobal().applyUncertainty(
-                            f"{recoil_order}",
+                            "{recoil_order}",
                             static_cast<double>(recoil_njet),
                             static_cast<double>(recoil_ptll),
                             static_cast<double>(recoil_boson_pt),
@@ -619,7 +619,7 @@ class Corrections:
                             static_cast<double>(recoil_boson_vis_phi),
                             static_cast<double>(PuppiMET_pt_recoil),
                             static_cast<double>(PuppiMET_phi_recoil),
-                            f"{syst}"
+                            "{syst}"
                         );
                         """,
                     )

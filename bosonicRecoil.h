@@ -96,7 +96,8 @@ namespace correction {
         static bool HasValidLepVisGenMatch(const int lep1_gen_kind, const int lep2_gen_kind) {
             // for bbtautau anaTuples, tau1_gen_kind==NoMatch is the default when gen matching is unavailable
             // the following is used for the workaround calculations.
-            return lep1_gen_kind != 0 && lep2_gen_kind != 0;
+            return lep1_gen_kind != 6 &&
+                   lep2_gen_kind != 6;  // 6 = GenLeptonMatch::NoMatch in anaTuples for tau_gen_kind
         }
 
         static LorentzVectorM GetVisibleBosonP4FromLepGenVis(const float lep1_pt,
