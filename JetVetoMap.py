@@ -12,7 +12,7 @@ from .CorrectionsCore import *
 
 class JetVetoMapProvider:
     JME_vetoMap_JsonPath = (
-        "/cvmfs/cms-griddata.cern.ch/cat/metadata/JME/{}/latest/jetvetomaps.json.gz"
+        "/cvmfs/cms-griddata.cern.ch/cat/metadata/JME/{}/jetvetomaps.json.gz"
     )
     initialized = False
 

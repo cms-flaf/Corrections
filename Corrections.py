@@ -198,7 +198,21 @@ class Corrections:
         if self.dy_hhbbtautau_ is None:
             from .DY_hhbbtautau import DYbbtautauCorrProducer
 
-            self.dy_hhbbtautau_ = DYbbtautauCorrProducer(era=self.period)
+            njets_branch = self.to_apply.get("dy_hhbbtautau", {}).get(
+                "njets_branch", "nJet"
+            )
+            ntags_branch = self.to_apply.get("dy_hhbbtautau", {}).get(
+                "ntags_branch", "nBJets"
+            )
+            pt_ll_gen = self.to_apply.get("dy_hhbbtautau", {}).get(
+                "pt_ll_gen", "pt_ll_gen"
+            )
+            self.dy_hhbbtautau_ = DYbbtautauCorrProducer(
+                era=self.period,
+                njets_branch=njets_branch,
+                ntags_branch=ntags_branch,
+                pt_ll_gen=pt_ll_gen,
+            )
         return self.dy_hhbbtautau_
 
     @property
@@ -206,7 +220,15 @@ class Corrections:
         if self.dy_hhbbww_ is None:
             from .DY_hhbbww import DYbbwwCorrProducer
 
-            self.dy_hhbbww_ = DYbbwwCorrProducer(era=self.period)
+            njets_branch = self.to_apply.get("dy_hhbbww", {}).get(
+                "njets_branch", "nJet"
+            )
+            pt_ll = self.to_apply.get("dy_hhbbww", {}).get("pt_ll", "pt_lep1_lep2")
+            self.dy_hhbbww_ = DYbbwwCorrProducer(
+                era=self.period,
+                njets_branch=njets_branch,
+                pt_ll=pt_ll,
+            )
         return self.dy_hhbbww_
 
     @property
@@ -300,14 +322,20 @@ class Corrections:
         if self.muScaRe_ is None:
             from .MuonEnergyScale_corr import MuonEnergyScaleProducer
 
+            apply_scare = (
+                self.to_apply["muScaRe"].get("scare_enabled", {}).get(self.stage, True)
+            )
+            apply_FSR = (
+                self.to_apply["muScaRe"].get("fsr_enabled", {}).get(self.stage, False)
+            )
+            id_selection = self.to_apply["muScaRe"].get("id_selection", "Muon_looseId")
             self.muScaRe_ = MuonEnergyScaleProducer(
                 period_names[self.period],
                 self.isData,
-                self.to_apply["muScaRe"].get("mu_pt_for_ScaReApplication", "pt_nano"),
-                apply_scare=self.to_apply["muScaRe"].get("apply_scare", True),
-                apply_fsr_recovery=self.to_apply["muScaRe"].get(
-                    "apply_fsr_recovery", True
-                ),
+                self.to_apply["muScaRe"].get("mu_pt_for_ScaReApplication", "nano"),
+                apply_scare=apply_scare,
+                apply_fsr_recovery=apply_FSR,
+                id_selection=id_selection,
             )
         return self.muScaRe_
 
@@ -626,11 +654,12 @@ class Corrections:
                 df, source_dict, apply_jer, apply_jes, apply_jet_horns_fix_
             )
         if "muScaRe" in self.to_apply:
-            df, source_dict = (
-                self.muScaRe.getP4Variations(df, source_dict)
-                if self.stage == "AnaTuple"
-                else self.muScaRe.getP4VariationsForLegs(df)
-            )
+            if self.stage == "AnaTuple":
+                df, source_dict = self.muScaRe.getP4Variations(df, source_dict)
+            elif self.stage == "HistTuple" or self.stage == "AnalysisCache":
+                df = self.muScaRe.getP4VariationsForLegs(df)
+            else:
+                raise RuntimeError("No known stages for muon ScaRe application")
         if (
             "tauES" in self.to_apply
             or "JEC" in self.to_apply

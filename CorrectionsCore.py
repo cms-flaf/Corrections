@@ -26,15 +26,15 @@ pog_folder_names = {
         "2016preVFP_UL": "Run2-2016preVFP-UL-NanoAODv9",
         "2016postVFP_UL": "Run2-2016postVFP-UL-NanoAODv9",
         "JER": "JER-Smearing",
-        "2022_Summer22": "Run3-22CDSep23-Summer22-NanoAODv12",  #
-        "2022_Prompt": "Run3-22Prompt-Winter22-NanoAODv12",
-        "2022_Summer22EE": "Run3-22EFGSep23-Summer22EE-NanoAODv12",
-        "2023_Summer23BPix": "Run3-23DSep23-Summer23BPix-NanoAODv12",
-        "2023_Summer23": "Run3-23CSep23-Summer23-NanoAODv12",
-        "2024_Winter24": "Run3-24Prompt-Winter24-NanoAODv14",
-        "2024_Summer24": "Run3-24CDEReprocessingFGHIPrompt-Summer24-NanoAODv15",  # https://cms-jerc.web.cern.ch/Recommendations/#2024
-        "2025_Summer24": "Run3-25Prompt-Winter25-NanoAODv15",  # TMP PATCH # --> Run3-25Prompt-Summer24-NanoAODv15 IS NOT AVAILABLE FOR JME but JME is the only one having Winter25 available. So by the time being we can have this tmp fix
-        "2025_Winter25": "Run3-25Prompt-Winter25-NanoAODv15",
+        "2022_Summer22": "Run3-22CDSep23-Summer22-NanoAODv12/2026-06-05",  #
+        "2022_Prompt": "Run3-22Prompt-Winter22-NanoAODv12/2025-04-11",
+        "2022_Summer22EE": "Run3-22EFGSep23-Summer22EE-NanoAODv12/2026-06-05",
+        "2023_Summer23BPix": "Run3-23DSep23-Summer23BPix-NanoAODv12/2026-06-05",
+        "2023_Summer23": "Run3-23CSep23-Summer23-NanoAODv12/2026-06-05",
+        "2024_Winter24": "Run3-24Prompt-Winter24-NanoAODv14/2025-06-09",
+        "2024_Summer24": "Run3-24CDEReprocessingFGHIPrompt-Summer24-NanoAODv15/2026-06-05",  # https://cms-jerc.web.cern.ch/Recommendations/#2024
+        "2025_Summer24": "Run3-25Prompt-Winter25-NanoAODv15/2026-06-05",  # TMP PATCH # --> Run3-25Prompt-Summer24-NanoAODv15 IS NOT AVAILABLE FOR JME but JME is the only one having Winter25 available. So by the time being we can have this tmp fix
+        "2025_Winter25": "Run3-25Prompt-Winter25-NanoAODv15/2026-06-05",
     },
     "EGM": {
         "2016postVFP_UL": "Run2-2016postVFP-UL-NanoAODv15",
@@ -109,6 +109,7 @@ period_names = {
     "Run3_2023BPix": "2023_Summer23BPix",
     "Run3_2024": "2024_Summer24",  # 2024_Winter24
     "Run3_2025": "2025_Summer24",  # "2025_Winter25" is also a valid entry, but has files only only for JME
+    "Run3_2026": "2025_Summer24",  # TEMPORARY PATCH TO CHECK THAT WORKS FOR 2026 DATA
 }
 
 periods = {
