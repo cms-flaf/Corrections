@@ -172,6 +172,7 @@ class Corrections:
         self.Vpt_ = None
         self.JetVetoMap_ = None
         self.btag_shape_norm_ = None
+        self.bosonicRecoil_ = None
 
     @property
     def xs_db(self):
@@ -369,6 +370,21 @@ class Corrections:
                 period_names[self.period], self.global_params, self.trigger_dict
             )
         return self.trg_
+
+    @property
+    def bosonicRecoil(self):
+        if self.bosonicRecoil_ is None:
+            from .bosonicRecoil import BosonicRecoilCorrection
+
+            self.bosonicRecoil_ = BosonicRecoilCorrection(
+                period=self.period,
+                config=self.to_apply.get("bosonicRecoil", {}),
+                isData=self.isData,
+                dataset_name=self.dataset_name,
+                process_name=self.process_name,
+                process_cfg=self.process_cfg,
+            )
+        return self.bosonicRecoil_
 
     @property
     def btag_norm(self):
@@ -705,6 +721,20 @@ class Corrections:
             all_weights.extend(fatjet_SF_branches)
 
         return df, all_weights
+
+    def applyBosonicRecoil(self, df):
+        if self.stage != "HistTuple":
+            return df
+
+        if self.isData:
+            return df
+
+        if "bosonicRecoil" not in self.to_apply:
+            return df
+
+        return self.bosonicRecoil.applyBosonicRecoilCorrections(
+            df, self.process_cfg, self.to_apply
+        )
 
 
 # amcatnlo problem
