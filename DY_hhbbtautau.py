@@ -38,7 +38,7 @@ class DYbbtautauCorrProducer:
         era,
         *,
         njets_branch="nJet",
-        ntags_branch="nBJets_PNetTag",
+        ntags_branch="nBJetsPNetTag",
         pt_ll_gen="pt_ll_gen",
         valid="valid",
         variations=None,
