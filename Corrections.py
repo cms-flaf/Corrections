@@ -74,8 +74,13 @@ class Corrections:
         processors,
         isData,
         trigger_class,
+        aggregated_caches=None,
     ):
         self.global_params = setup.global_params
+        # {producer -> localized aggregated-cache file path}, provided by the task layer
+        # (law localizes the AnalysisCacheAggregationTask output). Used for version-dependent
+        # inputs such as the BtagShape normalization, instead of reconstructing the path.
+        self.aggregated_caches = aggregated_caches or {}
         self.dataset_name = dataset_name
         self.dataset_cfg = dataset_cfg
         self.process_name = process_name
@@ -393,18 +398,16 @@ class Corrections:
                 from .btag import btagShapeWeightCorrector
 
                 params = self.to_apply["btag"]
-                pattern = params["normFilePattern"]
-                formatted_pattern = pattern.format(
-                    dataset_name=self.dataset_name,
-                    period=self.period,
-                    version=self.law_run_version,
-                )
+                producer = params["normCacheProducer"]
                 producers = self.global_params["payload_producers"]
-                btag_shape_producer_cfg = producers["BtagShape"]
-                bins = btag_shape_producer_cfg["bins"]
-                norm_file_path = os.path.join(
-                    os.environ["ANALYSIS_PATH"], formatted_pattern
-                )
+                bins = producers[producer]["bins"]
+                if producer not in self.aggregated_caches:
+                    raise RuntimeError(
+                        f"Aggregated cache for producer '{producer}' was not provided to "
+                        f"Corrections (available: {sorted(self.aggregated_caches)}). It must "
+                        f"be localized and passed by the task layer (HistTupleProducerTask)."
+                    )
+                norm_file_path = self.aggregated_caches[producer]
                 print(f"Applying shape weight normalization from {norm_file_path}")
                 self.btag_shape_norm_ = btagShapeWeightCorrector(
                     norm_file_path=norm_file_path, bins=bins
