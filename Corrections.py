@@ -477,6 +477,19 @@ class Corrections:
                             )
         return df, syst_dict
 
+    def prepareStitchingVariables(self, df):
+        # Define any columns the stitching processors select on (e.g. a gen-level
+        # decay-mode or dilepton mass) once, before the cross-section and denominator
+        # expressions reference them. Processors that only use native nanoAOD branches
+        # (e.g. LHE_Vpt/LHE_NpNLO) leave the frame unchanged.
+        prepared = set()
+        for p_name in self.xs_denom_processors.values():
+            if p_name in prepared:
+                continue
+            prepared.add(p_name)
+            df = self.all_processors[p_name].onAnaTuple_prepareDataFrame(df)
+        return df
+
     def defineCrossSection(self, df, crossSectionBranchBase):
         branches = []
         if len(self.xs_denom_processors) == 0:
@@ -543,6 +556,9 @@ class Corrections:
             lumi = self.global_params["luminosity"]
             df = df.Define(lumi_weight_name, f"float({lumi})")
             all_weights.append(lumi_weight_name)
+
+        if len(self.xs_denom_processors) > 0:
+            df = self.prepareStitchingVariables(df)
 
         crossSectionBranchBase = "weight_xs"
         if "xs" in self.to_apply:
