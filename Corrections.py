@@ -557,7 +557,10 @@ class Corrections:
             df = df.Define(lumi_weight_name, f"float({lumi})")
             all_weights.append(lumi_weight_name)
 
-        if len(self.xs_denom_processors) > 0:
+        # xs_denom_processors only exists when "xs"/"base" normalisation is set up (anaTuple
+        # stage). getNormalisationCorrections is also called at the histogram stage (via the
+        # analysis histTupleDef) where it is absent, so guard with getattr.
+        if getattr(self, "xs_denom_processors", None):
             df = self.prepareStitchingVariables(df)
 
         crossSectionBranchBase = "weight_xs"
