@@ -63,7 +63,7 @@ pog_folder_names = {
         "2023_Summer23": "Run3-23CSep23-Summer23-NanoAODv12",
         "2023_Summer23BPix": "Run3-23DSep23-Summer23BPix-NanoAODv12",
         "2024_Summer24": "Run3-24CDEReprocessingFGHIPrompt-Summer24-NanoAODv15",
-        "2025_Summer24": "",
+        "2025_Summer24": "Run3-25Prompt-Summer24-NanoAODv15",
         "2025_Winter25": "",
     },
     "MUO": {
@@ -93,7 +93,7 @@ pog_folder_names = {
         "2023_Summer23": "Run3-23CSep23-Summer23-NanoAODv12",
         "2023_Summer23BPix": "Run3-23DSep23-Summer23BPix-NanoAODv12",
         "2024_Summer24": "Run3-24CDEReprocessingFGHIPrompt-Summer24-NanoAODv15",
-        "2025_Summer24": "",
+        "2025_Summer24": "Run3-25Prompt-Summer24-NanoAODv15",
         "2025_Winter25": "",
     },
 }
