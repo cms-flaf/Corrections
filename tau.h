@@ -338,8 +338,18 @@ namespace correction {
                 const UncSource tau_had_source = tau_had_scale == UncScale::Central ? UncSource::Central : source;
                 const std::string& scale_str =
                     scale != UncScale::Central ? getScaleStr(tau_had_source, tau_had_scale, year_) : "nom";
-                const auto sf = tau_vs_jet_->evaluate(
-                    {Tau_p4.pt(), Tau_decayMode, Tau_genMatch, wpVSjet, wpVSe, scale_str, genuineTau_SFtype});
+                const auto sf =
+                    year_ == "2025"
+                        ? tau_vs_jet_->evaluate({Tau_p4.pt(),
+                                                 Tau_decayMode,
+                                                 Tau_genMatch,
+                                                 wpVSjet,
+                                                 wpVSe,
+                                                 wpVSmu,
+                                                 scale_str,
+                                                 genuineTau_SFtype})
+                        : tau_vs_jet_->evaluate(
+                              {Tau_p4.pt(), Tau_decayMode, Tau_genMatch, wpVSjet, wpVSe, scale_str, genuineTau_SFtype});
                 return sf;
             }
             if (genMatch == GenLeptonMatch::Electron || genMatch == GenLeptonMatch::TauElectron) {

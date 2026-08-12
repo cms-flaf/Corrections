@@ -17,8 +17,8 @@ class puWeightProducer:
 
     uncSource = ["pu"]
     golden_json_dict = {
-        "2025_Winter25": "",
-        "2025_Summer24": "",
+        "2025_Winter25": "Collisions25_goldenJSON",
+        "2025_Summer24": "Collisions25_goldenJSON",
         "2024_Summer24": "Collisions24_BCDEFGHI_goldenJSON",
         "2023_Summer23BPix": "Collisions2023_369803_370790_eraD_GoldenJson",
         "2023_Summer23": "Collisions2023_366403_369802_eraBC_GoldenJson",
@@ -30,8 +30,14 @@ class puWeightProducer:
         "2016postVFP_UL": "Collisions16_UltraLegacy_goldenJSON",
     }
 
+    pu_file_suffix = {
+        "2024_Summer24": "_BCDEFGHI",
+        "2025_Summer24": "_2025pp_Golden_Summer24_25ns_69200ub",
+        "2025_Winter25": "_2025pp_Golden_Summer24_25ns_69200ub",
+    }
+
     def __init__(self, period):
-        suffix = "_BCDEFGHI" if period == "2024_Summer24" else ""  # tmp patch
+        suffix = puWeightProducer.pu_file_suffix.get(period, "")
         jsonFile = puWeightProducer.JsonPath.format(
             folder=pog_folder_names["LUM"][period], suffix=suffix
         )

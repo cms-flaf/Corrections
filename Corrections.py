@@ -4,6 +4,7 @@ import itertools
 
 from .CorrectionsCore import *
 from FLAF.RunKit.run_tools import ps_call
+from FLAF.Common.shared_mc import shared_mc_split
 
 
 def findLibLocation(lib_name, first_guess=None):
@@ -611,6 +612,17 @@ class Corrections:
             all_weights.extend(dy_bbww_branches)
 
         if "base" in self.to_apply:
+            shared_mc = self.global_params.get("shared_mc")
+            this_year = None
+            frac = None
+            if shared_mc:
+                this_year, split_mod, thresh_24, frac = shared_mc_split(
+                    self.global_params["era"], shared_mc
+                )
+                df = df.Define(
+                    "__shared_mc_in_24",
+                    f"static_cast<int>((static_cast<unsigned long long>(event) % {split_mod}ULL) < {thresh_24}ULL)",
+                )
             for (
                 shape_unc_source,
                 shape_unc_scale,
@@ -640,6 +652,18 @@ class Corrections:
                             f"static_cast<float>({weight_name}/{weight_name_central})",
                         )
                     all_weights.append(weight_out_name)
+                    if shared_mc and shape_unc_name == central:
+                        cmb_weight = f"{weight_name_central}_cmb"
+                        assign_expr = (
+                            "__shared_mc_in_24"
+                            if this_year == "24"
+                            else "!__shared_mc_in_24"
+                        )
+                        df = df.Define(
+                            cmb_weight,
+                            f"static_cast<float>({assign_expr} ? ({weight_name_central} / {frac}) : 0.f)",
+                        )
+                        all_weights.append(cmb_weight)
 
         if "Vpt" in self.to_apply:
             df, Vpt_SF_branches = self.Vpt.getSF(df, isCentral, return_variations)

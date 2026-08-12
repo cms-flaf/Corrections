@@ -20,6 +20,7 @@ period_in_tau_json = {
     "Run3_2023": "2023_preBPix",
     "Run3_2023BPix": "2023_postBPix",
     "Run3_2024": "2024",
+    "Run3_2025": "2025",
 }
 
 period_in_tau_file_name = {
@@ -32,6 +33,7 @@ period_in_tau_file_name = {
     "Run3_2023": period_in_tau_json["Run3_2023"],
     "Run3_2023BPix": period_in_tau_json["Run3_2023BPix"],
     "Run3_2024": period_in_tau_json["Run3_2024"],
+    "Run3_2025": period_in_tau_json["Run3_2025"],
 }
 
 period_in_taupog_folder = {
@@ -44,6 +46,7 @@ period_in_taupog_folder = {
     "Run3_2023": "Run3-23CSep23-Summer23-NanoAODv12",
     "Run3_2023BPix": "Run3-23DSep23-Summer23BPix-NanoAODv12",
     "Run3_2024": "Run3-24CDEReprocessingFGHIPrompt-Summer24-NanoAODv15",
+    "Run3_2025": "Run3-25Prompt-Summer24-NanoAODv15",
 }
 
 jsonfileversion = "2025-10-01"
@@ -121,6 +124,9 @@ class TauCorrProducer:
                 for src in self.sf_sources_tau
                 if src.startswith("stat_highpT") or src.startswith("syst_highpT")
             ]
+        elif period == "Run3_2025":
+            # 2025 JSON uses a different VSjet syst naming; keep central only.
+            self.sf_sources_tau = []
         if not TauCorrProducer.initialized:
             headers_dir = os.path.dirname(os.path.abspath(__file__))
             header_path = os.path.join(headers_dir, "tau.h")
