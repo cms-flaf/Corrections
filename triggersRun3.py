@@ -74,7 +74,7 @@ class TrigCorrProducer:
             "2022_Summer22EE": "2022_postEE",
             "2023_Summer23": "2023_preBPix",
             "2023_Summer23BPix": "2023_postBPix",
-            "2024_Summer24": "2023_postBPix",  # tmp patch since it is currently missing
+            "2024_Summer24": "2023_postBPix",  # local HLepRare cross-trigger JSONs; official TAU json is 2024
             "2025_Summer24": "2023_postBPix",  # tmp patch since it is currently missing
             "2025_Winter25": "2023_postBPix",  # tmp patch since it is currently missing
         }
@@ -122,6 +122,8 @@ class TrigCorrProducer:
                 TrigCorrProducer.year = period.split("_")[0] + "PromptC"
             if period.endswith("Summer23BPix"):
                 TrigCorrProducer.year = period.split("_")[0] + "PromptD"
+            if period.endswith("Summer24"):
+                TrigCorrProducer.year = period.split("_")[0] + "Prompt"
 
             # ROOT.gInterpreter.ProcessLine(f"""::correction::TrigCorrProvider::Initialize("{jsonFile_Mu}","{jsonFile_e}", "{jsonFile_Tau}", "{self.muon_trg_dict[period]}","{self.ele_trg_dict['McEff'][period]}", "{self.tau_trg_dict[period]}", "{period}")""")
             mu_trg_key_mc, mu_trg_key_data = None, None

@@ -19,6 +19,7 @@ period_in_tau_json = {
     "Run3_2022EE": "2022_postEE",
     "Run3_2023": "2023_preBPix",
     "Run3_2023BPix": "2023_postBPix",
+    "Run3_2024": "2024",
 }
 
 period_in_tau_file_name = {
@@ -30,6 +31,7 @@ period_in_tau_file_name = {
     "Run3_2022EE": period_in_tau_json["Run3_2022EE"],
     "Run3_2023": period_in_tau_json["Run3_2023"],
     "Run3_2023BPix": period_in_tau_json["Run3_2023BPix"],
+    "Run3_2024": period_in_tau_json["Run3_2024"],
 }
 
 period_in_taupog_folder = {
@@ -41,6 +43,7 @@ period_in_taupog_folder = {
     "Run3_2022EE": "Run3-22EFGSep23-Summer22EE-NanoAODv12",
     "Run3_2023": "Run3-23CSep23-Summer23-NanoAODv12",
     "Run3_2023BPix": "Run3-23DSep23-Summer23BPix-NanoAODv12",
+    "Run3_2024": "Run3-24CDEReprocessingFGHIPrompt-Summer24-NanoAODv15",
 }
 
 jsonfileversion = "2025-10-01"
@@ -110,6 +113,14 @@ class TauCorrProducer:
         )
         #     period_in_taupog_folder[period], period_in_tau_file_name[period]
         # )
+        # 2024 tau.json only publishes nom/up/down plus highpT systs
+        self.sf_sources_tau = list(TauCorrProducer.SFSources_tau)
+        if period == "Run3_2024":
+            self.sf_sources_tau = [
+                src
+                for src in self.sf_sources_tau
+                if src.startswith("stat_highpT") or src.startswith("syst_highpT")
+            ]
         if not TauCorrProducer.initialized:
             headers_dir = os.path.dirname(os.path.abspath(__file__))
             header_path = os.path.join(headers_dir, "tau.h")
@@ -146,9 +157,7 @@ class TauCorrProducer:
         return df, source_dict
 
     def getSF(self, df, lepton_legs, isCentral, return_variations):
-        sf_sources = (
-            TauCorrProducer.SFSources_tau + TauCorrProducer.SFSources_genuineLep
-        )
+        sf_sources = self.sf_sources_tau + TauCorrProducer.SFSources_genuineLep
         sf_scales = [up, down] if return_variations else []
         SF_branches = []
         for source in [central] + sf_sources:
