@@ -112,8 +112,6 @@ class Corrections:
                     corr_stages.append(corr_params["stage"])
                 if stage not in corr_stages:
                     continue
-                if corr_params.get("modes", {}).get(stage) == "none":
-                    continue
                 if corr_name not in self.to_apply:
                     if (
                         "processes" in corr_params
