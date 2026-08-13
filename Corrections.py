@@ -613,16 +613,18 @@ class Corrections:
 
         if "base" in self.to_apply:
             shared_mc = self.global_params.get("shared_mc")
-            this_year = None
             frac = None
             if shared_mc:
-                this_year, split_mod, thresh_24, frac = shared_mc_split(
+                split_mod, lo, hi, frac = shared_mc_split(
                     self.global_params["era"], shared_mc
                 )
                 if not self.isData:
+                    residue = (
+                        f"(static_cast<unsigned long long>(event) % {split_mod}ULL)"
+                    )
                     df = df.Define(
-                        "__shared_mc_in_24",
-                        f"static_cast<int>((static_cast<unsigned long long>(event) % {split_mod}ULL) < {thresh_24}ULL)",
+                        "__shared_mc_in_era",
+                        f"static_cast<int>({residue} >= {lo}ULL && {residue} <= {hi}ULL)",
                     )
             for (
                 shape_unc_source,
@@ -661,14 +663,9 @@ class Corrections:
                                 f"static_cast<float>({weight_name_central})",
                             )
                         else:
-                            assign_expr = (
-                                "__shared_mc_in_24"
-                                if this_year == "24"
-                                else "!__shared_mc_in_24"
-                            )
                             df = df.Define(
                                 cmb_weight,
-                                f"static_cast<float>({assign_expr} ? ({weight_name_central} / {frac}) : 0.f)",
+                                f"static_cast<float>(__shared_mc_in_era ? ({weight_name_central} / {frac}) : 0.f)",
                             )
                         all_weights.append(cmb_weight)
 
