@@ -367,7 +367,10 @@ namespace correction {
                     sourceApplies(source, Tau_p4, Tau_decayMode, genMatch) ? scale : UncScale::Central;
                 const UncSource tau_mu_source = tau_mu_scale == UncScale::Central ? UncSource::Central : source;
                 const std::string& scale_str = getScaleStr(tau_mu_source, tau_mu_scale, year_);
-                const auto sf = tau_vs_mu_->evaluate({Tau_p4.eta(), Tau_genMatch, wpVSmu, scale_str});
+                const auto sf =
+                    year_ == "2025"
+                        ? tau_vs_mu_->evaluate({Tau_p4.eta(), Tau_genMatch, wpVSmu, wpVSe, wpVSjet, scale_str})
+                        : tau_vs_mu_->evaluate({Tau_p4.eta(), Tau_genMatch, wpVSmu, scale_str});
                 return sf;
             }
             return 1.;

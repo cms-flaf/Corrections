@@ -66,6 +66,7 @@ class TrigCorrProducer:
     }
 
     year = ""
+    ele_year = ""
 
     def __init__(self, period, config, trigger_dict):
         # json_correction_path = eval(trigger_dict['ditaujet']['legs'][1]["jsonTRGcorrection_path"])
@@ -127,6 +128,10 @@ class TrigCorrProducer:
                 TrigCorrProducer.year = period.split("_")[0] + "PromptD"
             if period.endswith("Summer24"):
                 TrigCorrProducer.year = period.split("_")[0] + "Prompt"
+            # 2025 electron HLT JSON is the 2024 file; evaluate with that year's key.
+            TrigCorrProducer.ele_year = (
+                "2024Prompt" if period.startswith("2025") else TrigCorrProducer.year
+            )
 
             # ROOT.gInterpreter.ProcessLine(f"""::correction::TrigCorrProvider::Initialize("{jsonFile_Mu}","{jsonFile_e}", "{jsonFile_Tau}", "{self.muon_trg_dict[period]}","{self.ele_trg_dict['McEff'][period]}", "{self.tau_trg_dict[period]}", "{period}")""")
             mu_trg_key_mc, mu_trg_key_data = None, None
@@ -260,10 +265,15 @@ class TrigCorrProducer:
                                         {leg_p4},"{TrigCorrProducer.year}",{leg_name}_decayMode, "{trigCorr_dict[trg_name]}", "Medium", "sf", ::correction::TrigCorrProvider::UncSource::{source}, ::correction::UncScale::{scale} ) : 1.f""",
                             )
                         else:
+                            trg_year = (
+                                TrigCorrProducer.ele_year
+                                if trg_name in ("singleEle", "singleEleWpTight")
+                                else TrigCorrProducer.year
+                            )
                             df = df.Define(
                                 f"{branch_name}_double",
                                 f"""{applyTrgBranch_name} ? ::correction::TrigCorrProvider::getGlobal().getSF_{trigCorr_dict[trg_name]}(
-                                        {leg_p4},"{TrigCorrProducer.year}", ::correction::TrigCorrProvider::UncSource::{source}, ::correction::UncScale::{scale} ) : 1.f""",
+                                        {leg_p4},"{trg_year}", ::correction::TrigCorrProvider::UncSource::{source}, ::correction::UncScale::{scale} ) : 1.f""",
                             )
                         if scale != central:
                             df = df.Define(
@@ -329,7 +339,12 @@ class TrigCorrProducer:
                             # if len(trigger_legs)>1: func_name += f"_leg{trg_leg_idx+1}"
                             if len(trigger_legs) > 1 and legtype_value != None:
                                 func_name += f"_leg_{legtype_value}"
-                            args = f""" {leg_name}_p4, {leg_name}_decayMode, "{TrigCorrProducer.year}", "{trg_name}", "{electron_input}", "{VSjetWP[trg_name]}", ::correction::TrigCorrProvider::UncSource::{central}, ::correction::UncScale::{scale}, "{mc_or_data}" """
+                            trg_year = (
+                                TrigCorrProducer.ele_year
+                                if legtype_value == "e"
+                                else TrigCorrProducer.year
+                            )
+                            args = f""" {leg_name}_p4, {leg_name}_decayMode, "{trg_year}", "{trg_name}", "{electron_input}", "{VSjetWP[trg_name]}", ::correction::TrigCorrProvider::UncSource::{central}, ::correction::UncScale::{scale}, "{mc_or_data}" """
                             df = df.Define(
                                 eff,
                                 f"""{applyTrgBranch_name} ? ::correction::TrigCorrProvider::getGlobal().{func_name}({args})  : 1.f """,

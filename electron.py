@@ -138,6 +138,8 @@ class EleCorrProducer:
                 EleCorrProducer.year = period.split("_")[0] + "PromptC"
             if period.endswith("Summer23BPix"):
                 EleCorrProducer.year = period.split("_")[0] + "PromptD"
+            if period.endswith("Summer24"):
+                EleCorrProducer.year = period.split("_")[0] + "Prompt"
 
             EleCorrProducer.initialized = True
 
