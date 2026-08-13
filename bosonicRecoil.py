@@ -14,6 +14,7 @@ class BosonicRecoilCorrection:
         "Run3_2023": "Recoil_corrections_2023preBPix_v5.json.gz",
         "Run3_2023BPix": "Recoil_corrections_2023postBPix_v5.json.gz",
         "Run3_2024": "Recoil_corrections_2024_v5.json.gz",
+        "Run3_2025": "Recoil_corrections_2024_v5.json.gz",
     }
 
     def __init__(self, period, config, isData, dataset_name, process_name, process_cfg):

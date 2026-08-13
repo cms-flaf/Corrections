@@ -132,6 +132,12 @@ class TrigCorrProducer:
             TrigCorrProducer.ele_year = (
                 "2024Prompt" if period.startswith("2025") else TrigCorrProducer.year
             )
+            # Local CrossEleTau JSONs are still the 2023 HLepRare files.
+            TrigCorrProducer.cross_ele_year = (
+                "2023PromptD"
+                if period.endswith("Summer24")
+                else TrigCorrProducer.ele_year
+            )
 
             # ROOT.gInterpreter.ProcessLine(f"""::correction::TrigCorrProvider::Initialize("{jsonFile_Mu}","{jsonFile_e}", "{jsonFile_Tau}", "{self.muon_trg_dict[period]}","{self.ele_trg_dict['McEff'][period]}", "{self.tau_trg_dict[period]}", "{period}")""")
             mu_trg_key_mc, mu_trg_key_data = None, None
@@ -339,11 +345,14 @@ class TrigCorrProducer:
                             # if len(trigger_legs)>1: func_name += f"_leg{trg_leg_idx+1}"
                             if len(trigger_legs) > 1 and legtype_value != None:
                                 func_name += f"_leg_{legtype_value}"
-                            trg_year = (
-                                TrigCorrProducer.ele_year
-                                if legtype_value == "e"
-                                else TrigCorrProducer.year
-                            )
+                            if legtype_value == "e":
+                                trg_year = (
+                                    TrigCorrProducer.ele_year
+                                    if trg_name in ("singleEle", "singleEleWpTight")
+                                    else TrigCorrProducer.cross_ele_year
+                                )
+                            else:
+                                trg_year = TrigCorrProducer.year
                             args = f""" {leg_name}_p4, {leg_name}_decayMode, "{trg_year}", "{trg_name}", "{electron_input}", "{VSjetWP[trg_name]}", ::correction::TrigCorrProvider::UncSource::{central}, ::correction::UncScale::{scale}, "{mc_or_data}" """
                             df = df.Define(
                                 eff,
