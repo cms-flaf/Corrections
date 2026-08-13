@@ -78,6 +78,7 @@ class TrigCorrProducer:
             "2024_Summer24": "2023_postBPix",  # local HLepRare cross-trigger JSONs; official TAU json is 2024
             "2025_Summer24": "2023_postBPix",  # tmp patch since it is currently missing
             "2025_Winter25": "2023_postBPix",  # tmp patch since it is currently missing
+            "2026_Summer24": "2023_postBPix",  # placeholder
         }
 
         self.period = period
@@ -85,8 +86,10 @@ class TrigCorrProducer:
         self.trigger_dict = trigger_dict
 
         egm_period = (
-            "2024_Summer24" if period.startswith("2025") else period
-        )  # 2025 has no electronHlt.json.gz
+            "2024_Summer24"
+            if period.startswith("2025") or period.startswith("2026")
+            else period
+        )  # 2025/2026 have no electronHlt.json.gz
         jsonFile_e = os.path.join(
             os.environ["ANALYSIS_PATH"],
             TrigCorrProducer.eTRG_jsonPath.format(pog_folder_names["EGM"][egm_period]),

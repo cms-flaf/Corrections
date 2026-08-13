@@ -72,6 +72,12 @@ ele_files_names = {
         "eleID_highPt": "",
         "eleES_EtDependent": "electronSS_EtDependent",
     },
+    "2026_Summer24": {  # placeholder: same as 2025
+        "eleID": "electron",
+        "eleHLT": "",
+        "eleID_highPt": "",
+        "eleES_EtDependent": "electronSS_EtDependent",
+    },
 }
 
 

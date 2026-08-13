@@ -117,6 +117,7 @@ class MuCorrProducer:
         "2024_Summer24": [],
         "2025_Summer24": [],
         "2025_Winter25": [],
+        "2026_Summer24": [],
     }
     MediumMuIDIso_SF_Sources = {
         "2016preVFP_UL": [
@@ -317,6 +318,17 @@ class MuCorrProducer:
             # "NUM_MediumMiniIso_DEN_MediumID",
             # "NUM_TightMiniIso_DEN_MediumID",
         ],
+        "2026_Summer24": [  # placeholder
+            "NUM_LooseID_DEN_TrackerMuons",
+            "NUM_MediumID_DEN_TrackerMuons",
+            "NUM_TightID_DEN_TrackerMuons",
+            "NUM_LoosePFIso_DEN_LooseID",
+            "NUM_LoosePFIso_DEN_MediumID",
+            "NUM_LoosePFIso_DEN_TightID",
+            "NUM_TightPFIso_DEN_TightID",
+            "NUM_LooseMiniIso_DEN_LooseID",
+            "NUM_LooseMiniIso_DEN_MediumID",
+        ],
         "2025_Winter25": [
             "NUM_LooseID_DEN_TrackerMuons",
             # "NUM_MediumID_DEN_genTracks",
@@ -410,6 +422,10 @@ class MuCorrProducer:
             "NUM_IsoMu24_DEN_CutBasedIdMedium_and_PFIsoMedium",
         ],
         "2025_Summer24": [
+            "NUM_IsoMu24_DEN_CutBasedIdTight_and_PFIsoTight",
+            "NUM_IsoMu24_DEN_CutBasedIdMedium_and_PFIsoMedium",
+        ],
+        "2026_Summer24": [  # placeholder
             "NUM_IsoMu24_DEN_CutBasedIdTight_and_PFIsoTight",
             "NUM_IsoMu24_DEN_CutBasedIdMedium_and_PFIsoMedium",
         ],

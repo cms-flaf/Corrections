@@ -24,6 +24,7 @@ class JetVetoMapProvider:
         "2024_Summer24": "Summer24Prompt24_RunBCDEFGHI_V1",
         "2025_Winter25": "Winter25Prompt25_RunCDEFG_V1",
         "2025_Summer24": "Winter25Prompt25_RunCDEFG_V1",
+        "2026_Summer24": "Winter25Prompt25_RunCDEFG_V1",  # placeholder
     }
 
     def __init__(self, era):

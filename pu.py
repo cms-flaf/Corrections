@@ -19,6 +19,7 @@ class puWeightProducer:
     golden_json_dict = {
         "2025_Winter25": "Collisions25_goldenJSON",
         "2025_Summer24": "Collisions25_goldenJSON",
+        "2026_Summer24": "Collisions25_goldenJSON",  # placeholder: no 2026 PU JSON yet
         "2024_Summer24": "Collisions24_BCDEFGHI_goldenJSON",
         "2023_Summer23BPix": "Collisions2023_369803_370790_eraD_GoldenJson",
         "2023_Summer23": "Collisions2023_366403_369802_eraBC_GoldenJson",
@@ -33,6 +34,7 @@ class puWeightProducer:
     pu_file_suffix = {
         "2024_Summer24": "_BCDEFGHI",
         "2025_Summer24": "_2025pp_Golden_Summer24_25ns_69200ub",
+        "2026_Summer24": "_2025pp_Golden_Summer24_25ns_69200ub",  # placeholder
         "2025_Winter25": "_2025pp_Golden_Summer24_25ns_69200ub",
     }
 

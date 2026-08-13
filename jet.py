@@ -126,6 +126,7 @@ class JetCorrProducer:
         "2024_Summer24": "Summer24Prompt24_JRV1_MC",  # For the time being, use the Summer23BPix JERs for 2024 data. The JER MC_ScaleFactor and MC_PtResolution for the Summer24 samples will be announced soon. from https://cms-jerc.web.cern.ch/Recommendations/#2024_1
         "2025_Summer24": "Summer24Prompt25_JRV1_MC",  # For the time being, use the Summer23BPix JERs for 2025 data. The JER MC_ScaleFactor and MC_PtResolution for the Winter25 samples will be announced soon.  https://cms-jerc.web.cern.ch/Recommendations/#2025_1 # tmp patch because 2025_Summer24 does not exist
         "2025_Winter25": "Summer24Prompt25_JRV1_MC",  # For the time being, use the Summer23BPix JERs for 2025 data. The JER MC_ScaleFactor and MC_PtResolution for the Winter25 samples will be announced soon. https://cms-jerc.web.cern.ch/Recommendations/#2025_1
+        "2026_Summer24": "Summer24Prompt25_JRV1_MC",  # placeholder
     }
 
     # maps period to JEC tag
@@ -152,6 +153,7 @@ class JetCorrProducer:
         "2025_Winter25": [
             "Winter25Prompt25_V3_MC"
         ],  # https://cms-jerc.web.cern.ch/Recommendations/#2025
+        "2026_Summer24": ["Winter25Prompt25_V3_MC"],  # placeholder
     }
 
     # maps period to base tag
@@ -183,6 +185,9 @@ class JetCorrProducer:
         "2025_Winter25": [
             "Winter25Prompt25_V3_DATA",
         ],
+        "2026_Summer24": [
+            "Winter25Prompt25_V3_DATA",
+        ],  # placeholder
     }
 
     # maps period to JER tag (only for MC!)
@@ -195,6 +200,7 @@ class JetCorrProducer:
         "2024_Summer24": "Summer24Prompt24_JRV1_MC",  # For the time being, use the Summer23BPix JERs for 2024 data. The JER MC_ScaleFactor and MC_PtResolution for the Summer24 samples will be announced soon. from https://cms-jerc.web.cern.ch/Recommendations/#2024_1
         "2025_Summer24": "Summer24Prompt25_JRV1_MC",  # For the time being, use the Summer23BPix JERs for 2025 data. The JER MC_ScaleFactor and MC_PtResolution for the Winter25 samples will be announced soon.  https://cms-jerc.web.cern.ch/Recommendations/#2025_1 # tmp patch because 2025_Summer24 does not exist
         "2025_Winter25": "Summer24Prompt25_JRV1_MC",  # For the time being, use the Summer23BPix JERs for 2025 data. The JER MC_ScaleFactor and MC_PtResolution for the Winter25 samples will be announced soon. https://cms-jerc.web.cern.ch/Recommendations/#2025_1
+        "2026_Summer24": "Summer24Prompt25_JRV1_MC",  # placeholder
     }
 
     # maps period to JEC tag
@@ -215,6 +221,7 @@ class JetCorrProducer:
         "2025_Winter25": [
             "Winter25Prompt25_V3_MC"
         ],  # https://cms-jerc.web.cern.ch/Recommendations/#2024
+        "2026_Summer24": ["Winter25Prompt25_V3_MC"],  # placeholder
     }
 
     fatjec_tag_map_data = {
@@ -243,6 +250,9 @@ class JetCorrProducer:
         "2025_Winter25": [
             "Winter25Prompt25_V3_DATA",
         ],
+        "2026_Summer24": [
+            "Winter25Prompt25_V3_DATA",
+        ],  # placeholder
     }
 
     run_versions = {
@@ -255,6 +265,7 @@ class JetCorrProducer:
         "2024_Summer24": [],  # ["nib1", "nib2", "nib3"], # https://cms-jerc.web.cern.ch/Recommendations/#2024 --> should have this naming convention, but apparently this does not work
         "2025_Summer24": [],
         "2025_Winter25": [],
+        "2026_Summer24": [],
     }
 
     run_letters = {
@@ -267,6 +278,7 @@ class JetCorrProducer:
         "2024_Summer24": ["CDEReprocessing", "FGHIPrompt"],
         "2025_Winter25": ["B", "C", "D", "E", "F", "G"],
         "2025_Summer24": ["B", "C", "D", "E", "F", "G"],
+        "2026_Summer24": ["A", "B", "C", "D"],
     }
 
     # Sources = []
@@ -369,7 +381,7 @@ class JetCorrProducer:
                     tokens = sample_name.split("_")
                     sample_version = tokens[-1]
                     sample_letter = tokens[-2][-1]
-                if period == "2025_Summer24":
+                if period in ("2025_Summer24", "2026_Summer24"):
                     sample_version = ""
 
                 # print(
@@ -462,7 +474,7 @@ class JetCorrProducer:
             wantPhi = (
                 "true"
                 if (self.period == "2023_Summer23BPix" and self.isData)
-                or (self.period == "2024_Summer24" or self.period == "2025_Summer24")
+                or (self.period in ("2024_Summer24", "2025_Summer24", "2026_Summer24"))
                 else "false"
             )
             if not self.isData:
