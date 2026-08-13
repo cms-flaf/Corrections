@@ -178,13 +178,11 @@ class JetCorrProducer:
             "Summer24Prompt24_V3_DATA"
         ],  # https://cms-jerc.web.cern.ch/Recommendations/#2024
         "2025_Summer24": [
-            "Winter25Prompt25_Run{}_V3_DATA",
             "Winter25Prompt25_V3_DATA",
-        ],  # https://cms-jerc.web.cern.ch/Recommendations/#2025 # tmp patch because 2025_Summer24 does not exist
+        ],  # 2025 JSON has no per-era Run letter
         "2025_Winter25": [
-            "Winter25Prompt25_Run{}_V3_DATA",
             "Winter25Prompt25_V3_DATA",
-        ],  # https://cms-jerc.web.cern.ch/Recommendations/#2025
+        ],
     }
 
     # maps period to JER tag (only for MC!)
@@ -240,13 +238,11 @@ class JetCorrProducer:
             "Summer24Prompt24_V3_DATA"
         ],  # https://cms-jerc.web.cern.ch/Recommendations/#2024
         "2025_Summer24": [
-            "Winter25Prompt25_Run{}_V3_DATA",
             "Winter25Prompt25_V3_DATA",
-        ],  # https://cms-jerc.web.cern.ch/Recommendations/#2025
+        ],
         "2025_Winter25": [
-            "Winter25Prompt25_Run{}_V3_DATA",
             "Winter25Prompt25_V3_DATA",
-        ],  # https://cms-jerc.web.cern.ch/Recommendations/#2025
+        ],
     }
 
     run_versions = {
@@ -269,8 +265,8 @@ class JetCorrProducer:
         "2022_Summer22EE": ["E", "F", "G"],
         "2024_Winter24": ["BCD", "E", "F", "G", "H"],
         "2024_Summer24": ["CDEReprocessing", "FGHIPrompt"],
-        "2025_Winter25": ["C", "D", "E", "F"],
-        "2025_Summer24": ["C", "D", "E", "F"],
+        "2025_Winter25": ["B", "C", "D", "E", "F", "G"],
+        "2025_Summer24": ["B", "C", "D", "E", "F", "G"],
     }
 
     # Sources = []

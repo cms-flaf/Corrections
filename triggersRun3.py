@@ -83,9 +83,12 @@ class TrigCorrProducer:
         self.config = config
         self.trigger_dict = trigger_dict
 
+        egm_period = (
+            "2024_Summer24" if period.startswith("2025") else period
+        )  # 2025 has no electronHlt.json.gz
         jsonFile_e = os.path.join(
             os.environ["ANALYSIS_PATH"],
-            TrigCorrProducer.eTRG_jsonPath.format(pog_folder_names["EGM"][period]),
+            TrigCorrProducer.eTRG_jsonPath.format(pog_folder_names["EGM"][egm_period]),
         )
         jsonFile_Tau = os.path.join(
             os.environ["ANALYSIS_PATH"],
