@@ -81,6 +81,24 @@ ele_files_names = {
 }
 
 
+def electron_id_sf_year(period):
+    year = period.split("_")[0]
+    if period.endswith("Summer22"):
+        return year + "Re-recoBCD"
+    if period.endswith("Summer22EE"):
+        return year + "Re-recoE+PromptFG"
+    if period.endswith("Summer23"):
+        return year + "PromptC"
+    if period.endswith("Summer23BPix"):
+        return year + "PromptD"
+    if period.startswith("2026"):
+        # 2026 EGM has no electron.json; 2025 ID SF year is 2025Prompt.
+        return "2025Prompt"
+    if period.endswith("Summer24"):
+        return year + "Prompt"
+    return year
+
+
 class EleCorrProducer:
     EleID_JsonPath = "/cvmfs/cms-griddata.cern.ch/cat/metadata/EGM/{folderName}/latest/{filenameID}.json.gz"
     EleES_JsonPath = "Corrections/data/EGM/{}/EGM_ScaleUnc.json.gz"
@@ -135,17 +153,7 @@ class EleCorrProducer:
             ROOT.gInterpreter.ProcessLine(
                 f'::correction::EleCorrProvider::Initialize("{EleID_JsonFile}", "{EleES_JsonFile}","{EleID_JsonFile_key}","{EleES_JsonFile_key}")'
             )
-            EleCorrProducer.year = period.split("_")[0]
-            if period.endswith("Summer22"):
-                EleCorrProducer.year = period.split("_")[0] + "Re-recoBCD"
-            if period.endswith("Summer22EE"):
-                EleCorrProducer.year = period.split("_")[0] + "Re-recoE+PromptFG"
-            if period.endswith("Summer23"):
-                EleCorrProducer.year = period.split("_")[0] + "PromptC"
-            if period.endswith("Summer23BPix"):
-                EleCorrProducer.year = period.split("_")[0] + "PromptD"
-            if period.endswith("Summer24"):
-                EleCorrProducer.year = period.split("_")[0] + "Prompt"
+            EleCorrProducer.year = electron_id_sf_year(period)
 
             EleCorrProducer.initialized = True
 
