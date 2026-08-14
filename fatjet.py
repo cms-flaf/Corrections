@@ -30,18 +30,37 @@ class FatJetCorrProducer:
                     base_file_path,
                     "ak8_sf_corrections_bbww_combined_2023_postBPix.json.gz",
                 ),
+                # dedicated 2024 AK8 SFs are not published yet
+                "2024_Summer24": os.path.join(
+                    base_file_path,
+                    "ak8_sf_corrections_bbww_combined_2023_postBPix.json.gz",
+                ),
+                "2025_Summer24": os.path.join(
+                    base_file_path,
+                    "ak8_sf_corrections_bbww_combined_2023_postBPix.json.gz",
+                ),
+                "2026_Summer24": os.path.join(  # placeholder
+                    base_file_path,
+                    "ak8_sf_corrections_bbww_combined_2023_postBPix.json.gz",
+                ),
             },
             "keys_bb": {
                 "2022_Summer22": "HHbbww_2022_preEE_SF_bb",
                 "2022_Summer22EE": "HHbbww_2022_postEE_SF_bb",
                 "2023_Summer23": "HHbbww_2023_preBPix_SF_bb",
                 "2023_Summer23BPix": "HHbbww_2023_postBPix_SF_bb",
+                "2024_Summer24": "HHbbww_2023_postBPix_SF_bb",
+                "2025_Summer24": "HHbbww_2023_postBPix_SF_bb",
+                "2026_Summer24": "HHbbww_2023_postBPix_SF_bb",  # placeholder
             },
             "keys_cc": {
                 "2022_Summer22": "HHbbww_2022_preEE_SF_cc",
                 "2022_Summer22EE": "HHbbww_2022_postEE_SF_cc",
                 "2023_Summer23": "HHbbww_2023_preBPix_SF_cc",
                 "2023_Summer23BPix": "HHbbww_2023_postBPix_SF_cc",
+                "2024_Summer24": "HHbbww_2023_postBPix_SF_cc",
+                "2025_Summer24": "HHbbww_2023_postBPix_SF_cc",
+                "2026_Summer24": "HHbbww_2023_postBPix_SF_cc",  # placeholder
             },
         }
     }

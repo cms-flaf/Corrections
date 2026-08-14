@@ -66,6 +66,18 @@ class TrigCorrProducer:
     }
 
     year = ""
+    ele_year = ""
+    cross_ele_year = ""
+
+    @staticmethod
+    def _json_trg_key(leg, period):
+        keys = leg["jsonTRGcorrection_key"]
+        if period in keys:
+            return keys[period]
+        for fallback in ("2025_Summer24", "2024_Summer24"):
+            if fallback in keys:
+                return keys[fallback]
+        raise KeyError(period)
 
     def __init__(self, period, config, trigger_dict):
         # json_correction_path = eval(trigger_dict['ditaujet']['legs'][1]["jsonTRGcorrection_path"])
@@ -74,18 +86,24 @@ class TrigCorrProducer:
             "2022_Summer22EE": "2022_postEE",
             "2023_Summer23": "2023_preBPix",
             "2023_Summer23BPix": "2023_postBPix",
-            "2024_Summer24": "2023_postBPix",  # tmp patch since it is currently missing
+            "2024_Summer24": "2023_postBPix",  # local HLepRare cross-trigger JSONs; official TAU json is 2024
             "2025_Summer24": "2023_postBPix",  # tmp patch since it is currently missing
             "2025_Winter25": "2023_postBPix",  # tmp patch since it is currently missing
+            "2026_Summer24": "2023_postBPix",  # placeholder
         }
 
         self.period = period
         self.config = config
         self.trigger_dict = trigger_dict
 
+        egm_period = (
+            "2024_Summer24"
+            if period.startswith("2025") or period.startswith("2026")
+            else period
+        )  # 2025/2026 have no electronHlt.json.gz
         jsonFile_e = os.path.join(
             os.environ["ANALYSIS_PATH"],
-            TrigCorrProducer.eTRG_jsonPath.format(pog_folder_names["EGM"][period]),
+            TrigCorrProducer.eTRG_jsonPath.format(pog_folder_names["EGM"][egm_period]),
         )
         jsonFile_Tau = os.path.join(
             os.environ["ANALYSIS_PATH"],
@@ -122,6 +140,20 @@ class TrigCorrProducer:
                 TrigCorrProducer.year = period.split("_")[0] + "PromptC"
             if period.endswith("Summer23BPix"):
                 TrigCorrProducer.year = period.split("_")[0] + "PromptD"
+            if period.endswith("Summer24"):
+                TrigCorrProducer.year = period.split("_")[0] + "Prompt"
+            # 2025 electron HLT JSON is the 2024 file; evaluate with that year's key.
+            TrigCorrProducer.ele_year = (
+                "2024Prompt"
+                if period.startswith("2025") or period.startswith("2026")
+                else TrigCorrProducer.year
+            )
+            # Local CrossEleTau JSONs are still the 2023 HLepRare files.
+            TrigCorrProducer.cross_ele_year = (
+                "2023PromptD"
+                if period.endswith("Summer24")
+                else TrigCorrProducer.ele_year
+            )
 
             # ROOT.gInterpreter.ProcessLine(f"""::correction::TrigCorrProvider::Initialize("{jsonFile_Mu}","{jsonFile_e}", "{jsonFile_Tau}", "{self.muon_trg_dict[period]}","{self.ele_trg_dict['McEff'][period]}", "{self.tau_trg_dict[period]}", "{period}")""")
             mu_trg_key_mc, mu_trg_key_data = None, None
@@ -129,58 +161,58 @@ class TrigCorrProducer:
 
             # bbWW uses singleIsoMu and singleEleWpTight names
             if "singleIsoMu" in self.trigger_dict.keys():
-                mu_trg_key_mc = self.trigger_dict["singleIsoMu"]["legs"][0][
-                    "jsonTRGcorrection_key"
-                ][period].format("MC")
-                mu_trg_key_data = self.trigger_dict["singleIsoMu"]["legs"][0][
-                    "jsonTRGcorrection_key"
-                ][period].format("DATA")
+                mu_trg_key_mc = self._json_trg_key(
+                    self.trigger_dict["singleIsoMu"]["legs"][0], period
+                ).format("MC")
+                mu_trg_key_data = self._json_trg_key(
+                    self.trigger_dict["singleIsoMu"]["legs"][0], period
+                ).format("DATA")
             if "singleEleWpTight" in self.trigger_dict.keys():
-                ele_trg_key_mc = self.trigger_dict["singleEleWpTight"]["legs"][0][
-                    "jsonTRGcorrection_key"
-                ][period].format("Mc")
-                ele_trg_key_data = self.trigger_dict["singleEleWpTight"]["legs"][0][
-                    "jsonTRGcorrection_key"
-                ][period].format("Data")
+                ele_trg_key_mc = self._json_trg_key(
+                    self.trigger_dict["singleEleWpTight"]["legs"][0], period
+                ).format("Mc")
+                ele_trg_key_data = self._json_trg_key(
+                    self.trigger_dict["singleEleWpTight"]["legs"][0], period
+                ).format("Data")
 
             # Now bbtautau keys
             mutau_trg_key_mc, mutau_trg_key_data = None, None
             tau_trg_key = None
             jet_trg_key = None
             if "singleMu" in self.trigger_dict.keys():
-                mu_trg_key_mc = self.trigger_dict["singleMu"]["legs"][0][
-                    "jsonTRGcorrection_key"
-                ][period].format(
+                mu_trg_key_mc = self._json_trg_key(
+                    self.trigger_dict["singleMu"]["legs"][0], period
+                ).format(
                     MuIDWP=config.get("muonID_WP_for_triggerSF", "Medium"), DataMC="MC"
                 )
-                mu_trg_key_data = self.trigger_dict["singleMu"]["legs"][0][
-                    "jsonTRGcorrection_key"
-                ][period].format(
+                mu_trg_key_data = self._json_trg_key(
+                    self.trigger_dict["singleMu"]["legs"][0], period
+                ).format(
                     MuIDWP=config.get("muonID_WP_for_triggerSF", "Medium"),
                     DataMC="DATA",
                 )
             if "singleEle" in self.trigger_dict.keys():
-                ele_trg_key_mc = self.trigger_dict["singleEle"]["legs"][0][
-                    "jsonTRGcorrection_key"
-                ][period].format("Mc")
-                ele_trg_key_data = self.trigger_dict["singleEle"]["legs"][0][
-                    "jsonTRGcorrection_key"
-                ][period].format("Data")
+                ele_trg_key_mc = self._json_trg_key(
+                    self.trigger_dict["singleEle"]["legs"][0], period
+                ).format("Mc")
+                ele_trg_key_data = self._json_trg_key(
+                    self.trigger_dict["singleEle"]["legs"][0], period
+                ).format("Data")
             if "mutau" in self.trigger_dict.keys():
-                mutau_trg_key_mc = self.trigger_dict["mutau"]["legs"][0][
-                    "jsonTRGcorrection_key"
-                ][period].format("MC")
-                mutau_trg_key_data = self.trigger_dict["mutau"]["legs"][0][
-                    "jsonTRGcorrection_key"
-                ][period].format("DATA")
+                mutau_trg_key_mc = self._json_trg_key(
+                    self.trigger_dict["mutau"]["legs"][0], period
+                ).format("MC")
+                mutau_trg_key_data = self._json_trg_key(
+                    self.trigger_dict["mutau"]["legs"][0], period
+                ).format("DATA")
             if "ditau" in self.trigger_dict.keys():
-                tau_trg_key = self.trigger_dict["ditau"]["legs"][0][
-                    "jsonTRGcorrection_key"
-                ][period]
+                tau_trg_key = self._json_trg_key(
+                    self.trigger_dict["ditau"]["legs"][0], period
+                )
             if "ditaujet" in self.trigger_dict.keys():
-                jet_trg_key = self.trigger_dict["ditaujet"]["legs"][1][
-                    "jsonTRGcorrection_key"
-                ][period]
+                jet_trg_key = self._json_trg_key(
+                    self.trigger_dict["ditaujet"]["legs"][1], period
+                )
 
             ROOT.gInterpreter.ProcessLine(
                 f"""::correction::TrigCorrProvider::Initialize("{jsonFile_Mu}","{jsonFile_e}", "{jsonFile_Tau}", "{jsonFile_TauJet}", "{jsonFile_eTau}", "{jsonFile_muTau}", "{mu_trg_key_mc}", "{mu_trg_key_data}", "{mutau_trg_key_mc}", "{mutau_trg_key_data}","{ele_trg_key_mc}","{ele_trg_key_data}", "{tau_trg_key}", "{jet_trg_key}", "{period}")"""
@@ -255,10 +287,15 @@ class TrigCorrProducer:
                                         {leg_p4},"{TrigCorrProducer.year}",{leg_name}_decayMode, "{trigCorr_dict[trg_name]}", "Medium", "sf", ::correction::TrigCorrProvider::UncSource::{source}, ::correction::UncScale::{scale} ) : 1.f""",
                             )
                         else:
+                            trg_year = (
+                                TrigCorrProducer.ele_year
+                                if trg_name in ("singleEle", "singleEleWpTight")
+                                else TrigCorrProducer.year
+                            )
                             df = df.Define(
                                 f"{branch_name}_double",
                                 f"""{applyTrgBranch_name} ? ::correction::TrigCorrProvider::getGlobal().getSF_{trigCorr_dict[trg_name]}(
-                                        {leg_p4},"{TrigCorrProducer.year}", ::correction::TrigCorrProvider::UncSource::{source}, ::correction::UncScale::{scale} ) : 1.f""",
+                                        {leg_p4},"{trg_year}", ::correction::TrigCorrProvider::UncSource::{source}, ::correction::UncScale::{scale} ) : 1.f""",
                             )
                         if scale != central:
                             df = df.Define(
@@ -324,7 +361,15 @@ class TrigCorrProducer:
                             # if len(trigger_legs)>1: func_name += f"_leg{trg_leg_idx+1}"
                             if len(trigger_legs) > 1 and legtype_value != None:
                                 func_name += f"_leg_{legtype_value}"
-                            args = f""" {leg_name}_p4, {leg_name}_decayMode, "{TrigCorrProducer.year}", "{trg_name}", "{electron_input}", "{VSjetWP[trg_name]}", ::correction::TrigCorrProvider::UncSource::{central}, ::correction::UncScale::{scale}, "{mc_or_data}" """
+                            if legtype_value == "e":
+                                trg_year = (
+                                    TrigCorrProducer.ele_year
+                                    if trg_name in ("singleEle", "singleEleWpTight")
+                                    else TrigCorrProducer.cross_ele_year
+                                )
+                            else:
+                                trg_year = TrigCorrProducer.year
+                            args = f""" {leg_name}_p4, {leg_name}_decayMode, "{trg_year}", "{trg_name}", "{electron_input}", "{VSjetWP[trg_name]}", ::correction::TrigCorrProvider::UncSource::{central}, ::correction::UncScale::{scale}, "{mc_or_data}" """
                             df = df.Define(
                                 eff,
                                 f"""{applyTrgBranch_name} ? ::correction::TrigCorrProvider::getGlobal().{func_name}({args})  : 1.f """,

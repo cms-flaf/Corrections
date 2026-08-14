@@ -67,12 +67,36 @@ ele_files_names = {
         "eleES_EtDependent": "electronSS_EtDependent",  # The 2022, 2023, and 2024 Scale and Smearing corrections are provided separately for electrons and photons. In addition, two "flavours" can be used for 2022 and 2023: a standard one, and an eT-dependent one (marked as such in the json file name). The eT-dependent corrections generally yield a better data/MC agreement for objects in the phase space they were derived upon. For 2024, only eT-dependent corrections are available. The Scale and Smearing corrections should not be used for electrons and photons below ~15 GeV and should be used with caution between 15 and 20 GeV, as they were not tuned for this pT range. They might also be ineffective at very high pT (hundreds of GeV).
     },
     "2025_Summer24": {
-        "eleID": "",  # currently not available
-        "eleHLT": "",  # currently not available
-        "eleID_highPt": "",  # currently not available
-        "eleES_EtDependent": "electronSS_EtDependent",  # The 2022, 2023, and 2024 Scale and Smearing corrections are provided separately for electrons and photons. In addition, two "flavours" can be used for 2022 and 2023: a standard one, and an eT-dependent one (marked as such in the json file name). The eT-dependent corrections generally yield a better data/MC agreement for objects in the phase space they were derived upon. For 2024, only eT-dependent corrections are available. The Scale and Smearing corrections should not be used for electrons and photons below ~15 GeV and should be used with caution between 15 and 20 GeV, as they were not tuned for this pT range. They might also be ineffective at very high pT (hundreds of GeV).
+        "eleID": "electron",
+        "eleHLT": "",  # electronHlt.json.gz is not published for 2025
+        "eleID_highPt": "",
+        "eleES_EtDependent": "electronSS_EtDependent",
+    },
+    "2026_Summer24": {  # placeholder: same as 2025
+        "eleID": "electron",
+        "eleHLT": "",
+        "eleID_highPt": "",
+        "eleES_EtDependent": "electronSS_EtDependent",
     },
 }
+
+
+def electron_id_sf_year(period):
+    year = period.split("_")[0]
+    if period.endswith("Summer22"):
+        return year + "Re-recoBCD"
+    if period.endswith("Summer22EE"):
+        return year + "Re-recoE+PromptFG"
+    if period.endswith("Summer23"):
+        return year + "PromptC"
+    if period.endswith("Summer23BPix"):
+        return year + "PromptD"
+    if period.startswith("2026"):
+        # 2026 EGM has no electron.json; 2025 ID SF year is 2025Prompt.
+        return "2025Prompt"
+    if period.endswith("Summer24"):
+        return year + "Prompt"
+    return year
 
 
 class EleCorrProducer:
@@ -129,15 +153,7 @@ class EleCorrProducer:
             ROOT.gInterpreter.ProcessLine(
                 f'::correction::EleCorrProvider::Initialize("{EleID_JsonFile}", "{EleES_JsonFile}","{EleID_JsonFile_key}","{EleES_JsonFile_key}")'
             )
-            EleCorrProducer.year = period.split("_")[0]
-            if period.endswith("Summer22"):
-                EleCorrProducer.year = period.split("_")[0] + "Re-recoBCD"
-            if period.endswith("Summer22EE"):
-                EleCorrProducer.year = period.split("_")[0] + "Re-recoE+PromptFG"
-            if period.endswith("Summer23"):
-                EleCorrProducer.year = period.split("_")[0] + "PromptC"
-            if period.endswith("Summer23BPix"):
-                EleCorrProducer.year = period.split("_")[0] + "PromptD"
+            EleCorrProducer.year = electron_id_sf_year(period)
 
             EleCorrProducer.initialized = True
 

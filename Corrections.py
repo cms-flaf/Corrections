@@ -4,6 +4,23 @@ import itertools
 
 from .CorrectionsCore import *
 from FLAF.RunKit.run_tools import ps_call
+from FLAF.Common.shared_mc import shared_mc_in_era_expr, shared_mc_split
+
+
+def _ana_caches_with_denom_key(ana_caches, key):
+    """Expose ``ana_caches[*][key]`` as ``denominator`` for defineDenominator."""
+    if key == "denominator":
+        return ana_caches
+    remapped = {}
+    for ds_name, cache in ana_caches.items():
+        if key not in cache:
+            raise RuntimeError(
+                f"AnaCache for '{ds_name}' has no '{key}'. Re-run AnaTupleFileTask "
+                "so both the full and in-era denominators are stored."
+            )
+        remapped[ds_name] = dict(cache)
+        remapped[ds_name]["denominator"] = cache[key]
+    return remapped
 
 
 def findLibLocation(lib_name, first_guess=None):
@@ -611,6 +628,14 @@ class Corrections:
             all_weights.extend(dy_bbww_branches)
 
         if "base" in self.to_apply:
+            shared_mc = self.global_params.get("shared_mc")
+            if shared_mc and not self.isData:
+                split_mod, lo, hi, _ = shared_mc_split(
+                    self.global_params["era"], shared_mc
+                )
+                df = df.Define(
+                    "__shared_mc_in_era", shared_mc_in_era_expr(split_mod, lo, hi)
+                )
             for (
                 shape_unc_source,
                 shape_unc_scale,
@@ -620,6 +645,18 @@ class Corrections:
                 df, denom_branches = self.defineDenominator(
                     df, denomBranchBase, shape_unc_source, shape_unc_scale, ana_caches
                 )
+                denom_cmb_by_suffix = {}
+                if shared_mc and not self.isData and shape_unc_name == central:
+                    df, denom_cmb_branches = self.defineDenominator(
+                        df,
+                        f"{denomBranchBase}_cmb",
+                        shape_unc_source,
+                        shape_unc_scale,
+                        _ana_caches_with_denom_key(ana_caches, "denominator_cmb"),
+                    )
+                    denom_cmb_by_suffix = {
+                        suffix: branch for suffix, branch in denom_cmb_branches
+                    }
                 shape_weights_product = (
                     " * ".join(shape_weights) if len(shape_weights) > 0 else "1.0"
                 )
@@ -632,7 +669,11 @@ class Corrections:
                     else:
                         weight_name = f"{weight_name_central}_{shape_unc_name}"
                         weight_out_name = f"{weight_name}_rel"
-                    weight_formula = f"{gen_weight_name} * {lumi_weight_name} * {crossSectionBranch} * {shape_weights_product} / {denomBranch}"
+                    numer = (
+                        f"{gen_weight_name} * {lumi_weight_name} * "
+                        f"{crossSectionBranch} * {shape_weights_product}"
+                    )
+                    weight_formula = f"{numer} / {denomBranch}"
                     df = df.Define(weight_name, f"static_cast<float>({weight_formula})")
                     if shape_unc_name != central:
                         df = df.Define(
@@ -640,6 +681,21 @@ class Corrections:
                             f"static_cast<float>({weight_name}/{weight_name_central})",
                         )
                     all_weights.append(weight_out_name)
+                    if shared_mc and shape_unc_name == central:
+                        cmb_weight = f"{weight_name_central}_cmb"
+                        if self.isData:
+                            df = df.Define(
+                                cmb_weight,
+                                f"static_cast<float>({weight_name_central})",
+                            )
+                        else:
+                            cmb_denom = denom_cmb_by_suffix[suffix]
+                            df = df.Define(
+                                cmb_weight,
+                                f"static_cast<float>(__shared_mc_in_era && ({cmb_denom} != 0) "
+                                f"? ({numer} / {cmb_denom}) : 0.f)",
+                            )
+                        all_weights.append(cmb_weight)
 
         if "Vpt" in self.to_apply:
             df, Vpt_SF_branches = self.Vpt.getSF(df, isCentral, return_variations)

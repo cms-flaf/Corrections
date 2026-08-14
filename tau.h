@@ -338,8 +338,18 @@ namespace correction {
                 const UncSource tau_had_source = tau_had_scale == UncScale::Central ? UncSource::Central : source;
                 const std::string& scale_str =
                     scale != UncScale::Central ? getScaleStr(tau_had_source, tau_had_scale, year_) : "nom";
-                const auto sf = tau_vs_jet_->evaluate(
-                    {Tau_p4.pt(), Tau_decayMode, Tau_genMatch, wpVSjet, wpVSe, scale_str, genuineTau_SFtype});
+                const auto sf =
+                    year_ == "2025"
+                        ? tau_vs_jet_->evaluate({Tau_p4.pt(),
+                                                 Tau_decayMode,
+                                                 Tau_genMatch,
+                                                 wpVSjet,
+                                                 wpVSe,
+                                                 wpVSmu,
+                                                 scale_str,
+                                                 genuineTau_SFtype})
+                        : tau_vs_jet_->evaluate(
+                              {Tau_p4.pt(), Tau_decayMode, Tau_genMatch, wpVSjet, wpVSe, scale_str, genuineTau_SFtype});
                 return sf;
             }
             if (genMatch == GenLeptonMatch::Electron || genMatch == GenLeptonMatch::TauElectron) {
@@ -357,7 +367,10 @@ namespace correction {
                     sourceApplies(source, Tau_p4, Tau_decayMode, genMatch) ? scale : UncScale::Central;
                 const UncSource tau_mu_source = tau_mu_scale == UncScale::Central ? UncSource::Central : source;
                 const std::string& scale_str = getScaleStr(tau_mu_source, tau_mu_scale, year_);
-                const auto sf = tau_vs_mu_->evaluate({Tau_p4.eta(), Tau_genMatch, wpVSmu, scale_str});
+                const auto sf =
+                    (year_ == "2024" || year_ == "2025")
+                        ? tau_vs_mu_->evaluate({Tau_p4.eta(), Tau_genMatch, wpVSmu, wpVSe, wpVSjet, scale_str})
+                        : tau_vs_mu_->evaluate({Tau_p4.eta(), Tau_genMatch, wpVSmu, scale_str});
                 return sf;
             }
             return 1.;
