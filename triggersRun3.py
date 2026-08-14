@@ -67,6 +67,7 @@ class TrigCorrProducer:
 
     year = ""
     ele_year = ""
+    cross_ele_year = ""
 
     @staticmethod
     def _json_trg_key(leg, period):
