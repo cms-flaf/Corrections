@@ -11,8 +11,7 @@ def _load_electron_id_sf_year():
     fn = next(
         node
         for node in tree.body
-        if isinstance(node, ast.FunctionDef)
-        and node.name == "electron_id_sf_year"
+        if isinstance(node, ast.FunctionDef) and node.name == "electron_id_sf_year"
     )
     ns = {}
     exec(compile(ast.Module(body=[fn], type_ignores=[]), path, "exec"), ns)
