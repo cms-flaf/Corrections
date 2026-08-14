@@ -68,6 +68,16 @@ class TrigCorrProducer:
     year = ""
     ele_year = ""
 
+    @staticmethod
+    def _json_trg_key(leg, period):
+        keys = leg["jsonTRGcorrection_key"]
+        if period in keys:
+            return keys[period]
+        for fallback in ("2025_Summer24", "2024_Summer24"):
+            if fallback in keys:
+                return keys[fallback]
+        raise KeyError(period)
+
     def __init__(self, period, config, trigger_dict):
         # json_correction_path = eval(trigger_dict['ditaujet']['legs'][1]["jsonTRGcorrection_path"])
         tau_filename_dict = {
@@ -133,7 +143,9 @@ class TrigCorrProducer:
                 TrigCorrProducer.year = period.split("_")[0] + "Prompt"
             # 2025 electron HLT JSON is the 2024 file; evaluate with that year's key.
             TrigCorrProducer.ele_year = (
-                "2024Prompt" if period.startswith("2025") else TrigCorrProducer.year
+                "2024Prompt"
+                if period.startswith("2025") or period.startswith("2026")
+                else TrigCorrProducer.year
             )
             # Local CrossEleTau JSONs are still the 2023 HLepRare files.
             TrigCorrProducer.cross_ele_year = (
@@ -148,58 +160,58 @@ class TrigCorrProducer:
 
             # bbWW uses singleIsoMu and singleEleWpTight names
             if "singleIsoMu" in self.trigger_dict.keys():
-                mu_trg_key_mc = self.trigger_dict["singleIsoMu"]["legs"][0][
-                    "jsonTRGcorrection_key"
-                ][period].format("MC")
-                mu_trg_key_data = self.trigger_dict["singleIsoMu"]["legs"][0][
-                    "jsonTRGcorrection_key"
-                ][period].format("DATA")
+                mu_trg_key_mc = self._json_trg_key(
+                    self.trigger_dict["singleIsoMu"]["legs"][0], period
+                ).format("MC")
+                mu_trg_key_data = self._json_trg_key(
+                    self.trigger_dict["singleIsoMu"]["legs"][0], period
+                ).format("DATA")
             if "singleEleWpTight" in self.trigger_dict.keys():
-                ele_trg_key_mc = self.trigger_dict["singleEleWpTight"]["legs"][0][
-                    "jsonTRGcorrection_key"
-                ][period].format("Mc")
-                ele_trg_key_data = self.trigger_dict["singleEleWpTight"]["legs"][0][
-                    "jsonTRGcorrection_key"
-                ][period].format("Data")
+                ele_trg_key_mc = self._json_trg_key(
+                    self.trigger_dict["singleEleWpTight"]["legs"][0], period
+                ).format("Mc")
+                ele_trg_key_data = self._json_trg_key(
+                    self.trigger_dict["singleEleWpTight"]["legs"][0], period
+                ).format("Data")
 
             # Now bbtautau keys
             mutau_trg_key_mc, mutau_trg_key_data = None, None
             tau_trg_key = None
             jet_trg_key = None
             if "singleMu" in self.trigger_dict.keys():
-                mu_trg_key_mc = self.trigger_dict["singleMu"]["legs"][0][
-                    "jsonTRGcorrection_key"
-                ][period].format(
+                mu_trg_key_mc = self._json_trg_key(
+                    self.trigger_dict["singleMu"]["legs"][0], period
+                ).format(
                     MuIDWP=config.get("muonID_WP_for_triggerSF", "Medium"), DataMC="MC"
                 )
-                mu_trg_key_data = self.trigger_dict["singleMu"]["legs"][0][
-                    "jsonTRGcorrection_key"
-                ][period].format(
+                mu_trg_key_data = self._json_trg_key(
+                    self.trigger_dict["singleMu"]["legs"][0], period
+                ).format(
                     MuIDWP=config.get("muonID_WP_for_triggerSF", "Medium"),
                     DataMC="DATA",
                 )
             if "singleEle" in self.trigger_dict.keys():
-                ele_trg_key_mc = self.trigger_dict["singleEle"]["legs"][0][
-                    "jsonTRGcorrection_key"
-                ][period].format("Mc")
-                ele_trg_key_data = self.trigger_dict["singleEle"]["legs"][0][
-                    "jsonTRGcorrection_key"
-                ][period].format("Data")
+                ele_trg_key_mc = self._json_trg_key(
+                    self.trigger_dict["singleEle"]["legs"][0], period
+                ).format("Mc")
+                ele_trg_key_data = self._json_trg_key(
+                    self.trigger_dict["singleEle"]["legs"][0], period
+                ).format("Data")
             if "mutau" in self.trigger_dict.keys():
-                mutau_trg_key_mc = self.trigger_dict["mutau"]["legs"][0][
-                    "jsonTRGcorrection_key"
-                ][period].format("MC")
-                mutau_trg_key_data = self.trigger_dict["mutau"]["legs"][0][
-                    "jsonTRGcorrection_key"
-                ][period].format("DATA")
+                mutau_trg_key_mc = self._json_trg_key(
+                    self.trigger_dict["mutau"]["legs"][0], period
+                ).format("MC")
+                mutau_trg_key_data = self._json_trg_key(
+                    self.trigger_dict["mutau"]["legs"][0], period
+                ).format("DATA")
             if "ditau" in self.trigger_dict.keys():
-                tau_trg_key = self.trigger_dict["ditau"]["legs"][0][
-                    "jsonTRGcorrection_key"
-                ][period]
+                tau_trg_key = self._json_trg_key(
+                    self.trigger_dict["ditau"]["legs"][0], period
+                )
             if "ditaujet" in self.trigger_dict.keys():
-                jet_trg_key = self.trigger_dict["ditaujet"]["legs"][1][
-                    "jsonTRGcorrection_key"
-                ][period]
+                jet_trg_key = self._json_trg_key(
+                    self.trigger_dict["ditaujet"]["legs"][1], period
+                )
 
             ROOT.gInterpreter.ProcessLine(
                 f"""::correction::TrigCorrProvider::Initialize("{jsonFile_Mu}","{jsonFile_e}", "{jsonFile_Tau}", "{jsonFile_TauJet}", "{jsonFile_eTau}", "{jsonFile_muTau}", "{mu_trg_key_mc}", "{mu_trg_key_data}", "{mutau_trg_key_mc}", "{mutau_trg_key_data}","{ele_trg_key_mc}","{ele_trg_key_data}", "{tau_trg_key}", "{jet_trg_key}", "{period}")"""
