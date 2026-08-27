@@ -6,7 +6,9 @@ variations for jets, taus, muons, electrons, b-tagging, pileup, MET and triggers
 Run 3. Used as a submodule by HH_bbtautau, HH_bbWW and H_mumu.
 
 **Read `FLAF/.github/copilot-instructions.md` first** for the shared rules on what a useful review
-comment looks like here and what not to flag. This file adds what is specific to corrections.
+comment looks like here and what not to flag. The rule that documentation ships in the same PR
+applies here too, and is restated below — it works differently for this repository, which has no
+documentation site of its own. This file adds what is specific to corrections.
 
 ## What costs the most here
 
@@ -51,6 +53,42 @@ names appear on both sides, in the same order.
 Up and down variations must be distinguishable and correctly signed. A copy-pasted branch that
 returns the central value for one direction produces a systematic of zero width, which no test
 notices. Check that the variation name reaching `correctionlib` differs between the two branches.
+
+## Documentation must ship with the change
+
+A PR must update the documentation **in the same PR** whenever it changes anything a user of the
+framework can observe. Treat this as a review item of the same weight as correctness — docs
+drifting from the code is the failure that motivated the current documentation, and a PR that
+lands without them is not complete.
+
+Ask, for every diff: does it add, rename or remove any of these?
+
+- a task or DAG node, or the arguments/parameters of one;
+- a command, a CLI flag, or the meaning of an existing one;
+- a configuration key — `global.yaml`, `user_custom.yaml`, `processes.yaml`, `phys_models.yaml`,
+  cross-sections, `fs_*` storage keys, bundle flavours, processor entries;
+- a dataset, era, process or physics-model name;
+- the environment, installation or setup steps;
+- storage locations, output paths or log locations;
+- a CI workflow, or how the integration test is triggered or configured;
+- any behaviour a user relies on, including a default that changes.
+
+If the answer is yes and the diff touches **no** documentation file, say so and name the page that
+should have changed. If the author states the change is internal-only, that is a legitimate
+answer — a pure refactor or bugfix with no user-visible effect is exempt — but it should be
+stated in the PR, not left implicit.
+
+Also flag the inverse: documentation edited to describe behaviour the diff does not implement, and
+new pages added without being wired into `mkdocs.yml`'s `nav` (the build fails on that, but the
+review should catch it first).
+
+Where it goes: **this repository has no documentation site of its own.** Corrections are described
+in the framework documentation, so a user-visible change here — a new correction, a new era, a
+renamed configuration key, a changed default — needs a companion PR against `cms-flaf/FLAF`
+updating the relevant page under `FLAF/docs/` (`concepts/eras.md`, `concepts/configuration.md`,
+`configuration/datasets.md`, `troubleshooting.md` and the glossary are the ones that mention
+corrections). Flag the absence of that companion PR; do not accept an undocumented change on the
+grounds that this repository has nowhere to put it.
 
 ## Do not flag
 
