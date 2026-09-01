@@ -183,6 +183,7 @@ class Corrections:
         self.trg_ = None
         self.btag_ = None
         self.pu_ = None
+        self.parton_shower_ = None
         self.dy_hhbbtautau_ = None
         self.dy_hhbbww_ = None
         self.mu_ = None
@@ -214,6 +215,16 @@ class Corrections:
 
             self.pu_ = puWeightProducer(period=period_names[self.period])
         return self.pu_
+
+    @property
+    def parton_shower(self):
+        if self.parton_shower_ is None:
+            from .parton_shower import psWeightProducer
+
+            self.parton_shower_ = psWeightProducer(
+                branch=self.to_apply.get("parton_shower", {}).get("branch", "PSWeight")
+            )
+        return self.parton_shower_
 
     @property
     def dy_hhbbtautau(self):
@@ -525,6 +536,60 @@ class Corrections:
             branches.append(branch)
         return df, branches
 
+    # Corrections whose weights enter the normalisation weight as shape variations,
+    # in the order getNormalisationCorrections runs them. Both the anaCache denominator
+    # and the `base` numerator are built from this one list, so they cannot disagree
+    # about which factors belong to a variation.
+    shape_weight_producers = [
+        ("pu", "pu"),  # (correction name in global.yaml, attribute on self)
+        ("parton_shower", "parton_shower"),
+    ]
+
+    def _shapeWeightClasses(self):
+        from .pu import puWeightProducer
+        from .parton_shower import psWeightProducer
+
+        return {"pu": puWeightProducer, "parton_shower": psWeightProducer}
+
+    def registerShapeWeights(self, registry, return_variations=True):
+        """Populate a ShapeWeightRegistry with the shape producers active here.
+
+        Registration does not depend on whether a producer is enabled at this stage:
+        a branch written at AnaTuple has to be nameable again at AnaTupleMerge, where
+        the producer is disabled and the branch is read back from the tuple.
+        """
+        classes = self._shapeWeightClasses()
+        for corr_name, _ in self.shape_weight_producers:
+            if corr_name not in self.to_apply:
+                continue
+            cls = classes[corr_name]
+            registry.register(
+                corr_name,
+                cls.uncSource if return_variations else [],
+                cls.branchName,
+            )
+        return registry
+
+    def defineShapeWeights(self, df, return_variations=True, respect_enabled=True):
+        """Define the shape-weight branches themselves."""
+        branches = []
+        for corr_name, attr in self.shape_weight_producers:
+            if corr_name not in self.to_apply:
+                continue
+            enabled = True
+            if respect_enabled:
+                enabled = (
+                    self.to_apply[corr_name].get("enabled", {}).get(self.stage, True)
+                )
+            df, producer_branches = getattr(self, attr).getWeight(
+                df,
+                return_variations=return_variations,
+                return_list_of_branches=True,
+                enabled=enabled,
+            )
+            branches.extend(producer_branches)
+        return df, branches
+
     def defineDenominator(self, df, denomBranch, unc_source, unc_scale, ana_caches):
         branches = []
         if len(self.xs_denom_processors) == 0:
@@ -597,17 +662,15 @@ class Corrections:
             df = df.Define(gen_weight_name, genWeight_def)
             all_weights.append(gen_weight_name)
 
-        shape_weights_dict = {(central, central): []}
-        if "pu" in self.to_apply:
-            pu_enabled = self.to_apply["pu"].get("enabled", {}).get(self.stage, True)
-            df, weight_pu_branches = self.pu.getWeight(
-                df,
-                shape_weights_dict=shape_weights_dict,
-                return_variations=return_variations and isCentral,
-                return_list_of_branches=True,
-                enabled=pu_enabled,
-            )
-            all_weights.extend(weight_pu_branches)
+        shape_weight_registry = self.registerShapeWeights(
+            ShapeWeightRegistry(),
+            return_variations=return_variations and isCentral,
+        )
+        shape_weights_dict = shape_weight_registry.asDict()
+        df, shape_weight_branches = self.defineShapeWeights(
+            df, return_variations=return_variations and isCentral
+        )
+        all_weights.extend(shape_weight_branches)
 
         if "dy_hhbbtautau" in self.to_apply:
             df, dy_branches = self.dy_hhbbtautau.getWeight(

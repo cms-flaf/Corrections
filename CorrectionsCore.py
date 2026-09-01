@@ -154,6 +154,60 @@ def getSystName(source, scale):
     )
 
 
+class ShapeWeightRegistry:
+    """Which weight branches multiply into each (source, scale) variation.
+
+    The normalisation weight is built once per variation, both as the numerator in
+    Corrections.getNormalisationCorrections and as the anaCache denominator in
+    FLAF/AnaProd/anaTupleProducer.py. Both need the same answer to the same question:
+    for variation (source, scale), which weight branches multiply together?
+
+    The answer is not "the branches of the producer that owns this source". A variation
+    of one producer must still carry every *other* producer's central branch, or the
+    ratio weight_base_<var> / weight_base_Central retains a spurious factor of one over
+    that other producer's central weight. With pileup as the only non-central source
+    that never showed up, because the only non-central keys belonged to pileup itself.
+
+    Producers register the sources they own plus a (source, scale) -> branch-name
+    callable, and this class does the cross product. Registration is independent of
+    whether the producer is enabled at this stage, so a branch written at AnaTuple can
+    be named again at AnaTupleMerge without being recomputed.
+    """
+
+    def __init__(self):
+        self._producers = []  # [(name, owned_sources, branch_fn)]
+
+    def register(self, name, sources, branch_fn):
+        if any(name == registered for registered, _, _ in self._producers):
+            raise RuntimeError(f"ShapeWeightRegistry: duplicate producer '{name}'")
+        self._producers.append((name, list(sources), branch_fn))
+
+    @property
+    def sources(self):
+        sources = [central]
+        for _, owned, _ in self._producers:
+            sources.extend(owned)
+        return sources
+
+    def branches(self, source, scale):
+        """Varied branch from the producer owning `source`, central from the rest."""
+        return [
+            (
+                branch_fn(source, scale)
+                if source in owned
+                else branch_fn(central, central)
+            )
+            for _, owned, branch_fn in self._producers
+        ]
+
+    def asDict(self):
+        return {
+            (source, scale): self.branches(source, scale)
+            for source in self.sources
+            for scale in getScales(source)
+        }
+
+
 def splitSystName(syst_name):
     if syst_name == central:
         return (central, central)
