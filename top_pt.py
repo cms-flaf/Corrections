@@ -13,6 +13,15 @@ class TopPtCorrProducer:
     The tops arrive as one or more vector branches named by `top_pt_branches`, so the
     number of tops is whatever the event has rather than a fixed pair.
 
+    **The reweighting is not applied to the nominal.** As (Down, Central, Up) the weight
+    is (SF, 1, SF): the nominal is the unreweighted POWHEG+PYTHIA8 prediction and both
+    variations are the reweighted one. The uncertain thing is whether the reweighting
+    applies at all, not which direction it goes, so the nuisance is a one-sided envelope
+    given symmetrically -- appropriate for a correction whose coefficients are unverified
+    and whose applicability at 13.6 TeV is unestablished. See `_variation_expr` for what
+    equal Up and Down templates mean once Combine morphs them. To apply the reweighting
+    centrally instead, return it from `_central_expr`.
+
     Unlike the other reweightings in this directory the correction is a closed-form
     function rather than a correctionlib payload, so there is no JSON to load and no
     header to declare -- a plain Define is enough.
@@ -96,6 +105,8 @@ class TopPtCorrProducer:
     pt_branch = "top_pt_forWeight"
     #: Per-event column holding the per-top scale factors.
     sf_branch = "top_pt_sf"
+    #: Per-event column holding the reweighting itself, prod(SF_i)^(1/n).
+    weight_branch = "top_pt_reweight"
 
     def _pt_expr(self):
         """The configured branches concatenated into one RVec of top pT.
@@ -130,7 +141,7 @@ class TopPtCorrProducer:
         sf = self.parameterizations[self.parameterization].format(pt=self.pt_branch)
         return f"ROOT::VecOps::Where(({sf}) < 0.f, 0.f, {sf})"
 
-    def _central_expr(self):
+    def _reweight_expr(self):
         """The geometric mean of the per-top scale factors: prod(SF_i)^(1/n).
 
         For the ttbar pair the TWiki prescribes, this is sqrt(SF(t) * SF(tbar)) --
@@ -149,18 +160,40 @@ class TopPtCorrProducer:
             f"1.0f / static_cast<float>({self.sf_branch}.size())))"
         )
 
-    def _variation_expr(self, scale):
-        """A 100% uncertainty on the correction.
+    def _central_expr(self):
+        """Unity: the reweighting is not applied to the nominal.
 
-        `Down` removes the reweighting entirely and `Up` applies it twice, so the pair
-        brackets "no correction at all" symmetrically in log space. The size of the
-        correction is the thing genuinely in doubt, so it is also the natural size for
-        the uncertainty.
+        The correction is carried entirely by the nuisance instead. The nominal is the
+        unreweighted POWHEG+PYTHIA8 prediction, `Up` is that prediction reweighted, and
+        `Down` is the mirror image. That is the right shape for a correction whose
+        applicability is itself in doubt -- these are Run 2 13 TeV derivations and the
+        coefficients are unverified -- since it lets the fit pull towards the
+        reweighting without presupposing it.
+
+        The branch is kept, rather than dropped from the weight, so the plumbing is
+        unchanged and turning the reweighting back on in the nominal is a one-line
+        change here rather than a change to every consumer.
         """
-        if scale == up:
-            return f"static_cast<float>({self.central_branch} * {self.central_branch})"
-        if scale == down:
-            return "1.0f"
+        return "1.0f"
+
+    def _variation_expr(self, scale):
+        """The reweighting itself, for both directions: (Down, Central, Up) = (SF, 1, SF).
+
+        The two variations are deliberately the same template. The direction of the top
+        pT reweighting is not the uncertain thing -- whether it should be applied at all
+        is -- so the nuisance is a one-sided envelope written symmetrically: the fit sits
+        at the unreweighted prediction when the parameter is 0 and reaches the fully
+        reweighted one at |theta| = 1, with the sign carrying no meaning.
+
+        Note what this does in Combine. Template morphing runs through (Down, Nominal,
+        Up); with Down == Up the odd term cancels and only the even one survives, so the
+        response is quadratic in theta and the yield moves the *same* way whichever way
+        the parameter is pulled. That is the intended reading here, but it also means the
+        nuisance has no linear response at theta = 0, so its impact comes out one-sided
+        in a ranking and the minimiser sees a flat direction at the starting point.
+        """
+        if scale in (up, down):
+            return f"static_cast<float>({self.weight_branch})"
         raise RuntimeError(f"TopPtCorrProducer: unsupported variation '{scale}'.")
 
     def getWeight(
@@ -182,6 +215,9 @@ class TopPtCorrProducer:
         # once, and so both are inspectable when a weight looks wrong.
         df = df.Define(self.pt_branch, self._pt_expr())
         df = df.Define(self.sf_branch, self._sf_expr())
+        df = df.Define(
+            self.weight_branch, f"static_cast<float>({self._reweight_expr()})"
+        )
 
         df = df.Define(
             self.central_branch, f"static_cast<float>({self._central_expr()})"
