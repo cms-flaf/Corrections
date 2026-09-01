@@ -90,6 +90,18 @@ class DYbbtautauCorrProducer:
             return "true" if self.valid else "false"
         return f"static_cast<bool>({self.valid})"
 
+    @staticmethod
+    def _branch_suffix(syst):
+        """The JSON's variation name as a branch suffix.
+
+        The correction file spells its variations `stat_btag0_up`, but weights.yaml
+        expands `{scale}` to the FLAF scale names, which are `Up` and `Down`
+        (CorrectionsCore). Capitalising the trailing token is what lets a single
+        weights.yaml entry cover both directions, the way every other correction does.
+        """
+        source, _, scale = syst.rpartition("_")
+        return f"{source}_{scale.capitalize()}"
+
     def getWeight(
         self,
         df,
@@ -109,9 +121,13 @@ class DYbbtautauCorrProducer:
         branches = []
         valid_expr = self._valid_expr()
 
+        central_branch = "weight_dy_central"
         for syst in systs:
+            is_nominal = syst == "nominal"
             branch_name = (
-                "weight_dy_central" if syst == "nominal" else f"weight_dy_{syst}"
+                central_branch
+                if is_nominal
+                else f"weight_dy_{self._branch_suffix(syst)}"
             )
             df = df.Define(
                 branch_name,
@@ -128,6 +144,19 @@ class DYbbtautauCorrProducer:
             )
 
             branches.append(branch_name)
+
+            if not is_nominal:
+                # weights.yaml multiplies a relative branch by final_weight, which
+                # already carries the nominal DY weight -- the convention every other
+                # correction follows (see electron.py). "nominal" is first in `systs`,
+                # so the central branch is always defined by the time this runs.
+                rel_branch = f"{branch_name}_rel"
+                df = df.Define(
+                    rel_branch,
+                    f"static_cast<float>({central_branch} != 0.f "
+                    f"? {branch_name} / {central_branch} : 1.f)",
+                )
+                branches.append(rel_branch)
 
         if return_list_of_branches:
             return df, branches
