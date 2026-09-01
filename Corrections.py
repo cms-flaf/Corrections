@@ -183,6 +183,7 @@ class Corrections:
         self.trg_ = None
         self.btag_ = None
         self.pu_ = None
+        self.parton_shower_ = None
         self.dy_hhbbtautau_ = None
         self.dy_hhbbww_ = None
         self.mu_ = None
@@ -214,6 +215,16 @@ class Corrections:
 
             self.pu_ = puWeightProducer(period=period_names[self.period])
         return self.pu_
+
+    @property
+    def parton_shower(self):
+        if self.parton_shower_ is None:
+            from .parton_shower import psWeightProducer
+
+            self.parton_shower_ = psWeightProducer(
+                branch=self.to_apply.get("parton_shower", {}).get("branch", "PSWeight")
+            )
+        return self.parton_shower_
 
     @property
     def dy_hhbbtautau(self):
@@ -531,12 +542,14 @@ class Corrections:
     # about which factors belong to a variation.
     shape_weight_producers = [
         ("pu", "pu"),  # (correction name in global.yaml, attribute on self)
+        ("parton_shower", "parton_shower"),
     ]
 
     def _shapeWeightClasses(self):
         from .pu import puWeightProducer
+        from .parton_shower import psWeightProducer
 
-        return {"pu": puWeightProducer}
+        return {"pu": puWeightProducer, "parton_shower": psWeightProducer}
 
     def registerShapeWeights(self, registry, return_variations=True):
         """Populate a ShapeWeightRegistry with the shape producers active here.
