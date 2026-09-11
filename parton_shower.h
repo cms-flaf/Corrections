@@ -23,11 +23,18 @@ namespace correction {
 // nuisance a no-op for it -- silently. The inclusive denominator ratio is the
 // diagnostic: it comes out exactly 1.000000 for such a sample.
 inline float psWeight(const ROOT::VecOps::RVec<float>& ps, size_t idx) {
-  if (ps.size() != 4) return 1.f;
+  if (ps.size() != 4) {
+    throw std::runtime_error("psWeight: expected exactly 4 PS weights, got " +
+                             std::to_string(ps.size()));
+  }
   const float w = ps[idx];
   // Guard non-finite only. A zero or negative PS weight is a generator problem worth
   // seeing downstream, not something to quietly rewrite to 1.
-  return std::isfinite(w) ? w : 1.f;
+  if (!std::isfinite(w)) {
+    throw std::runtime_error("psWeight: non-finite PS weight at index " +
+                             std::to_string(idx) + ": " + std::to_string(w));
+  }
+  return w;
 }
 
 }  // namespace correction
