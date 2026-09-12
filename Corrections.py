@@ -271,9 +271,14 @@ class Corrections:
             from .top_pt import TopPtCorrProducer
 
             cfg = self.to_apply.get("top_pt", {})
+            if "top_pt_branches" in cfg:
+                raise RuntimeError(
+                    "top_pt: 'top_pt_branches' is no longer supported. The tops are "
+                    "read from GenPart, because the anaCache denominator is built "
+                    "before any analysis-defined branch exists. Remove the key."
+                )
             self.top_pt_ = TopPtCorrProducer(
                 era=self.period,
-                top_pt_branches=cfg.get("top_pt_branches", None),
                 parameterization=cfg.get("parameterization", "nnlo_nlo"),
                 max_pt=cfg.get("max_pt", None),
             )
@@ -558,13 +563,19 @@ class Corrections:
     shape_weight_producers = [
         ("pu", "pu"),  # (correction name in global.yaml, attribute on self)
         ("parton_shower", "parton_shower"),
+        ("top_pt", "top_pt"),
     ]
 
     def _shapeWeightClasses(self):
         from .pu import puWeightProducer
         from .parton_shower import psWeightProducer
+        from .top_pt import TopPtCorrProducer
 
-        return {"pu": puWeightProducer, "parton_shower": psWeightProducer}
+        return {
+            "pu": puWeightProducer,
+            "parton_shower": psWeightProducer,
+            "top_pt": TopPtCorrProducer,
+        }
 
     def registerShapeWeights(self, registry, return_variations=True):
         """Populate a ShapeWeightRegistry with the shape producers active here.
@@ -704,15 +715,6 @@ class Corrections:
             )
 
             all_weights.extend(dy_bbww_branches)
-
-        if "top_pt" in self.to_apply:
-            df, top_pt_branches = self.top_pt.getWeight(
-                df,
-                return_variations=return_variations and isCentral,
-                return_list_of_branches=True,
-            )
-
-            all_weights.extend(top_pt_branches)
 
         if "base" in self.to_apply:
             shared_mc = self.global_params.get("shared_mc")

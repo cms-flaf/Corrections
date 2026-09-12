@@ -1,17 +1,16 @@
+import sys
+
 from .CorrectionsCore import *
 
 
 class TopPtCorrProducer:
-    """Top pT reweighting for SM ttbar.
+    """Top pT reweighting for SM ttbar, as a shape weight.
 
     The top pT spectrum in data is softer than POWHEG+PYTHIA8 predicts. The
     correction is a per-top scale factor whose event weight is the geometric mean over
     the tops in the event, following
     https://twiki.cern.ch/twiki/bin/view/CMS/TopPtReweighting -- for the ttbar pair the
     TWiki prescribes, that is sqrt(SF(t) * SF(tbar)).
-
-    The tops arrive as one or more vector branches named by `top_pt_branches`, so the
-    number of tops is whatever the event has rather than a fixed pair.
 
     **The reweighting is not applied to the nominal.** As (Down, Central, Up) the weight
     is (SF, 1, SF): the nominal is the unreweighted POWHEG+PYTHIA8 prediction and both
@@ -21,6 +20,14 @@ class TopPtCorrProducer:
     and whose applicability at 13.6 TeV is unestablished. See `_variation_expr` for what
     equal Up and Down templates mean once Combine morphs them. To apply the reweighting
     centrally instead, return it from `_central_expr`.
+
+    The producer is registered in Corrections.shape_weight_producers, next to pileup and
+    the parton shower, so it is renormalised the same way they are: each variation is
+    divided by its own inclusive sum of weights in the anaCache denominator, and Corrections'
+    `base` block writes weight_base_top_pt{Up,Down}_rel. The inclusive ttbar yield is
+    therefore unchanged by the nuisance and only the shape of the reweighting survives.
+    `weight_top_pt_Central` is the literal 1.f, which is also what keeps the existing
+    pileup and parton-shower denominators bit-identical when this producer is added.
 
     Unlike the other reweightings in this directory the correction is a closed-form
     function rather than a correctionlib payload, so there is no JSON to load and no
@@ -37,6 +44,8 @@ class TopPtCorrProducer:
       scoping is done in global.yaml with a `processes:` list, the same way the DY
       reweighting is scoped.
     """
+
+    uncSource = ["top_pt"]
 
     # UNVERIFIED: these coefficients could not be sourced from any public reference --
     # the TWiki is behind CERN SSO. Confirm them against
@@ -58,22 +67,22 @@ class TopPtCorrProducer:
         ),
     }
 
-    default_variations = [up, down]
+    # The tops are read from the NanoAOD GenPart collection, not from a branch the
+    # analysis defines. The anaCache denominator is accumulated in
+    # anaTupleProducer.updateDenomEntry, which runs before addAllVariables, so only the
+    # original NanoAOD columns are available at that point -- the same constraint that
+    # makes parton_shower.py read PSWeight rather than PS_Weight.
+    input_branches = ["GenPart_pt", "GenPart_pdgId", "GenPart_statusFlags"]
 
-    central_branch = "weight_top_pt_central"
+    # Bit index of isLastCopy in GenPart_statusFlags, as in FLAF/include/GenStatusFlags.h
+    # (GenStatusFlags::kIsLastCopy). A bitwise mask rather than the enum so the
+    # expression does not depend on that header being declared, and does not pin the
+    # storage type of GenPart_statusFlags, which varies between NanoAOD versions.
+    is_last_copy_bit = 13
 
-    #: Vector branches holding the gen top pT, concatenated before averaging.
-    default_top_pt_branches = ["genTop_pt"]
+    warned_missing = False
 
-    def __init__(
-        self,
-        era,
-        *,
-        top_pt_branches=None,
-        parameterization="nnlo_nlo",
-        max_pt=None,
-        variations=None,
-    ):
+    def __init__(self, era, *, parameterization="nnlo_nlo", max_pt=None):
         self.era = era
 
         if parameterization not in self.parameterizations:
@@ -81,25 +90,20 @@ class TopPtCorrProducer:
                 f"TopPtCorrProducer: unknown parameterization '{parameterization}'. "
                 f"Supported: {sorted(self.parameterizations.keys())}"
             )
-
-        if isinstance(top_pt_branches, str):
-            top_pt_branches = [top_pt_branches]
-        self.top_pt_branches = list(
-            self.default_top_pt_branches if top_pt_branches is None else top_pt_branches
-        )
-        if not self.top_pt_branches:
-            raise RuntimeError(
-                "TopPtCorrProducer: top_pt_branches is empty, so there is nothing to "
-                "reweight. Drop the correction instead of configuring it with no input."
-            )
         self.parameterization = parameterization
         # The TWiki quotes a validity range for the fitted functions. It is left unset
         # rather than guessed: pass max_pt to clamp the pT the SF is evaluated at once
         # the number is confirmed.
         self.max_pt = max_pt
-        self.variations = list(
-            self.default_variations if variations is None else variations
-        )
+
+    @staticmethod
+    def branchName(source, scale):
+        """Branch holding this producer's weight for variation (source, scale).
+
+        Keyed on the scale alone, as for pileup: the producer owns a single source, so
+        the scale already identifies the branch.
+        """
+        return f"weight_top_pt_{scale}"
 
     #: Per-event column holding the top pT the SF is evaluated at.
     pt_branch = "top_pt_forWeight"
@@ -109,16 +113,10 @@ class TopPtCorrProducer:
     weight_branch = "top_pt_reweight"
 
     def _pt_expr(self):
-        """The configured branches concatenated into one RVec of top pT.
-
-        Each must be a vector branch; a scalar would be read as a size, not a value.
-        """
-        expr = f"ROOT::VecOps::RVec<float>({self.top_pt_branches[0]})"
-        for branch in self.top_pt_branches[1:]:
-            expr = (
-                f"ROOT::VecOps::Concatenate({expr}, "
-                f"ROOT::VecOps::RVec<float>({branch}))"
-            )
+        """The pT of every last-copy top and antitop in the event, as one RVec."""
+        is_top = "(GenPart_pdgId == 6 || GenPart_pdgId == -6)"
+        is_last_copy = f"(GenPart_statusFlags & (1 << {self.is_last_copy_bit})) != 0"
+        expr = f"ROOT::VecOps::RVec<float>(GenPart_pt[{is_top} && ({is_last_copy})])"
         if self.max_pt is not None:
             expr = (
                 f"ROOT::VecOps::Where({expr} > {float(self.max_pt)}f, "
@@ -144,15 +142,13 @@ class TopPtCorrProducer:
     def _reweight_expr(self):
         """The geometric mean of the per-top scale factors: prod(SF_i)^(1/n).
 
-        For the ttbar pair the TWiki prescribes, this is sqrt(SF(t) * SF(tbar)) --
-        verified bitwise identical to the previous two-scalar implementation over a
-        range of pT, since pow(x, 1/2) and sqrt(x) agree here. Any other multiplicity
-        follows from the same definition rather than from a special case.
+        For the ttbar pair the TWiki prescribes, this is sqrt(SF(t) * SF(tbar)). Any
+        other multiplicity follows from the same definition rather than from a special
+        case.
 
-        An event with no gen top gets 1. The branches are written for every MC sample
-        and are empty wherever there is no last-copy top, which covers every non-ttbar
-        sample and any ttbar event with an incomplete gen record, so returning 1 makes
-        the correction a no-op there rather than an error.
+        An event with no last-copy top gets 1, which covers every non-ttbar sample and
+        any ttbar event with an incomplete gen record, so the correction is a no-op
+        there rather than an error.
         """
         return (
             f"{self.sf_branch}.empty() ? 1.0f : static_cast<float>(std::pow("
@@ -193,7 +189,7 @@ class TopPtCorrProducer:
         in a ranking and the minimiser sees a flat direction at the starting point.
         """
         if scale in (up, down):
-            return f"static_cast<float>({self.weight_branch})"
+            return self.weight_branch
         raise RuntimeError(f"TopPtCorrProducer: unsupported variation '{scale}'.")
 
     def getWeight(
@@ -203,44 +199,56 @@ class TopPtCorrProducer:
         return_list_of_branches=False,
         enabled=True,
     ):
-        if not enabled:
-            if return_list_of_branches:
-                return df, []
-            return df
-
+        sf_sources = TopPtCorrProducer.uncSource if return_variations else []
         branches = []
 
-        # Intermediate, not saved: the pT the SF is evaluated at, and the per-top SF.
-        # Two columns rather than one nested expression so the parameterization appears
-        # once, and so both are inspectable when a weight looks wrong.
-        df = df.Define(self.pt_branch, self._pt_expr())
-        df = df.Define(self.sf_branch, self._sf_expr())
-        df = df.Define(
-            self.weight_branch, f"static_cast<float>({self._reweight_expr()})"
-        )
-
-        df = df.Define(
-            self.central_branch, f"static_cast<float>({self._central_expr()})"
-        )
-        branches.append(self.central_branch)
-
-        if return_variations:
-            for scale in self.variations:
-                branch_name = f"weight_top_pt_{scale}"
-                df = df.Define(branch_name, self._variation_expr(scale))
-                branches.append(branch_name)
-
-                # weights.yaml multiplies a relative branch by final_weight, which
-                # already carries the central weight -- the convention every other
-                # correction follows (see DY_hhbbtautau.py). The central branch is
-                # always defined by the time this runs.
-                rel_branch = f"{branch_name}_rel"
+        if enabled:
+            columns = {str(c) for c in df.GetColumnNames()}
+            has_input = all(b in columns for b in self.input_branches)
+            if not has_input:
+                # A stage without GenPart (AnaTupleMerge reads a tuple that does not
+                # carry it) must not silently define 1.f on top of the values already
+                # persisted -- that would shadow them and make the nuisance null with
+                # nothing to show for it. The producer is meant to be disabled there via
+                # `enabled` in global.yaml.
+                already_built = any(c.startswith("weight_top_pt_") for c in columns)
+                if already_built:
+                    raise RuntimeError(
+                        "TopPtCorrProducer: GenPart is not available but "
+                        "weight_top_pt_* columns already exist. Defining them again "
+                        "would shadow the persisted values. Set enabled: false for "
+                        "top_pt at this stage."
+                    )
+                if not TopPtCorrProducer.warned_missing:
+                    TopPtCorrProducer.warned_missing = True
+                    print(
+                        "WARNING: GenPart not found; the top pT reweighting will be a "
+                        "no-op for this dataset.",
+                        file=sys.stderr,
+                    )
+            elif self.weight_branch not in columns:
+                # Intermediate, not saved: the pT the SF is evaluated at, and the
+                # per-top SF. Two columns rather than one nested expression so the
+                # parameterization appears once, and so both are inspectable when a
+                # weight looks wrong.
+                df = df.Define(self.pt_branch, self._pt_expr())
+                df = df.Define(self.sf_branch, self._sf_expr())
                 df = df.Define(
-                    rel_branch,
-                    f"static_cast<float>({self.central_branch} != 0.f "
-                    f"? {branch_name} / {self.central_branch} : 1.f)",
+                    self.weight_branch, f"static_cast<float>({self._reweight_expr()})"
                 )
-                branches.append(rel_branch)
+
+        for source in [central] + sf_sources:
+            for scale in getScales(source):
+                branch_name = TopPtCorrProducer.branchName(source, scale)
+                if enabled:
+                    if source == central:
+                        expr = self._central_expr()
+                    elif has_input:
+                        expr = self._variation_expr(scale)
+                    else:
+                        expr = "1.f"
+                    df = df.Define(branch_name, f"static_cast<float>({expr})")
+                    branches.append(branch_name)
 
         if return_list_of_branches:
             return df, branches
