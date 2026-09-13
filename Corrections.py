@@ -271,12 +271,6 @@ class Corrections:
             from .top_pt import TopPtCorrProducer
 
             cfg = self.to_apply.get("top_pt", {})
-            if "top_pt_branches" in cfg:
-                raise RuntimeError(
-                    "top_pt: 'top_pt_branches' is no longer supported. The tops are "
-                    "read from GenPart, because the anaCache denominator is built "
-                    "before any analysis-defined branch exists. Remove the key."
-                )
             self.top_pt_ = TopPtCorrProducer(
                 era=self.period,
                 parameterization=cfg.get("parameterization", "nnlo_nlo"),
