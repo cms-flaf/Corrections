@@ -1,6 +1,19 @@
+import os
 import sys
 
 from .CorrectionsCore import *
+
+
+def _declare_tt_header(df):
+    """Make gen_process::tt::identify available to the JIT."""
+    from FLAF.Common.Utilities import DeclareHeader
+    import FLAF.Common.Utilities as flaf_utilities
+
+    flaf_dir = os.path.dirname(
+        os.path.dirname(os.path.abspath(flaf_utilities.__file__))
+    )
+    DeclareHeader(os.path.join(flaf_dir, "include", "GenProcess", "TT.h"))
+    return df
 
 
 class TopPtCorrProducer:
@@ -30,19 +43,22 @@ class TopPtCorrProducer:
     pileup and parton-shower denominators bit-identical when this producer is added.
 
     Unlike the other reweightings in this directory the correction is a closed-form
-    function rather than a correctionlib payload, so there is no JSON to load and no
-    header to declare -- a plain Define is enough.
+    function rather than a correctionlib payload, so there is no JSON to load.
 
-    Two things about the inputs are worth repeating here, because getting either
-    wrong silently produces a plausible but invalid weight:
+    Where the top pT comes from, and why there are two paths to it:
 
-    * The pT must come from the `isLastCopy` parton-level top -- after radiation and
-      before decay. The TWiki is explicit that a reco- or particle-level proxy gives
-      an invalid reweighting. In particular the LHE-level tops the anaTuple also
-      carries are taken *before* radiation and are not a substitute.
-    * Only SM ttbar is reweighted, never single top or tops from BSM production. That
-      scoping is done in global.yaml with a `processes:` list, the same way the DY
-      reweighting is scoped.
+    * It is the pT of the two `isLastCopy` parton-level tops -- after radiation and before
+      decay -- from the strict ttbar identification in FLAF/include/GenProcess/TT.h
+      (TTInfo::top_pt). The TWiki is explicit that a reco- or particle-level proxy gives an
+      invalid reweighting, and the LHE-level tops are taken *before* radiation.
+    * `branch` names the analysis anaTuple branch holding it (TTInfo_top_pt), stored for
+      every process declaring `genInfo: [ TT ]`. The anaCache denominator is summed before
+      the analysis variables exist, so there the same identify() is evaluated from GenPart
+      instead. That is FLAF's stored-or-compute pattern (docs/concepts/stitching.md): both
+      paths yield the same value.
+    * identify() throws on anything but a ttbar topology, and single top, ttH and the
+      signals carry last-copy tops too. The `processes:` list in global.yaml is therefore
+      load-bearing: it must name exactly the SM ttbar processes.
     """
 
     uncSource = ["top_pt"]
@@ -67,23 +83,21 @@ class TopPtCorrProducer:
         ),
     }
 
-    # The tops are read from the NanoAOD GenPart collection, not from a branch the
-    # analysis defines. The anaCache denominator is accumulated in
-    # anaTupleProducer.updateDenomEntry, which runs before addAllVariables, so only the
-    # original NanoAOD columns are available at that point -- the same constraint that
-    # makes parton_shower.py read PSWeight rather than PS_Weight.
-    input_branches = ["GenPart_pt", "GenPart_pdgId", "GenPart_statusFlags"]
-
-    # Bit index of isLastCopy in GenPart_statusFlags, as in FLAF/include/GenStatusFlags.h
-    # (GenStatusFlags::kIsLastCopy). A bitwise mask rather than the enum so the
-    # expression does not depend on that header being declared, and does not pin the
-    # storage type of GenPart_statusFlags, which varies between NanoAOD versions.
-    is_last_copy_bit = 13
+    # NanoAOD columns the fallback identification reads.
+    gen_branches = [
+        "GenPart_pdgId",
+        "GenPart_statusFlags",
+        "GenPart_genPartIdxMother",
+        "GenPart_pt",
+    ]
 
     warned_missing = False
 
-    def __init__(self, era, *, parameterization="nnlo_nlo", max_pt=None):
+    def __init__(
+        self, era, *, branch="TTInfo_top_pt", parameterization="nnlo_nlo", max_pt=None
+    ):
         self.era = era
+        self.branch = branch
 
         if parameterization not in self.parameterizations:
             raise RuntimeError(
@@ -105,24 +119,49 @@ class TopPtCorrProducer:
         """
         return f"weight_top_pt_{scale}"
 
+    #: Per-event column holding the top pT as read or identified, before any clamp.
+    raw_pt_branch = "top_pt_raw_forWeight"
     #: Per-event column holding the top pT the SF is evaluated at.
     pt_branch = "top_pt_forWeight"
     #: Per-event column holding the per-top scale factors.
     sf_branch = "top_pt_sf"
     #: Per-event column holding the reweighting itself, prod(SF_i)^(1/n).
     weight_branch = "top_pt_reweight"
+    #: Intermediate TTInfo struct, defined only on the GenPart fallback path.
+    info_branch = "TTInfo_forWeight"
+
+    def _define_raw_pt(self, df):
+        """TTInfo_top_pt from the stored branch where present, from GenPart otherwise."""
+        from FLAF.Processors.MCStitching import defineFromStoredOrExpression
+
+        def prepare(df):
+            df = _declare_tt_header(df)
+            return df.Define(
+                self.info_branch,
+                "gen_process::tt::identify(GenPart_pdgId, GenPart_statusFlags,"
+                " GenPart_genPartIdxMother, GenPart_pt)",
+            )
+
+        return defineFromStoredOrExpression(
+            df,
+            self.raw_pt_branch,
+            stored=self.branch,
+            stored_expression=f"ROOT::VecOps::RVec<float>({self.branch})",
+            expression=(
+                f"ROOT::VecOps::RVec<float>{{{self.info_branch}.top_pt[0], "
+                f"{self.info_branch}.top_pt[1]}}"
+            ),
+            prepare=prepare,
+        )
 
     def _pt_expr(self):
-        """The pT of every last-copy top and antitop in the event, as one RVec."""
-        is_top = "(GenPart_pdgId == 6 || GenPart_pdgId == -6)"
-        is_last_copy = f"(GenPart_statusFlags & (1 << {self.is_last_copy_bit})) != 0"
-        expr = f"ROOT::VecOps::RVec<float>(GenPart_pt[{is_top} && ({is_last_copy})])"
-        if self.max_pt is not None:
-            expr = (
-                f"ROOT::VecOps::Where({expr} > {float(self.max_pt)}f, "
-                f"{float(self.max_pt)}f, {expr})"
-            )
-        return expr
+        """The top pT the SF is evaluated at, clamped to max_pt when one is set."""
+        if self.max_pt is None:
+            return self.raw_pt_branch
+        return (
+            f"ROOT::VecOps::Where({self.raw_pt_branch} > {float(self.max_pt)}f, "
+            f"{float(self.max_pt)}f, {self.raw_pt_branch})"
+        )
 
     def _sf_expr(self):
         """The per-top scale factor, elementwise, clamped to be non-negative.
@@ -146,9 +185,7 @@ class TopPtCorrProducer:
         other multiplicity follows from the same definition rather than from a special
         case.
 
-        An event with no last-copy top gets 1, which covers every non-ttbar sample and
-        any ttbar event with an incomplete gen record, so the correction is a no-op
-        there rather than an error.
+        An empty vector gets 1, so the correction is a no-op there rather than an error.
         """
         return (
             f"{self.sf_branch}.empty() ? 1.0f : static_cast<float>(std::pow("
@@ -202,35 +239,36 @@ class TopPtCorrProducer:
         sf_sources = TopPtCorrProducer.uncSource if return_variations else []
         branches = []
 
+        has_input = False
         if enabled:
             columns = {str(c) for c in df.GetColumnNames()}
-            has_input = all(b in columns for b in self.input_branches)
+            # A stage where the weights are read back from the tuple (AnaTupleMerge) must
+            # not define them again: that would either fail or shadow the persisted
+            # values. The producer is meant to be disabled there via `enabled` in
+            # global.yaml, and this makes a config that forgets it fail loudly.
+            if any(c.startswith("weight_top_pt_") for c in columns):
+                raise RuntimeError(
+                    "TopPtCorrProducer: weight_top_pt_* columns already exist. Defining "
+                    "them again would shadow the persisted values. Set enabled: false "
+                    "for top_pt at this stage."
+                )
+            has_input = self.branch in columns or all(
+                b in columns for b in self.gen_branches
+            )
             if not has_input:
-                # A stage without GenPart (AnaTupleMerge reads a tuple that does not
-                # carry it) must not silently define 1.f on top of the values already
-                # persisted -- that would shadow them and make the nuisance null with
-                # nothing to show for it. The producer is meant to be disabled there via
-                # `enabled` in global.yaml.
-                already_built = any(c.startswith("weight_top_pt_") for c in columns)
-                if already_built:
-                    raise RuntimeError(
-                        "TopPtCorrProducer: GenPart is not available but "
-                        "weight_top_pt_* columns already exist. Defining them again "
-                        "would shadow the persisted values. Set enabled: false for "
-                        "top_pt at this stage."
-                    )
                 if not TopPtCorrProducer.warned_missing:
                     TopPtCorrProducer.warned_missing = True
                     print(
-                        "WARNING: GenPart not found; the top pT reweighting will be a "
-                        "no-op for this dataset.",
+                        f"WARNING: neither '{self.branch}' nor GenPart found; the top pT "
+                        "reweighting will be a no-op for this dataset.",
                         file=sys.stderr,
                     )
             elif self.weight_branch not in columns:
                 # Intermediate, not saved: the pT the SF is evaluated at, and the
-                # per-top SF. Two columns rather than one nested expression so the
-                # parameterization appears once, and so both are inspectable when a
+                # per-top SF. Separate columns rather than one nested expression so the
+                # parameterization appears once, and so each is inspectable when a
                 # weight looks wrong.
+                df = self._define_raw_pt(df)
                 df = df.Define(self.pt_branch, self._pt_expr())
                 df = df.Define(self.sf_branch, self._sf_expr())
                 df = df.Define(

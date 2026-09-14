@@ -273,6 +273,7 @@ class Corrections:
             cfg = self.to_apply.get("top_pt", {})
             self.top_pt_ = TopPtCorrProducer(
                 era=self.period,
+                branch=cfg.get("branch", "TTInfo_top_pt"),
                 parameterization=cfg.get("parameterization", "nnlo_nlo"),
                 max_pt=cfg.get("max_pt", None),
             )
