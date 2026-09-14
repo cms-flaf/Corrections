@@ -49,7 +49,7 @@ class TopPtCorrProducer:
 
     * It is the pT of the two `isLastCopy` parton-level tops -- after radiation and before
       decay -- from the strict ttbar identification in FLAF/include/GenProcess/TT.h
-      (TTInfo::top_pt). The TWiki is explicit that a reco- or particle-level proxy gives an
+      (TTInfo::top_p4). The TWiki is explicit that a reco- or particle-level proxy gives an
       invalid reweighting, and the LHE-level tops are taken *before* radiation.
     * `branch` names the analysis anaTuple branch holding it (TTInfo_top_pt), stored for
       every process declaring `genInfo: [ TT ]`. The anaCache denominator is summed before
@@ -89,6 +89,9 @@ class TopPtCorrProducer:
         "GenPart_statusFlags",
         "GenPart_genPartIdxMother",
         "GenPart_pt",
+        "GenPart_eta",
+        "GenPart_phi",
+        "GenPart_mass",
     ]
 
     warned_missing = False
@@ -139,7 +142,8 @@ class TopPtCorrProducer:
             return df.Define(
                 self.info_branch,
                 "gen_process::tt::identify(GenPart_pdgId, GenPart_statusFlags,"
-                " GenPart_genPartIdxMother, GenPart_pt)",
+                " GenPart_genPartIdxMother, GenPart_pt, GenPart_eta, GenPart_phi,"
+                " GenPart_mass)",
             )
 
         return defineFromStoredOrExpression(
@@ -148,8 +152,9 @@ class TopPtCorrProducer:
             stored=self.branch,
             stored_expression=f"ROOT::VecOps::RVec<float>({self.branch})",
             expression=(
-                f"ROOT::VecOps::RVec<float>{{{self.info_branch}.top_pt[0], "
-                f"{self.info_branch}.top_pt[1]}}"
+                f"ROOT::VecOps::RVec<float>{{"
+                f"static_cast<float>({self.info_branch}.top_p4[0].pt()), "
+                f"static_cast<float>({self.info_branch}.top_p4[1].pt())}}"
             ),
             prepare=prepare,
         )
