@@ -1,19 +1,6 @@
-import os
 import sys
 
 from .CorrectionsCore import *
-
-
-def _declare_tt_header(df):
-    """Make gen_process::tt::identify available to the JIT."""
-    from FLAF.Common.Utilities import DeclareHeader
-    import FLAF.Common.Utilities as flaf_utilities
-
-    flaf_dir = os.path.dirname(
-        os.path.dirname(os.path.abspath(flaf_utilities.__file__))
-    )
-    DeclareHeader(os.path.join(flaf_dir, "include", "GenProcess", "TT.h"))
-    return df
 
 
 class TopPtCorrProducer:
@@ -21,7 +8,7 @@ class TopPtCorrProducer:
 
     https://twiki.cern.ch/twiki/bin/view/CMS/TopPtReweighting. The event weight is the
     geometric mean of the per-top SFs, and (Down, Central, Up) = (SF, 1, SF). The top pT
-    is read from `branch` or, where that is absent, computed from GenPart with FLAF's TT.h.
+    is read from `branch` (TTInfo_top_pt).
     """
 
     uncSource = ["top_pt"]
@@ -37,16 +24,6 @@ class TopPtCorrProducer:
             " - 0.000134f * ({pt}) + 0.973f"
         ),
     }
-
-    gen_branches = [
-        "GenPart_pdgId",
-        "GenPart_statusFlags",
-        "GenPart_genPartIdxMother",
-        "GenPart_pt",
-        "GenPart_eta",
-        "GenPart_phi",
-        "GenPart_mass",
-    ]
 
     warned_missing = False
 
@@ -68,46 +45,16 @@ class TopPtCorrProducer:
     def branchName(source, scale):
         return f"weight_top_pt_{scale}"
 
-    raw_pt_branch = "top_pt_raw_forWeight"
     pt_branch = "top_pt_forWeight"
     sf_branch = "top_pt_sf"
     weight_branch = "top_pt_reweight"
-    info_branch = "TTInfo_forWeight"
-
-    def _define_raw_pt(self, df):
-        """TTInfo_top_pt from the stored branch where present, from GenPart otherwise."""
-        from FLAF.Processors.MCStitching import defineFromStoredOrExpression
-
-        def prepare(df):
-            df = _declare_tt_header(df)
-            return df.Define(
-                self.info_branch,
-                "gen_process::tt::identify(GenPart_pdgId, GenPart_statusFlags,"
-                " GenPart_genPartIdxMother, GenPart_pt, GenPart_eta, GenPart_phi,"
-                " GenPart_mass)",
-            )
-
-        return defineFromStoredOrExpression(
-            df,
-            self.raw_pt_branch,
-            stored=self.branch,
-            stored_expression=f"ROOT::VecOps::RVec<float>({self.branch})",
-            expression=(
-                f"ROOT::VecOps::RVec<float>{{"
-                f"static_cast<float>({self.info_branch}.top_p4[0].pt()), "
-                f"static_cast<float>({self.info_branch}.top_p4[1].pt())}}"
-            ),
-            prepare=prepare,
-        )
 
     def _pt_expr(self):
         """The top pT the SF is evaluated at, clamped to max_pt when one is set."""
+        pt = f"ROOT::VecOps::RVec<float>({self.branch})"
         if self.max_pt is None:
-            return self.raw_pt_branch
-        return (
-            f"ROOT::VecOps::Where({self.raw_pt_branch} > {float(self.max_pt)}f, "
-            f"{float(self.max_pt)}f, {self.raw_pt_branch})"
-        )
+            return pt
+        return f"ROOT::VecOps::Where({pt} > {float(self.max_pt)}f, {float(self.max_pt)}f, {pt})"
 
     def _sf_expr(self):
         """Per-top SF, clamped at zero so the geometric mean cannot become NaN."""
@@ -151,19 +98,16 @@ class TopPtCorrProducer:
                     "them again would shadow the persisted values. Set enabled: false "
                     "for top_pt at this stage."
                 )
-            has_input = self.branch in columns or all(
-                b in columns for b in self.gen_branches
-            )
+            has_input = self.branch in columns
             if not has_input:
                 if not TopPtCorrProducer.warned_missing:
                     TopPtCorrProducer.warned_missing = True
                     print(
-                        f"WARNING: neither '{self.branch}' nor GenPart found; the top pT "
-                        "reweighting will be a no-op for this dataset.",
+                        f"WARNING: '{self.branch}' not found; the top pT reweighting "
+                        "will be a no-op for this dataset.",
                         file=sys.stderr,
                     )
             elif self.weight_branch not in columns:
-                df = self._define_raw_pt(df)
                 df = df.Define(self.pt_branch, self._pt_expr())
                 df = df.Define(self.sf_branch, self._sf_expr())
                 df = df.Define(
