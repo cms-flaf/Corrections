@@ -172,9 +172,6 @@ class EleCorrProducer:
                 syst_name = getSystName(source, scale)
                 # if self.period.split("_")[0] == "2024" or self.period.split("_")[0] == "2023" or self.period.split("_")[0] == "2023BPix":
                 func_name = "getESEtDep_data" if self.isData else "getESEtDep_MC"
-                # The S&S corrections take the supercluster eta. Electron_superclusterEta is read
-                # from NanoAOD v15, and defined as Electron_eta + Electron_deltaEtaSC for older
-                # versions by FLAF (Common/BaselineSelection.py, CreateRecoP4), before this runs.
                 df = df.Define(
                     f"Electron_p4_{syst_name}",
                     f"""::correction::EleCorrProvider::getGlobal().{func_name}(Electron_p4_{nano}, Electron_genMatch, Electron_seedGain, Electron_superclusterEta, run,
