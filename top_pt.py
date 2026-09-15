@@ -28,7 +28,7 @@ class TopPtCorrProducer:
     warned_missing = False
 
     def __init__(
-        self, era, *, branch="TTInfo_top_pt", parameterization="nnlo_nlo", max_pt=None
+        self, era, *, branch="TTInfo_top_pt", parameterization="data_nlo", max_pt=None
     ):
         self.era = era
         self.branch = branch
