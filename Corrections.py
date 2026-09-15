@@ -186,6 +186,7 @@ class Corrections:
         self.parton_shower_ = None
         self.dy_hhbbtautau_ = None
         self.dy_hhbbww_ = None
+        self.top_pt_ = None
         self.mu_ = None
         self.muScaRe_ = None
         self.ele_ = None
@@ -263,6 +264,20 @@ class Corrections:
                 pt_ll=pt_ll,
             )
         return self.dy_hhbbww_
+
+    @property
+    def top_pt(self):
+        if self.top_pt_ is None:
+            from .top_pt import TopPtCorrProducer
+
+            cfg = self.to_apply.get("top_pt", {})
+            self.top_pt_ = TopPtCorrProducer(
+                era=self.period,
+                branch=cfg.get("branch", "TTInfo_top_pt"),
+                parameterization=cfg.get("parameterization", "data_nlo"),
+                max_pt=cfg.get("max_pt", None),
+            )
+        return self.top_pt_
 
     @property
     def Vpt(self):
@@ -543,13 +558,19 @@ class Corrections:
     shape_weight_producers = [
         ("pu", "pu"),  # (correction name in global.yaml, attribute on self)
         ("parton_shower", "parton_shower"),
+        ("top_pt", "top_pt"),
     ]
 
     def _shapeWeightClasses(self):
         from .pu import puWeightProducer
         from .parton_shower import psWeightProducer
+        from .top_pt import TopPtCorrProducer
 
-        return {"pu": puWeightProducer, "parton_shower": psWeightProducer}
+        return {
+            "pu": puWeightProducer,
+            "parton_shower": psWeightProducer,
+            "top_pt": TopPtCorrProducer,
+        }
 
     def registerShapeWeights(self, registry, return_variations=True):
         """Populate a ShapeWeightRegistry with the shape producers active here.
