@@ -172,13 +172,9 @@ class EleCorrProducer:
                 syst_name = getSystName(source, scale)
                 # if self.period.split("_")[0] == "2024" or self.period.split("_")[0] == "2023" or self.period.split("_")[0] == "2023BPix":
                 func_name = "getESEtDep_data" if self.isData else "getESEtDep_MC"
-                if (
-                    "Electron_superclusterEta" not in df.GetColumnNames()
-                ):  # Please note that the correct eta to use to fetch the electron and photon S&S corrections is the supercluster eta (that is Electron(Photon)_superclusterEta in NanoAOD v15). For NanoAOD versions < 15 this variable is not directly available, but one can calculate it as "Electron_eta + Electron_deltaEtaSC". This is unfortunately not the case for photons, for which deltaEtaSC does not exist. In this latter case, Photon_eta can be used instead. Ultimately, the difference between using supercluster era or eta should be minimal.
-                    df = df.Define(
-                        "Electron_superclusterEta",
-                        "RVecF ele_SC_eta; for(size_t i = 0 ; i < Electron_eta.size(); i++) {{ele_SC_eta.push_back(Electron_deltaEtaSC[i]+Electron_eta[i]);}} return ele_SC_eta;",
-                    )
+                # The S&S corrections take the supercluster eta. Electron_superclusterEta is read
+                # from NanoAOD v15, and defined as Electron_eta + Electron_deltaEtaSC for older
+                # versions by FLAF (Common/BaselineSelection.py, CreateRecoP4), before this runs.
                 df = df.Define(
                     f"Electron_p4_{syst_name}",
                     f"""::correction::EleCorrProvider::getGlobal().{func_name}(Electron_p4_{nano}, Electron_genMatch, Electron_seedGain, Electron_superclusterEta, run,
