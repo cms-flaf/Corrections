@@ -148,6 +148,20 @@ class Corrections:
                 file=sys.stderr,
             )
 
+        # A producer whose variations are not Up/Down declares its scales here, before
+        # anything enumerates them: the anaCache merge reads the denominator grid before
+        # a single weight is defined.
+        shape_weight_classes = self._shapeWeightClasses()
+        for corr_name, _ in self.shape_weight_producers:
+            cls = shape_weight_classes.get(corr_name)
+            if (
+                corr_name in self.to_apply
+                and cls is not None
+                and hasattr(cls, "scales")
+            ):
+                for source in cls.uncSource:
+                    registerSourceScales(source, cls.scales(self.to_apply[corr_name]))
+
         self.all_processors = processors
 
         if "xs" in self.to_apply or "base" in self.to_apply:
@@ -184,6 +198,7 @@ class Corrections:
         self.btag_ = None
         self.pu_ = None
         self.parton_shower_ = None
+        self.pdf_ = None
         self.dy_hhbbtautau_ = None
         self.dy_hhbbww_ = None
         self.top_pt_ = None
@@ -226,6 +241,23 @@ class Corrections:
                 branch=self.to_apply.get("parton_shower", {}).get("branch", "PSWeight")
             )
         return self.parton_shower_
+
+    @property
+    def pdf(self):
+        if self.pdf_ is None:
+            from .pdf import pdfWeightProducer
+
+            cfg = self.to_apply.get("pdf", {})
+            # The anaTuple renames LHEPdfWeight, so the merge stage reads the copy.
+            branch_key = "merged_branch" if self.stage == "AnaTupleMerge" else "branch"
+            default = (
+                "LHEPdf_Weight" if branch_key == "merged_branch" else "LHEPdfWeight"
+            )
+            self.pdf_ = pdfWeightProducer(
+                branch=cfg.get(branch_key, default),
+                n_members=cfg.get("n_members", 103),
+            )
+        return self.pdf_
 
     @property
     def dy_hhbbtautau(self):
@@ -559,17 +591,20 @@ class Corrections:
         ("pu", "pu"),  # (correction name in global.yaml, attribute on self)
         ("parton_shower", "parton_shower"),
         ("top_pt", "top_pt"),
+        ("pdf", "pdf"),
     ]
 
     def _shapeWeightClasses(self):
         from .pu import puWeightProducer
         from .parton_shower import psWeightProducer
         from .top_pt import TopPtCorrProducer
+        from .pdf import pdfWeightProducer
 
         return {
             "pu": puWeightProducer,
             "parton_shower": psWeightProducer,
             "top_pt": TopPtCorrProducer,
+            "pdf": pdfWeightProducer,
         }
 
     def registerShapeWeights(self, registry, return_variations=True):
