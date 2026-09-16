@@ -816,6 +816,10 @@ class Corrections:
                             )
                         all_weights.append(cmb_weight)
 
+            # The shape weights are inputs to weight_base_*; the tuple keeps the base
+            # weights, not the per-member columns they were built from.
+            all_weights = [w for w in all_weights if w not in shape_weight_branches]
+
         if "Vpt" in self.to_apply:
             df, Vpt_SF_branches = self.Vpt.getSF(df, isCentral, return_variations)
             all_weights.extend(Vpt_SF_branches)
