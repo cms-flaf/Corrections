@@ -781,6 +781,15 @@ class Corrections:
                             )
                         all_weights.append(cmb_weight)
 
+        pdf_cfg = self.global_params.get("pdf_weights")
+        if pdf_cfg and pdf_cfg.get("enabled", True) and "base" in self.to_apply:
+            from .pdf import definePdfRelWeights
+
+            df, pdf_branches = definePdfRelWeights(
+                df, pdf_cfg, (ana_caches or {}).get(self.dataset_name)
+            )
+            all_weights.extend(pdf_branches)
+
         if "Vpt" in self.to_apply:
             df, Vpt_SF_branches = self.Vpt.getSF(df, isCentral, return_variations)
             all_weights.extend(Vpt_SF_branches)
