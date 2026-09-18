@@ -14,10 +14,13 @@ class pdfWeightProducer:
     of the `pdf` source and therefore gets its own anaCache denominator and its own
     weight_base_pdf<k>_rel, the same way pileup gets one per Up/Down.
 
-    The branch already holds w_var / w_nominal, so the members are relative as they stand
-    and member 0 is 1 in the file: its denominator comes out equal to the Central one and
-    weight_base_pdf0_rel is 1. Members past the end of a shorter vector (signal carries
-    101, backgrounds 103) are no-ops for the same reason. A non-finite weight throws.
+    The members are taken as stored, with no renormalisation -- see pdf.h for what that
+    means for a sample whose member 0 is not 1.
+
+    A vector shorter than the 101 base members throws, as does a non-finite weight. The
+    two optional alphaS members are 0 where a sample does not carry them (the
+    four-flavour-scheme samples stop at 101), which makes weight_base_pdf101/102_rel come
+    out NaN for those samples rather than passing as a weight of 1.
 
     The branch is the NanoAOD name at AnaTuple, where the denominators are summed, and
     the renamed anaTuple copy at AnaTupleMerge -- the same trap as PSWeight/PS_Weight.
