@@ -22,6 +22,10 @@ class pdfWeightProducer:
     four-flavour-scheme samples stop at 101), which makes weight_base_pdf101/102_rel come
     out NaN for those samples rather than passing as a weight of 1.
 
+    Rows that FuseAnaTuples padded are excluded from that check. AnaTupleMerge is the one
+    stage that does not filter on `valid`, and a padded row carries an empty vector for
+    every array column, so reading one would throw on data the histograms never see.
+
     The branch is the NanoAOD name at AnaTuple, where the denominators are summed, and
     the renamed anaTuple copy at AnaTupleMerge -- the same trap as PSWeight/PS_Weight.
     """
@@ -66,6 +70,7 @@ class pdfWeightProducer:
         branches = []
 
         has_input = False
+        has_valid = False
         if enabled:
             columns = {str(c) for c in df.GetColumnNames()}
             if any(c.startswith("weight_pdf_") for c in columns):
@@ -75,6 +80,7 @@ class pdfWeightProducer:
                     "for pdf at this stage."
                 )
             has_input = self.branch in columns
+            has_valid = "valid" in columns
             if not has_input and not pdfWeightProducer.warned_missing:
                 pdfWeightProducer.warned_missing = True
                 print(
@@ -91,6 +97,8 @@ class pdfWeightProducer:
                         expr = "1.f"
                     else:
                         expr = f"::correction::pdfMemberWeight({self.branch}, {scale})"
+                        if has_valid:
+                            expr = f"valid ? {expr} : 0.f"
                     df = df.Define(branch_name, expr)
                     branches.append(branch_name)
 
