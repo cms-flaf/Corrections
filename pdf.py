@@ -14,8 +14,12 @@ class pdfWeightProducer:
     of the `pdf` source and therefore gets its own anaCache denominator and its own
     weight_base_pdf<k>_rel, the same way pileup gets one per Up/Down.
 
-    The members are taken as stored, with no renormalisation -- see pdf.h for what that
-    means for a sample whose member 0 is not 1.
+    Member 0 is the Central branch, the way the nominal pileup weight is: it multiplies
+    into weight_base and into the Central denominator, so the nominal is reweighted onto
+    the stored set's central PDF with the sample's total normalisation preserved -- only
+    the distribution, and hence the selected yield, moves. It matters for the
+    samples whose member 0 is not 1 -- see pdf.h. A variation replaces it with member k,
+    so weight_base_pdf<k>_rel carries w[k]/w[0] without the accessor ever dividing.
 
     A vector shorter than the 101 base members throws, as does a non-finite weight. The
     two optional alphaS members are 0 where a sample does not carry them (the
@@ -93,10 +97,11 @@ class pdfWeightProducer:
             for scale in getScales(source):
                 branch_name = pdfWeightProducer.branchName(source, scale)
                 if enabled:
-                    if source == central or not has_input:
+                    if not has_input:
                         expr = "1.f"
                     else:
-                        expr = f"::correction::pdfMemberWeight({self.branch}, {scale})"
+                        member = 0 if source == central else scale
+                        expr = f"::correction::pdfMemberWeight({self.branch}, {member})"
                         if has_valid:
                             expr = f"valid ? {expr} : 0.f"
                     df = df.Define(branch_name, expr)

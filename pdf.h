@@ -12,14 +12,20 @@ namespace correction {
 // PDF member k of the NanoAOD LHEPdfWeight vector, taken as stored.
 //
 // The branch holds w_var / originalXWGTUP, so member 0 is 1 only where the sample was
-// generated with the central PDF of the stored set -- TT, DY, signal, ST s-channel and
-// tW are. Single top t-channel (4FS, LHA 325500) is not: its set's central is a Hessian
-// conversion of the generation PDF, so there member 0 varies 0.82-1.03 per event and is
-// equal to LHEScaleWeight[4], the scale family's nominal slot. Nothing is renormalised
-// here, so for such a sample the members stay relative to originalXWGTUP rather than to
-// the set's central. Reweighting the nominal onto that central would change the central
-// prediction and is a separate decision; genWeight (== originalXWGTUP) enters the
-// analysis by sign only.
+// generated with the central PDF of the stored set -- for TT it is exactly 1. Single top
+// t-channel (4FS, LHA 325500) reweights onto a Hessian conversion of its generation PDF,
+// so there member 0 is a real per-event weight: measured over 20k events, 0.14-1.58 for
+// TbarBQ and -1.45-2.51 for TBbarQ, and equal to LHEScaleWeight[4] in every event.
+//
+// Nothing is renormalised here. The accessor returns the stored value and
+// pdfWeightProducer takes member 0 as its Central weight, which puts w[0] in weight_base
+// and in the Central denominator: the nominal moves onto the set's central PDF with the
+// sample's total normalisation preserved, and a variation carries w[k]/w[0] without a
+// division here. Under FLAF's sign-only genWeight that is exact wherever |genWeight| is
+// constant, which holds for the samples member 0 actually moves: 135.293 for TBbarQ and
+// 81.976 for TbarBQ (81.104 for TTto2L2Nu, 26780 for DY). sign(genWeight) * w[0] is then
+// the reweighted ME weight up to that constant, which cancels against the denominator.
+// The LO signals do vary, by 1.5% at MX-300, but their member 0 is exactly 1.
 //
 // The base set is 101 members, the nominal plus 100 eigenvectors; the two alphaS members
 // that follow in a "_pdfas" set are optional, so the four-flavour-scheme samples carry
