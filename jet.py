@@ -114,15 +114,15 @@ class JetCorrProducer:
         "/cvmfs/cms-griddata.cern.ch/cat/metadata/JME/{}/fatJet_jerc.json.gz"
     )
     # jersmear_jsonPath = "/cvmfs/cms-griddata.cern.ch/cat/metadata/JME/JER-Smearing/latest/jer_smear.json.gz"
-    jersmear_jsonPath = "/cvmfs/cms-griddata.cern.ch/cat/metadata/JME/JER-Smearing/2025-11-03/jer_smear.json.gz"
+    jersmear_jsonPath = "/cvmfs/cms-griddata.cern.ch/cat/metadata/JME/JER-Smearing/2026-09-18/jer_smear.json.gz"
 
     # maps period to JER tag (only for MC!)
     jer_tag_map = {
         "2022_Summer22": "Summer22_22Sep2023_JRV2_MC",
         "2022_Prompt": "JR_Winter22Run3_V2_MC",
         "2022_Summer22EE": "Summer22EE_22Sep2023_JRV2_MC",
-        "2023_Summer23BPix": "Summer23BPixPrompt23_RunD_JRV2_MC",
-        "2023_Summer23": "Summer23Prompt23_RunCv1234_JRV2_MC",
+        "2023_Summer23BPix": "Summer23BPixPrompt23_RunD_JRV3_MC",
+        "2023_Summer23": "Summer23Prompt23_RunCv1234_JRV3_MC",
         "2024_Summer24": "Summer24Prompt24_JRV1_MC",  # For the time being, use the Summer23BPix JERs for 2024 data. The JER MC_ScaleFactor and MC_PtResolution for the Summer24 samples will be announced soon. from https://cms-jerc.web.cern.ch/Recommendations/#2024_1
         "2025_Summer24": "Summer24Prompt25_JRV1_MC",  # For the time being, use the Summer23BPix JERs for 2025 data. The JER MC_ScaleFactor and MC_PtResolution for the Winter25 samples will be announced soon.  https://cms-jerc.web.cern.ch/Recommendations/#2025_1 # tmp patch because 2025_Summer24 does not exist
         "2025_Winter25": "Summer24Prompt25_JRV1_MC",  # For the time being, use the Summer23BPix JERs for 2025 data. The JER MC_ScaleFactor and MC_PtResolution for the Winter25 samples will be announced soon. https://cms-jerc.web.cern.ch/Recommendations/#2025_1
@@ -195,8 +195,8 @@ class JetCorrProducer:
         "2022_Summer22": "Summer22_22Sep2023_JRV2_MC",
         "2022_Prompt": "JR_Winter22Run3_V2_MC",
         "2022_Summer22EE": "Summer22EE_22Sep2023_JRV2_MC",
-        "2023_Summer23BPix": "Summer23BPixPrompt23_RunD_JRV2_MC",
-        "2023_Summer23": "Summer23Prompt23_RunCv1234_JRV2_MC",
+        "2023_Summer23BPix": "Summer23BPixPrompt23_RunD_JRV3_MC",
+        "2023_Summer23": "Summer23Prompt23_RunCv1234_JRV3_MC",
         "2024_Summer24": "Summer24Prompt24_JRV1_MC",  # For the time being, use the Summer23BPix JERs for 2024 data. The JER MC_ScaleFactor and MC_PtResolution for the Summer24 samples will be announced soon. from https://cms-jerc.web.cern.ch/Recommendations/#2024_1
         "2025_Summer24": "Summer24Prompt25_JRV1_MC",  # For the time being, use the Summer23BPix JERs for 2025 data. The JER MC_ScaleFactor and MC_PtResolution for the Winter25 samples will be announced soon.  https://cms-jerc.web.cern.ch/Recommendations/#2025_1 # tmp patch because 2025_Summer24 does not exist
         "2025_Winter25": "Summer24Prompt25_JRV1_MC",  # For the time being, use the Summer23BPix JERs for 2025 data. The JER MC_ScaleFactor and MC_PtResolution for the Winter25 samples will be announced soon. https://cms-jerc.web.cern.ch/Recommendations/#2025_1
