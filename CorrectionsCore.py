@@ -134,11 +134,22 @@ periods = {
 }
 
 
+# Sources whose variations are an indexed family rather than Up/Down -- PDF members, for
+# instance. The scales are strings so they survive the anaCache JSON round trip unchanged.
+_source_scales = {}
+
+
+def registerSourceScales(source, scales):
+    _source_scales[source] = [str(scale) for scale in scales]
+
+
 def getScales(source=None):
     if source is None:
         return [central, up, down]
     if source == central:
         return [central]
+    if source in _source_scales:
+        return list(_source_scales[source])
     return [up, down]
 
 
@@ -146,6 +157,9 @@ def getSystName(source, scale):
     if source == central:
         if scale == central:
             return central
+    elif source in _source_scales:
+        if str(scale) in _source_scales[source]:
+            return f"{source}{scale}"
     else:
         if scale in [up, down]:
             return source + scale
@@ -216,6 +230,9 @@ def splitSystName(syst_name):
             source = syst_name[: -len(suffix)]
             scale = suffix
             return (source, scale)
+    for source, scales in _source_scales.items():
+        if syst_name.startswith(source) and syst_name[len(source) :] in scales:
+            return (source, syst_name[len(source) :])
     raise RuntimeError(f"splitSystName: cannot split syst_name = {syst_name}")
 
 
