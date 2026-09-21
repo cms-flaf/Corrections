@@ -199,6 +199,7 @@ class Corrections:
         self.pu_ = None
         self.parton_shower_ = None
         self.pdf_ = None
+        self.qcd_scale_ = None
         self.dy_hhbbtautau_ = None
         self.dy_hhbbww_ = None
         self.top_pt_ = None
@@ -258,6 +259,26 @@ class Corrections:
                 n_members=cfg.get("n_members", 103),
             )
         return self.pdf_
+
+    @property
+    def qcd_scale(self):
+        if self.qcd_scale_ is None:
+            from .qcd_scale import qcdScaleWeightProducer
+
+            cfg = self.to_apply.get("qcd_scale", {})
+            # The anaTuple renames LHEScaleWeight, so the merge stage reads the copy.
+            branch_key = "merged_branch" if self.stage == "AnaTupleMerge" else "branch"
+            default = (
+                "LHEScale_Weight" if branch_key == "merged_branch" else "LHEScaleWeight"
+            )
+            # The leftover nominal factor is shared with pdf (see qcd_scale.h) and must
+            # reach weight_base once. Membership in to_apply, not the per-stage `enabled`
+            # flag: the grid has to match at AnaTuple and AnaTupleMerge.
+            self.qcd_scale_ = qcdScaleWeightProducer(
+                branch=cfg.get(branch_key, default),
+                applies_nominal="pdf" not in self.to_apply,
+            )
+        return self.qcd_scale_
 
     @property
     def dy_hhbbtautau(self):
@@ -592,6 +613,7 @@ class Corrections:
         ("parton_shower", "parton_shower"),
         ("top_pt", "top_pt"),
         ("pdf", "pdf"),
+        ("qcd_scale", "qcd_scale"),
     ]
 
     def _shapeWeightClasses(self):
@@ -599,12 +621,14 @@ class Corrections:
         from .parton_shower import psWeightProducer
         from .top_pt import TopPtCorrProducer
         from .pdf import pdfWeightProducer
+        from .qcd_scale import qcdScaleWeightProducer
 
         return {
             "pu": puWeightProducer,
             "parton_shower": psWeightProducer,
             "top_pt": TopPtCorrProducer,
             "pdf": pdfWeightProducer,
+            "qcd_scale": qcdScaleWeightProducer,
         }
 
     def registerShapeWeights(self, registry, return_variations=True):
