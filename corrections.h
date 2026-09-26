@@ -1,5 +1,11 @@
 #pragma once
 
+#include <algorithm>
+#include <cmath>
+#include <limits>
+#include <stdexcept>
+#include <string>
+
 #include "correction.h"
 
 namespace correction {
@@ -42,6 +48,17 @@ namespace correction {
             print_args(std::forward<Args>(args)...);
             throw;
         }
+    }
+
+    // Snap a value just outside the binning [lo, hi) into it, and throw if it is further out.
+    // Shifted anaTuple trees store float deltas with an 8-bit mantissa, so a value that
+    // passed a cut at a bin edge can be read back fractionally beyond it. The upper edge is
+    // exclusive in correctionlib, so the clamp stops one ulp below it.
+    inline double clampToRange(double value, double lo, double hi, double rel_tol = 0.01) {
+        if (value < lo - rel_tol * std::abs(lo) || value > hi + rel_tol * std::abs(hi))
+            throw std::runtime_error("clampToRange: " + std::to_string(value) + " is outside [" + std::to_string(lo) +
+                                     ", " + std::to_string(hi) + ") beyond tolerance");
+        return std::clamp(value, lo, std::nextafter(hi, lo));
     }
 
     template <typename CorrectionClass>
