@@ -374,8 +374,10 @@ namespace correction {
                                 UncScale scale) const {
             float corr_SF = 1;
             const std::string& scale_str = getMuScaleStr(scale);
-            corr_SF =
-                muTrgCorrections.at(getUncSourceName(source))->evaluate({abs(part_p4.Eta()), part_p4.Pt(), scale_str});
+            // IsoMu24 SF binning: |eta| in [0, 2.4), pt in [26, inf), flow "error".
+            const double abseta = clampToRange(std::abs(part_p4.Eta()), 0., 2.4);
+            const double pt = clampToRange(part_p4.Pt(), 26., std::numeric_limits<double>::infinity());
+            corr_SF = muTrgCorrections.at(getUncSourceName(source))->evaluate({abseta, pt, scale_str});
             return corr_SF;
         }
         float getSF_ditau(const LorentzVectorM& part_p4,

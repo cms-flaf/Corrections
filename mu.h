@@ -300,8 +300,10 @@ namespace correction {
             }
             static const double pt_low = 15.0;
             const double muon_pt = std::max(pt_low, muon_p4.pt());
+            // muon_Z ID/iso SF binning: |eta| in [0, 2.4), flow "error".
+            const double muon_abseta = clampToRange(std::abs(muon_p4.Eta()), 0., 2.4);
             const float corr_SF =
-                corrections_->at(getUncSourceName(source))->evaluate({abs(muon_p4.Eta()), muon_pt, scale_str});
+                corrections_->at(getUncSourceName(source))->evaluate({muon_abseta, muon_pt, scale_str});
             return source == UncSource::Central ? 1. : corr_SF;
         }
         //Check range, but if it is out of range it is still valid and return 1.
