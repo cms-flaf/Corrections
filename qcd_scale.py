@@ -31,8 +31,9 @@ class qcdScaleWeightProducer:
 
     uncSource = ["qcd_scale"]
 
-    # Label -> its index in LHEScaleWeight, muR outermost. [4] is the nominal and
-    # [2], [6] are the unphysical corners.
+    # Label -> its index on the nine-point (muR, muF) grid, muR outermost. [4] is the
+    # nominal and [2], [6] are the unphysical corners. qcdScaleWeight remaps these
+    # indices when the vector has eight entries and the nominal was left out.
     members = {
         "_muR0p5_muF0p5": 0,
         "_muR0p5_muF1": 1,
