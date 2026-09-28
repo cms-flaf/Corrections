@@ -292,10 +292,16 @@ class TrigCorrProducer:
                                 if trg_name in ("singleEle", "singleEleWpTight")
                                 else TrigCorrProducer.year
                             )
+                            # Shifted trees may push a muon fractionally past a bin edge.
+                            clamp_arg = (
+                                f", {'false' if isCentral else 'true'}"
+                                if trigCorr_dict[trg_name] == "singleIsoMu"
+                                else ""
+                            )
                             df = df.Define(
                                 f"{branch_name}_double",
                                 f"""{applyTrgBranch_name} ? ::correction::TrigCorrProvider::getGlobal().getSF_{trigCorr_dict[trg_name]}(
-                                        {leg_p4},"{trg_year}", ::correction::TrigCorrProvider::UncSource::{source}, ::correction::UncScale::{scale} ) : 1.f""",
+                                        {leg_p4},"{trg_year}", ::correction::TrigCorrProvider::UncSource::{source}, ::correction::UncScale::{scale}{clamp_arg} ) : 1.f""",
                             )
                         if scale != central:
                             df = df.Define(

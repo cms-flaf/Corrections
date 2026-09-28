@@ -285,7 +285,8 @@ namespace correction {
                         const bool Muon_MediumId,
                         const bool Muon_LooseId,
                         UncSource source,
-                        UncScale scale) const {
+                        UncScale scale,
+                        bool clamp_inputs = false) const {
             const UncScale muID_scale =
                 sourceApplies(
                     source, Muon_pfRelIso04_all, Muon_TightId, muon_p4.Pt(), Muon_tkRelIso, Muon_highPtId, Muon_MediumId, Muon_LooseId)
@@ -301,7 +302,9 @@ namespace correction {
             static const double pt_low = 15.0;
             const double muon_pt = std::max(pt_low, muon_p4.pt());
             // muon_Z ID/iso SF binning: |eta| in [0, 2.4), flow "error".
-            const double muon_abseta = clampToRange(std::abs(muon_p4.Eta()), 0., 2.4);
+            // Only shifted trees clamp; central inputs are exact and must stay strict.
+            const double muon_abseta =
+                clamp_inputs ? clampToRange(std::abs(muon_p4.Eta()), 0., 2.4) : std::abs(muon_p4.Eta());
             const float corr_SF =
                 corrections_->at(getUncSourceName(source))->evaluate({muon_abseta, muon_pt, scale_str});
             return source == UncSource::Central ? 1. : corr_SF;
