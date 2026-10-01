@@ -142,9 +142,43 @@ class Corrections:
                         file=sys.stderr,
                     )
 
+        # A dataset can switch corrections off by name, e.g. a shape weight whose input its
+        # NanoAOD does not carry, per NanoAOD source (the tag FLAF reads it from, as for
+        # fileNamePattern): one analysis reads a dataset from DAS, another from a skim. A shape
+        # weight stays in to_apply with every member 1, so that its branches and denominators
+        # exist for every dataset of a process; any other correction is not applied.
+        nano_version = self.global_params.get("nanoAODVersions", {}).get(
+            "data" if isData else "mc", "HLepRare"
+        )
+        self.disabled_corrections = set(
+            (dataset_cfg or {}).get("disabled_corrections", {}).get(nano_version, [])
+        )
+        shape_weight_names = {name for name, _ in self.shape_weight_producers}
+        # The datasets are shared by the analyses: a shape weight one of them does not use is
+        # simply not there to disable, while any other name has to be one this analysis knows.
+        known_corrections = set(shape_weight_names)
+        for cfg in [dataset_cfg, process_cfg, self.global_params]:
+            if cfg:
+                known_corrections.update(cfg.get("corrections", {}).keys())
+        unknown = self.disabled_corrections - known_corrections
+        if unknown:
+            raise RuntimeError(
+                f"Dataset {dataset_name}: disabled_corrections names unknown corrections:"
+                f" {sorted(unknown)}"
+            )
+        for corr_name in self.disabled_corrections - shape_weight_names:
+            self.to_apply.pop(corr_name, None)
+
         if len(self.to_apply) > 0:
             print(
                 f"Corrections to apply: {', '.join(self.to_apply.keys())}",
+                file=sys.stderr,
+            )
+        disabled_shape_weights = self.disabled_corrections & set(self.to_apply)
+        if disabled_shape_weights:
+            print(
+                f"Shape weights with every member 1 for {dataset_name}:"
+                f" {', '.join(sorted(disabled_shape_weights))}",
                 file=sys.stderr,
             )
 
@@ -276,7 +310,8 @@ class Corrections:
             # flag: the grid has to match at AnaTuple and AnaTupleMerge.
             self.qcd_scale_ = qcdScaleWeightProducer(
                 branch=cfg.get(branch_key, default),
-                applies_nominal="pdf" not in self.to_apply,
+                applies_nominal="pdf" not in self.to_apply
+                or "pdf" in self.disabled_corrections,
             )
         return self.qcd_scale_
 
@@ -661,6 +696,15 @@ class Corrections:
                 enabled = (
                     self.to_apply[corr_name].get("enabled", {}).get(self.stage, True)
                 )
+            if enabled and corr_name in self.disabled_corrections:
+                cls = self._shapeWeightClasses()[corr_name]
+                sources = [central] + (cls.uncSource if return_variations else [])
+                for source in sources:
+                    for scale in getScales(source):
+                        branch_name = cls.branchName(source, scale)
+                        df = df.Define(branch_name, "1.f")
+                        branches.append(branch_name)
+                continue
             df, producer_branches = getattr(self, attr).getWeight(
                 df,
                 return_variations=return_variations,
