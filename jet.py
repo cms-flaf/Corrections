@@ -126,7 +126,7 @@ class JetCorrProducer:
         "2024_Summer24": "Summer24Prompt24_JRV1_MC",  # For the time being, use the Summer23BPix JERs for 2024 data. The JER MC_ScaleFactor and MC_PtResolution for the Summer24 samples will be announced soon. from https://cms-jerc.web.cern.ch/Recommendations/#2024_1
         "2025_Summer24": "Summer24Prompt25_JRV1_MC",  # For the time being, use the Summer23BPix JERs for 2025 data. The JER MC_ScaleFactor and MC_PtResolution for the Winter25 samples will be announced soon.  https://cms-jerc.web.cern.ch/Recommendations/#2025_1 # tmp patch because 2025_Summer24 does not exist
         "2025_Winter25": "Summer24Prompt25_JRV1_MC",  # For the time being, use the Summer23BPix JERs for 2025 data. The JER MC_ScaleFactor and MC_PtResolution for the Winter25 samples will be announced soon. https://cms-jerc.web.cern.ch/Recommendations/#2025_1
-        "2026_Summer24": "Summer24Prompt25_JRV1_MC",  # placeholder
+        "2026_Summer24": "Summer24Prompt26_RunBD_JRV1_MC",  # RunC (low PU) has its own JER, but no certified luminosity
     }
 
     # maps period to JEC tag
@@ -153,7 +153,7 @@ class JetCorrProducer:
         "2025_Winter25": [
             "Winter25Prompt25_V3_MC"
         ],  # https://cms-jerc.web.cern.ch/Recommendations/#2025
-        "2026_Summer24": ["Winter25Prompt25_V3_MC"],  # placeholder
+        "2026_Summer24": ["Summer24Prompt26_V1_MC"],
     }
 
     # maps period to base tag
@@ -186,8 +186,8 @@ class JetCorrProducer:
             "Winter25Prompt25_V3_DATA",
         ],
         "2026_Summer24": [
-            "Winter25Prompt25_V3_DATA",
-        ],  # placeholder
+            "Summer24Prompt26_V1_DATA",
+        ],
     }
 
     # maps period to JER tag (only for MC!)
@@ -200,7 +200,7 @@ class JetCorrProducer:
         "2024_Summer24": "Summer24Prompt24_JRV1_MC",  # For the time being, use the Summer23BPix JERs for 2024 data. The JER MC_ScaleFactor and MC_PtResolution for the Summer24 samples will be announced soon. from https://cms-jerc.web.cern.ch/Recommendations/#2024_1
         "2025_Summer24": "Summer24Prompt25_JRV1_MC",  # For the time being, use the Summer23BPix JERs for 2025 data. The JER MC_ScaleFactor and MC_PtResolution for the Winter25 samples will be announced soon.  https://cms-jerc.web.cern.ch/Recommendations/#2025_1 # tmp patch because 2025_Summer24 does not exist
         "2025_Winter25": "Summer24Prompt25_JRV1_MC",  # For the time being, use the Summer23BPix JERs for 2025 data. The JER MC_ScaleFactor and MC_PtResolution for the Winter25 samples will be announced soon. https://cms-jerc.web.cern.ch/Recommendations/#2025_1
-        "2026_Summer24": "Summer24Prompt25_JRV1_MC",  # placeholder
+        "2026_Summer24": "Summer24Prompt26_RunBD_JRV1_MC",  # RunC (low PU) has its own JER, but no certified luminosity
     }
 
     # maps period to JEC tag
@@ -221,7 +221,7 @@ class JetCorrProducer:
         "2025_Winter25": [
             "Winter25Prompt25_V3_MC"
         ],  # https://cms-jerc.web.cern.ch/Recommendations/#2024
-        "2026_Summer24": ["Winter25Prompt25_V3_MC"],  # placeholder
+        "2026_Summer24": ["Summer24Prompt26_V1_MC"],
     }
 
     fatjec_tag_map_data = {
@@ -251,8 +251,8 @@ class JetCorrProducer:
             "Winter25Prompt25_V3_DATA",
         ],
         "2026_Summer24": [
-            "Winter25Prompt25_V3_DATA",
-        ],  # placeholder
+            "Summer24Prompt26_V1_DATA",
+        ],
     }
 
     run_versions = {
