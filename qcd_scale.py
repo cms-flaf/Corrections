@@ -23,8 +23,6 @@ class qcdScaleWeightProducer:
     members are divided by entry 4 so it is not counted again; when pdf is not active
     nothing else carries it, so entry 4 becomes this producer's Central and the members
     are taken as stored. Either way entry 4 is a divisor or the Central, never a variation.
-
-    Rows that FuseAnaTuples padded carry an empty vector and are skipped, as in pdf.py.
     """
 
     initialized = False
@@ -78,36 +76,28 @@ class qcdScaleWeightProducer:
         df,
         return_variations=True,
         return_list_of_branches=False,
-        enabled=True,
     ):
         sf_sources = qcdScaleWeightProducer.uncSource if return_variations else []
         branches = []
 
-        has_input = False
-        has_valid = False
-        if enabled:
-            columns = {str(c) for c in df.GetColumnNames()}
-            if any(c.startswith("weight_qcd_scale_") for c in columns):
-                raise RuntimeError(
-                    "qcdScaleWeightProducer: weight_qcd_scale_* columns already exist. "
-                    "Defining them again would shadow the persisted values. Set "
-                    "enabled: false for qcd_scale at this stage."
-                )
-            has_input = self.branch in columns
-            has_valid = "valid" in columns
-            if not has_input and not qcdScaleWeightProducer.warned_missing:
-                qcdScaleWeightProducer.warned_missing = True
-                print(
-                    f"WARNING: '{self.branch}' not found; the qcd_scale members are all 1 "
-                    "for this dataset.",
-                    file=sys.stderr,
-                )
+        columns = {str(c) for c in df.GetColumnNames()}
+        if any(c.startswith("weight_qcd_scale_") for c in columns):
+            raise RuntimeError(
+                "qcdScaleWeightProducer: weight_qcd_scale_* columns already exist. "
+                "Defining them again would shadow the persisted values."
+            )
+        has_input = self.branch in columns
+        if not has_input and not qcdScaleWeightProducer.warned_missing:
+            qcdScaleWeightProducer.warned_missing = True
+            print(
+                f"WARNING: '{self.branch}' not found; the qcd_scale members are all 1 "
+                "for this dataset.",
+                file=sys.stderr,
+            )
 
         for source in [central] + sf_sources:
             for scale in getScales(source):
                 branch_name = qcdScaleWeightProducer.branchName(source, scale)
-                if not enabled:
-                    continue
                 # Central is a weight only when this producer owns the nominal factor;
                 # otherwise pdf applies it and the members divide it out instead.
                 accessor, index = None, None
@@ -126,8 +116,6 @@ class qcdScaleWeightProducer:
                     expr = "1.f"
                 else:
                     expr = f"::correction::{accessor}({self.branch}, {index})"
-                    if has_valid:
-                        expr = f"valid ? {expr} : 0.f"
                 df = df.Define(branch_name, expr)
                 branches.append(branch_name)
 

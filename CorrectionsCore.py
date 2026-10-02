@@ -183,9 +183,9 @@ class ShapeWeightRegistry:
     that never showed up, because the only non-central keys belonged to pileup itself.
 
     Producers register the sources they own plus a (source, scale) -> branch-name
-    callable, and this class does the cross product. Registration is independent of
-    whether the producer is enabled at this stage, so a branch written at AnaTuple can
-    be named again at AnaTupleMerge without being recomputed.
+    callable, and this class does the cross product. Registration happens at every stage
+    of a shape weight, so a branch written at AnaTuple can be named again at AnaTupleMerge
+    without being recomputed.
     """
 
     def __init__(self):
