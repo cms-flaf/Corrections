@@ -109,7 +109,32 @@ class Corrections:
         self.stage = stage
         self.law_run_version = setup.law_run_version
 
+        # A dataset can switch corrections off by name, per NanoAOD source (the tag FLAF reads
+        # it from, as for fileNamePattern: one analysis reads a dataset from DAS, another from a
+        # skim), e.g. a shape weight whose input its NanoAOD does not carry. A disabled
+        # correction is not in to_apply. The datasets are shared by the analyses: a shape
+        # weight one of them does not use is simply not there to disable, while any other name
+        # has to be one this analysis knows.
+        nano_version = self.global_params.get("nanoAODVersions", {}).get(
+            "data" if isData else "mc", "HLepRare"
+        )
+        self.disabled_corrections = set(
+            (dataset_cfg or {}).get("disabled_corrections", {}).get(nano_version, [])
+        )
+        shape_weight_names = {name for name, _ in self.shape_weight_producers}
+        known_corrections = set(shape_weight_names)
+        for cfg in [dataset_cfg, process_cfg, self.global_params]:
+            if cfg:
+                known_corrections.update(cfg.get("corrections", {}).keys())
+        unknown = self.disabled_corrections - known_corrections
+        if unknown:
+            raise RuntimeError(
+                f"Dataset {dataset_name}: disabled_corrections names unknown corrections:"
+                f" {sorted(unknown)}"
+            )
+
         self.to_apply = {}
+        disabled_shape_weights = {}
         correction_origins = {}
         for cfg_name, cfg in [
             ("dataset", dataset_cfg),
@@ -126,55 +151,60 @@ class Corrections:
                 corr_stages = corr_params.get("stages", [])
                 if "stage" in corr_params:
                     corr_stages.append(corr_params["stage"])
+                if corr_name in shape_weight_names:
+                    if "enabled" in corr_params:
+                        raise RuntimeError(
+                            f"correction {corr_name} in {cfg_name}: 'enabled' is no longer"
+                            " an option. A shape weight is computed at AnaTuple and read"
+                            " back at its later stages."
+                        )
+                    if "AnaTuple" not in corr_stages:
+                        raise RuntimeError(
+                            f"correction {corr_name} in {cfg_name}: a shape weight is"
+                            " computed at AnaTuple, so its stages must include AnaTuple."
+                        )
                 if stage not in corr_stages:
                     continue
-                if corr_name not in self.to_apply:
-                    if (
-                        "processes" in corr_params
-                        and process_name not in corr_params["processes"]
-                    ):
-                        continue
-                    self.to_apply[corr_name] = corr_params
-                    correction_origins[corr_name] = cfg_name
-                else:
+                if corr_name in self.to_apply or corr_name in disabled_shape_weights:
                     print(
                         f"Warning: correction {corr_name} is already defined in {correction_origins[corr_name]}. Skipping definition from {cfg_name}",
                         file=sys.stderr,
                     )
-
-        # A dataset can switch corrections off by name, e.g. a shape weight whose input its
-        # NanoAOD does not carry, per NanoAOD source (the tag FLAF reads it from, as for
-        # fileNamePattern): one analysis reads a dataset from DAS, another from a skim. A shape
-        # weight stays in to_apply with every member 1, so that its branches and denominators
-        # exist for every dataset of a process; any other correction is not applied.
-        nano_version = self.global_params.get("nanoAODVersions", {}).get(
-            "data" if isData else "mc", "HLepRare"
-        )
-        self.disabled_corrections = set(
-            (dataset_cfg or {}).get("disabled_corrections", {}).get(nano_version, [])
-        )
-        shape_weight_names = {name for name, _ in self.shape_weight_producers}
-        # The datasets are shared by the analyses: a shape weight one of them does not use is
-        # simply not there to disable, while any other name has to be one this analysis knows.
-        known_corrections = set(shape_weight_names)
-        for cfg in [dataset_cfg, process_cfg, self.global_params]:
-            if cfg:
-                known_corrections.update(cfg.get("corrections", {}).keys())
-        unknown = self.disabled_corrections - known_corrections
-        if unknown:
-            raise RuntimeError(
-                f"Dataset {dataset_name}: disabled_corrections names unknown corrections:"
-                f" {sorted(unknown)}"
-            )
-        for corr_name in self.disabled_corrections - shape_weight_names:
-            self.to_apply.pop(corr_name, None)
+                    continue
+                if (
+                    "processes" in corr_params
+                    and process_name not in corr_params["processes"]
+                ):
+                    continue
+                correction_origins[corr_name] = cfg_name
+                if corr_name in self.disabled_corrections:
+                    if corr_name in shape_weight_names:
+                        disabled_shape_weights[corr_name] = corr_params
+                    continue
+                self.to_apply[corr_name] = corr_params
 
         if len(self.to_apply) > 0:
             print(
                 f"Corrections to apply: {', '.join(self.to_apply.keys())}",
                 file=sys.stderr,
             )
-        disabled_shape_weights = self.disabled_corrections & set(self.to_apply)
+
+        # What each shape weight does at this stage. It is computed at AnaTuple, where the
+        # anaCache denominators are summed, and read back at the later stages, where the base
+        # weights are built from the persisted branches. A shape weight the dataset disables
+        # keeps its branches, with every member 1, so that they and its denominators exist for
+        # every dataset of a process and the histogram stage finds weight_base_<var>_rel (= 1)
+        # everywhere.
+        computing = stage == "AnaTuple"
+        self.shape_weights = {}
+        for corr_name, cfg in self.to_apply.items():
+            if corr_name in shape_weight_names:
+                self.shape_weights[corr_name] = (
+                    "compute" if computing else "read",
+                    cfg,
+                )
+        for corr_name, cfg in disabled_shape_weights.items():
+            self.shape_weights[corr_name] = ("unit" if computing else "read", cfg)
         if disabled_shape_weights:
             print(
                 f"Shape weights with every member 1 for {dataset_name}:"
@@ -186,15 +216,11 @@ class Corrections:
         # anything enumerates them: the anaCache merge reads the denominator grid before
         # a single weight is defined.
         shape_weight_classes = self._shapeWeightClasses()
-        for corr_name, _ in self.shape_weight_producers:
-            cls = shape_weight_classes.get(corr_name)
-            if (
-                corr_name in self.to_apply
-                and cls is not None
-                and hasattr(cls, "scales")
-            ):
+        for corr_name, (_, cfg) in self.shape_weights.items():
+            cls = shape_weight_classes[corr_name]
+            if hasattr(cls, "scales"):
                 for source in cls.uncSource:
-                    registerSourceScales(source, cls.scales(self.to_apply[corr_name]))
+                    registerSourceScales(source, cls.scales(cfg))
 
         self.all_processors = processors
 
@@ -306,12 +332,11 @@ class Corrections:
                 "LHEScale_Weight" if branch_key == "merged_branch" else "LHEScaleWeight"
             )
             # The leftover nominal factor is shared with pdf (see qcd_scale.h) and must
-            # reach weight_base once. Membership in to_apply, not the per-stage `enabled`
-            # flag: the grid has to match at AnaTuple and AnaTupleMerge.
+            # reach weight_base once: pdf applies it when it is computed here, otherwise
+            # (not configured, or disabled for this dataset) this producer does.
             self.qcd_scale_ = qcdScaleWeightProducer(
                 branch=cfg.get(branch_key, default),
-                applies_nominal="pdf" not in self.to_apply
-                or "pdf" in self.disabled_corrections,
+                applies_nominal="pdf" not in self.to_apply,
             )
         return self.qcd_scale_
 
@@ -667,15 +692,14 @@ class Corrections:
         }
 
     def registerShapeWeights(self, registry, return_variations=True):
-        """Populate a ShapeWeightRegistry with the shape producers active here.
+        """Populate a ShapeWeightRegistry with the shape weights of this stage.
 
-        Registration does not depend on whether a producer is enabled at this stage:
-        a branch written at AnaTuple has to be nameable again at AnaTupleMerge, where
-        the producer is disabled and the branch is read back from the tuple.
+        Every mode registers: a branch written at AnaTuple has to be nameable again at
+        AnaTupleMerge, where it is read back from the tuple.
         """
         classes = self._shapeWeightClasses()
         for corr_name, _ in self.shape_weight_producers:
-            if corr_name not in self.to_apply:
+            if corr_name not in self.shape_weights:
                 continue
             cls = classes[corr_name]
             registry.register(
@@ -685,33 +709,27 @@ class Corrections:
             )
         return registry
 
-    def defineShapeWeights(self, df, return_variations=True, respect_enabled=True):
-        """Define the shape-weight branches themselves."""
+    def defineShapeWeights(self, df, return_variations=True):
+        """Define the shape-weight branches computed at this stage (none where they are read)."""
         branches = []
+        classes = self._shapeWeightClasses()
         for corr_name, attr in self.shape_weight_producers:
-            if corr_name not in self.to_apply:
-                continue
-            enabled = True
-            if respect_enabled:
-                enabled = (
-                    self.to_apply[corr_name].get("enabled", {}).get(self.stage, True)
+            mode, _ = self.shape_weights.get(corr_name, (None, None))
+            if mode == "compute":
+                df, producer_branches = getattr(self, attr).getWeight(
+                    df,
+                    return_variations=return_variations,
+                    return_list_of_branches=True,
                 )
-            if enabled and corr_name in self.disabled_corrections:
-                cls = self._shapeWeightClasses()[corr_name]
+                branches.extend(producer_branches)
+            elif mode == "unit":
+                cls = classes[corr_name]
                 sources = [central] + (cls.uncSource if return_variations else [])
                 for source in sources:
                     for scale in getScales(source):
                         branch_name = cls.branchName(source, scale)
                         df = df.Define(branch_name, "1.f")
                         branches.append(branch_name)
-                continue
-            df, producer_branches = getattr(self, attr).getWeight(
-                df,
-                return_variations=return_variations,
-                return_list_of_branches=True,
-                enabled=enabled,
-            )
-            branches.extend(producer_branches)
         return df, branches
 
     def defineDenominator(self, df, denomBranch, unc_source, unc_scale, ana_caches):
