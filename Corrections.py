@@ -309,13 +309,8 @@ class Corrections:
             from .pdf import pdfWeightProducer
 
             cfg = self.to_apply.get("pdf", {})
-            # The anaTuple renames LHEPdfWeight, so the merge stage reads the copy.
-            branch_key = "merged_branch" if self.stage == "AnaTupleMerge" else "branch"
-            default = (
-                "LHEPdf_Weight" if branch_key == "merged_branch" else "LHEPdfWeight"
-            )
             self.pdf_ = pdfWeightProducer(
-                branch=cfg.get(branch_key, default),
+                branch=cfg.get("branch", "LHEPdfWeight"),
                 n_members=cfg.get("n_members", 103),
             )
         return self.pdf_
@@ -326,16 +321,11 @@ class Corrections:
             from .qcd_scale import qcdScaleWeightProducer
 
             cfg = self.to_apply.get("qcd_scale", {})
-            # The anaTuple renames LHEScaleWeight, so the merge stage reads the copy.
-            branch_key = "merged_branch" if self.stage == "AnaTupleMerge" else "branch"
-            default = (
-                "LHEScale_Weight" if branch_key == "merged_branch" else "LHEScaleWeight"
-            )
             # The leftover nominal factor is shared with pdf (see qcd_scale.h) and must
             # reach weight_base once: pdf applies it when it is computed here, otherwise
             # (not configured, or disabled for this dataset) this producer does.
             self.qcd_scale_ = qcdScaleWeightProducer(
-                branch=cfg.get(branch_key, default),
+                branch=cfg.get("branch", "LHEScaleWeight"),
                 applies_nominal="pdf" not in self.to_apply,
             )
         return self.qcd_scale_

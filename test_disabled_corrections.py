@@ -37,6 +37,10 @@ GLOBAL_PARAMS = {
             "stages": ["AnaTuple", "AnaTupleMerge"],
             "branch": "PSWeight",
         },
+        "qcd_scale": {
+            "stages": ["AnaTuple", "AnaTupleMerge"],
+            "branch": "LHEScaleWeight",
+        },
     },
 }
 
@@ -61,6 +65,10 @@ def shape_weights(corrections):
         ROOT.RDataFrame(3)
         .Define("LHEPdfWeight", "ROOT::RVecF(103, 0.5f + 0.25f * rdfentry_)")
         .Define("PSWeight", "ROOT::RVecF{0.9f, 1.1f, 0.8f, 1.2f}")
+        .Define(
+            "LHEScaleWeight",
+            "ROOT::RVecF{1.1f, 1.2f, 1.3f, 0.9f, 0.5f, 1.1f, 0.8f, 0.9f, 1.f}",
+        )
     )
     df, branches = corrections.defineShapeWeights(df)
     return {b: list(df.Take["float"](b).GetValue()) for b in branches}
@@ -77,19 +85,24 @@ class TestDisabledCorrections(unittest.TestCase):
         corrections = make_corrections(
             {"disabled_corrections": {"v12": ["pdf", "parton_shower", "JEC"]}}
         )
-        self.assertEqual(corrections.to_apply, {})
+        self.assertEqual(set(corrections.to_apply), {"qcd_scale"})
         self.assertEqual(
             {name: mode for name, (mode, _) in corrections.shape_weights.items()},
-            {"pdf": "unit", "parton_shower": "unit"},
+            {"pdf": "unit", "parton_shower": "unit", "qcd_scale": "compute"},
         )
         weights = shape_weights(corrections)
-        self.assertEqual(len(weights), (1 + 103) + (1 + 4))
+        self.assertEqual(
+            len([b for b in weights if "qcd_scale" not in b]), (1 + 103) + (1 + 4)
+        )
         for branch, values in weights.items():
-            self.assertEqual(values, [1.0, 1.0, 1.0], branch)
+            if "qcd_scale" not in branch:
+                self.assertEqual(values, [1.0, 1.0, 1.0], branch)
 
     def test_enabled_dataset_computes_the_weights(self):
         corrections = make_corrections({})
-        self.assertEqual(set(corrections.to_apply), {"JEC", "pdf", "parton_shower"})
+        self.assertEqual(
+            set(corrections.to_apply), {"JEC", "pdf", "parton_shower", "qcd_scale"}
+        )
         weights = shape_weights(corrections)
         self.assertEqual(weights["weight_pdf_37"], [0.5, 0.75, 1.0])
         self.assertNotEqual(weights["weight_ps_isrUp"], [1.0, 1.0, 1.0])
@@ -123,6 +136,16 @@ class TestDisabledCorrections(unittest.TestCase):
         )
         self.assertNotIn("parton_shower", corrections.shape_weights)
         self.assertEqual(shape_weights(corrections)["weight_pdf_37"], [0.5, 0.75, 1.0])
+
+    def test_qcd_scale_carries_the_nominal_without_pdf(self):
+        # The nominal scale weight (entry 4) enters weight_base once: through pdf's Central
+        # when pdf is computed, through qcd_scale's Central when the dataset disables pdf.
+        weights = shape_weights(make_corrections({}))
+        self.assertEqual(weights["weight_qcd_scale_Central"], [1.0, 1.0, 1.0])
+        weights = shape_weights(
+            make_corrections({"disabled_corrections": {"v12": ["pdf"]}})
+        )
+        self.assertEqual(weights["weight_qcd_scale_Central"], [0.5, 0.5, 0.5])
 
     def test_unknown_name_is_refused(self):
         with self.assertRaisesRegex(RuntimeError, r"unknown corrections: \['pfd'\]"):

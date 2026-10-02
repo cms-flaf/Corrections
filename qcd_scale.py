@@ -23,8 +23,6 @@ class qcdScaleWeightProducer:
     members are divided by entry 4 so it is not counted again; when pdf is not active
     nothing else carries it, so entry 4 becomes this producer's Central and the members
     are taken as stored. Either way entry 4 is a divisor or the Central, never a variation.
-
-    Rows that FuseAnaTuples padded carry an empty vector and are skipped, as in pdf.py.
     """
 
     initialized = False
@@ -89,7 +87,6 @@ class qcdScaleWeightProducer:
                 "Defining them again would shadow the persisted values."
             )
         has_input = self.branch in columns
-        has_valid = "valid" in columns
         if not has_input and not qcdScaleWeightProducer.warned_missing:
             qcdScaleWeightProducer.warned_missing = True
             print(
@@ -119,8 +116,6 @@ class qcdScaleWeightProducer:
                     expr = "1.f"
                 else:
                     expr = f"::correction::{accessor}({self.branch}, {index})"
-                    if has_valid:
-                        expr = f"valid ? {expr} : 0.f"
                 df = df.Define(branch_name, expr)
                 branches.append(branch_name)
 
