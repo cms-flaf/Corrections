@@ -7,14 +7,14 @@
 
 namespace correction {
     // Seed of the random number that smears one electron: a function of the event and the
-    // electron's index only, so every job and every rerun smears it the same way, and the Up and
-    // Down variations use the same number and mirror each other. TRandom3(0) would seed from the
-    // clock, which is why 0 is never returned.
+    // electron's index only, so every job and every rerun smears it the same way, and the nominal
+    // smearing and all its variations use the same number, as the EGM recipe requires. TRandom3(0)
+    // would seed from the clock, which is why 0 is never returned.
     inline UInt_t electronSmearingSeed(unsigned int run,
                                        unsigned int luminosityBlock,
                                        unsigned long long event,
                                        size_t index) {
-        auto mix = [](uint64_t x) {  // splitmix64 finaliser
+        auto mix = [](uint64_t x) {  // one splitmix64 step
             x += 0x9E3779B97F4A7C15ULL;
             x = (x ^ (x >> 30)) * 0xBF58476D1CE4E5B9ULL;
             x = (x ^ (x >> 27)) * 0x94D049BB133111EBULL;
@@ -35,6 +35,7 @@ namespace correction {
             EleID = 0,
             EleES = 1,
             Ele_dEsigma = 2,
+            EleSmear = 3,
         };
 
         static std::string getESScaleStr(UncScale scale) {
@@ -93,61 +94,61 @@ namespace correction {
             return value;
         }
         // https://gitlab.cern.ch/cms-analysis-corrections/EGM/examples/-/blob/latest/egmScaleAndSmearingExample.py?ref_type=heads
+        // Data gets the energy-scale correction, MC the smearing; the scale and smearing
+        // uncertainties are MC-only. EGM did not tune the corrections below about 15 GeV, so such
+        // electrons are left as they are.
+        static constexpr double minScaleAndSmearingPt = 15.;
+
         RVecLV getESEtDep_data(const RVecLV& Electron_p4,
-                     const RVecI& Electron_genMatch,
-                     const RVecUC& Electron_seedGain,
-                     const RVecF& Electron_SCeta,
-                     unsigned int run,
-                     const RVecUC& Electron_r9,
-                     UncSource source,
-                     UncScale scale) const {
+                               const RVecUC& Electron_seedGain,
+                               const RVecF& Electron_SCeta,
+                               unsigned int run,
+                               const RVecF& Electron_r9) const {
+            const auto& scale_correction = correctionsES_->compound().at("Scale");
             RVecLV final_p4 = Electron_p4;
             for (size_t n = 0; n < Electron_p4.size(); ++n) {
-                const GenLeptonMatch genMatch = static_cast<GenLeptonMatch>(Electron_genMatch.at(n));
-                if (scale != UncScale::Central &&
-                    (genMatch == GenLeptonMatch::Electron || genMatch == GenLeptonMatch::TauElectron)) {
-                    double sf = Electron_p4[n].pt() < 15 ? 0. : correctionsES_->compound().at("Scale")->evaluate({"scale",  // or SmearAndSyst ??? and smear?
-                                                static_cast<double>(run),
-                                                Electron_SCeta[n],
-                                                static_cast<double>(Electron_r9.at(n)),
-                                                Electron_p4[n].pt(),
-                                                Electron_seedGain.at(n)});
-                    final_p4[n] *= 1 + static_cast<int>(scale) * sf;
-                }
+                const double pt = Electron_p4[n].pt();
+                if (pt < minScaleAndSmearingPt)
+                    continue;
+                const double scale = scale_correction->evaluate({"scale",
+                                                                 static_cast<double>(run),
+                                                                 static_cast<double>(Electron_SCeta[n]),
+                                                                 static_cast<double>(Electron_r9[n]),
+                                                                 pt,
+                                                                 static_cast<double>(Electron_seedGain[n])});
+                final_p4[n] = LorentzVectorM(pt * scale, Electron_p4[n].eta(), Electron_p4[n].phi(), Electron_p4[n].M());
             }
             return final_p4;
         }
 
+        // The nominal is pt * (1 + smear * r). EleSmear replaces smear by smear_up/smear_down with the
+        // same r; EleES multiplies the smeared pt by scale_up/scale_down. Every width and uncertainty
+        // is evaluated at the uncorrected pt.
         RVecLV getESEtDep_MC(const RVecLV& Electron_p4,
-                     const RVecI& Electron_genMatch,
-                     const RVecUC& Electron_seedGain,
-                     const RVecF& Electron_SCeta,
-                     unsigned int run,
-                     unsigned int luminosityBlock,
-                     unsigned long long event,
-                     const RVecUC& Electron_r9,
-                     UncSource source,
-                     UncScale scale) const {
+                             const RVecF& Electron_SCeta,
+                             unsigned int run,
+                             unsigned int luminosityBlock,
+                             unsigned long long event,
+                             const RVecF& Electron_r9,
+                             UncSource source,
+                             UncScale scale) const {
+            const bool shift_smear = source == UncSource::EleSmear && scale != UncScale::Central;
+            const bool shift_scale = source == UncSource::EleES && scale != UncScale::Central;
+            const std::string smear_name = shift_smear ? (scale == UncScale::Up ? "smear_up" : "smear_down") : "smear";
+            const std::string scale_name = scale == UncScale::Up ? "scale_up" : "scale_down";
             RVecLV final_p4 = Electron_p4;
             for (size_t n = 0; n < Electron_p4.size(); ++n) {
-                const GenLeptonMatch genMatch = static_cast<GenLeptonMatch>(Electron_genMatch.at(n));
-                if (scale != UncScale::Central &&
-                    (genMatch == GenLeptonMatch::Electron || genMatch == GenLeptonMatch::TauElectron)) {
-                    double smear = Electron_p4[n].pt() < 15 ? 0. : EleES_->evaluate({"smear",  // or SmearAndSyst ??? and smear?
-                                                // static_cast<double>(run),
-                                                Electron_p4[n].pt(),
-                                                static_cast<double>(Electron_r9.at(n)),
-                                                Electron_SCeta[n]});
-                    TRandom3 rng(electronSmearingSeed(run, luminosityBlock, event, n));
-                    const double random_number = rng.Gaus(0.0, 1.0);
-                    const double sf = 1.0 + static_cast<int>(scale) * smear * random_number;
-
-                    final_p4[n] = LorentzVectorM(Electron_p4[n].pt() * sf, Electron_p4[n].eta(),Electron_p4[n].phi(),Electron_p4[n].M());
-                    // const double energyErr_corr = std::sqrt(
-                    //     std::pow(mc_electrons_energyErr[i], 2) +
-                    //     std::pow(mc_electrons_energy[i] * smear, 2)
-                    // ) * smearing;
-                }
+                const double pt = Electron_p4[n].pt();
+                if (pt < minScaleAndSmearingPt)
+                    continue;
+                const double r9 = Electron_r9[n];
+                const double sc_eta = Electron_SCeta[n];
+                const double smear = EleES_->evaluate({smear_name, pt, r9, sc_eta});
+                TRandom3 rng(electronSmearingSeed(run, luminosityBlock, event, n));
+                double factor = 1. + smear * rng.Gaus(0., 1.);
+                if (shift_scale)
+                    factor *= EleES_->evaluate({scale_name, pt, r9, sc_eta});
+                final_p4[n] = LorentzVectorM(pt * factor, Electron_p4[n].eta(), Electron_p4[n].phi(), Electron_p4[n].M());
             }
             return final_p4;
         }
@@ -156,7 +157,7 @@ namespace correction {
                      const RVecI& Electron_genMatch,
                      const RVecUC& Electron_seedGain,
                      int run,
-                     const RVecUC& Electron_r9,
+                     const RVecF& Electron_r9,
                      UncSource source,
                      UncScale scale) const {
             RVecLV final_p4 = Electron_p4;

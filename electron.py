@@ -106,7 +106,7 @@ class EleCorrProducer:
     initialized = False
     ID_sources = ["EleID"]
     working_points = ["wp80iso", "wp80noiso"]
-    energyScaleSources_ele = ["EleES"]
+    energyScaleSources_ele = ["EleES", "EleSmear"]
     year = ""
 
     inputColumns = [
@@ -172,14 +172,14 @@ class EleCorrProducer:
                 syst_name = getSystName(source, scale)
                 # if self.period.split("_")[0] == "2024" or self.period.split("_")[0] == "2023" or self.period.split("_")[0] == "2023BPix":
                 if self.isData:
-                    func_name, event_id = "getESEtDep_data", "run"
+                    expr = f"getESEtDep_data(Electron_p4_{nano}, Electron_seedGain, Electron_superclusterEta, run, Electron_r9)"
                 else:
                     # The smearing of MC is seeded per event and electron.
-                    func_name, event_id = "getESEtDep_MC", "run, luminosityBlock, event"
+                    expr = f"""getESEtDep_MC(Electron_p4_{nano}, Electron_superclusterEta, run, luminosityBlock, event, Electron_r9,
+                ::correction::EleCorrProvider::UncSource::{source}, ::correction::UncScale::{scale})"""
                 df = df.Define(
                     f"Electron_p4_{syst_name}",
-                    f"""::correction::EleCorrProvider::getGlobal().{func_name}(Electron_p4_{nano}, Electron_genMatch, Electron_seedGain, Electron_superclusterEta, {event_id},
-                Electron_r9,::correction::EleCorrProvider::UncSource::{source}, ::correction::UncScale::{scale})""",
+                    f"::correction::EleCorrProvider::getGlobal().{expr}",
                 )
                 # else:
                 #     df = df.Define(
