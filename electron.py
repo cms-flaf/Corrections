@@ -171,10 +171,14 @@ class EleCorrProducer:
             for scale in getScales(source):
                 syst_name = getSystName(source, scale)
                 # if self.period.split("_")[0] == "2024" or self.period.split("_")[0] == "2023" or self.period.split("_")[0] == "2023BPix":
-                func_name = "getESEtDep_data" if self.isData else "getESEtDep_MC"
+                if self.isData:
+                    func_name, event_id = "getESEtDep_data", "run"
+                else:
+                    # The smearing of MC is seeded per event and electron.
+                    func_name, event_id = "getESEtDep_MC", "run, luminosityBlock, event"
                 df = df.Define(
                     f"Electron_p4_{syst_name}",
-                    f"""::correction::EleCorrProvider::getGlobal().{func_name}(Electron_p4_{nano}, Electron_genMatch, Electron_seedGain, Electron_superclusterEta, run,
+                    f"""::correction::EleCorrProvider::getGlobal().{func_name}(Electron_p4_{nano}, Electron_genMatch, Electron_seedGain, Electron_superclusterEta, {event_id},
                 Electron_r9,::correction::EleCorrProvider::UncSource::{source}, ::correction::UncScale::{scale})""",
                 )
                 # else:

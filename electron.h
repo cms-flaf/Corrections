@@ -1,9 +1,33 @@
 #pragma once
 
+#include <cstdint>
+
 #include "correction.h"
 #include "corrections.h"
 
 namespace correction {
+    // Seed of the random number that smears one electron: a function of the event and the
+    // electron's index only, so every job and every rerun smears it the same way, and the Up and
+    // Down variations use the same number and mirror each other. TRandom3(0) would seed from the
+    // clock, which is why 0 is never returned.
+    inline UInt_t electronSmearingSeed(unsigned int run,
+                                       unsigned int luminosityBlock,
+                                       unsigned long long event,
+                                       size_t index) {
+        auto mix = [](uint64_t x) {  // splitmix64 finaliser
+            x += 0x9E3779B97F4A7C15ULL;
+            x = (x ^ (x >> 30)) * 0xBF58476D1CE4E5B9ULL;
+            x = (x ^ (x >> 27)) * 0x94D049BB133111EBULL;
+            return x ^ (x >> 31);
+        };
+        uint64_t x = mix(event);
+        x = mix(x ^ luminosityBlock);
+        x = mix(x ^ run);
+        x = mix(x ^ index);
+        const UInt_t seed = static_cast<UInt_t>(x ^ (x >> 32));
+        return seed == 0 ? 1 : seed;
+    }
+
     class EleCorrProvider : public CorrectionsBase<EleCorrProvider> {
       public:
         enum class UncSource : int {
@@ -99,10 +123,11 @@ namespace correction {
                      const RVecUC& Electron_seedGain,
                      const RVecF& Electron_SCeta,
                      unsigned int run,
+                     unsigned int luminosityBlock,
+                     unsigned long long event,
                      const RVecUC& Electron_r9,
                      UncSource source,
                      UncScale scale) const {
-            TRandom3 rng(0);
             RVecLV final_p4 = Electron_p4;
             for (size_t n = 0; n < Electron_p4.size(); ++n) {
                 const GenLeptonMatch genMatch = static_cast<GenLeptonMatch>(Electron_genMatch.at(n));
@@ -113,6 +138,7 @@ namespace correction {
                                                 Electron_p4[n].pt(),
                                                 static_cast<double>(Electron_r9.at(n)),
                                                 Electron_SCeta[n]});
+                    TRandom3 rng(electronSmearingSeed(run, luminosityBlock, event, n));
                     const double random_number = rng.Gaus(0.0, 1.0);
                     const double sf = 1.0 + static_cast<int>(scale) * smear * random_number;
 
