@@ -54,7 +54,7 @@ pog_folder_names = {
         "2024_Summer24": "Run3-24CDEReprocessingFGHIPrompt-Summer24-NanoAODv15",
         "2025_Summer24": "Run3-25Prompt-Summer24-NanoAODv15",
         "2025_Winter25": "",
-        "2026_Summer24": "Run3-25Prompt-Summer24-NanoAODv15",  # placeholder
+        "2026_Summer24": "Run3-26Prompt-Summer24-NanoAODv15",  # no electron.json: electron.py reads the 2025 one
     },
     "LUM": {
         "2016postVFP_UL": "Run2-2016postVFP-UL-NanoAODv9",

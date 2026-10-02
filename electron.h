@@ -116,7 +116,8 @@ namespace correction {
                                                                  static_cast<double>(Electron_r9[n]),
                                                                  pt,
                                                                  static_cast<double>(Electron_seedGain[n])});
-                final_p4[n] = LorentzVectorM(pt * scale, Electron_p4[n].eta(), Electron_p4[n].phi(), Electron_p4[n].M());
+                final_p4[n] =
+                    LorentzVectorM(pt * scale, Electron_p4[n].eta(), Electron_p4[n].phi(), Electron_p4[n].M());
             }
             return final_p4;
         }
@@ -148,7 +149,8 @@ namespace correction {
                 double factor = 1. + smear * rng.Gaus(0., 1.);
                 if (shift_scale)
                     factor *= EleES_->evaluate({scale_name, pt, r9, sc_eta});
-                final_p4[n] = LorentzVectorM(pt * factor, Electron_p4[n].eta(), Electron_p4[n].phi(), Electron_p4[n].M());
+                final_p4[n] =
+                    LorentzVectorM(pt * factor, Electron_p4[n].eta(), Electron_p4[n].phi(), Electron_p4[n].M());
             }
             return final_p4;
         }
