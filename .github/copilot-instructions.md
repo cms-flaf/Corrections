@@ -54,6 +54,13 @@ Up and down variations must be distinguishable and correctly signed. A copy-past
 returns the central value for one direction produces a systematic of zero width, which no test
 notices. Check that the variation name reaching `correctionlib` differs between the two branches.
 
+In the tree of a scale source, the objects the source shifts take their shifted p4 and every other
+object keeps its Central one (`applyScaleUncertainties`). The MET of that tree must describe the
+same objects: `met.py` subtracts the source's deltas and the Central deltas of the objects it does
+not shift, all relative to the NanoAOD p4 (`<obj>_p4_<syst>_delta = <obj>_p4_<syst> - <obj>_p4_nano`).
+A new p4 correction of a MET object therefore has to define its Central delta and register the
+object under `Central` in `source_dict`, or every other tree loses it from MET.
+
 ## Documentation must ship with the change
 
 A PR must update the documentation **in the same PR** whenever it changes anything a user of the
