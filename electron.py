@@ -106,7 +106,7 @@ class EleCorrProducer:
     initialized = False
     ID_sources = ["EleID"]
     working_points = ["wp80iso", "wp80noiso"]
-    energyScaleSources_ele = ["EleES"]
+    energyScaleSources_ele = ["EleES", "EleSmear"]
     year = ""
 
     inputColumns = [
@@ -123,8 +123,10 @@ class EleCorrProducer:
             if "eleES" in ele_files_names[period].keys()
             else ele_files_names[period]["eleES_EtDependent"]
         )  # in 2024 there is no electronSS...
+        # The 2026 EGM folder has no electron.json: the ID SFs are the 2025 ones, as in electron_id_sf_year.
+        id_period = "2025_Summer24" if period == "2026_Summer24" else period
         EleID_JsonFile = EleCorrProducer.EleID_JsonPath.format(
-            folderName=pog_folder_names["EGM"][period], filenameID=file_nameID
+            folderName=pog_folder_names["EGM"][id_period], filenameID=file_nameID
         )
 
         if period.startswith("Run2"):
@@ -171,11 +173,15 @@ class EleCorrProducer:
             for scale in getScales(source):
                 syst_name = getSystName(source, scale)
                 # if self.period.split("_")[0] == "2024" or self.period.split("_")[0] == "2023" or self.period.split("_")[0] == "2023BPix":
-                func_name = "getESEtDep_data" if self.isData else "getESEtDep_MC"
+                if self.isData:
+                    expr = f"getESEtDep_data(Electron_p4_{nano}, Electron_seedGain, Electron_superclusterEta, run, Electron_r9)"
+                else:
+                    # The smearing of MC is seeded per event and electron.
+                    expr = f"""getESEtDep_MC(Electron_p4_{nano}, Electron_superclusterEta, run, luminosityBlock, event, Electron_r9,
+                ::correction::EleCorrProvider::UncSource::{source}, ::correction::UncScale::{scale})"""
                 df = df.Define(
                     f"Electron_p4_{syst_name}",
-                    f"""::correction::EleCorrProvider::getGlobal().{func_name}(Electron_p4_{nano}, Electron_genMatch, Electron_seedGain, Electron_superclusterEta, run,
-                Electron_r9,::correction::EleCorrProvider::UncSource::{source}, ::correction::UncScale::{scale})""",
+                    f"::correction::EleCorrProvider::getGlobal().{expr}",
                 )
                 # else:
                 #     df = df.Define(
