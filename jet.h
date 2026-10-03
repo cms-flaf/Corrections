@@ -228,6 +228,7 @@ namespace correction {
             const Correction::Ref& corr_jer_sfUnc,
             const Correction::Ref& jersmear_corr,
             const Correction::Ref& corr_jer_res,
+            const bool isAK4,
             const RVecF& gen_pt_vec = {},
             const RVecF& gen_eta_vec = {},
             const RVecF& gen_phi_vec = {},
@@ -236,6 +237,10 @@ namespace correction {
         {
             std::map<std::pair<UncSource, UncScale>, RVecLV> all_shifted_p4;
             const size_t sz = pt_vec.size();
+            // The gen match reads all three gen-jet vectors and the NanoAOD index of every jet.
+            if (!gen_pt_vec.empty() && (gen_eta_vec.size() != gen_pt_vec.size() ||
+                                        gen_phi_vec.size() != gen_pt_vec.size() || genJetIdx_vec.size() != sz))
+                throw std::runtime_error("JetCorrectionProvider: inconsistent gen-jet inputs for the JER match");
 
             // ============================================================
             // Build list of variations
@@ -356,7 +361,8 @@ namespace correction {
                                 gen_pt_vec,
                                 gen_eta_vec,
                                 gen_phi_vec,
-                                jer_pt_res * corrected_pt
+                                jer_pt_res * corrected_pt,
+                                isAK4
                             );
 
                             if (matched_idx < gen_pt_vec.size()) {
@@ -543,6 +549,7 @@ namespace correction {
                 corr_jer_sfUnc_,
                 jersmear_corr_,
                 corr_jer_res_,
+                true,
                 GenJet_pt,
                 GenJet_eta,
                 GenJet_phi,
@@ -592,6 +599,7 @@ namespace correction {
                 fat_corr_jer_sfUnc_,
                 fat_jersmear_corr_,
                 fat_corr_jer_res_,
+                false,
                 GenFatJet_pt,
                 GenFatJet_eta,
                 GenFatJet_phi,
