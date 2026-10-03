@@ -483,7 +483,7 @@ class JetCorrProducer:
                     f"""::correction::JetCorrectionProvider::getGlobal().getShiftedP4_Jet(Jet_pt, Jet_eta, Jet_phi, Jet_mass,
                                                                                                                        Jet_rawFactor, Jet_area, Rho_fixedGridRhoFastjetAll, event, {apply_jer},
                                                                                                                        {reapply_jec}, {require_run_number}, run, {wantPhi}, {apply_forward_jet_horns_fix},
-                                                                                                                       GenJet_pt, Jet_genJetIdx)""",
+                                                                                                                       GenJet_pt, GenJet_eta, GenJet_phi, Jet_genJetIdx)""",
                 )
 
                 df = df.Define(
@@ -491,7 +491,7 @@ class JetCorrProducer:
                     f"""::correction::JetCorrectionProvider::getGlobal().getShiftedP4_FatJet(FatJet_pt, FatJet_eta, FatJet_phi, FatJet_mass,
                                                                                                                        FatJet_rawFactor, FatJet_area, Rho_fixedGridRhoFastjetAll, event, {apply_jer},
                                                                                                                        {reapply_jec}, {require_run_number}, run, {wantPhi}, {apply_forward_jet_horns_fix},
-                                                                                                                       GenJetAK8_pt, FatJet_genJetAK8Idx)""",
+                                                                                                                       GenJetAK8_pt, GenJetAK8_eta, GenJetAK8_phi, FatJet_genJetAK8Idx)""",
                 )
             else:
                 df = df.Define(
