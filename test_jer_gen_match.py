@@ -109,6 +109,9 @@ class TestJerGenMatch(unittest.TestCase):
     def test_ak8_jet_matches_within_the_wider_cone(self):
         self.assertTrue(self._is_scaled(self._smear("FatJet", 0.3)))
 
+    def test_ak8_jet_outside_its_cone_is_not_scaled(self):
+        self.assertFalse(self._is_scaled(self._smear("FatJet", 0.5)))
+
     def test_inconsistent_gen_inputs_are_refused(self):
         # The argument layout of the past: the jet's gen index in place of gen eta, no gen phi.
         with self.assertRaises(Exception) as ctx:
