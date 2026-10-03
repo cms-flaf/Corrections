@@ -26,12 +26,8 @@ class pdfWeightProducer:
     four-flavour-scheme samples stop at 101), which makes weight_base_pdf101/102_rel come
     out NaN for those samples rather than passing as a weight of 1.
 
-    Rows that FuseAnaTuples padded are excluded from that check. AnaTupleMerge is the one
-    stage that does not filter on `valid`, and a padded row carries an empty vector for
-    every array column, so reading one would throw on data the histograms never see.
-
-    The branch is the NanoAOD name at AnaTuple, where the denominators are summed, and
-    the renamed anaTuple copy at AnaTupleMerge -- the same trap as PSWeight/PS_Weight.
+    The members are computed at AnaTuple from the NanoAOD branch, where the denominators
+    are summed, and read back at AnaTupleMerge.
     """
 
     initialized = False
@@ -68,44 +64,35 @@ class pdfWeightProducer:
         df,
         return_variations=True,
         return_list_of_branches=False,
-        enabled=True,
     ):
         sf_sources = pdfWeightProducer.uncSource if return_variations else []
         branches = []
 
-        has_input = False
-        has_valid = False
-        if enabled:
-            columns = {str(c) for c in df.GetColumnNames()}
-            if any(c.startswith("weight_pdf_") for c in columns):
-                raise RuntimeError(
-                    "pdfWeightProducer: weight_pdf_* columns already exist. Defining "
-                    "them again would shadow the persisted values. Set enabled: false "
-                    "for pdf at this stage."
-                )
-            has_input = self.branch in columns
-            has_valid = "valid" in columns
-            if not has_input and not pdfWeightProducer.warned_missing:
-                pdfWeightProducer.warned_missing = True
-                print(
-                    f"WARNING: '{self.branch}' not found; the pdf members are all 1 for "
-                    "this dataset.",
-                    file=sys.stderr,
-                )
+        columns = {str(c) for c in df.GetColumnNames()}
+        if any(c.startswith("weight_pdf_") for c in columns):
+            raise RuntimeError(
+                "pdfWeightProducer: weight_pdf_* columns already exist. Defining "
+                "them again would shadow the persisted values."
+            )
+        has_input = self.branch in columns
+        if not has_input and not pdfWeightProducer.warned_missing:
+            pdfWeightProducer.warned_missing = True
+            print(
+                f"WARNING: '{self.branch}' not found; the pdf members are all 1 for "
+                "this dataset.",
+                file=sys.stderr,
+            )
 
         for source in [central] + sf_sources:
             for scale in getScales(source):
                 branch_name = pdfWeightProducer.branchName(source, scale)
-                if enabled:
-                    if not has_input:
-                        expr = "1.f"
-                    else:
-                        member = 0 if source == central else scale
-                        expr = f"::correction::pdfMemberWeight({self.branch}, {member})"
-                        if has_valid:
-                            expr = f"valid ? {expr} : 0.f"
-                    df = df.Define(branch_name, expr)
-                    branches.append(branch_name)
+                if not has_input:
+                    expr = "1.f"
+                else:
+                    member = 0 if source == central else scale
+                    expr = f"::correction::pdfMemberWeight({self.branch}, {member})"
+                df = df.Define(branch_name, expr)
+                branches.append(branch_name)
 
         if return_list_of_branches:
             return df, branches

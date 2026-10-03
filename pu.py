@@ -67,20 +67,18 @@ class puWeightProducer:
         df,
         return_variations=True,
         return_list_of_branches=False,
-        enabled=True,
     ):
         sf_sources = puWeightProducer.uncSource if return_variations else []
         branches = []
         for source in [central] + sf_sources:
             for scale in getScales(source):
                 branch_name = puWeightProducer.branchName(source, scale)
-                if enabled:
-                    df = df.Define(
-                        branch_name,
-                        f"""::correction::puCorrProvider::getGlobal().getWeight(
-                                    ::correction::UncScale::{scale}, Pileup_nTrueInt)""",
-                    )
-                    branches.append(branch_name)
+                df = df.Define(
+                    branch_name,
+                    f"""::correction::puCorrProvider::getGlobal().getWeight(
+                                ::correction::UncScale::{scale}, Pileup_nTrueInt)""",
+                )
+                branches.append(branch_name)
 
         if return_list_of_branches:
             return df, branches

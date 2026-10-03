@@ -107,13 +107,7 @@ class DYbbtautauCorrProducer:
         df,
         return_variations=True,
         return_list_of_branches=False,
-        enabled=True,
     ):
-        if not enabled:
-            if return_list_of_branches:
-                return df, []
-            return df
-
         systs = ["nominal"]
         if return_variations:
             systs += self.variations
