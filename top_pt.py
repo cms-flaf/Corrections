@@ -84,48 +84,43 @@ class TopPtCorrProducer:
         df,
         return_variations=True,
         return_list_of_branches=False,
-        enabled=True,
     ):
         sf_sources = TopPtCorrProducer.uncSource if return_variations else []
         branches = []
 
-        has_input = False
-        if enabled:
-            columns = {str(c) for c in df.GetColumnNames()}
-            if any(c.startswith("weight_top_pt_") for c in columns):
-                raise RuntimeError(
-                    "TopPtCorrProducer: weight_top_pt_* columns already exist. Defining "
-                    "them again would shadow the persisted values. Set enabled: false "
-                    "for top_pt at this stage."
+        columns = {str(c) for c in df.GetColumnNames()}
+        if any(c.startswith("weight_top_pt_") for c in columns):
+            raise RuntimeError(
+                "TopPtCorrProducer: weight_top_pt_* columns already exist. Defining "
+                "them again would shadow the persisted values."
+            )
+        has_input = self.branch in columns
+        if not has_input:
+            if not TopPtCorrProducer.warned_missing:
+                TopPtCorrProducer.warned_missing = True
+                print(
+                    f"WARNING: '{self.branch}' not found; the top pT reweighting "
+                    "will be a no-op for this dataset.",
+                    file=sys.stderr,
                 )
-            has_input = self.branch in columns
-            if not has_input:
-                if not TopPtCorrProducer.warned_missing:
-                    TopPtCorrProducer.warned_missing = True
-                    print(
-                        f"WARNING: '{self.branch}' not found; the top pT reweighting "
-                        "will be a no-op for this dataset.",
-                        file=sys.stderr,
-                    )
-            elif self.weight_branch not in columns:
-                df = df.Define(self.pt_branch, self._pt_expr())
-                df = df.Define(self.sf_branch, self._sf_expr())
-                df = df.Define(
-                    self.weight_branch, f"static_cast<float>({self._reweight_expr()})"
-                )
+        elif self.weight_branch not in columns:
+            df = df.Define(self.pt_branch, self._pt_expr())
+            df = df.Define(self.sf_branch, self._sf_expr())
+            df = df.Define(
+                self.weight_branch, f"static_cast<float>({self._reweight_expr()})"
+            )
 
         for source in [central] + sf_sources:
             for scale in getScales(source):
                 branch_name = TopPtCorrProducer.branchName(source, scale)
-                if enabled:
-                    if source == central:
-                        expr = self._central_expr()
-                    elif has_input:
-                        expr = self._variation_expr(scale)
-                    else:
-                        expr = "1.f"
-                    df = df.Define(branch_name, f"static_cast<float>({expr})")
-                    branches.append(branch_name)
+                if source == central:
+                    expr = self._central_expr()
+                elif has_input:
+                    expr = self._variation_expr(scale)
+                else:
+                    expr = "1.f"
+                df = df.Define(branch_name, f"static_cast<float>({expr})")
+                branches.append(branch_name)
 
         if return_list_of_branches:
             return df, branches

@@ -61,52 +61,48 @@ class psWeightProducer:
         df,
         return_variations=True,
         return_list_of_branches=False,
-        enabled=True,
     ):
         sf_sources = psWeightProducer.uncSource if return_variations else []
         branches = []
 
-        if enabled:
-            columns = {str(c) for c in df.GetColumnNames()}
-            has_input = self.branch in columns
-            if not has_input:
-                # A stage where the branch has been renamed away (AnaTupleMerge holds
-                # PS_Weight, not PSWeight) must not silently define 1.f on top of the
-                # correct values already persisted -- that would shadow them and make
-                # the nuisance null with nothing to show for it. The producer is meant
-                # to be disabled there via `enabled` in global.yaml.
-                already_built = any(c.startswith("weight_ps_") for c in columns)
-                if already_built:
-                    raise RuntimeError(
-                        f"psWeightProducer: '{self.branch}' is not available but "
-                        "weight_ps_* columns already exist. Defining them again would "
-                        "shadow the persisted values. Set enabled: false for "
-                        "parton_shower at this stage."
-                    )
-                if self.branch not in psWeightProducer.warned_missing:
-                    psWeightProducer.warned_missing.add(self.branch)
-                    print(
-                        f"WARNING: '{self.branch}' not found; ps_isr/ps_fsr will be a "
-                        "no-op for this dataset.",
-                        file=sys.stderr,
-                    )
+        columns = {str(c) for c in df.GetColumnNames()}
+        has_input = self.branch in columns
+        if not has_input:
+            # A stage where the branch has been renamed away (AnaTupleMerge holds
+            # PS_Weight, not PSWeight) must not silently define 1.f on top of the
+            # correct values already persisted -- that would shadow them and make
+            # the nuisance null with nothing to show for it. Corrections only calls
+            # this at AnaTuple.
+            already_built = any(c.startswith("weight_ps_") for c in columns)
+            if already_built:
+                raise RuntimeError(
+                    f"psWeightProducer: '{self.branch}' is not available but "
+                    "weight_ps_* columns already exist. Defining them again would "
+                    "shadow the persisted values."
+                )
+            if self.branch not in psWeightProducer.warned_missing:
+                psWeightProducer.warned_missing.add(self.branch)
+                print(
+                    f"WARNING: '{self.branch}' not found; ps_isr/ps_fsr will be a "
+                    "no-op for this dataset.",
+                    file=sys.stderr,
+                )
 
         for source in [central] + sf_sources:
             for scale in getScales(source):
                 branch_name = psWeightProducer.branchName(source, scale)
-                if enabled:
-                    if source == central:
-                        # Exactly 1.0f. This is what keeps the pileup denominators
-                        # bit-identical when this producer is added: multiplying by an
-                        # IEEE-754 1.0f is the identity.
-                        expr = "1.f"
-                    elif has_input:
-                        idx = psWeightProducer.indices[(source, scale)]
-                        expr = f"::correction::psWeight({self.branch}, {idx})"
-                    else:
-                        expr = "1.f"
-                    df = df.Define(branch_name, expr)
-                    branches.append(branch_name)
+                if source == central:
+                    # Exactly 1.0f. This is what keeps the pileup denominators
+                    # bit-identical when this producer is added: multiplying by an
+                    # IEEE-754 1.0f is the identity.
+                    expr = "1.f"
+                elif has_input:
+                    idx = psWeightProducer.indices[(source, scale)]
+                    expr = f"::correction::psWeight({self.branch}, {idx})"
+                else:
+                    expr = "1.f"
+                df = df.Define(branch_name, expr)
+                branches.append(branch_name)
 
         if return_list_of_branches:
             return df, branches
