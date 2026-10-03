@@ -18,7 +18,7 @@ class METCorrProducer:
         MET_objs = {"Electron", "Muon", "Tau", "Jet"}
         # In the tree of a source, the objects it does not shift keep their Central
         # correction (applyScaleUncertainties), so its MET takes their Central deltas.
-        central_objs = set(source_dict.get(central, [])).intersection(MET_objs)
+        central_objs = set(source_dict[central]).intersection(MET_objs)
         source_dict_upd = copy.deepcopy(source_dict)
         for source, all_source_objs in source_dict.items():
             source_objs = set(all_source_objs).intersection(MET_objs)

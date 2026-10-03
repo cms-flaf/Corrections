@@ -138,15 +138,25 @@ class TestMetShiftPropagation(unittest.TestCase):
         )
 
     def test_central_carries_every_central_correction(self):
+        self._check_central(self.df, list(OBJECTS))
+
+    def _check_central(self, df, objs):
         terms = " + ".join(
             f"ROOT::VecOps::Sum(v_ops_px({o}_p4_{central}) - v_ops_px({o}_p4_{nano}))"
-            for o in OBJECTS
+            for o in objs
         )
-        df = self.df.Define(
+        terms_y = terms.replace("v_ops_px", "v_ops_py")
+        df = df.Define(
             "dx",
             f"{MET_TYPE}_p4_{central}.Px() - ({MET_TYPE}_p4_{nano}.Px() - ({terms}))",
+        ).Define(
+            "dy",
+            f"{MET_TYPE}_p4_{central}.Py() - ({MET_TYPE}_p4_{nano}.Py() - ({terms_y}))",
         )
-        worst = max(abs(x) for x in df.Take["double"]("dx").GetValue())
+        worst = max(
+            max(abs(x) for x in df.Take["double"]("dx").GetValue()),
+            max(abs(y) for y in df.Take["double"]("dy").GetValue()),
+        )
         self.assertLess(worst, 1e-9)
 
     def test_shifted_met_is_central_met_plus_the_source_shift(self):
@@ -173,7 +183,7 @@ class TestMetShiftPropagation(unittest.TestCase):
         df = df.Define(f"Jet_p4_{central}_delta", f"Jet_p4_{central} - Jet_p4_{nano}")
         df, source_dict = METCorrProducer().getMET(df, {central: ["Jet"]}, MET_TYPE)
         self.assertEqual(source_dict, {central: ["Jet", "MET"]})
-        self.assertIn(f"{MET_TYPE}_p4_{central}", {str(c) for c in df.GetColumnNames()})
+        self._check_central(df, ["Jet"])
 
 
 if __name__ == "__main__":
