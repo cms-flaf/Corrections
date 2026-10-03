@@ -12,8 +12,10 @@ import sys
 import unittest
 
 # Import the package from the directory above, as the analyses do: run from here, the script's own
-# directory would make `Corrections` resolve to Corrections.py.
+# directory would make `Corrections` resolve to Corrections.py. The path is restored afterwards so
+# that test modules loaded after this one in the same run still import.
 repo = os.path.dirname(os.path.abspath(__file__))
+_sys_path = list(sys.path)
 sys.path = [p for p in sys.path if os.path.abspath(p or ".") != repo]
 sys.path.insert(0, os.path.dirname(repo))
 
@@ -21,6 +23,8 @@ import ROOT
 
 from Corrections.CorrectionsCore import central, getScales, getSystName, nano
 from Corrections.met import METCorrProducer
+
+sys.path = _sys_path
 
 MET_TYPE = "PuppiMET"
 LV = "ROOT::Math::LorentzVector<ROOT::Math::PtEtaPhiM4D<double>>"
