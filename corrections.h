@@ -54,7 +54,7 @@ namespace correction {
     // Shifted anaTuple trees store float deltas with an 8-bit mantissa, so a value that
     // passed a cut at a bin edge can be read back fractionally beyond it. The upper edge is
     // exclusive in correctionlib, so the clamp stops one ulp below it.
-    inline double clampToRange(double value, double lo, double hi, double rel_tol = 0.01) {
+    inline double clampToRange(double value, double lo, double hi, double rel_tol = 0.001) {
         if (value < lo - rel_tol * std::abs(lo) || value > hi + rel_tol * std::abs(hi))
             throw std::runtime_error("clampToRange: " + std::to_string(value) + " is outside [" + std::to_string(lo) +
                                      ", " + std::to_string(hi) + ") beyond tolerance");
