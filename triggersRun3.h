@@ -371,11 +371,19 @@ namespace correction {
         float getSF_singleIsoMu(const LorentzVectorM& part_p4,
                                 std::string year,
                                 UncSource source,
-                                UncScale scale) const {
+                                UncScale scale,
+                                bool clamp_inputs = false) const {
             float corr_SF = 1;
             const std::string& scale_str = getMuScaleStr(scale);
-            corr_SF =
-                muTrgCorrections.at(getUncSourceName(source))->evaluate({abs(part_p4.Eta()), part_p4.Pt(), scale_str});
+            // IsoMu24 SF binning: |eta| in [0, 2.4), pt in [26, inf), flow "error".
+            // Only shifted trees clamp; central inputs are exact and must stay strict.
+            double abseta = std::abs(part_p4.Eta());
+            double pt = part_p4.Pt();
+            if (clamp_inputs) {
+                abseta = clampToRange(abseta, 0., 2.4);
+                pt = clampToRange(pt, 26., std::numeric_limits<double>::infinity());
+            }
+            corr_SF = muTrgCorrections.at(getUncSourceName(source))->evaluate({abseta, pt, scale_str});
             return corr_SF;
         }
         float getSF_ditau(const LorentzVectorM& part_p4,

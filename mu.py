@@ -535,7 +535,8 @@ class MuCorrProducer:
                             ? ::correction::MuCorrProvider::getGlobal().getMuonSF(
                                 {p4}, {pfRelIso04_all}, {tightId}, {tkRelIso}, {highPtId}, {mediumId},{looseId},
                                 ::correction::MuCorrProvider::UncSource::{source},
-                                ::correction::UncScale::{scale})
+                                ::correction::UncScale::{scale},
+                                {'false' if isCentral else 'true'})
                             : 1.""",
                     )
 

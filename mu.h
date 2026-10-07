@@ -88,14 +88,13 @@ namespace correction {
         }
 
         static bool sourceApplies(UncSource source,
-                          const float Muon_pfRelIso04_all,
-                          const bool  Muon_TightId,
-                          const float muon_Pt,
-                          const float Muon_tkRelIso,
-                          const bool  Muon_highPtId,
-                          const bool  Muon_MediumId,
-                          const bool  Muon_LooseId) {
-
+                                  const float Muon_pfRelIso04_all,
+                                  const bool Muon_TightId,
+                                  const float muon_Pt,
+                                  const float Muon_tkRelIso,
+                                  const bool Muon_highPtId,
+                                  const bool Muon_MediumId,
+                                  const bool Muon_LooseId) {
             const bool Muon_LooseIso = (Muon_pfRelIso04_all < 0.25);
             const bool Muon_MediumIso = (Muon_pfRelIso04_all < 0.2);
             const bool Muon_TightIso = (Muon_pfRelIso04_all < 0.15);
@@ -285,12 +284,18 @@ namespace correction {
                         const bool Muon_MediumId,
                         const bool Muon_LooseId,
                         UncSource source,
-                        UncScale scale) const {
-            const UncScale muID_scale =
-                sourceApplies(
-                    source, Muon_pfRelIso04_all, Muon_TightId, muon_p4.Pt(), Muon_tkRelIso, Muon_highPtId, Muon_MediumId, Muon_LooseId)
-                    ? scale
-                    : UncScale::Central;
+                        UncScale scale,
+                        bool clamp_inputs = false) const {
+            const UncScale muID_scale = sourceApplies(source,
+                                                      Muon_pfRelIso04_all,
+                                                      Muon_TightId,
+                                                      muon_p4.Pt(),
+                                                      Muon_tkRelIso,
+                                                      Muon_highPtId,
+                                                      Muon_MediumId,
+                                                      Muon_LooseId)
+                                            ? scale
+                                            : UncScale::Central;
             const std::string& scale_str = getScaleStr(muID_scale);
             if (source == UncSource::NUM_TrackerMuons_DEN_genTracks) {
                 //const std::string& reco_scale_str = scale==UncScale::Central ? "nominal" : scale_str;
@@ -300,8 +305,12 @@ namespace correction {
             }
             static const double pt_low = 15.0;
             const double muon_pt = std::max(pt_low, muon_p4.pt());
+            // muon_Z ID/iso SF binning: |eta| in [0, 2.4), flow "error".
+            // Only shifted trees clamp; central inputs are exact and must stay strict.
+            const double muon_abseta =
+                clamp_inputs ? clampToRange(std::abs(muon_p4.Eta()), 0., 2.4) : std::abs(muon_p4.Eta());
             const float corr_SF =
-                corrections_->at(getUncSourceName(source))->evaluate({abs(muon_p4.Eta()), muon_pt, scale_str});
+                corrections_->at(getUncSourceName(source))->evaluate({muon_abseta, muon_pt, scale_str});
             return source == UncSource::Central ? 1. : corr_SF;
         }
         //Check range, but if it is out of range it is still valid and return 1.
@@ -424,16 +433,21 @@ namespace correction {
             if (source == UncSource::NUM_Mu50_or_TkMu50_DEN_CutBasedIdGlobalHighPt_and_TkIsoLoose)
                 k = "NUM_Mu50_or_TkMu50_DEN_CutBasedIdGlobalHighPt_and_TkIsoLoose";
 
-            if (source == UncSource::NUM_IsoMu24_or_Mu50_or_CascadeMu100_or_HighPtTkMu100_DEN_CutBasedIdGlobalHighPt_and_TkIsoLoose)
+            if (source ==
+                UncSource::NUM_IsoMu24_or_Mu50_or_CascadeMu100_or_HighPtTkMu100_DEN_CutBasedIdGlobalHighPt_and_TkIsoLoose)
                 k = "NUM_IsoMu24_or_Mu50_or_CascadeMu100_or_HighPtTkMu100_DEN_CutBasedIdGlobalHighPt_and_TkIsoLoose";
-            if (source == UncSource::NUM_IsoMu24_or_Mu50_or_CascadeMu100_or_HighPtTkMu100_DEN_CutBasedIdMedium_and_PFIsoMedium)
+            if (source ==
+                UncSource::NUM_IsoMu24_or_Mu50_or_CascadeMu100_or_HighPtTkMu100_DEN_CutBasedIdMedium_and_PFIsoMedium)
                 k = "NUM_IsoMu24_or_Mu50_or_CascadeMu100_or_HighPtTkMu100_DEN_CutBasedIdMedium_and_PFIsoMedium";
-            if (source == UncSource::NUM_IsoMu24_or_Mu50_or_CascadeMu100_or_HighPtTkMu100_DEN_CutBasedIdTight_and_PFIsoTight)
+            if (source ==
+                UncSource::NUM_IsoMu24_or_Mu50_or_CascadeMu100_or_HighPtTkMu100_DEN_CutBasedIdTight_and_PFIsoTight)
                 k = "NUM_IsoMu24_or_Mu50_or_CascadeMu100_or_HighPtTkMu100_DEN_CutBasedIdTight_and_PFIsoTight";
-            if (source == UncSource::NUM_IsoMu24_or_Mu50_or_CascadeMu100_or_HighPtTkMu100_DEN_CutBasedIdTrkHighPt_and_TkIsoLoose)
+            if (source ==
+                UncSource::NUM_IsoMu24_or_Mu50_or_CascadeMu100_or_HighPtTkMu100_DEN_CutBasedIdTrkHighPt_and_TkIsoLoose)
                 k = "NUM_IsoMu24_or_Mu50_or_CascadeMu100_or_HighPtTkMu100_DEN_CutBasedIdTrkHighPt_and_TkIsoLoose";
 
-            if (source == UncSource::NUM_Mu50_or_CascadeMu100_or_HighPtTkMu100_DEN_CutBasedIdGlobalHighPt_and_TkIsoLoose)
+            if (source ==
+                UncSource::NUM_Mu50_or_CascadeMu100_or_HighPtTkMu100_DEN_CutBasedIdGlobalHighPt_and_TkIsoLoose)
                 k = "NUM_Mu50_or_CascadeMu100_or_HighPtTkMu100_DEN_CutBasedIdGlobalHighPt_and_TkIsoLoose";
             if (source == UncSource::NUM_Mu50_or_CascadeMu100_or_HighPtTkMu100_DEN_CutBasedIdTrkHighPt_and_TkIsoLoose)
                 k = "NUM_Mu50_or_CascadeMu100_or_HighPtTkMu100_DEN_CutBasedIdTrkHighPt_and_TkIsoLoose";
@@ -446,7 +460,6 @@ namespace correction {
                 k = "NUM_TightRelIso_DEN_TightIDandIPCut";
             return k;
         }
-
 
       private:
         std::unique_ptr<CorrectionSet> corrections_;
