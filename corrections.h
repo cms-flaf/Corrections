@@ -53,8 +53,9 @@ namespace correction {
     // Snap a value just outside the binning [lo, hi) into it, and throw if it is further out.
     // Shifted anaTuple trees store float deltas with an 8-bit mantissa, so a value that
     // passed a cut at a bin edge can be read back fractionally beyond it. The upper edge is
-    // exclusive in correctionlib, so the clamp stops one ulp below it.
-    inline double clampToRange(double value, double lo, double hi, double rel_tol = 0.001) {
+    // exclusive in correctionlib, so the clamp stops one ulp below it. When a shift reorders the
+    // leptons the delta spans two different objects, so the rounding can reach ~0.3%.
+    inline double clampToRange(double value, double lo, double hi, double rel_tol = 0.005) {
         if (value < lo - rel_tol * std::abs(lo) || value > hi + rel_tol * std::abs(hi))
             throw std::runtime_error("clampToRange: " + std::to_string(value) + " is outside [" + std::to_string(lo) +
                                      ", " + std::to_string(hi) + ") beyond tolerance");
