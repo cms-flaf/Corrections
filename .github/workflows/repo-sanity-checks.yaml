@@ -30,3 +30,11 @@ jobs:
           sparse-checkout-cone-mode: false
       - name: No leftover of the period -> era rename
         run: python3 flaf_check/run_tools/check_era_rename.py --repo .
+
+  # The tests that read the sources only; the others need ROOT, correctionlib and /cvmfs.
+  unit-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: No process-wide correction state
+        run: python3 -m unittest -v test_no_global_state
