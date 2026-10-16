@@ -17,8 +17,8 @@ class BosonicRecoilCorrection:
         "Run3_2026": "Recoil_corrections_2024_v5.json.gz",  # placeholder
     }
 
-    def __init__(self, period, config, isData, dataset_name, process_name, process_cfg):
-        self.period = period
+    def __init__(self, era, config, isData, dataset_name, process_name, process_cfg):
+        self.era = era
         self.config = config
         self.isData = isData
         self.dataset_name = dataset_name
@@ -28,7 +28,7 @@ class BosonicRecoilCorrection:
         json_file = os.path.join(
             os.environ["ANALYSIS_PATH"],
             "Corrections/data/hleprare/bosonicRecoil",
-            self.json_map[period],
+            self.json_map[era],
         )
 
         declareProviderHeader("bosonicRecoil.h")

@@ -63,22 +63,22 @@ class FatJetCorrProducer:
 
     fatjet_Sources = ["Hbb", "Hcc", "tau21"]
 
-    def __init__(self, period, ana, tagger, fatjetName, isData=False):
+    def __init__(self, campaign, ana, tagger, fatjetName, isData=False):
         # ana input for future, if other analyses will use separate corrections
         self.isData = isData
         self.fatjetName = fatjetName
 
         this_dict = self.fatjet_corr_dict[tagger]
-        file_nameID = this_dict["file_name"][period]
-        bb_key = this_dict["keys_bb"][period]
-        cc_key = this_dict["keys_cc"][period]
+        file_nameID = this_dict["file_name"][campaign]
+        bb_key = this_dict["keys_bb"][campaign]
+        cc_key = this_dict["keys_cc"][campaign]
 
         declareProviderHeader("fatjet.h")
         self.provider = CppProvider(
             "correction::FatJetCorrProvider", file_nameID, bb_key, cc_key
         )
 
-        self.period = period
+        self.campaign = campaign
         self.columns = {}
 
     def getSF(self, df, isCentral, return_variations):

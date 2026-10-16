@@ -30,12 +30,27 @@ declares the C++, and the header applies it inside RDataFrame. A change to one w
 compiles and then misbehaves at runtime. Check that new arguments, enum values and working-point
 names appear on both sides, in the same order.
 
+### Providers are objects, one per era and configuration
+
+- A process may build corrections for several eras (a law process merging AnaTuples of two
+  eras, for one). Every C++ provider is an ordinary object created and owned by its Python
+  producer through `CorrectionsCore.CppProvider`, and every JIT string reaches it through the
+  provider's `ref` (`f"{self.provider.ref}->getWeight(...)"`). There is no global `Corrections`
+  instance, no static `Initialize`/`getGlobal`, no `initialized` flag and no era value stored on
+  a class; a header holds no mutable function-local `static` (it would be shared by every object
+  and every RDataFrame thread). `test_no_global_state.py` checks this from the sources.
+- `ref` is a raw address: the producer, and the `Corrections` instance that owns it, must outlive
+  every dataframe built with it (FLAF keeps the instance on the `DataFrameWrapper`). `ref` is
+  `const`, so a provider method used from a JIT string must be `const`.
+- Headers are declared once per process (`declareHeader`, `declareProviderHeader`); a new era
+  creates new objects, it never compiles the classes again.
+
 ### Era handling
 
-- `CorrectionsCore.py` maps FLAF period names (`Run3_2022`, `Run3_2022EE`, `Run3_2023`,
-  `Run3_2023BPix`, `Run3_2024`, …) onto the campaign strings the POG files use
-  (`2022_Summer22`, …). A new era needs an entry here **and** in every correction that switches on
-  the period.
+- The FLAF era (`Run3_2022`, `Run3_2022EE`, `Run3_2023`, `Run3_2023BPix`, `Run3_2024`, …) is
+  called `era`; the POG campaign string the files use (`2022_Summer22`, …) is called `campaign`.
+  `CorrectionsCore.campaign_names` maps one onto the other. A new era needs an entry there **and**
+  in every correction that switches on the era or the campaign.
 - Eras sometimes have to borrow another era's file when a POG has not published theirs. That is
   legitimate, but it must be explicit and commented with which year is being substituted and why —
   a silent fallback to a neighbouring year is exactly the invisible error above.
@@ -112,7 +127,7 @@ Verified 2026-08-27; re-check before relying on any of it.
 
 | | |
 |---|---|
-| Entry points | `Corrections.py` (`initializeGlobal`, per-stage wiring), `CorrectionsCore.py` (period names, scale handling) |
+| Entry points | `Corrections.py` (one instance per dataset, era and stage; per-stage wiring), `CorrectionsCore.py` (`CppProvider`, campaign names, scale handling) |
 | Per-object modules | `tau`, `jet`, `fatjet`, `electron`, `mu`, `btag`, `pu`, `met`, `triggers`, `triggersRun3`, `puJetID`, `Vpt`, `lumi`, `JetVetoMap`, `MuonScaRe*`, analysis-specific `DY_hhbbtautau` / `DY_hhbbww` |
 | Data | `data/` (BTV, EGM, MUO, TAU, TRG, EWK_Corr_Vpt, golden_json) plus JSON POG files from CVMFS |
 | Dependencies | ROOT (PyROOT), `correctionlib`, CVMFS |

@@ -14,7 +14,7 @@ class MuonEnergyScaleProducer:
 
     def __init__(
         self,
-        period,
+        campaign,
         isData,
         pt_for_ScaRe,
         return_variations=True,
@@ -22,16 +22,16 @@ class MuonEnergyScaleProducer:
         apply_fsr_recovery=True,
         id_selection="Muon_looseId",
     ):
-        self.period = period
+        self.campaign = campaign
         self.pt_for_ScaRe = pt_for_ScaRe
         self.apply_scare = apply_scare
         self.apply_fsr_recovery = apply_fsr_recovery
         self.id_selection = id_selection
         jsonFile_path = MuonEnergyScaleProducer.jsonPath.format(
-            pog_folder_names["MUO"][period]
+            pog_folder_names["MUO"][campaign]
         )
         jsonFile_path_VXBS = MuonEnergyScaleProducer.jsonPath_VXBS.format(
-            pog_folder_names["MUO"][period]
+            pog_folder_names["MUO"][campaign]
         )
         self.isData = isData
         self.return_variations = return_variations

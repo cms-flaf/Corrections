@@ -443,22 +443,22 @@ class MuCorrProducer:
     ]
 
     def __init__(self, *, era, columns):
-        period = period_names[era]
+        campaign = campaign_names[era]
         jsonFile_eff = os.path.join(
             os.environ["ANALYSIS_PATH"],
-            MuCorrProducer.muIDEff_JsonPath.format(pog_folder_names["MUO"][period]),
+            MuCorrProducer.muIDEff_JsonPath.format(pog_folder_names["MUO"][campaign]),
         )
         jsonFile_eff_highPt = os.path.join(
             os.environ["ANALYSIS_PATH"],
             MuCorrProducer.HighPtmuIDEff_JsonPath.format(
-                pog_folder_names["MUO"][period]
+                pog_folder_names["MUO"][campaign]
             ),
         )
         if era not in ("Run3_2025", "Run3_2026"):
             jsonFile_eff_lowPt = os.path.join(
                 os.environ["ANALYSIS_PATH"],
                 MuCorrProducer.LowPtmuIDEff_JsonPath.format(
-                    pog_folder_names["MUO"][period]
+                    pog_folder_names["MUO"][campaign]
                 ),
             )
         declareProviderHeader("mu.h")
@@ -470,7 +470,7 @@ class MuCorrProducer:
             self.lowPt_provider = CppProvider(
                 "correction::LowPtMuCorrProvider", jsonFile_eff_lowPt
             )
-        self.period = period
+        self.campaign = campaign
         self.low_available = era.startswith("Run3") and era not in (
             "Run3_2025",
             "Run3_2026",
@@ -485,8 +485,8 @@ class MuCorrProducer:
         SF_branches = []
 
         sf_sources = (
-            MuCorrProducer.MediumMuIDIso_SF_Sources[self.period]
-            + MuCorrProducer.MediumMuReco_SF_sources[self.period]
+            MuCorrProducer.MediumMuIDIso_SF_Sources[self.campaign]
+            + MuCorrProducer.MediumMuReco_SF_sources[self.campaign]
         )
         sf_scales = [central, up, down] if return_variations else [central]
         for source in sf_sources:

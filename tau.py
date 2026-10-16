@@ -10,7 +10,7 @@ from .CorrectionsCore import *
 # Run3: https://twiki.cern.ch/twiki/bin/view/CMS/TauIDRecommendationForRun3
 
 deepTauVersions = {"2p1": "2017", "2p5": "2018"}
-period_in_tau_json = {
+era_in_tau_json = {
     "Run2_2016_HIPM": "2016_postVFP",
     "Run2_2016": "2016_preVFP",
     "Run2_2017": "2017",
@@ -24,21 +24,21 @@ period_in_tau_json = {
     "Run3_2026": "2025",  # placeholder: no 2026 tau JSON era key yet
 }
 
-period_in_tau_file_name = {
-    "Run2_2016_HIPM": period_names["Run2_2016_HIPM"],
-    "Run2_2016": period_names["Run2_2016"],
-    "Run2_2017": period_names["Run2_2017"],
-    "Run2_2018": period_names["Run2_2018"],
-    "Run3_2022": period_in_tau_json["Run3_2022"],
-    "Run3_2022EE": period_in_tau_json["Run3_2022EE"],
-    "Run3_2023": period_in_tau_json["Run3_2023"],
-    "Run3_2023BPix": period_in_tau_json["Run3_2023BPix"],
-    "Run3_2024": period_in_tau_json["Run3_2024"],
-    "Run3_2025": period_in_tau_json["Run3_2025"],
-    "Run3_2026": period_in_tau_json["Run3_2026"],
+era_in_tau_file_name = {
+    "Run2_2016_HIPM": campaign_names["Run2_2016_HIPM"],
+    "Run2_2016": campaign_names["Run2_2016"],
+    "Run2_2017": campaign_names["Run2_2017"],
+    "Run2_2018": campaign_names["Run2_2018"],
+    "Run3_2022": era_in_tau_json["Run3_2022"],
+    "Run3_2022EE": era_in_tau_json["Run3_2022EE"],
+    "Run3_2023": era_in_tau_json["Run3_2023"],
+    "Run3_2023BPix": era_in_tau_json["Run3_2023BPix"],
+    "Run3_2024": era_in_tau_json["Run3_2024"],
+    "Run3_2025": era_in_tau_json["Run3_2025"],
+    "Run3_2026": era_in_tau_json["Run3_2026"],
 }
 
-period_in_taupog_folder = {
+era_in_taupog_folder = {
     "Run2_2016_HIPM": "Run2-2016preVFP-UL-NanoAODv9",
     "Run2_2016": "Run2-2016postVFP-UL-NanoAODv9",
     "Run2_2017": "Run2-2017-UL-NanoAODv9",
@@ -111,22 +111,22 @@ class TauCorrProducer:
         "channelId",
     ]
 
-    def __init__(self, *, period, config, columns):
+    def __init__(self, *, era, config, columns):
         self.deepTauVersion = f"""DeepTau{deepTauVersions[config["deepTauVersion"]]}v{config["deepTauVersion"]}"""
         jsonFile = TauCorrProducer.jsonPath.format(
-            pog_folder_names["TAU"][period_names[period]]
+            pog_folder_names["TAU"][campaign_names[era]]
         )
-        #     period_in_taupog_folder[period], period_in_tau_file_name[period]
+        #     era_in_taupog_folder[era], era_in_tau_file_name[era]
         # )
         # 2024 tau.json only publishes nom/up/down plus highpT systs
         self.sf_sources_tau = list(TauCorrProducer.SFSources_tau)
-        if period == "Run3_2024":
+        if era == "Run3_2024":
             self.sf_sources_tau = [
                 src
                 for src in self.sf_sources_tau
                 if src.startswith("stat_highpT") or src.startswith("syst_highpT")
             ]
-        elif period in ("Run3_2025", "Run3_2026"):
+        elif era in ("Run3_2025", "Run3_2026"):
             # 2025/2026 JSON uses a different VSjet syst naming; keep central only.
             self.sf_sources_tau = []
         declareProviderHeader("tau.h")
@@ -134,7 +134,7 @@ class TauCorrProducer:
         tauType_map = createTauSFTypeMap(config["genuineTau_SFtype"])
         self.provider = CppProvider(
             "correction::TauCorrProvider",
-            cpp_args=f'"{jsonFile}", "{self.deepTauVersion}", {wp_map_cpp}, {tauType_map}, "{period_in_tau_json[period]}"',
+            cpp_args=f'"{jsonFile}", "{self.deepTauVersion}", {wp_map_cpp}, {tauType_map}, "{era_in_tau_json[era]}"',
         )
         self.columns = {}
         for col in TauCorrProducer.inputColumns:

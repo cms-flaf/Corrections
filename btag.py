@@ -76,7 +76,7 @@ class bTagCorrProducer:
     def __init__(
         self,
         *,
-        period,
+        campaign,
         jetCollection,
         loadEfficiency=False,
         tagger="particleNet",
@@ -89,15 +89,15 @@ class bTagCorrProducer:
         self.jetCollection = jetCollection
         self.useSplitJes = useSplitJes
         jsonFile = bTagCorrProducer.jsonPath.format(
-            pog_folder_names["BTV"][period]
+            pog_folder_names["BTV"][campaign]
         )  # for 2025 latest is not available, but files are in this folder available: add_2025_b_and_c_WPs (?) bah
         if not os.path.exists(jsonFile):
             jsonFile = bTagCorrProducer.alternative_jsonPath.format(
-                pog_folder_names["BTV"][period]
+                pog_folder_names["BTV"][campaign]
             )
         jsonFile_eff = os.path.join(
             os.environ["ANALYSIS_PATH"],
-            bTagCorrProducer.bTagEff_JsonPath.format(period),
+            bTagCorrProducer.bTagEff_JsonPath.format(campaign),
         )
         if not loadEfficiency:
             jsonFile_eff = ""
@@ -109,7 +109,7 @@ class bTagCorrProducer:
         self.shape_provider = CppProvider(
             "correction::bTagShapeCorrProvider",
             jsonFile,
-            periods[period],
+            campaign_years[campaign],
             self.tagger,
             wantShape,
         )

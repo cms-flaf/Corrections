@@ -427,7 +427,7 @@ namespace correction {
             eleTrgCorrections_Data, tauTrgCorrections, ditauJet_trgCorrections, etau_trgCorrections_Mc,
             etau_trgCorrections_Data, mutau_trgCorrections_Mc, mutau_trgCorrections_Data, muTrgCorrections_Mc,
             muTrgCorrections_Data;
-        const std::string period_;
+        const std::string campaign_;
     };
 
 }  // namespace correction

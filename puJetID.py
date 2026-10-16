@@ -12,14 +12,14 @@ class puJetIDCorrProducer:
     puJetID_SF_Sources = ["PUJetID_eff"]
     puJetID = "L"
 
-    def __init__(self, period):
+    def __init__(self, campaign):
         jsonFile_eff = os.path.join(
             os.environ["ANALYSIS_PATH"],
-            puJetIDCorrProducer.PUJetID_JsonPath.format(period),
+            puJetIDCorrProducer.PUJetID_JsonPath.format(campaign),
         )
         declareProviderHeader("puJetID.h")
         self.provider = CppProvider("correction::PUJetIDCorrProvider", jsonFile_eff)
-        self.period = period
+        self.campaign = campaign
 
     def getPUJetIDEff(self, df, isCentral=True, return_variations=True):
         puJetID_SF_branches = []

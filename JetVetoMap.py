@@ -16,7 +16,7 @@ class JetVetoMapProvider:
     )
 
     jetvetomap_names = {
-        "2022_Summer22": "Summer22_23Sep2023_RunCD_V1",  # period: , entryname
+        "2022_Summer22": "Summer22_23Sep2023_RunCD_V1",  # campaign: entry name
         "2022_Summer22EE": "Summer22EE_23Sep2023_RunEFG_V1",
         "2023_Summer23BPix": "Summer23BPixPrompt23_RunD_V1",
         "2023_Summer23": "Summer23Prompt23_RunC_V1",
@@ -27,19 +27,19 @@ class JetVetoMapProvider:
     }
 
     def __init__(self, era):
-        period = period_names[era]
-        entry_name = JetVetoMapProvider.jetvetomap_names[period]
+        campaign = campaign_names[era]
+        entry_name = JetVetoMapProvider.jetvetomap_names[campaign]
         JME_vetoMap_JsonFile = os.path.join(
             os.environ["ANALYSIS_PATH"],
             JetVetoMapProvider.JME_vetoMap_JsonPath.format(
-                pog_folder_names["JERC"][period]
+                pog_folder_names["JERC"][campaign]
             ),
         )
         declareProviderHeader("JetVetoMap.h")
         self.provider = CppProvider(
             "correction::JetVetoMapProvider", JME_vetoMap_JsonFile, entry_name
         )
-        self.period = period
+        self.campaign = campaign
 
     def GetJetVetoMap(self, df):
         # jet pT > 15 GeV, tight jet ID, PU jet ID for CHS jets with pT < 50 GeV,  jet EM fraction (charged + neutral) < 0.9

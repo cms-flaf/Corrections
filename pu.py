@@ -37,14 +37,14 @@ class puWeightProducer:
         "2025_Winter25": "_2025pp_Golden_Summer24_25ns_69200ub",
     }
 
-    def __init__(self, period):
-        suffix = puWeightProducer.pu_file_suffix.get(period, "")
+    def __init__(self, campaign):
+        suffix = puWeightProducer.pu_file_suffix.get(campaign, "")
         jsonFile = puWeightProducer.JsonPath.format(
-            folder=pog_folder_names["LUM"][period], suffix=suffix
+            folder=pog_folder_names["LUM"][campaign], suffix=suffix
         )
         declareProviderHeader("pu.h")
         self.provider = CppProvider(
-            "correction::puCorrProvider", jsonFile, self.golden_json_dict[period]
+            "correction::puCorrProvider", jsonFile, self.golden_json_dict[campaign]
         )
 
     @staticmethod

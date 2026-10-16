@@ -21,8 +21,8 @@ import re
 
 # singleTau;diTau run3: https://gitlab.cern.ch/cms-tau-pog/jsonpog-integration/-/tree/TauPOG_v2_deepTauV2p5/POG/TAU?ref_type=heads
 # crossTrigger run3 : https://gitlab.cern.ch/cms-higgs-leprare/hleprare/-/tree/master/TriggerScaleFactors?ref_type=heads
-# singleEle : /cvmfs/cms-griddata.cern.ch/cat/metadata/EGM/{period}/electronHlt.json.gz
-# singleMu : /cvmfs/cms-griddata.cern.ch/cat/metadata/MUO/{period}/muon_Z.json.gz
+# singleEle : /cvmfs/cms-griddata.cern.ch/cat/metadata/EGM/{campaign}/electronHlt.json.gz
+# singleMu : /cvmfs/cms-griddata.cern.ch/cat/metadata/MUO/{campaign}/muon_Z.json.gz
 # missing efficiencies for singleMu --> run2 eff are https://gitlab.cern.ch/cms-muonPOG/muonefficiencies/-/tree/master (but run3 is missing also on this folder)
 
 
@@ -65,16 +65,16 @@ class TrigCorrProducer:
     }
 
     @staticmethod
-    def _json_trg_key(leg, period):
+    def _json_trg_key(leg, campaign):
         keys = leg["jsonTRGcorrection_key"]
-        if period in keys:
-            return keys[period]
+        if campaign in keys:
+            return keys[campaign]
         for fallback in ("2025_Summer24", "2024_Summer24"):
             if fallback in keys:
                 return keys[fallback]
-        raise KeyError(period)
+        raise KeyError(campaign)
 
-    def __init__(self, period, config, trigger_dict):
+    def __init__(self, campaign, config, trigger_dict):
         # json_correction_path = eval(trigger_dict['ditaujet']['legs'][1]["jsonTRGcorrection_path"])
         tau_filename_dict = {
             "2022_Summer22": "2022_preEE",
@@ -87,81 +87,83 @@ class TrigCorrProducer:
             "2026_Summer24": "2023_postBPix",  # placeholder
         }
 
-        self.period = period
+        self.campaign = campaign
         self.config = config
         self.trigger_dict = trigger_dict
 
-        egm_period = (
+        egm_campaign = (
             "2024_Summer24"
-            if period.startswith("2025") or period.startswith("2026")
-            else period
+            if campaign.startswith("2025") or campaign.startswith("2026")
+            else campaign
         )  # 2025/2026 have no electronHlt.json.gz
         jsonFile_e = os.path.join(
             os.environ["ANALYSIS_PATH"],
-            TrigCorrProducer.eTRG_jsonPath.format(pog_folder_names["EGM"][egm_period]),
+            TrigCorrProducer.eTRG_jsonPath.format(
+                pog_folder_names["EGM"][egm_campaign]
+            ),
         )
         jsonFile_Tau = os.path.join(
             os.environ["ANALYSIS_PATH"],
-            TrigCorrProducer.TauTRG_jsonPath.format(pog_folder_names["TAU"][period]),
+            TrigCorrProducer.TauTRG_jsonPath.format(pog_folder_names["TAU"][campaign]),
         )
         jsonFile_Mu = os.path.join(
             os.environ["ANALYSIS_PATH"],
-            TrigCorrProducer.MuTRG_jsonPath.format(tau_filename_dict[period]),
+            TrigCorrProducer.MuTRG_jsonPath.format(tau_filename_dict[campaign]),
         )
         jsonFile_TauJet = os.path.join(
             os.environ["ANALYSIS_PATH"],
-            TrigCorrProducer.TaujetTRG_jsonPath.format(tau_filename_dict[period]),
+            TrigCorrProducer.TaujetTRG_jsonPath.format(tau_filename_dict[campaign]),
         )
         jsonFile_muTau = os.path.join(
             os.environ["ANALYSIS_PATH"],
-            TrigCorrProducer.muTauTRG_jsonPath.format(tau_filename_dict[period]),
+            TrigCorrProducer.muTauTRG_jsonPath.format(tau_filename_dict[campaign]),
         )
         jsonFile_eTau = os.path.join(
             os.environ["ANALYSIS_PATH"],
-            TrigCorrProducer.eTauTRG_jsonPath.format(tau_filename_dict[period]),
+            TrigCorrProducer.eTauTRG_jsonPath.format(tau_filename_dict[campaign]),
         )
 
         declareProviderHeader("triggersRun3.h")
-        self.year = period.split("_")[0]
-        if period.endswith("Summer22"):
-            self.year = period.split("_")[0] + "Re-recoBCD"
-        if period.endswith("Summer22EE"):
-            self.year = period.split("_")[0] + "Re-recoE+PromptFG"
-        if period.endswith("Summer23"):
-            self.year = period.split("_")[0] + "PromptC"
-        if period.endswith("Summer23BPix"):
-            self.year = period.split("_")[0] + "PromptD"
-        if period.endswith("Summer24"):
-            self.year = period.split("_")[0] + "Prompt"
+        self.year = campaign.split("_")[0]
+        if campaign.endswith("Summer22"):
+            self.year = campaign.split("_")[0] + "Re-recoBCD"
+        if campaign.endswith("Summer22EE"):
+            self.year = campaign.split("_")[0] + "Re-recoE+PromptFG"
+        if campaign.endswith("Summer23"):
+            self.year = campaign.split("_")[0] + "PromptC"
+        if campaign.endswith("Summer23BPix"):
+            self.year = campaign.split("_")[0] + "PromptD"
+        if campaign.endswith("Summer24"):
+            self.year = campaign.split("_")[0] + "Prompt"
         # 2025 electron HLT JSON is the 2024 file; evaluate with that year's key.
         self.ele_year = (
             "2024Prompt"
-            if period.startswith("2025") or period.startswith("2026")
+            if campaign.startswith("2025") or campaign.startswith("2026")
             else self.year
         )
         # Local CrossEleTau JSONs are still the 2023 HLepRare files.
         self.cross_ele_year = (
-            "2023PromptD" if period.endswith("Summer24") else self.ele_year
+            "2023PromptD" if campaign.endswith("Summer24") else self.ele_year
         )
 
-        # ROOT.gInterpreter.ProcessLine(f"""::correction::TrigCorrProvider::Initialize("{jsonFile_Mu}","{jsonFile_e}", "{jsonFile_Tau}", "{self.muon_trg_dict[period]}","{self.ele_trg_dict['McEff'][period]}", "{self.tau_trg_dict[period]}", "{period}")""")
+        # ROOT.gInterpreter.ProcessLine(f"""::correction::TrigCorrProvider::Initialize("{jsonFile_Mu}","{jsonFile_e}", "{jsonFile_Tau}", "{self.muon_trg_dict[campaign]}","{self.ele_trg_dict['McEff'][campaign]}", "{self.tau_trg_dict[campaign]}", "{campaign}")""")
         mu_trg_key_mc, mu_trg_key_data = None, None
         ele_trg_key_mc, ele_trg_key_data = None, None
 
         # bbWW uses singleIsoMu and singleEleWpTight names
         if "singleIsoMu" in self.trigger_dict.keys():
             mu_trg_key_mc = self._json_trg_key(
-                self.trigger_dict["singleIsoMu"]["legs"][0], period
+                self.trigger_dict["singleIsoMu"]["legs"][0], campaign
             ).format("MC")
             mu_trg_key_data = self._json_trg_key(
-                self.trigger_dict["singleIsoMu"]["legs"][0], period
+                self.trigger_dict["singleIsoMu"]["legs"][0], campaign
             ).format("DATA")
         if "singleEleWpTight" in self.trigger_dict.keys():
             ele_trg_key_mc = self._json_trg_key(
-                self.trigger_dict["singleEleWpTight"]["legs"][0], period
+                self.trigger_dict["singleEleWpTight"]["legs"][0], campaign
             ).format("Mc")
             ele_trg_key_data = self._json_trg_key(
-                self.trigger_dict["singleEleWpTight"]["legs"][0], period
+                self.trigger_dict["singleEleWpTight"]["legs"][0], campaign
             ).format("Data")
 
         # Now bbtautau keys
@@ -170,37 +172,37 @@ class TrigCorrProducer:
         jet_trg_key = None
         if "singleMu" in self.trigger_dict.keys():
             mu_trg_key_mc = self._json_trg_key(
-                self.trigger_dict["singleMu"]["legs"][0], period
+                self.trigger_dict["singleMu"]["legs"][0], campaign
             ).format(
                 MuIDWP=config.get("muonID_WP_for_triggerSF", "Medium"), DataMC="MC"
             )
             mu_trg_key_data = self._json_trg_key(
-                self.trigger_dict["singleMu"]["legs"][0], period
+                self.trigger_dict["singleMu"]["legs"][0], campaign
             ).format(
                 MuIDWP=config.get("muonID_WP_for_triggerSF", "Medium"),
                 DataMC="DATA",
             )
         if "singleEle" in self.trigger_dict.keys():
             ele_trg_key_mc = self._json_trg_key(
-                self.trigger_dict["singleEle"]["legs"][0], period
+                self.trigger_dict["singleEle"]["legs"][0], campaign
             ).format("Mc")
             ele_trg_key_data = self._json_trg_key(
-                self.trigger_dict["singleEle"]["legs"][0], period
+                self.trigger_dict["singleEle"]["legs"][0], campaign
             ).format("Data")
         if "mutau" in self.trigger_dict.keys():
             mutau_trg_key_mc = self._json_trg_key(
-                self.trigger_dict["mutau"]["legs"][0], period
+                self.trigger_dict["mutau"]["legs"][0], campaign
             ).format("MC")
             mutau_trg_key_data = self._json_trg_key(
-                self.trigger_dict["mutau"]["legs"][0], period
+                self.trigger_dict["mutau"]["legs"][0], campaign
             ).format("DATA")
         if "ditau" in self.trigger_dict.keys():
             tau_trg_key = self._json_trg_key(
-                self.trigger_dict["ditau"]["legs"][0], period
+                self.trigger_dict["ditau"]["legs"][0], campaign
             )
         if "ditaujet" in self.trigger_dict.keys():
             jet_trg_key = self._json_trg_key(
-                self.trigger_dict["ditaujet"]["legs"][1], period
+                self.trigger_dict["ditaujet"]["legs"][1], campaign
             )
 
         self.provider = CppProvider(
@@ -220,7 +222,7 @@ class TrigCorrProducer:
             str(ele_trg_key_data),
             str(tau_trg_key),
             str(jet_trg_key),
-            period,
+            campaign,
         )
         print("TrigCorrProducer initialized")
 

@@ -107,7 +107,7 @@ pog_folder_names = {
     },
 }
 
-period_names = {
+campaign_names = {
     "Run2_2016_HIPM": "2016preVFP_UL",
     "Run2_2016": "2016postVFP_UL",
     "Run2_2017": "2017_UL",
@@ -121,7 +121,7 @@ period_names = {
     "Run3_2026": "2026_Summer24",  # not every POG publishes 2026 sets yet: see pog_folder_names
 }
 
-periods = {
+campaign_years = {
     "2026_Summer24": "2026",
     "2025_Winter25": "2025",
     "2025_Summer24": "2025",

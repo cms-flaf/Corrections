@@ -114,7 +114,7 @@ class JetCorrProducer:
     # jersmear_jsonPath = "/cvmfs/cms-griddata.cern.ch/cat/metadata/JME/JER-Smearing/latest/jer_smear.json.gz"
     jersmear_jsonPath = "/cvmfs/cms-griddata.cern.ch/cat/metadata/JME/JER-Smearing/2026-09-18/jer_smear.json.gz"
 
-    # maps period to JER tag (only for MC!)
+    # maps campaign to JER tag (only for MC!)
     jer_tag_map = {
         "2022_Summer22": "Summer22_22Sep2023_JRV2_MC",
         "2022_Prompt": "JR_Winter22Run3_V2_MC",
@@ -127,7 +127,7 @@ class JetCorrProducer:
         "2026_Summer24": "Summer24Prompt26_RunBD_JRV1_MC",  # RunC (low PU) has its own JER, but no certified luminosity
     }
 
-    # maps period to JEC tag
+    # maps campaign to JEC tag
     jec_tag_map_mc = {
         "2022_Prompt": ["Winter22Run3_V4_MC"],
         "2022_Summer22": [
@@ -154,7 +154,7 @@ class JetCorrProducer:
         "2026_Summer24": ["Summer24Prompt26_V1_MC"],
     }
 
-    # maps period to base tag
+    # maps campaign to base tag
     # for DATA: jec_tag = {base_tag}_Run{letters}_V{version}_DATA
     jec_tag_map_data = {
         "2022_Prompt": ["Winter22Run3_Run{}_V4_DATA"],
@@ -188,7 +188,7 @@ class JetCorrProducer:
         ],
     }
 
-    # maps period to JER tag (only for MC!)
+    # maps campaign to JER tag (only for MC!)
     fatjer_tag_map = {
         "2022_Summer22": "Summer22_22Sep2023_JRV2_MC",
         "2022_Prompt": "JR_Winter22Run3_V2_MC",
@@ -201,7 +201,7 @@ class JetCorrProducer:
         "2026_Summer24": "Summer24Prompt26_RunBD_JRV1_MC",  # RunC (low PU) has its own JER, but no certified luminosity
     }
 
-    # maps period to JEC tag
+    # maps campaign to JEC tag
     fatjec_tag_map_mc = {
         "2022_Summer22": ["Summer22_22Sep2023_V4_MC"],
         "2022_Prompt": ["Winter22Run3_V4_MC"],
@@ -282,7 +282,7 @@ class JetCorrProducer:
     # Sources = []
 
     def __init__(
-        self, period, isData, sample_name, use_corrlib=True, use_regrouped=False
+        self, campaign, isData, sample_name, use_corrlib=True, use_regrouped=False
     ):
         self.isData = isData
         self.sample_name = sample_name
@@ -293,18 +293,18 @@ class JetCorrProducer:
             self.uncSources_toUse = JetCorrProducer.uncSources_regrouped
         else:
             self.uncSources_toUse = JetCorrProducer.uncSources_minimal
-        self.year = int(period[:4])
-        self.period = period
+        self.year = int(campaign[:4])
+        self.campaign = campaign
         if not self.use_corrlib:
             print("Initializing old JetCorrProducer")
-            JEC_dir = directories_JEC[period]
-            JER_dir = directories_JER[period]
+            JEC_dir = directories_JEC[campaign]
+            JER_dir = directories_JER[campaign]
             type_suffix = "DATA" if isData else "MC"
             JER_SF_txt = (
                 f"{JER_dir}_{type_suffix}/{JER_dir}_{type_suffix}_SF_AK4PFchs.txt"
             )
             JER_PtRes_txt = f"{JER_dir}_{type_suffix}/{JER_dir}_{type_suffix}_PtResolution_AK4PFchs.txt"
-            JEC_Regrouped_txt = f"{JEC_dir}/{regrouped_files_names[period]}"
+            JEC_Regrouped_txt = f"{JEC_dir}/{regrouped_files_names[campaign]}"
             ptResolution = getJMEFile("JRDatabase", JER_PtRes_txt)
             ptResolutionSF = getJMEFile("JRDatabase", JER_SF_txt)
             JEC_Regrouped = getJMEFile("JECDatabase", JEC_Regrouped_txt)
@@ -320,32 +320,32 @@ class JetCorrProducer:
                 ptResolution,
                 ptResolutionSF,
                 JEC_Regrouped,
-                periods[period],
+                campaign_years[campaign],
             )
         else:
             print("Initializing new JetCorrProducer")
 
             jet_path = JetCorrProducer.jet_jsonPath.format(
-                pog_folder_names["JERC"][period]
+                pog_folder_names["JERC"][campaign]
             )
             jet_jsonFile = os.path.join(os.environ["ANALYSIS_PATH"], jet_path)
             jersmear_path = JetCorrProducer.jersmear_jsonPath
             jetsmear_jsonFile = os.path.join(os.environ["ANALYSIS_PATH"], jersmear_path)
-            year = period.split("_")[0]
+            year = campaign.split("_")[0]
             jec_tag_map = (
                 JetCorrProducer.jec_tag_map_data
                 if self.isData
                 else JetCorrProducer.jec_tag_map_mc
             )
 
-            jec_tag_array = jec_tag_map[period]
+            jec_tag_array = jec_tag_map[campaign]
             jec_tag = jec_tag_array[0]
             other_jec_tag = (
                 jec_tag_array[1] if len(jec_tag_array) > 1 else jec_tag_array[0]
             )
             # print(f"jec_tag is {jec_tag}")
             fatjet_path = JetCorrProducer.fatjet_jsonPath.format(
-                pog_folder_names["JERC"][period]
+                pog_folder_names["JERC"][campaign]
             )
             fatjet_jsonFile = os.path.join(os.environ["ANALYSIS_PATH"], fatjet_path)
             fatjec_tag_map = (
@@ -354,7 +354,7 @@ class JetCorrProducer:
                 else JetCorrProducer.fatjec_tag_map_mc
             )
 
-            fatjec_tag_array = fatjec_tag_map[period]
+            fatjec_tag_array = fatjec_tag_map[campaign]
             fatjec_tag = fatjec_tag_array[0]
             other_fatjec_tag = (
                 fatjec_tag_array[1]
@@ -363,8 +363,8 @@ class JetCorrProducer:
             )
 
             if self.isData:
-                letter_list = JetCorrProducer.run_letters[period]
-                version_list = JetCorrProducer.run_versions[period]
+                letter_list = JetCorrProducer.run_letters[campaign]
+                version_list = JetCorrProducer.run_versions[campaign]
                 sample_letter = ""
                 sample_version = ""
                 if sample_name[-1].isalpha():
@@ -373,7 +373,7 @@ class JetCorrProducer:
                     tokens = sample_name.split("_")
                     sample_version = tokens[-1]
                     sample_letter = tokens[-2][-1]
-                if period in ("2025_Summer24", "2026_Summer24"):
+                if campaign in ("2025_Summer24", "2026_Summer24"):
                     sample_version = ""
 
                 # print(
@@ -416,10 +416,10 @@ class JetCorrProducer:
                 other_fatjec_tag = other_fatjec_tag.format(letters)
                 # print(f"fatjec_tag is {fatjec_tag}")
 
-            jer_tag = JetCorrProducer.jer_tag_map[period]
+            jer_tag = JetCorrProducer.jer_tag_map[campaign]
             algo = JetCorrProducer.jet_algorithm
 
-            fatjer_tag = JetCorrProducer.jer_tag_map[period]
+            fatjer_tag = JetCorrProducer.jer_tag_map[campaign]
             fatalgo = JetCorrProducer.fatjet_algorithm
 
             declareProviderHeader("jet.h")
@@ -455,12 +455,14 @@ class JetCorrProducer:
             require_run_number = "false"
             if self.isData:
                 require_run_number = "true"
-            if self.period == "2023_Summer23BPix":
+            if self.campaign == "2023_Summer23BPix":
                 require_run_number = "true"
             wantPhi = (
                 "true"
-                if (self.period == "2023_Summer23BPix" and self.isData)
-                or (self.period in ("2024_Summer24", "2025_Summer24", "2026_Summer24"))
+                if (self.campaign == "2023_Summer23BPix" and self.isData)
+                or (
+                    self.campaign in ("2024_Summer24", "2025_Summer24", "2026_Summer24")
+                )
                 else "false"
             )
             if not self.isData:
@@ -509,7 +511,7 @@ class JetCorrProducer:
             if source in apply_jes_list:  # source!=central and source != "JER":
                 source_eff = "JES_" + source_eff
             if source.endswith("_"):
-                source_eff = source_eff + self.period.split("_")[0]
+                source_eff = source_eff + self.campaign.split("_")[0]
                 source += "year"
             updateSourceDict(source_dict, source_eff, "Jet")
             updateSourceDict(source_dict, source_eff, "FatJet")

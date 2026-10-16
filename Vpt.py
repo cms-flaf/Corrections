@@ -2,7 +2,7 @@ import os
 import ROOT
 from .CorrectionsCore import *
 
-period_names_Vpt = {
+era_names_Vpt = {
     "Run3_2022": "2022preEE",
     "Run3_2022EE": "2022postEE",
     "Run3_2023": "2023preBPix",
@@ -39,7 +39,7 @@ class VptCorrProducer:
     SFSources = ["Vpt", "ewcorr"]
     DY_w_SFSources = ["DYWeight"]
 
-    def __init__(self, sampleType, period, order="NLO"):
+    def __init__(self, sampleType, era, order="NLO"):
         rootFile_EWKcorr_name = (
             "ZJetsCorr_collection_wek.root"
             if sampleType == "DY"
@@ -51,11 +51,11 @@ class VptCorrProducer:
         )
         jsonFile_EWKcorr_recoil = os.path.join(
             os.environ["ANALYSIS_PATH"],
-            VptCorrProducer.EWK_corr_jsonPath_recoil.format(period_names_Vpt[period]),
+            VptCorrProducer.EWK_corr_jsonPath_recoil.format(era_names_Vpt[era]),
         )
         jsonFile_EWKcorr_weight = os.path.join(
             os.environ["ANALYSIS_PATH"],
-            VptCorrProducer.EWK_corr_jsonPath_weights.format(period_names_Vpt[period]),
+            VptCorrProducer.EWK_corr_jsonPath_weights.format(era_names_Vpt[era]),
         )
         print(jsonFile_EWKcorr_weight)
         self.order = order
