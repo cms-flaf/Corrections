@@ -9,9 +9,7 @@ from .CorrectionsCore import *
 
 class puJetIDCorrProducer:
     PUJetID_JsonPath = "/cvmfs/cms.cern.ch/rsync/cms-nanoAOD/jsonpog-integration/POG/JME/{}/jmar.json.gz"
-    initialized = False
     puJetID_SF_Sources = ["PUJetID_eff"]
-    period = None
     puJetID = "L"
 
     def __init__(self, period):
@@ -19,15 +17,9 @@ class puJetIDCorrProducer:
             os.environ["ANALYSIS_PATH"],
             puJetIDCorrProducer.PUJetID_JsonPath.format(period),
         )
-        if not puJetIDCorrProducer.initialized:
-            headers_dir = os.path.dirname(os.path.abspath(__file__))
-            header_path = os.path.join(headers_dir, "puJetID.h")
-            ROOT.gInterpreter.Declare(f'#include "{header_path}"')
-            ROOT.gInterpreter.ProcessLine(
-                f'::correction::PUJetIDCorrProvider::Initialize("{jsonFile_eff}")'
-            )
-            puJetIDCorrProducer.period = period
-            puJetIDCorrProducer.initialized = True
+        declareProviderHeader("puJetID.h")
+        self.provider = CppProvider("correction::PUJetIDCorrProvider", jsonFile_eff)
+        self.period = period
 
     def getPUJetIDEff(self, df, isCentral=True, return_variations=True):
         puJetID_SF_branches = []
@@ -44,7 +36,7 @@ class puJetIDCorrProducer:
                 branch_central_jets = f"""weight_Jet_PUJetID_Central_"""
                 df = df.Define(
                     f"{branch_name_jets}",
-                    f"""::correction::PUJetIDCorrProvider::getGlobal().getPUJetID_eff(
+                    f"""{self.provider.ref}->getPUJetID_eff(
                                         Jet_pt, Jet_eta, "{puJetIDCorrProducer.puJetID}",
                                         ::correction::PUJetIDCorrProvider::UncSource::{source}, ::correction::UncScale::{scale});""",
                 )

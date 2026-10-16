@@ -5,7 +5,6 @@ from .CorrectionsCore import *
 
 class DYbbwwCorrProducer:
     JsonPath = "Corrections/data/DY_corr_hhbbww/dy_correction_weight.json.gz"
-    initialized = False
 
     era_map = {
         "Run3_2022": "2022_2022EE_2023_2023BPix",
@@ -56,14 +55,8 @@ class DYbbwwCorrProducer:
             self.default_variations if variations is None else variations
         )
 
-        if not DYbbwwCorrProducer.initialized:
-            headers_dir = os.path.dirname(os.path.abspath(__file__))
-            header_path = os.path.join(headers_dir, "DY_hhbbww.h")
-            ROOT.gInterpreter.Declare(f'#include "{header_path}"')
-            ROOT.gInterpreter.ProcessLine(
-                f'::correction::DYbbwwCorrProvider::Initialize("{self.json_path}")'
-            )
-            DYbbwwCorrProducer.initialized = True
+        declareProviderHeader("DY_hhbbww.h")
+        self.provider = CppProvider("correction::DYbbwwCorrProvider", self.json_path)
 
     def getWeight(
         self,
@@ -87,7 +80,7 @@ class DYbbwwCorrProducer:
             df = df.Define(
                 branch_name,
                 f"""static_cast<float>(
-                    ::correction::DYbbwwCorrProvider::getGlobal().getWeight(
+                    {self.provider.ref}->getWeight(
                         \"{self.era_map[self.era]}\",
                         static_cast<int>({self.njets_branch}),
                         static_cast<float>({self.pt_ll}),

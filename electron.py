@@ -103,11 +103,9 @@ class EleCorrProducer:
     EleID_JsonPath = "/cvmfs/cms-griddata.cern.ch/cat/metadata/EGM/{folderName}/latest/{filenameID}.json.gz"
     EleES_JsonPath = "Corrections/data/EGM/{}/EGM_ScaleUnc.json.gz"
     EleES_JsonPath_Run3 = "/cvmfs/cms-griddata.cern.ch/cat/metadata/EGM/{folderName}/latest/{filenameES}.json.gz"
-    initialized = False
     ID_sources = ["EleID"]
     working_points = ["wp80iso", "wp80noiso"]
     energyScaleSources_ele = ["EleES", "EleSmear"]
-    year = ""
 
     inputColumns = [
         "gen_kind",
@@ -148,16 +146,15 @@ class EleCorrProducer:
             #     EleES_JsonFile_key = "SmearAndSyst" #"2023PromptD_ScaleJSON"
             # if period == "2024_Summer24":
             #     EleES_JsonFile_key = "SmearAndSyst"  # "compound corrections
-        if not EleCorrProducer.initialized:
-            headers_dir = os.path.dirname(os.path.abspath(__file__))
-            header_path = os.path.join(headers_dir, "electron.h")
-            ROOT.gInterpreter.Declare(f'#include "{header_path}"')
-            ROOT.gInterpreter.ProcessLine(
-                f'::correction::EleCorrProvider::Initialize("{EleID_JsonFile}", "{EleES_JsonFile}","{EleID_JsonFile_key}","{EleES_JsonFile_key}")'
-            )
-            EleCorrProducer.year = electron_id_sf_year(period)
-
-            EleCorrProducer.initialized = True
+        declareProviderHeader("electron.h")
+        self.provider = CppProvider(
+            "correction::EleCorrProvider",
+            EleID_JsonFile,
+            EleES_JsonFile,
+            EleID_JsonFile_key,
+            EleES_JsonFile_key,
+        )
+        self.year = electron_id_sf_year(period)
 
         self.period = period
         self.columns = {}
@@ -181,7 +178,7 @@ class EleCorrProducer:
                 ::correction::EleCorrProvider::UncSource::{source}, ::correction::UncScale::{scale})"""
                 df = df.Define(
                     f"Electron_p4_{syst_name}",
-                    f"::correction::EleCorrProvider::getGlobal().{expr}",
+                    f"{self.provider.ref}->{expr}",
                 )
                 # else:
                 #     df = df.Define(
@@ -221,8 +218,8 @@ class EleCorrProducer:
                         df = df.Define(
                             f"{branch_name}_double",
                             f"""{legType} == Leg::e && {p4}.pt() >= 10 && ({genMatch_bool})
-                                ? ::correction::EleCorrProvider::getGlobal().getID_SF(
-                                    {p4}, "{working_point}", "{EleCorrProducer.year}",
+                                ? {self.provider.ref}->getID_SF(
+                                    {p4}, "{working_point}", "{self.year}",
                                     ::correction::EleCorrProvider::UncSource::{source},
                                     ::correction::UncScale::{scale})
                                 : 1.""",

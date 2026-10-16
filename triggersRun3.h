@@ -5,7 +5,7 @@
 
 namespace correction {
 
-    class TrigCorrProvider : public CorrectionsBase<TrigCorrProvider> {
+    class TrigCorrProvider {
       public:
         enum class UncSource : int {
             Central = -1,
@@ -403,8 +403,8 @@ namespace correction {
         }
 
       private:
-        static std::string& getUncSourceName(UncSource source) {
-            static std::string sourcename = "Central";
+        static std::string getUncSourceName(UncSource source) {
+            std::string sourcename = "Central";
             if (source == UncSource::IsoMu24)
                 sourcename = "Central";  //Still get from the central Key, maybe rename later
             if (source == UncSource::singleEle)

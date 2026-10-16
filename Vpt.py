@@ -36,7 +36,6 @@ class VptCorrProducer:
         "Corrections/data/hleprare/DYweightCorrlib/DY_pTll_weights_{0}_v5.json.gz"
     )
     EWK_corr_filePath = "Corrections/data/EWK_Corr_Vpt/{0}"
-    initialized = False
     SFSources = ["Vpt", "ewcorr"]
     DY_w_SFSources = ["DYWeight"]
 
@@ -63,14 +62,15 @@ class VptCorrProducer:
         hist_name = "eej_pTV_kappa_EW" if sampleType == "DY" else "evj_pTV_kappa_EW"
         hist_nominal_weight = "ewcorr"
         self.sampleType = sampleType
-        if not VptCorrProducer.initialized:
-            headers_dir = os.path.dirname(os.path.abspath(__file__))
-            header_path = os.path.join(headers_dir, "Vpt.h")
-            ROOT.gInterpreter.Declare(f"""#include "{header_path}" """)
-            ROOT.gInterpreter.ProcessLine(
-                f"""::correction::VptCorrProvider::Initialize("{rootFile_EWKcorr}", "{jsonFile_EWKcorr_weight}","{jsonFile_EWKcorr_recoil}", "{hist_name}", "{hist_nominal_weight}")"""
-            )
-            VptCorrProducer.initialized = True
+        declareProviderHeader("Vpt.h")
+        self.provider = CppProvider(
+            "correction::VptCorrProvider",
+            rootFile_EWKcorr,
+            jsonFile_EWKcorr_weight,
+            jsonFile_EWKcorr_recoil,
+            hist_name,
+            hist_nominal_weight,
+        )
 
     def getDYSF(self, df, isCentral, return_variations):
         sf_sources = VptCorrProducer.DY_w_SFSources
@@ -93,7 +93,7 @@ class VptCorrProducer:
                     if self.sampleType == "DY":
                         df = df.Define(
                             f"{branch_SF_name}_double",
-                            f"""::correction::VptCorrProvider::getGlobal().getDY_weight(LHE_Vpt, "{self.order}",
+                            f"""{self.provider.ref}->getDY_weight(LHE_Vpt, "{self.order}",
                                         ::correction::VptCorrProvider::UncSource::{source}, ::correction::VptCorrProvider::DYUncScale::{scale_def} )""",
                         )
                         # for scale_def in scale_defs[order][scale]:
@@ -138,7 +138,7 @@ class VptCorrProducer:
                 if self.sampleType == "W" or self.sampleType == "DY":
                     df = df.Define(
                         f"{branch_SF_name}_double_sc",
-                        f"""::correction::VptCorrProvider::getGlobal().getSF_fromRootFile(
+                        f"""{self.provider.ref}->getSF_fromRootFile(
                                         LHE_Vpt, ::correction::VptCorrProvider::UncSource::{source}, ::correction::UncScale::{scale} )""",
                     )
                     df = df.Define(

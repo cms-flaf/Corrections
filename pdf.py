@@ -30,8 +30,6 @@ class pdfWeightProducer:
     are summed, and read back at AnaTupleMerge.
     """
 
-    initialized = False
-
     uncSource = ["pdf"]
 
     warned_missing = False
@@ -54,10 +52,7 @@ class pdfWeightProducer:
                 f"pdfWeightProducer: n_members = {self.n_members} is not a member count."
             )
         registerSourceScales("pdf", self.scales({"n_members": self.n_members}))
-        if not pdfWeightProducer.initialized:
-            header = os.path.join(os.path.dirname(os.path.abspath(__file__)), "pdf.h")
-            ROOT.gInterpreter.Declare(f'#include "{header}"')
-            pdfWeightProducer.initialized = True
+        declareProviderHeader("pdf.h")
 
     def getWeight(
         self,

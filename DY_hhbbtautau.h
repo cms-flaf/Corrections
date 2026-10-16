@@ -8,7 +8,7 @@
 
 namespace correction {
 
-    class DYbbtautauCorrProvider : public CorrectionsBase<DYbbtautauCorrProvider> {
+    class DYbbtautauCorrProvider {
       public:
         explicit DYbbtautauCorrProvider(const std::string& fileName)
             : corrections_(CorrectionSet::from_file(fileName)), dyWeight_(corrections_->at("dy_weight")) {}

@@ -4,10 +4,6 @@ from .CorrectionsCore import *
 
 
 class FatJetCorrProducer:
-    initialized = False
-
-    period = None
-
     base_file_path = os.path.join(
         os.environ["ANALYSIS_PATH"], "Corrections/data/AK8Jet/bbWW"
     )
@@ -77,14 +73,10 @@ class FatJetCorrProducer:
         bb_key = this_dict["keys_bb"][period]
         cc_key = this_dict["keys_cc"][period]
 
-        if not FatJetCorrProducer.initialized:
-            headers_dir = os.path.dirname(os.path.abspath(__file__))
-            header_path = os.path.join(headers_dir, "fatjet.h")
-            ROOT.gInterpreter.Declare(f'#include "{header_path}"')
-            ROOT.gInterpreter.ProcessLine(
-                f'::correction::FatJetCorrProvider::Initialize("{file_nameID}","{bb_key}","{cc_key}")'
-            )
-            FatJetCorrProducer.initialized = True
+        declareProviderHeader("fatjet.h")
+        self.provider = CppProvider(
+            "correction::FatJetCorrProvider", file_nameID, bb_key, cc_key
+        )
 
         self.period = period
         self.columns = {}
@@ -103,7 +95,7 @@ class FatJetCorrProducer:
 
                 df = df.Define(
                     f"{branch_name}",
-                    f"""::correction::FatJetCorrProvider::getGlobal().get_SF({self.fatjetName}_isValid,
+                    f"""{self.provider.ref}->get_SF({self.fatjetName}_isValid,
                             {self.fatjetName}_pt, {self.fatjetName}_hadronFlavour,
                             ::correction::FatJetCorrProvider::UncSource::{source},
                             ::correction::UncScale::{scale})""",

@@ -63,7 +63,6 @@ class TauCorrProducer:
         # )
         "/cvmfs/cms-griddata.cern.ch/cat/metadata/TAU/{}/latest/tau.json.gz"
     )
-    initialized = False
 
     energyScaleSources_tau = ["TauES_DM0", "TauES_DM1", "TauES_3prong"]
     energyScaleSources_lep = [
@@ -130,16 +129,13 @@ class TauCorrProducer:
         elif period in ("Run3_2025", "Run3_2026"):
             # 2025/2026 JSON uses a different VSjet syst naming; keep central only.
             self.sf_sources_tau = []
-        if not TauCorrProducer.initialized:
-            headers_dir = os.path.dirname(os.path.abspath(__file__))
-            header_path = os.path.join(headers_dir, "tau.h")
-            ROOT.gInterpreter.Declare(f'#include "{header_path}"')
-            wp_map_cpp = createWPChannelMap(config["deepTauWPs"])
-            tauType_map = createTauSFTypeMap(config["genuineTau_SFtype"])
-            ROOT.gInterpreter.ProcessLine(
-                f'::correction::TauCorrProvider::Initialize("{jsonFile}", "{self.deepTauVersion}", {wp_map_cpp}, {tauType_map} , "{period_in_tau_json[period]}")'
-            )
-            TauCorrProducer.initialized = True
+        declareProviderHeader("tau.h")
+        wp_map_cpp = createWPChannelMap(config["deepTauWPs"])
+        tauType_map = createTauSFTypeMap(config["genuineTau_SFtype"])
+        self.provider = CppProvider(
+            "correction::TauCorrProvider",
+            cpp_args=f'"{jsonFile}", "{self.deepTauVersion}", {wp_map_cpp}, {tauType_map}, "{period_in_tau_json[period]}"',
+        )
         self.columns = {}
         for col in TauCorrProducer.inputColumns:
             self.columns[col] = columns.get(col, col)
@@ -155,7 +151,7 @@ class TauCorrProducer:
                 syst_name = getSystName(source, scale)
                 df = df.Define(
                     f"Tau_p4_{syst_name}",
-                    f"""::correction::TauCorrProvider::getGlobal().getES(
+                    f"""{self.provider.ref}->getES(
                                Tau_p4_{nano}, Tau_decayMode, Tau_genMatch,
                                ::correction::TauCorrProvider::UncSource::{source}, ::correction::UncScale::{scale})""",
                 )
@@ -195,7 +191,7 @@ class TauCorrProducer:
                     df = df.Define(
                         f"{branch_Medium_name}_double",
                         f"""{legType} == Leg::tau
-                            ? ::correction::TauCorrProvider::getGlobal().getSF(
+                            ? {self.provider.ref}->getSF(
                                 {p4}, {decayMode}, {gen_kind}, "Medium", {channelId},
                                 ::correction::TauCorrProvider::UncSource::{source},
                                 ::correction::UncScale::{scale})

@@ -7,7 +7,7 @@ namespace correction {
 
     // Bosonic recoil corrections following Higgs LepRare recommendation: https://cms-higgs-leprare.docs.cern.ch/htt-common/V_recoil/
 
-    class BosonicRecoilProvider : public CorrectionsBase<BosonicRecoilProvider> {
+    class BosonicRecoilProvider {
       public:
         using LorentzVectorM = correction::LorentzVectorM;
         using RVecF = correction::RVecF;

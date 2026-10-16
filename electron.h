@@ -28,7 +28,7 @@ namespace correction {
         return seed == 0 ? 1 : seed;
     }
 
-    class EleCorrProvider : public CorrectionsBase<EleCorrProvider> {
+    class EleCorrProvider {
       public:
         enum class UncSource : int {
             Central = -1,

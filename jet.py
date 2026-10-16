@@ -83,8 +83,6 @@ regrouped_files_names = {
 class JetCorrProducer:
     jsonPath_btag = "/cvmfs/cms-griddata.cern.ch/cat/metadata/BTV/{}/btagging.json.gz"
 
-    initialized = False
-
     jet_algorithm = "AK4PFPuppi"
     fatjet_algorithm = "AK8PFPuppi"
 
@@ -282,7 +280,6 @@ class JetCorrProducer:
     }
 
     # Sources = []
-    period = None
 
     def __init__(
         self, period, isData, sample_name, use_corrlib=True, use_regrouped=False
@@ -311,25 +308,20 @@ class JetCorrProducer:
             ptResolution = getJMEFile("JRDatabase", JER_PtRes_txt)
             ptResolutionSF = getJMEFile("JRDatabase", JER_SF_txt)
             JEC_Regrouped = getJMEFile("JECDatabase", JEC_Regrouped_txt)
-            if not JetCorrProducer.initialized:
-                ROOT.gSystem.Load("libJetMETCorrectionsModules.so")
-                ROOT.gSystem.Load("libCondFormatsJetMETObjects.so")
-                ROOT.gSystem.Load("libCommonToolsUtils.so")
-                headers_dir = os.path.dirname(os.path.abspath(__file__))
-                header_path = os.path.join(headers_dir, "jet.h")
-                JME_calc_base = os.path.join(headers_dir, "JMECalculatorBase.cc")
-                JME_calc_path = os.path.join(
-                    headers_dir, "JMESystematicsCalculators.cc"
-                )
-                ROOT.gInterpreter.Declare(f'#include "{JME_calc_base}"')
-                ROOT.gInterpreter.Declare(f'#include "{JME_calc_path}"')
-                ROOT.gInterpreter.Declare(f'#include "{header_path}"')
-
-                ROOT.gInterpreter.ProcessLine(
-                    f"""::correction::JetCorrProvider::Initialize("{ptResolution}", "{ptResolutionSF}","{JEC_Regrouped}", "{periods[period]}")"""
-                )
-                JetCorrProducer.period = period
-                JetCorrProducer.initialized = True
+            ROOT.gSystem.Load("libJetMETCorrectionsModules.so")
+            ROOT.gSystem.Load("libCondFormatsJetMETObjects.so")
+            ROOT.gSystem.Load("libCommonToolsUtils.so")
+            headers_dir = os.path.dirname(os.path.abspath(__file__))
+            declareHeader(os.path.join(headers_dir, "JMECalculatorBase.cc"))
+            declareHeader(os.path.join(headers_dir, "JMESystematicsCalculators.cc"))
+            declareProviderHeader("jet.h")
+            self.provider = CppProvider(
+                "correction::JetCorrProvider",
+                ptResolution,
+                ptResolutionSF,
+                JEC_Regrouped,
+                periods[period],
+            )
         else:
             print("Initializing new JetCorrProducer")
 
@@ -430,31 +422,25 @@ class JetCorrProducer:
             fatjer_tag = JetCorrProducer.jer_tag_map[period]
             fatalgo = JetCorrProducer.fatjet_algorithm
 
-            if not JetCorrProducer.initialized:
-                headers_dir = os.path.dirname(os.path.abspath(__file__))
-                header_path = os.path.join(headers_dir, "jet.h")
-                ROOT.gInterpreter.Declare(f'#include "{header_path}"')
-                is_data = "true" if self.isData else "false"
-                regrouped = "true" if self.use_regrouped else "false"
-                apply_compound = "true"
-                ROOT.gInterpreter.ProcessLine(
-                    f"""::correction::JetCorrectionProvider::Initialize("{jet_jsonFile}",
-                                                                                                  "{jetsmear_jsonFile}",
-                                                                                                  "{jec_tag}",
-                                                                                                  "{other_jec_tag}",
-                                                                                                  "{jer_tag}",
-                                                                                                  "{algo}",
-                                                                                                  "{fatjet_jsonFile}",
-                                                                                                  "{fatjec_tag}",
-                                                                                                  "{other_fatjec_tag}",
-                                                                                                  "{fatjer_tag}",
-                                                                                                  "{fatalgo}",
-                                                                                                  "{year}",
-                                                                                                   {is_data},
-                                                                                                   {regrouped},
-                                                                                                   {apply_compound})"""
-                )
-                JetCorrProducer.initialized = True
+            declareProviderHeader("jet.h")
+            self.provider = CppProvider(
+                "correction::JetCorrectionProvider",
+                jet_jsonFile,
+                jetsmear_jsonFile,
+                jec_tag,
+                other_jec_tag,
+                jer_tag,
+                algo,
+                fatjet_jsonFile,
+                fatjec_tag,
+                other_fatjec_tag,
+                fatjer_tag,
+                fatalgo,
+                year,
+                self.isData,
+                self.use_regrouped,
+                True,
+            )
 
     def getP4Variations(
         self, df, source_dict, apply_JER, apply_JES, apply_forward_jet_horns_fix_=False
@@ -480,7 +466,7 @@ class JetCorrProducer:
             if not self.isData:
                 df = df.Define(
                     "Jet_p4_shifted_map",
-                    f"""::correction::JetCorrectionProvider::getGlobal().getShiftedP4_Jet(Jet_pt, Jet_eta, Jet_phi, Jet_mass,
+                    f"""{self.provider.ref}->getShiftedP4_Jet(Jet_pt, Jet_eta, Jet_phi, Jet_mass,
                                                                                                                        Jet_rawFactor, Jet_area, Rho_fixedGridRhoFastjetAll, event, {apply_jer},
                                                                                                                        {reapply_jec}, {require_run_number}, run, {wantPhi}, {apply_forward_jet_horns_fix},
                                                                                                                        GenJet_pt, GenJet_eta, GenJet_phi, Jet_genJetIdx)""",
@@ -488,7 +474,7 @@ class JetCorrProducer:
 
                 df = df.Define(
                     "FatJet_p4_shifted_map",
-                    f"""::correction::JetCorrectionProvider::getGlobal().getShiftedP4_FatJet(FatJet_pt, FatJet_eta, FatJet_phi, FatJet_mass,
+                    f"""{self.provider.ref}->getShiftedP4_FatJet(FatJet_pt, FatJet_eta, FatJet_phi, FatJet_mass,
                                                                                                                        FatJet_rawFactor, FatJet_area, Rho_fixedGridRhoFastjetAll, event, {apply_jer},
                                                                                                                        {reapply_jec}, {require_run_number}, run, {wantPhi}, {apply_forward_jet_horns_fix},
                                                                                                                        GenJetAK8_pt, GenJetAK8_eta, GenJetAK8_phi, FatJet_genJetAK8Idx)""",
@@ -496,17 +482,17 @@ class JetCorrProducer:
             else:
                 df = df.Define(
                     "Jet_p4_shifted_map",
-                    f"""::correction::JetCorrectionProvider::getGlobal().getShiftedP4_Jet(Jet_pt, Jet_eta, Jet_phi, Jet_mass, Jet_rawFactor, Jet_area, Rho_fixedGridRhoFastjetAll, event, {apply_jer}, {reapply_jec}, {require_run_number}, run, {wantPhi}, {apply_forward_jet_horns_fix})""",
+                    f"""{self.provider.ref}->getShiftedP4_Jet(Jet_pt, Jet_eta, Jet_phi, Jet_mass, Jet_rawFactor, Jet_area, Rho_fixedGridRhoFastjetAll, event, {apply_jer}, {reapply_jec}, {require_run_number}, run, {wantPhi}, {apply_forward_jet_horns_fix})""",
                 )
                 df = df.Define(
                     "FatJet_p4_shifted_map",
-                    f"""::correction::JetCorrectionProvider::getGlobal().getShiftedP4_FatJet(FatJet_pt, FatJet_eta, FatJet_phi, FatJet_mass, FatJet_rawFactor, FatJet_area, Rho_fixedGridRhoFastjetAll, event, {apply_jer}, {reapply_jec}, {require_run_number}, run, {wantPhi}, {apply_forward_jet_horns_fix})""",
+                    f"""{self.provider.ref}->getShiftedP4_FatJet(FatJet_pt, FatJet_eta, FatJet_phi, FatJet_mass, FatJet_rawFactor, FatJet_area, Rho_fixedGridRhoFastjetAll, event, {apply_jer}, {reapply_jec}, {require_run_number}, run, {wantPhi}, {apply_forward_jet_horns_fix})""",
                 )
             class_name = "JetCorrectionProvider"
         else:
             df = df.Define(
                 "Jet_p4_shifted_map",
-                f"""::correction::JetCorrProvider::getGlobal().getShiftedP4(
+                f"""{self.provider.ref}->getShiftedP4(
                             Jet_pt, Jet_eta, Jet_phi, Jet_mass, Jet_rawFactor, Jet_area,
                             Jet_jetId, Rho_fixedGridRhoFastjetAll, Jet_partonFlavour, 0, GenJet_pt, GenJet_eta,
                             GenJet_phi, GenJet_mass, event)""",
@@ -523,7 +509,7 @@ class JetCorrProducer:
             if source in apply_jes_list:  # source!=central and source != "JER":
                 source_eff = "JES_" + source_eff
             if source.endswith("_"):
-                source_eff = source_eff + JetCorrProducer.period.split("_")[0]
+                source_eff = source_eff + self.period.split("_")[0]
                 source += "year"
             updateSourceDict(source_dict, source_eff, "Jet")
             updateSourceDict(source_dict, source_eff, "FatJet")
@@ -551,11 +537,11 @@ class JetCorrProducer:
         if self.use_corrlib:
             df = df.Define(
                 "Jet_ptRes",
-                "::correction::JetCorrectionProvider::getGlobal().GetResolutions(Jet_pt, Jet_mass, Jet_rawFactor, Jet_eta, Rho_fixedGridRhoFastjetAll)",
+                f"{self.provider.ref}->GetResolutions(Jet_pt, Jet_mass, Jet_rawFactor, Jet_eta, Rho_fixedGridRhoFastjetAll)",
             )
         else:
             df = df.Define(
                 "Jet_ptRes",
-                "::correction::JetCorrProvider::getGlobal().getResolution(Jet_pt, Jet_eta, Rho_fixedGridRhoFastjetAll)",
+                f"{self.provider.ref}->getResolution(Jet_pt, Jet_eta, Rho_fixedGridRhoFastjetAll)",
             )
         return df

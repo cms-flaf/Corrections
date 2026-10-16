@@ -7,7 +7,7 @@
 
 namespace correction {
 
-    class MuonScaReCorrProvider : public CorrectionsBase<MuonScaReCorrProvider> {
+    class MuonScaReCorrProvider {
       public:
         enum class UncSource : int {
             Central = -1,

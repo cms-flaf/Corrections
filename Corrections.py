@@ -3,7 +3,6 @@ import re
 import itertools
 
 from .CorrectionsCore import *
-from FLAF.RunKit.run_tools import ps_call
 from FLAF.Common.shared_mc import shared_mc_in_era_expr, shared_mc_split
 
 
@@ -23,62 +22,7 @@ def _ana_caches_with_denom_key(ana_caches, key):
     return remapped
 
 
-def findLibLocation(lib_name, first_guess=None):
-    paths_to_check = []
-    if first_guess is not None:
-        paths_to_check.append(first_guess)
-    other_paths = os.environ.get("LD_LIBRARY_PATH", "").split(":")
-    paths_to_check.extend(other_paths)
-    full_lib_name = f"lib{lib_name}.so"
-    for path in paths_to_check:
-        lib_path = os.path.join(path, full_lib_name)
-        if os.path.exists(lib_path):
-            return lib_path
-    raise RuntimeError(f"Library {lib_name} not found.")
-
-
 class Corrections:
-    _global_instance = None
-    _corr_lib_loaded = False
-
-    @staticmethod
-    def initializeGlobal(load_corr_lib=False, **kwargs):
-        if Corrections._global_instance is not None:
-            print(
-                f"WARNING: Global instance of Corrections was already initialized. Overwriting it.",
-                file=sys.stderr,
-            )
-
-        if load_corr_lib and not Corrections._corr_lib_loaded:
-            returncode, output, err = ps_call(
-                ["correction", "config", "--cflags", "--ldflags"],
-                catch_stdout=True,
-                decode=True,
-                verbose=0,
-            )
-            params = output.split(" ")
-            lib_path = None
-            for param in params:
-                if param.startswith("-I"):
-                    ROOT.gInterpreter.AddIncludePath(param[2:].strip())
-                elif param.startswith("-L"):
-                    lib_path = param[2:].strip()
-                elif param.startswith("-l"):
-                    lib_name = param[2:].strip()
-
-            # ROOT.gInterpreter.AddIncludePath(os.environ['FLAF_ENVIRONMENT_PATH']+"/include")
-            corr_lib = findLibLocation(lib_name, lib_path)
-            ROOT.gSystem.Load(corr_lib)
-            Corrections._corr_lib_loaded = True
-
-        Corrections._global_instance = Corrections(**kwargs)
-
-    @staticmethod
-    def getGlobal():
-        if Corrections._global_instance is None:
-            raise RuntimeError("Global instance is not initialized")
-        return Corrections._global_instance
-
     def __init__(
         self,
         *,

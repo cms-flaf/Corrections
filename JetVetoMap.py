@@ -14,7 +14,6 @@ class JetVetoMapProvider:
     JME_vetoMap_JsonPath = (
         "/cvmfs/cms-griddata.cern.ch/cat/metadata/JME/{}/jetvetomaps.json.gz"
     )
-    initialized = False
 
     jetvetomap_names = {
         "2022_Summer22": "Summer22_23Sep2023_RunCD_V1",  # period: , entryname
@@ -36,20 +35,16 @@ class JetVetoMapProvider:
                 pog_folder_names["JERC"][period]
             ),
         )
-        if not JetVetoMapProvider.initialized:
-            headers_dir = os.path.dirname(os.path.abspath(__file__))
-            header_path = os.path.join(headers_dir, "JetVetoMap.h")
-            ROOT.gInterpreter.Declare(f'#include "{header_path}"')
-            ROOT.gInterpreter.ProcessLine(
-                f'::correction::JetVetoMapProvider::Initialize("{JME_vetoMap_JsonFile}", "{entry_name}")'
-            )
-            JetVetoMapProvider.period = period
-            JetVetoMapProvider.initialized = True
+        declareProviderHeader("JetVetoMap.h")
+        self.provider = CppProvider(
+            "correction::JetVetoMapProvider", JME_vetoMap_JsonFile, entry_name
+        )
+        self.period = period
 
     def GetJetVetoMap(self, df):
         # jet pT > 15 GeV, tight jet ID, PU jet ID for CHS jets with pT < 50 GeV,  jet EM fraction (charged + neutral) < 0.9
         df = df.Define(
             f"Jet_isInsideVetoRegion",
-            f"""::correction::JetVetoMapProvider::getGlobal().GetJetVetoMapValues(Jet_p4)""",
+            f"""{self.provider.ref}->GetJetVetoMapValues(Jet_p4)""",
         )
         return df

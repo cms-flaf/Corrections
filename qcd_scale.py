@@ -25,8 +25,6 @@ class qcdScaleWeightProducer:
     are taken as stored. Either way entry 4 is a divisor or the Central, never a variation.
     """
 
-    initialized = False
-
     uncSource = ["qcd_scale"]
 
     # Label -> its index on the nine-point (muR, muF) grid, muR outermost. [4] is the
@@ -64,12 +62,7 @@ class qcdScaleWeightProducer:
         self.branch = branch
         self.applies_nominal = applies_nominal
         registerSourceScales("qcd_scale", self.scales({}))
-        if not qcdScaleWeightProducer.initialized:
-            header = os.path.join(
-                os.path.dirname(os.path.abspath(__file__)), "qcd_scale.h"
-            )
-            ROOT.gInterpreter.Declare(f'#include "{header}"')
-            qcdScaleWeightProducer.initialized = True
+        declareProviderHeader("qcd_scale.h")
 
     def getWeight(
         self,

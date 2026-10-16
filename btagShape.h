@@ -7,7 +7,7 @@
 #include <set>
 
 namespace correction {
-    class bTagShapeCorrProvider : public CorrectionsBase<bTagShapeCorrProvider> {
+    class bTagShapeCorrProvider {
       public:
         enum class UncSource : int {
             Central = -1,

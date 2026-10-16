@@ -6,7 +6,7 @@
 
 namespace correction {
 
-    class TrigCorrProvider : public CorrectionsBase<TrigCorrProvider> {
+    class TrigCorrProvider {
       public:
         enum class UncSource : int {
             Central = -1,
