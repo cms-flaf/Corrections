@@ -25,7 +25,7 @@ from Corrections.jet import JetCorrProducer
 
 sys.path = _sys_path
 
-PERIOD = "2022_Summer22"
+CAMPAIGN = "2022_Summer22"
 FIRST = "{::correction::JetCorrectionProvider::UncSource::"
 SCALE = "::correction::UncScale::"
 
@@ -59,7 +59,7 @@ class TestJerGenMatch(unittest.TestCase):
         # Declaring jet.h before RDataFrame is loaded leaves cling unable to materialise the
         # standard-library symbols of its static initialisers.
         ROOT.RDataFrame(1)
-        cls.jets = JetCorrProducer(PERIOD, isData=False, sample_name="TTto2L2Nu")
+        cls.jets = JetCorrProducer(CAMPAIGN, isData=False, sample_name="TTto2L2Nu")
 
     def _smear(self, kind, gen_dphi, gen_args=None):
         # One jet at pt 60 GeV, |eta| 0.5; its gen jet at pt 57 GeV, displaced in phi by gen_dphi.

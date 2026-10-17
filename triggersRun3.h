@@ -101,7 +101,7 @@ namespace correction {
                          const std::string& ele_trg_key_data,
                          const std::string& tau_trg_key,
                          const std::string& jet_trg_key,
-                         const std::string& era)
+                         const std::string& campaign)
             :  // TrigCorrProvider(const std::string& muon_trg_file, const std::string& ele_trg_file, const std::string& muon_trg_key, const std::string& ele_trg_key, const std::string& era) :
               mutrgcorrections_(CorrectionSet::from_file(muon_trg_file)),
               etrgcorrections_(CorrectionSet::from_file(ele_trg_file)),
@@ -109,9 +109,9 @@ namespace correction {
               ditauJet_trgcorrections_(CorrectionSet::from_file(ditauJet_trg_file)),
               etau_trgcorrections_(CorrectionSet::from_file(etau_trg_file)),
               mutau_trgcorrections_(CorrectionSet::from_file(mutau_trg_file)) {
-            if (era == "2022_Summer22" || era == "2022_Summer22EE" || era == "2023_Summer23" ||
-                era == "2023_Summer23BPix" || era == "2024_Summer24" || era == "2025_Summer24" ||
-                era == "2025_Winter25" || era == "2026_Summer24") {
+            if (campaign == "2022_Summer22" || campaign == "2022_Summer22EE" || campaign == "2023_Summer23" ||
+                campaign == "2023_Summer23BPix" || campaign == "2024_Summer24" || campaign == "2025_Summer24" ||
+                campaign == "2025_Winter25" || campaign == "2026_Summer24") {
                 // muTrgCorrections["Central"]=mutrgcorrections_->at(muon_trg_key);
                 // muTrgCorrections["Central"]=mutrgcorrections_->at(muon_trg_key);
 
