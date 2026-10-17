@@ -1,6 +1,4 @@
 import copy
-import os
-import ROOT
 from .CorrectionsCore import *
 
 

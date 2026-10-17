@@ -1,5 +1,4 @@
 import os
-import ROOT
 from .CorrectionsCore import *
 from FLAF.Common.Utilities import *
 import yaml

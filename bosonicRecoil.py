@@ -1,5 +1,4 @@
 import os
-import ROOT
 from .CorrectionsCore import *
 
 # Bosonic recoil corrections following recommendations from https://cms-higgs-leprare.docs.cern.ch/htt-common/V_recoil/

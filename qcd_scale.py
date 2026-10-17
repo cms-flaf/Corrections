@@ -1,7 +1,5 @@
-import os
 import sys
 
-import ROOT
 
 from .CorrectionsCore import *
 

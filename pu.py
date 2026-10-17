@@ -1,6 +1,4 @@
-import os
 import sys
-import ROOT
 from .CorrectionsCore import *
 
 # lumi POG: https://twiki.cern.ch/twiki/bin/view/CMS/TWikiLUM

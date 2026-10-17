@@ -1,6 +1,5 @@
 import os
 import urllib.request
-import ROOT
 from .CorrectionsCore import *
 from FLAF.Common.Utilities import DeclareHeader
 

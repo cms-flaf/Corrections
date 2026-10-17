@@ -1,5 +1,4 @@
 import os
-import ROOT
 from .CorrectionsCore import *
 
 # https://twiki.cern.ch/twiki/bin/viewauth/CMS/PileupJetIDUL
