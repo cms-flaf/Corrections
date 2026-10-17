@@ -38,7 +38,12 @@ names appear on both sides, in the same order.
   provider's `ref` (`f"{self.provider.ref}->getWeight(...)"`). There is no global `Corrections`
   instance, no static `Initialize`/`getGlobal`, no `initialized` flag and no era value stored on
   a class; a header holds no mutable function-local `static` (it would be shared by every object
-  and every RDataFrame thread). `test_no_global_state.py` checks this from the sources.
+  and every RDataFrame thread). Two tests cover part of this. `test_no_global_state.py` searches
+  the sources for those patterns, for era, campaign or year values and providers (`CppProvider`
+  objects, `_shared` or `*provider*` attributes) stored on a class, and for providers created at
+  module level. `test_multi_era.py` builds the pileup and tau producers of two eras in one
+  multithreaded dataframe and compares their values with correctionlib. Shared state in another
+  form passes both, so a diff that adds state to a class or a module still needs reading.
 - `ref` is a raw address: the producer, and the `Corrections` instance that owns it, must outlive
   every dataframe built with it (FLAF keeps the instance on the `DataFrameWrapper`). `ref` is
   `const`, so a provider method used from a JIT string must be `const`.

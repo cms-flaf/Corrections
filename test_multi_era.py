@@ -25,6 +25,7 @@ import ROOT
 
 from Corrections.CorrectionsCore import (
     CppProvider,
+    campaign_names,
     createTauSFTypeMap,
     createWPChannelMap,
     declareHeader,
@@ -40,6 +41,17 @@ PU_ERAS = {
     "2022_Summer22": "Collisions2022_355100_357900_eraBCD_GoldenJson",
     "2023_Summer23": "Collisions2023_366403_369802_eraBC_GoldenJson",
 }
+TAU_YEARS = {"Run3_2022": "2022_preEE", "Run3_2023": "2023_preBPix"}
+TAU_CONFIG = {
+    "deepTauVersion": "2p5",
+    "deepTauWPs": {"tauTau": {"VSe": "VVLoose", "VSmu": "Tight", "VSjet": "Medium"}},
+    "genuineTau_SFtype": {"tauTau": "dm"},
+}
+
+
+def declare_flaf_tools():
+    """LorentzVectorM, Channel and GenLeptonMatch, which tau.h uses."""
+    declareHeader(os.path.join(os.environ["FLAF_PATH"], "include", "AnalysisTools.h"))
 
 
 def pu_file(campaign):
@@ -54,10 +66,15 @@ def pu_reference(campaign, n_true_int):
 
 
 def pu_provider(campaign):
-    declareProviderHeader("pu.h")
-    return CppProvider(
-        "correction::puCorrProvider", pu_file(campaign), PU_ERAS[campaign]
-    )
+    """The provider of a puWeightProducer, built as Corrections builds it."""
+    return puWeightProducer(campaign=campaign).provider
+
+
+def tau_reference(era, syst):
+    """DeepTau VSjet SF of a genuine 50 GeV tau in decay mode 0, from correctionlib."""
+    file = TauCorrProducer.jsonPath.format(pog_folder_names["TAU"][campaign_names[era]])
+    vs_jet = correctionlib.CorrectionSet.from_file(file)["DeepTau2018v2p5VSjet"]
+    return vs_jet.evaluate(50.0, 0, 5, "Medium", "VVLoose", syst, "dm")
 
 
 def pu_column(df, name, provider):
@@ -87,9 +104,12 @@ class TwoErasInOneDataFrame(unittest.TestCase):
         ROOT.DisableImplicitMT()
 
     def test_each_era_gives_its_own_weight(self):
-        values = run_pu(
-            {"w22": pu_provider("2022_Summer22"), "w23": pu_provider("2023_Summer23")}
-        )
+        providers = {
+            "w22": pu_provider("2022_Summer22"),
+            "w23": pu_provider("2023_Summer23"),
+        }
+        self.assertNotEqual(providers["w22"].ref, providers["w23"].ref)
+        values = run_pu(providers)
         self.assertAlmostEqual(
             values["w22"], pu_reference("2022_Summer22", 30.0), places=5
         )
@@ -107,6 +127,38 @@ class TwoErasInOneDataFrame(unittest.TestCase):
         after = run_pu({"w": first, "w_again": again})
         self.assertEqual(after["w"], before)
         self.assertEqual(after["w_again"], before)
+
+    def test_each_tau_producer_gives_its_own_sf(self):
+        # the tau provider is constructed from a C++ argument list (CppProvider cpp_args)
+        declare_flaf_tools()
+        producers = {
+            era: TauCorrProducer(era=era, config=TAU_CONFIG, columns={})
+            for era in TAU_YEARS
+        }
+        self.assertNotEqual(
+            producers["Run3_2022"].provider.ref, producers["Run3_2023"].provider.ref
+        )
+        df = ROOT.RDataFrame(100).Define("tau_p4", "LorentzVectorM(50., 0.5, 0., 1.)")
+        results = {}
+        for era, producer in producers.items():
+            for scale, syst in (("Central", "nom"), ("Up", f"syst_{TAU_YEARS[era]}_up")):
+                column = f"sf_{era}_{scale}"
+                df = df.Define(
+                    column,
+                    f"""{producer.provider.ref}->getSF(tau_p4, 0,
+                            static_cast<int>(GenLeptonMatch::Tau), "Medium", Channel::tauTau,
+                            ::correction::TauCorrProvider::UncSource::syst_year,
+                            ::correction::UncScale::{scale})""",
+                )
+                results[era, syst] = df.Max(column)
+        self.assertNotAlmostEqual(
+            tau_reference("Run3_2022", "nom"), tau_reference("Run3_2023", "nom"), places=3
+        )
+        for (era, syst), result in results.items():
+            with self.subTest(era=era, syst=syst):
+                self.assertAlmostEqual(
+                    result.GetValue(), tau_reference(era, syst), places=5
+                )
 
 
 class ConstAccess(unittest.TestCase):
@@ -151,9 +203,7 @@ class TauYearPerObject(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        ROOT.gInterpreter.Declare(
-            f'#include "{os.environ["FLAF_PATH"]}/include/AnalysisTools.h"'
-        )
+        declare_flaf_tools()
         declareProviderHeader("tau.h")
         cls.wps = createWPChannelMap(
             {"tauTau": {"VSe": "VVLoose", "VSmu": "Tight", "VSjet": "Medium"}}
