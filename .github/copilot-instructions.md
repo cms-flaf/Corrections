@@ -32,8 +32,10 @@ names appear on both sides, in the same order.
 
 ### Providers are objects, one per era and configuration
 
-- A process may build corrections for several eras (a law process merging AnaTuples of two
-  eras, for one). Every C++ provider is an ordinary object created and owned by its Python
+- A process may build corrections for several Run 3 eras (a law process merging AnaTuples of
+  two eras, for one). Run 2 and Run 3 trigger corrections cannot share a process: `triggers.h`
+  and `triggersRun3.h` both define `correction::TrigCorrProvider`, so declaring the second one
+  raises. Every C++ provider is an ordinary object created and owned by its Python
   producer through `CorrectionsCore.CppProvider`, and every JIT string reaches it through the
   provider's `ref` (`f"{self.provider.ref}->getWeight(...)"`). There is no global `Corrections`
   instance, no static `Initialize`/`getGlobal`, no `initialized` flag and no era value stored on
@@ -44,6 +46,13 @@ names appear on both sides, in the same order.
   module level. `test_multi_era.py` builds the pileup and tau producers of two eras in one
   multithreaded dataframe and compares their values with correctionlib. Shared state in another
   form passes both, so a diff that adds state to a class or a module still needs reading.
+- Two kinds of process-level state are deliberate, and both tests allow them:
+  `CorrectionsCore._source_scales` (filled by `registerSourceScales`) holds the members of an
+  indexed source such as the PDF set, keyed by the source name alone, so every instance in a
+  process has to use the same member list (the PDF `n_members` comes from the analysis's
+  `global.yaml`, default 103); the class-level `warned_missing` flags of `pdf.py`,
+  `qcd_scale.py`, `top_pt.py` and `parton_shower.py` print each missing-input warning once per
+  process. Any further process-level state needs a reason of the same kind.
 - `ref` is a raw address: the producer, and the `Corrections` instance that owns it, must outlive
   every dataframe built with it (FLAF keeps the instance on the `DataFrameWrapper`). `ref` is
   `const`, so a provider method used from a JIT string must be `const`.
@@ -128,13 +137,13 @@ grounds that this repository has nowhere to put it.
 
 ## Repository facts
 
-Verified 2026-08-27; re-check before relying on any of it.
+Verified 2026-10-17; re-check before relying on any of it.
 
 | | |
 |---|---|
 | Entry points | `Corrections.py` (one instance per dataset, era and stage; per-stage wiring), `CorrectionsCore.py` (`CppProvider`, campaign names, scale handling) |
-| Per-object modules | `tau`, `jet`, `fatjet`, `electron`, `mu`, `btag`, `pu`, `met`, `triggers`, `triggersRun3`, `puJetID`, `Vpt`, `lumi`, `JetVetoMap`, `MuonScaRe*`, analysis-specific `DY_hhbbtautau` / `DY_hhbbww` |
-| Data | `data/` (BTV, EGM, MUO, TAU, TRG, EWK_Corr_Vpt, golden_json) plus JSON POG files from CVMFS |
+| Per-object modules | `tau`, `jet`, `fatjet`, `electron`, `mu`, `btag`, `pu`, `met`, `triggers`, `triggersRun3`, `puJetID`, `Vpt`, `lumi`, `JetVetoMap`, `bosonicRecoil`, `pdf`, `qcd_scale`, `parton_shower`, `top_pt`, `MuonEnergyScale_corr` (with `MuonScaReProvider.h`, `MuonFsrRecoveryProvider.h`), analysis-specific `DY_hhbbtautau` / `DY_hhbbww` |
+| Data | `data/` (AK8Jet, BTV, DY_corr_hbt, DY_corr_hhbbww, EGM, EWK_Corr_Vpt, MUO, TAU, TRG, golden_json, hleprare) plus JSON POG files from CVMFS |
 | Dependencies | ROOT (PyROOT), `correctionlib`, CVMFS |
-| Workflows | `formatting-check`, `repo-sanity-checks`, `trigger-flaf-integration`. Formatting is checked automatically — do not comment on it |
-| Integration test | Triggered by `@cms-flaf-bot please test`; the pipeline configuration lives in `cms-flaf/FLAF_ci` |
+| Workflows | `formatting-check`, `repo-sanity-checks` (FLAF's sanity checks plus `test_no_global_state.py`), `trigger-flaf-integration`. Formatting is checked automatically — do not comment on it |
+| Integration test | Triggered by `@cms-flaf-bot please test`; the pipeline configuration lives in `cms-flaf/FLAF_ci`; its `test_corrections` job runs every `test_*.py` in an analysis environment |

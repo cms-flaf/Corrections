@@ -1,9 +1,20 @@
 """No process-wide correction state: every provider is an object owned by its producer.
 
-A process may build corrections for several eras, so nothing may be kept per class or per
-process: no `initialized` flags or class-level era values in the producers, no static provider
-singletons and no mutable function-local statics in the headers. Reads the sources only; needs
-neither ROOT nor /cvmfs.
+A process may build corrections for several Run 3 eras (Run 2 and Run 3 trigger corrections
+cannot share one: triggers.h and triggersRun3.h both define correction::TrigCorrProvider), so
+nothing that depends on the era may be kept per class or per process. Checked here: no
+`initialized` flags, no era, campaign or year values and no providers (CppProvider objects,
+`_shared` or `*provider*` attributes) stored on a class, no providers created at module level,
+no static provider singletons and no mutable function-local statics in the headers. These are
+patterns in the sources, not a proof; test_multi_era.py runs the producers of two eras in one
+process.
+
+Deliberate process-level state, allowed here: CorrectionsCore._source_scales holds the members
+of an indexed source such as the PDF set, keyed by the source name alone, so every instance in
+a process has to use the same member list; the class-level `warned_missing` flags of pdf.py,
+qcd_scale.py, top_pt.py and parton_shower.py print each missing-input warning once per process.
+
+Reads the sources only; needs neither ROOT nor /cvmfs.
 """
 
 import ast
