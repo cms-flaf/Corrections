@@ -75,14 +75,17 @@ def assignments(nodes):
         if isinstance(node, ast.Assign):
             for target in node.targets:
                 yield target, node.value, node.lineno
-        elif isinstance(node, (ast.AnnAssign, ast.AugAssign)) and node.value is not None:
+        elif (
+            isinstance(node, (ast.AnnAssign, ast.AugAssign)) and node.value is not None
+        ):
             yield node.target, node.value, node.lineno
 
 
 def creates_provider(node):
     return any(
         isinstance(n, ast.Call)
-        and "CppProvider" in (getattr(n.func, "id", None), getattr(n.func, "attr", None))
+        and "CppProvider"
+        in (getattr(n.func, "id", None), getattr(n.func, "attr", None))
         for n in ast.walk(node)
     )
 

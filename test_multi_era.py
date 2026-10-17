@@ -141,7 +141,10 @@ class TwoErasInOneDataFrame(unittest.TestCase):
         df = ROOT.RDataFrame(100).Define("tau_p4", "LorentzVectorM(50., 0.5, 0., 1.)")
         results = {}
         for era, producer in producers.items():
-            for scale, syst in (("Central", "nom"), ("Up", f"syst_{TAU_YEARS[era]}_up")):
+            for scale, syst in (
+                ("Central", "nom"),
+                ("Up", f"syst_{TAU_YEARS[era]}_up"),
+            ):
                 column = f"sf_{era}_{scale}"
                 df = df.Define(
                     column,
@@ -152,7 +155,9 @@ class TwoErasInOneDataFrame(unittest.TestCase):
                 )
                 results[era, syst] = df.Max(column)
         self.assertNotAlmostEqual(
-            tau_reference("Run3_2022", "nom"), tau_reference("Run3_2023", "nom"), places=3
+            tau_reference("Run3_2022", "nom"),
+            tau_reference("Run3_2023", "nom"),
+            places=3,
         )
         for (era, syst), result in results.items():
             with self.subTest(era=era, syst=syst):
