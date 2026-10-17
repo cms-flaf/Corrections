@@ -40,14 +40,13 @@ namespace correction {
             return iter->second;
         }
 
-        FatJetCorrProvider(const std::string& fatjetFile,
-                        const std::string& Hbb_key,
-                        const std::string& Hcc_key)
+        FatJetCorrProvider(const std::string& fatjetFile, const std::string& Hbb_key, const std::string& Hcc_key)
             : corrections_(CorrectionSet::from_file(fatjetFile)),
               Hbb_(corrections_->at(Hbb_key)),
               Hcc_(corrections_->at(Hcc_key)) {}
 
-        float get_SF(const bool FatJet_isValid, const float FatJet_pt,
+        float get_SF(const bool FatJet_isValid,
+                     const float FatJet_pt,
                      const int FatJet_HadronFlavour,
                      const UncSource source,
                      const UncScale scale) const {
@@ -55,30 +54,30 @@ namespace correction {
             const UncScale jet_scale = applies ? scale : UncScale::Central;
             const UncSource jet_source = applies ? source : UncSource::Central;
             float value = 1.0;
-            if(FatJet_isValid) {
-                if (FatJet_HadronFlavour == 5){
+            if (FatJet_isValid) {
+                if (FatJet_HadronFlavour == 5) {
                     value = safeEvaluate(Hbb_, FatJet_pt, getScaleStr(jet_source, jet_scale));
-                }
-                else if (FatJet_HadronFlavour == 4){
+                } else if (FatJet_HadronFlavour == 4) {
                     value = safeEvaluate(Hcc_, FatJet_pt, getScaleStr(jet_source, jet_scale));
                 }
             }
             return value;
         }
 
-        RVecF get_SF(const RVecB& FatJet_isValid, const RVecF& FatJet_pt,
+        RVecF get_SF(const RVecB& FatJet_isValid,
+                     const RVecF& FatJet_pt,
                      const RVecI& FatJet_HadronFlavour,
                      const UncSource source,
                      const UncScale scale) const {
             RVecF result(FatJet_isValid.size(), 1.f);
             assert(FatJet_isValid.size() == FatJet_pt.size());
             assert(FatJet_isValid.size() == FatJet_HadronFlavour.size());
-            for(size_t n = 0; n < FatJet_isValid.size(); ++n)
+            for (size_t n = 0; n < FatJet_isValid.size(); ++n)
                 result[n] = get_SF(FatJet_isValid[n], FatJet_pt[n], FatJet_HadronFlavour[n], source, scale);
             return result;
         }
 
-    private:
+      private:
         std::unique_ptr<CorrectionSet> corrections_;
         Correction::Ref Hbb_, Hcc_;
     };
