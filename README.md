@@ -26,7 +26,8 @@ dataframe built with it.
 
 Tests: `test_no_global_state.py` and `test_electron_id_sf_year.py` read the sources only; the
 other `test_*.py` need ROOT, correctionlib, `FLAF_PATH` and /cvmfs (an analysis environment).
-The `repo-sanity-checks` workflow runs `test_no_global_state.py` on every pull request. The
+The `repo-sanity-checks` workflow runs `test_no_global_state.py` on every pull request, and FLAF's
+`run_tools/check_era_rename.py` (from FLAF `main`) for leftovers of the `period` → `era` rename. The
 `test_corrections` job of the integration pipeline
 ([cms-flaf/flaf_integration](https://gitlab.cern.ch/cms-flaf/flaf_integration)) runs every
 `test_*.py`, one process per file, in the environment of the first active analysis's build and
