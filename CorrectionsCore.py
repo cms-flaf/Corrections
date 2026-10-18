@@ -1,4 +1,7 @@
+import functools
+
 from FLAF.Common.Utilities import *
+from FLAF.RunKit.run_tools import ps_call
 
 central = "Central"
 up = "Up"
@@ -104,7 +107,7 @@ pog_folder_names = {
     },
 }
 
-period_names = {
+campaign_names = {
     "Run2_2016_HIPM": "2016preVFP_UL",
     "Run2_2016": "2016postVFP_UL",
     "Run2_2017": "2017_UL",
@@ -118,7 +121,7 @@ period_names = {
     "Run3_2026": "2026_Summer24",  # not every POG publishes 2026 sets yet: see pog_folder_names
 }
 
-periods = {
+campaign_years = {
     "2026_Summer24": "2026",
     "2025_Winter25": "2025",
     "2025_Summer24": "2025",
@@ -132,6 +135,95 @@ periods = {
     "2016preVFP_UL": "2016",
     "2016postVFP_UL": "2016",
 }
+
+
+def findLibLocation(lib_name, first_guess=None):
+    paths_to_check = []
+    if first_guess is not None:
+        paths_to_check.append(first_guess)
+    other_paths = os.environ.get("LD_LIBRARY_PATH", "").split(":")
+    paths_to_check.extend(other_paths)
+    full_lib_name = f"lib{lib_name}.so"
+    for path in paths_to_check:
+        lib_path = os.path.join(path, full_lib_name)
+        if os.path.exists(lib_path):
+            return lib_path
+    raise RuntimeError(f"Library {lib_name} not found.")
+
+
+@functools.cache
+def loadCorrectionLib():
+    """Load correctionlib into ROOT and add its include path, once per process."""
+    returncode, output, err = ps_call(
+        ["correction", "config", "--cflags", "--ldflags"],
+        catch_stdout=True,
+        decode=True,
+        verbose=0,
+    )
+    params = output.split(" ")
+    lib_path = None
+    for param in params:
+        if param.startswith("-I"):
+            ROOT.gInterpreter.AddIncludePath(param[2:].strip())
+        elif param.startswith("-L"):
+            lib_path = param[2:].strip()
+        elif param.startswith("-l"):
+            lib_name = param[2:].strip()
+    ROOT.gSystem.Load(findLibLocation(lib_name, lib_path))
+
+
+@functools.cache
+def declareHeader(path):
+    """Include a provider header into ROOT's interpreter, once per path and process: the C++
+    classes are compiled once, and every era gets its own objects of them (CppProvider).
+    """
+    loadCorrectionLib()
+    if not ROOT.gInterpreter.Declare(f'#include "{path}"'):
+        raise RuntimeError(f"Unable to declare {path}.")
+
+
+def declareProviderHeader(name):
+    """declareHeader for a header of this package, by file name."""
+    declareHeader(os.path.join(os.path.dirname(os.path.abspath(__file__)), name))
+
+
+class CppProvider:
+    """One C++ correction provider object, created and owned by this Python object.
+
+    `ref` is a C++ expression for the object, to be used in the strings given to RDataFrame
+    (`f"{provider.ref}->getWeight(...)"`). It holds the object's address, so this Python
+    object has to outlive every dataframe built with it; the Corrections instance that owns
+    the provider is kept on the DataFrameWrapper for that reason. `ref` is const: a JIT
+    string that calls a non-const method fails when it is compiled.
+
+    The constructor arguments are Python values, or with `cpp_args` a C++ argument list for
+    the arguments that are C++ expressions (maps, vectors of enums).
+    """
+
+    def __init__(self, cpp_class, *args, cpp_args=None):
+        self.cpp_class = cpp_class
+        cls = functools.reduce(getattr, cpp_class.split("::"), ROOT)
+        try:
+            if cpp_args is None:
+                self.obj = cls(*args)
+            else:
+                if args:
+                    raise ValueError("either Python arguments or cpp_args, not both")
+                address = ROOT.gInterpreter.ProcessLine(
+                    f"new ::{cpp_class}({cpp_args});"
+                )
+                if not address:
+                    raise RuntimeError("the constructor failed (see the error above)")
+                self.obj = ROOT.BindObject(address, cls)
+                self.obj.__python_owns__ = True
+        except Exception as e:
+            arguments = cpp_args if cpp_args is not None else args
+            raise RuntimeError(
+                f"Unable to construct {cpp_class} with arguments {arguments}: {e}"
+            ) from e
+        self.ref = (
+            f"reinterpret_cast<const ::{cpp_class}*>({hex(ROOT.addressof(self.obj))})"
+        )
 
 
 # Sources whose variations are an indexed family rather than Up/Down -- PDF members, for

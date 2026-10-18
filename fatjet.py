@@ -1,13 +1,8 @@
 import os
-import ROOT
 from .CorrectionsCore import *
 
 
 class FatJetCorrProducer:
-    initialized = False
-
-    period = None
-
     base_file_path = os.path.join(
         os.environ["ANALYSIS_PATH"], "Corrections/data/AK8Jet/bbWW"
     )
@@ -67,26 +62,22 @@ class FatJetCorrProducer:
 
     fatjet_Sources = ["Hbb", "Hcc", "tau21"]
 
-    def __init__(self, period, ana, tagger, fatjetName, isData=False):
+    def __init__(self, campaign, ana, tagger, fatjetName, isData=False):
         # ana input for future, if other analyses will use separate corrections
         self.isData = isData
         self.fatjetName = fatjetName
 
         this_dict = self.fatjet_corr_dict[tagger]
-        file_nameID = this_dict["file_name"][period]
-        bb_key = this_dict["keys_bb"][period]
-        cc_key = this_dict["keys_cc"][period]
+        file_nameID = this_dict["file_name"][campaign]
+        bb_key = this_dict["keys_bb"][campaign]
+        cc_key = this_dict["keys_cc"][campaign]
 
-        if not FatJetCorrProducer.initialized:
-            headers_dir = os.path.dirname(os.path.abspath(__file__))
-            header_path = os.path.join(headers_dir, "fatjet.h")
-            ROOT.gInterpreter.Declare(f'#include "{header_path}"')
-            ROOT.gInterpreter.ProcessLine(
-                f'::correction::FatJetCorrProvider::Initialize("{file_nameID}","{bb_key}","{cc_key}")'
-            )
-            FatJetCorrProducer.initialized = True
+        declareProviderHeader("fatjet.h")
+        self.provider = CppProvider(
+            "correction::FatJetCorrProvider", file_nameID, bb_key, cc_key
+        )
 
-        self.period = period
+        self.campaign = campaign
         self.columns = {}
 
     def getSF(self, df, isCentral, return_variations):
@@ -103,7 +94,7 @@ class FatJetCorrProducer:
 
                 df = df.Define(
                     f"{branch_name}",
-                    f"""::correction::FatJetCorrProvider::getGlobal().get_SF({self.fatjetName}_isValid,
+                    f"""{self.provider.ref}->get_SF({self.fatjetName}_isValid,
                             {self.fatjetName}_pt, {self.fatjetName}_hadronFlavour,
                             ::correction::FatJetCorrProvider::UncSource::{source},
                             ::correction::UncScale::{scale})""",

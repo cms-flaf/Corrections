@@ -8,16 +8,14 @@
 
 namespace correction {
 
-    class DYbbwwCorrProvider : public CorrectionsBase<DYbbwwCorrProvider> {
+    class DYbbwwCorrProvider {
       public:
         explicit DYbbwwCorrProvider(const std::string& fileName)
-            : corrections_(CorrectionSet::from_file(fileName)), dy_hhbbww_Weight_(corrections_->at("dy_correction_weight")) {}
+            : corrections_(CorrectionSet::from_file(fileName)),
+              dy_hhbbww_Weight_(corrections_->at("dy_correction_weight")) {}
 
         // template <typename LV1, typename LV2>
-        double getWeight(const std::string& era,
-                         int njets,
-                         float pt_ll,
-                         const std::string& syst) const {
+        double getWeight(const std::string& era, int njets, float pt_ll, const std::string& syst) const {
             static constexpr int kMinNJets = 2;
             static constexpr int MaxJets = 10;
 

@@ -1,12 +1,10 @@
 import os
-import ROOT
 from .CorrectionsCore import *
 
 
 class DYbbtautauCorrProducer:
     # JsonPath = "/afs/cern.ch/work/m/mrieger/public/hbt/external_files/custom_dy_files/hbt_corrections.json.gz"
     JsonPath = "Corrections/data/DY_corr_hbt/hbt_corrections_v2.json.gz"
-    initialized = False
 
     era_map = {
         "Run3_2022": "2022preEE",
@@ -76,14 +74,10 @@ class DYbbtautauCorrProducer:
             self.default_variations if variations is None else variations
         )
 
-        if not DYbbtautauCorrProducer.initialized:
-            headers_dir = os.path.dirname(os.path.abspath(__file__))
-            header_path = os.path.join(headers_dir, "DY_hhbbtautau.h")
-            ROOT.gInterpreter.Declare(f'#include "{header_path}"')
-            ROOT.gInterpreter.ProcessLine(
-                f'::correction::DYbbtautauCorrProvider::Initialize("{self.json_path}")'
-            )
-            DYbbtautauCorrProducer.initialized = True
+        declareProviderHeader("DY_hhbbtautau.h")
+        self.provider = CppProvider(
+            "correction::DYbbtautauCorrProvider", self.json_path
+        )
 
     def _valid_expr(self):
         if isinstance(self.valid, bool):
@@ -126,7 +120,7 @@ class DYbbtautauCorrProducer:
             df = df.Define(
                 branch_name,
                 f"""static_cast<float>(
-                    ::correction::DYbbtautauCorrProvider::getGlobal().getWeight(
+                    {self.provider.ref}->getWeight(
                         \"{self.era_map[self.era]}\",
                         static_cast<int>({self.njets_branch}),
                         static_cast<int>({self.ntags_branch}),

@@ -5,7 +5,7 @@
 
 namespace correction {
 
-    class VptCorrProvider : public CorrectionsBase<VptCorrProvider> {
+    class VptCorrProvider {
       public:
         enum class UncSource : int { Central = -1, ewcorr = 0, Vpt = 1, DYWeight = 2 };
 

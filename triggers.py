@@ -63,7 +63,6 @@ class TrigCorrProducer:
     mu_XTrg_jsonPath = "Corrections/data/TRG/{0}/{1}"
     e_XTrg_jsonPath = "Corrections/data/TRG/{0}/{1}"
     MET_jsonPath = "Corrections/data/TRG/{0}/{1}"
-    initialized = False
     deepTauVersion = "DeepTau2017v2p1"
     SFSources = {
         "ditau": ["ditau_DM0", "ditau_DM1", "ditau_3Prong"],
@@ -169,64 +168,64 @@ class TrigCorrProducer:
         },
     }
 
-    def __init__(self, period, config):
+    def __init__(self, campaign, config):
         jsonFile_Tau = TrigCorrProducer.TauTRG_jsonPath.format(
-            pog_folder_names["TAU"][period]
+            pog_folder_names["TAU"][campaign]
         )
         self.deepTauVersion = f"""DeepTau{deepTauVersions[config["deepTauVersion"]]}v{config["deepTauVersion"]}"""
         jsonFile_e = os.path.join(
             os.environ["ANALYSIS_PATH"],
-            TrigCorrProducer.eTRG_jsonPath.format(period, year_singleElefile[period]),
+            TrigCorrProducer.eTRG_jsonPath.format(
+                campaign, year_singleElefile[campaign]
+            ),
         )
         jsonFile_Mu = os.path.join(
             os.environ["ANALYSIS_PATH"],
-            TrigCorrProducer.MuTRG_jsonPath.format(period, year_singleMufile[period]),
+            TrigCorrProducer.MuTRG_jsonPath.format(
+                campaign, year_singleMufile[campaign]
+            ),
         )
         jsonFile_mu_XTrg = os.path.join(
             os.environ["ANALYSIS_PATH"],
             TrigCorrProducer.mu_XTrg_jsonPath.format(
-                period, year_xTrg_muTaufile[period]
+                campaign, year_xTrg_muTaufile[campaign]
             ),
         )
         jsonFile_e_XTrg = os.path.join(
             os.environ["ANALYSIS_PATH"],
-            TrigCorrProducer.e_XTrg_jsonPath.format(period, year_xTrg_eTaufile[period]),
+            TrigCorrProducer.e_XTrg_jsonPath.format(
+                campaign, year_xTrg_eTaufile[campaign]
+            ),
         )
 
         jsonFile_MET = os.path.join(
             os.environ["ANALYSIS_PATH"],
-            TrigCorrProducer.MET_jsonPath.format(period, year_METfile[period]),
+            TrigCorrProducer.MET_jsonPath.format(campaign, year_METfile[campaign]),
         )
-        self.period = period
-        self.year = period.split("_")[0]
+        self.campaign = campaign
+        self.year = campaign.split("_")[0]
         # self.trg_config = trg_config
         # print(jsonFile_e_XTrg)
         if self.deepTauVersion == "DeepTau2018v2p5":
-            jsonFile_Tau_rel = f"Corrections/data/TAU/{period}/tau_DeepTau2018v2p5_{period}_101123.json"
+            jsonFile_Tau_rel = f"Corrections/data/TAU/{campaign}/tau_DeepTau2018v2p5_{campaign}_101123.json"
             jsonFile_Tau = os.path.join(os.environ["ANALYSIS_PATH"], jsonFile_Tau_rel)
-        if not TrigCorrProducer.initialized:
-            headers_dir = os.path.dirname(os.path.abspath(__file__))
-            header_path = os.path.join(headers_dir, "triggers.h")
-            ROOT.gInterpreter.Declare(f'#include "{header_path}"')
-            wp_map_cpp = createWPChannelMap(config["deepTauWPs"])
-            # print(wp_map_cpp)
-            # "{self.muon_trg_dict[period]}",
-            year = period.split("_")[0]
-            trigNames_mu_vec = """std::vector<std::string>{\""""
-            trigNames_mu_vec += """\", \"""".join(
-                path for path in self.muon_trgHistNames_dict[period]
-            )
-            trigNames_mu_vec += """\" } """
-            effNames_mu_vec = """std::vector<std::string>{\""""
-            effNames_mu_vec += """\", \"""".join(
-                path for path in self.muon_trgHistNames_eff_dict[period]
-            )
-            effNames_mu_vec += """\" } """
-            # print(trigNames_mu_vec)
-            ROOT.gInterpreter.ProcessLine(
-                f"""::correction::TrigCorrProvider::Initialize("{jsonFile_Tau}", "{self.deepTauVersion}", {wp_map_cpp}, "{jsonFile_Mu}", "{year}", {trigNames_mu_vec},{effNames_mu_vec},"{jsonFile_e}","{jsonFile_e_XTrg}","{jsonFile_mu_XTrg}", "{jsonFile_MET}")"""
-            )
-            TrigCorrProducer.initialized = True
+        declareProviderHeader("triggers.h")
+        wp_map_cpp = createWPChannelMap(config["deepTauWPs"])
+        year = campaign.split("_")[0]
+        trigNames_mu_vec = """std::vector<std::string>{\""""
+        trigNames_mu_vec += """\", \"""".join(
+            path for path in self.muon_trgHistNames_dict[campaign]
+        )
+        trigNames_mu_vec += """\" } """
+        effNames_mu_vec = """std::vector<std::string>{\""""
+        effNames_mu_vec += """\", \"""".join(
+            path for path in self.muon_trgHistNames_eff_dict[campaign]
+        )
+        effNames_mu_vec += """\" } """
+        self.provider = CppProvider(
+            "correction::TrigCorrProvider",
+            cpp_args=f'''"{jsonFile_Tau}", "{self.deepTauVersion}", {wp_map_cpp}, "{jsonFile_Mu}", "{year}", {trigNames_mu_vec},{effNames_mu_vec},"{jsonFile_e}","{jsonFile_e_XTrg}","{jsonFile_mu_XTrg}", "{jsonFile_MET}"''',
+        )
 
     def addSFsbranches(
         self,
@@ -273,33 +272,33 @@ class TrigCorrProducer:
                 if fromCorrLib == True:
                     df = df.Define(
                         f"{branch_SF_name}_double",
-                        f"""{applyTrgBranch_name} ? ::correction::TrigCorrProvider::getGlobal().getTauSF_fromCorrLib(
+                        f"""{applyTrgBranch_name} ? {self.provider.ref}->getTauSF_fromCorrLib(
                             HttCandidate.leg_p4[{leg_idx}], Tau_decayMode.at(HttCandidate.leg_index[{leg_idx}]), "{trg_name}", HttCandidate.channel(), ::correction::TrigCorrProvider::UncSource::{source}, ::correction::UncScale::{scale} ) : 1.f;""",
                     )
                     df = df.Define(
                         f"{branch_eff_data_name}",
-                        f"""{applyTrgBranch_name} ? ::correction::TrigCorrProvider::getGlobal().getTauEffData_fromCorrLib(
+                        f"""{applyTrgBranch_name} ? {self.provider.ref}->getTauEffData_fromCorrLib(
                             HttCandidate.leg_p4[{leg_idx}], Tau_decayMode.at(HttCandidate.leg_index[{leg_idx}]), "{trg_name}", HttCandidate.channel(), ::correction::TrigCorrProvider::UncSource::{source}, ::correction::UncScale::{scale} ) : 1.f;""",
                     )
                     df = df.Define(
                         f"{branch_eff_MC_name}",
-                        f"""{applyTrgBranch_name} ? ::correction::TrigCorrProvider::getGlobal().getTauEffMC_fromCorrLib(
+                        f"""{applyTrgBranch_name} ? {self.provider.ref}->getTauEffMC_fromCorrLib(
                                     HttCandidate.leg_p4[{leg_idx}], Tau_decayMode.at(HttCandidate.leg_index[{leg_idx}]), "{trg_name}", HttCandidate.channel(), ::correction::TrigCorrProvider::UncSource::{source}, ::correction::UncScale::{scale} ): 1.f;""",
                     )
                 else:
                     df = df.Define(
                         f"{branch_SF_name}_double",
-                        f"""{applyTrgBranch_name} ? ::correction::TrigCorrProvider::getGlobal().getSF_fromRootFile(
+                        f"""{applyTrgBranch_name} ? {self.provider.ref}->getSF_fromRootFile(
                                 HttCandidate.leg_p4[{leg_idx}],::correction::TrigCorrProvider::UncSource::{source}, ::correction::UncScale::{scale} ) : 1.f""",
                     )
                     df = df.Define(
                         f"{branch_eff_data_name}",
-                        f"""{applyTrgBranch_name} ? ::correction::TrigCorrProvider::getGlobal().getEffData_fromRootFile(
+                        f"""{applyTrgBranch_name} ? {self.provider.ref}->getEffData_fromRootFile(
                                 HttCandidate.leg_p4[{leg_idx}],::correction::TrigCorrProvider::UncSource::{source}, ::correction::UncScale::{scale}, true) : 1.f""",
                     )
                     df = df.Define(
                         f"{branch_eff_MC_name}",
-                        f"""{applyTrgBranch_name} ? ::correction::TrigCorrProvider::getGlobal().getEffMC_fromRootFile(
+                        f"""{applyTrgBranch_name} ? {self.provider.ref}->getEffMC_fromRootFile(
                                 HttCandidate.leg_p4[{leg_idx}],::correction::TrigCorrProvider::UncSource::{source}, ::correction::UncScale::{scale}, true) : 1.f""",
                     )
                 if scale != central:
@@ -337,7 +336,7 @@ class TrigCorrProducer:
                 branch_SF_name = f"weight_TrgSF_{source}{scale}"
                 df = df.Define(
                     f"{branch_SF_name}_double",
-                    f"""{applyTrgBranch_name} ? ::correction::TrigCorrProvider::getGlobal().getMETTrgSF(
+                    f"""{applyTrgBranch_name} ? {self.provider.ref}->getMETTrgSF(
                                 "{self.year}",metnomu_pt, metnomu_phi, ::correction::UncScale::{scale} ) : 1.f""",
                 )
                 if scale != central:
@@ -373,7 +372,7 @@ class TrigCorrProducer:
                 # branch_SF_name = f"{branch_SF_name_prefix}_{source}{scale}"
                 branch_SF_central = f"{branch_SF_name_prefix}_{source}Central"
                 branch_SF_name = f"{branch_SF_name_prefix}_{source}{scale}"
-                value_shifted = self.singleTau_SF_dict[self.period][scale]
+                value_shifted = self.singleTau_SF_dict[self.campaign][scale]
 
                 df = df.Define(
                     f"{branch_SF_name}_double",

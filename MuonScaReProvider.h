@@ -7,7 +7,7 @@
 
 namespace correction {
 
-    class MuonScaReCorrProvider : public CorrectionsBase<MuonScaReCorrProvider> {
+    class MuonScaReCorrProvider {
       public:
         enum class UncSource : int {
             Central = -1,
@@ -28,87 +28,81 @@ namespace correction {
             return false;
         }
 
-        MuonScaReCorrProvider(
-        const std::string& jsonFile,
-        const std::string& jsonFileVXBS
-        ) :
-            cset(CorrectionSet::from_file(jsonFile)),
-            cset_vxbs(CorrectionSet::from_file(jsonFileVXBS))
-        {}
+        MuonScaReCorrProvider(const std::string& jsonFile, const std::string& jsonFileVXBS)
+            : cset(CorrectionSet::from_file(jsonFile)), cset_vxbs(CorrectionSet::from_file(jsonFileVXBS)) {}
 
-        const CorrectionSet& getCSet(bool useVXBS) const {
-            return useVXBS ? *cset_vxbs : *cset;
-        }
+        const CorrectionSet& getCSet(bool useVXBS) const { return useVXBS ? *cset_vxbs : *cset; }
 
-            LorentzVectorM getES(
-                const float Muon_pt,
-                const float Muon_eta,
-                const float Muon_phi,
-                const float Muon_mass,
-                const int Muon_charge,
-                const unsigned char Muon_nTrackerLayers,
-                const bool is_data,
-                const int evtNumber,
-                const int lumiNumber,
-                UncSource source,
-                UncScale scale,
-                bool useVXBS = false) const {
-                const UncScale mu_scale = sourceApplies(source) ? scale : UncScale::Central;
-                const std::string& scale_str = getScaleStr(mu_scale);
+        LorentzVectorM getES(const float Muon_pt,
+                             const float Muon_eta,
+                             const float Muon_phi,
+                             const float Muon_mass,
+                             const int Muon_charge,
+                             const unsigned char Muon_nTrackerLayers,
+                             const bool is_data,
+                             const int evtNumber,
+                             const int lumiNumber,
+                             UncSource source,
+                             UncScale scale,
+                             bool useVXBS = false) const {
+            const UncScale mu_scale = sourceApplies(source) ? scale : UncScale::Central;
+            const std::string& scale_str = getScaleStr(mu_scale);
 
-                const int isData = is_data ? 1 : 0;
-                const double muon_pt_scaled = mu_scale == UncScale::Central ? pt_scale(is_data, Muon_pt, Muon_eta, Muon_phi, Muon_charge,useVXBS) : pt_scale_var(Muon_pt, Muon_eta, Muon_phi, Muon_charge, scale_str,useVXBS);
-                double muon_pt_resol = muon_pt_scaled;
+            const int isData = is_data ? 1 : 0;
+            const double muon_pt_scaled =
+                mu_scale == UncScale::Central
+                    ? pt_scale(is_data, Muon_pt, Muon_eta, Muon_phi, Muon_charge, useVXBS)
+                    : pt_scale_var(Muon_pt, Muon_eta, Muon_phi, Muon_charge, scale_str, useVXBS);
+            double muon_pt_resol = muon_pt_scaled;
 
-                if (!isData) {
-                    muon_pt_resol = mu_scale == UncScale::Central ? pt_resol(muon_pt_scaled, Muon_eta, Muon_phi, Muon_nTrackerLayers, evtNumber, lumiNumber,useVXBS) : pt_resol_var(muon_pt_scaled, muon_pt_resol, Muon_eta, scale_str,useVXBS);
-
-                }
-                const LorentzVectorM muon_p4_ScaRe = LorentzVectorM(muon_pt_resol, Muon_eta, Muon_phi, Muon_mass);
-                return muon_p4_ScaRe;
+            if (!isData) {
+                muon_pt_resol =
+                    mu_scale == UncScale::Central
+                        ? pt_resol(
+                              muon_pt_scaled, Muon_eta, Muon_phi, Muon_nTrackerLayers, evtNumber, lumiNumber, useVXBS)
+                        : pt_resol_var(muon_pt_scaled, muon_pt_resol, Muon_eta, scale_str, useVXBS);
+            }
+            const LorentzVectorM muon_p4_ScaRe = LorentzVectorM(muon_pt_resol, Muon_eta, Muon_phi, Muon_mass);
+            return muon_p4_ScaRe;
         }
         RVecLV getES(const RVecI& id_selection,
-                const RVecF& Muon_pt,
-                const RVecF& Muon_eta,
-                const RVecF& Muon_phi,
-                const RVecF& Muon_mass,
-                const RVecI&  Muon_charge,
-                const RVecUC& Muon_nTrackerLayers,
-                const bool is_data,
-                const int evtNumber,
-                const int lumiNumber,
-                UncSource source,
-                UncScale scale,
-                bool useVXBS = false) const
-            {
-                const size_t nMuons = Muon_pt.size();
-                RVecLV out(nMuons);
+                     const RVecF& Muon_pt,
+                     const RVecF& Muon_eta,
+                     const RVecF& Muon_phi,
+                     const RVecF& Muon_mass,
+                     const RVecI& Muon_charge,
+                     const RVecUC& Muon_nTrackerLayers,
+                     const bool is_data,
+                     const int evtNumber,
+                     const int lumiNumber,
+                     UncSource source,
+                     UncScale scale,
+                     bool useVXBS = false) const {
+            const size_t nMuons = Muon_pt.size();
+            RVecLV out(nMuons);
 
-                for (size_t i = 0; i < nMuons; ++i) {
-                    if (id_selection[i] <= 0){
-                        // id selection is using Muon_looseId at anaTuple, but mu1_pt at histTuple (h_mumu)
-                        out[i] = LorentzVectorM(Muon_pt[i], Muon_eta[i], Muon_phi[i], Muon_mass[i]);
-                    }
-                    else {
-                        out[i] = getES(
-                            Muon_pt[i],
-                            Muon_eta[i],
-                            Muon_phi[i],
-                            Muon_mass[i],
-                            Muon_charge[i],
-                            Muon_nTrackerLayers[i],
-                            is_data,
-                            evtNumber,
-                            lumiNumber,
-                            source,
-                            scale,
-                            useVXBS
-                        );
-                    }
+            for (size_t i = 0; i < nMuons; ++i) {
+                if (id_selection[i] <= 0) {
+                    // id selection is using Muon_looseId at anaTuple, but mu1_pt at histTuple (h_mumu)
+                    out[i] = LorentzVectorM(Muon_pt[i], Muon_eta[i], Muon_phi[i], Muon_mass[i]);
+                } else {
+                    out[i] = getES(Muon_pt[i],
+                                   Muon_eta[i],
+                                   Muon_phi[i],
+                                   Muon_mass[i],
+                                   Muon_charge[i],
+                                   Muon_nTrackerLayers[i],
+                                   is_data,
+                                   evtNumber,
+                                   lumiNumber,
+                                   source,
+                                   scale,
+                                   useVXBS);
                 }
-
-                return out;
             }
+
+            return out;
+        }
 
       private:
         std::unique_ptr<CorrectionSet> cset;
@@ -129,7 +123,7 @@ namespace correction {
             return cb.invcdf(rndm);
         }
 
-        double get_std(double pt, double eta, float nL,bool useVXBS = false) const {
+        double get_std(double pt, double eta, float nL, bool useVXBS = false) const {
             const auto& cs = getCSet(useVXBS);
             // obtain paramters from correctionlib
             double param_0 = cs.at("poly_params")->evaluate({abs(eta), nL, 0});
@@ -137,12 +131,13 @@ namespace correction {
             double param_2 = cs.at("poly_params")->evaluate({abs(eta), nL, 2});
 
             // calculate value and return max(0, val)
-            double sigma = param_0 + param_1 * pt + param_2 * pt*pt;
-            if (sigma < 0) sigma = 0;
+            double sigma = param_0 + param_1 * pt + param_2 * pt * pt;
+            if (sigma < 0)
+                sigma = 0;
             return sigma;
         }
 
-        double get_k(double eta, string var,bool useVXBS = false) const {
+        double get_k(double eta, string var, bool useVXBS = false) const {
             const auto& cs = getCSet(useVXBS);
             // obtain parameters from correctionlib
             double k_data = cs.at("k_data")->evaluate({abs(eta), var});
@@ -151,23 +146,30 @@ namespace correction {
             // calculate residual smearing factor
             // return 0 if smearing in MC already larger than in data
             double k = 0;
-            if (k_mc < k_data) k = sqrt(k_data*k_data - k_mc*k_mc);
+            if (k_mc < k_data)
+                k = sqrt(k_data * k_data - k_mc * k_mc);
             return k;
         }
 
-
-
-        double pt_resol(double pt, double eta, double phi, float nL, int evtNumber, int lumiNumber, bool useVXBS = false, double low_pt_threshold = 20) const {
+        double pt_resol(double pt,
+                        double eta,
+                        double phi,
+                        float nL,
+                        int evtNumber,
+                        int lumiNumber,
+                        bool useVXBS = false,
+                        double low_pt_threshold = 20) const {
             // load correction values
-            double rndm = (double) get_rndm(eta, phi, nL, evtNumber, lumiNumber,useVXBS);
-            double std = (double) get_std(pt, eta, nL,useVXBS);
-            double k = (double) get_k(eta, "nom", useVXBS);
+            double rndm = (double)get_rndm(eta, phi, nL, evtNumber, lumiNumber, useVXBS);
+            double std = (double)get_std(pt, eta, nL, useVXBS);
+            double k = (double)get_k(eta, "nom", useVXBS);
 
             // calculate corrected value and return original value if a parameter is nan
-            double ptc = pt * ( 1 + k * std * rndm);
-            if (isnan(ptc)) ptc = pt;
-            if(ptc / pt > 2 || ptc / pt < 0.1 || ptc < 0 || pt < low_pt_threshold || pt > 200){
-            ptc = pt;
+            double ptc = pt * (1 + k * std * rndm);
+            if (isnan(ptc))
+                ptc = pt;
+            if (ptc / pt > 2 || ptc / pt < 0.1 || ptc < 0 || pt < low_pt_threshold || pt > 200) {
+                ptc = pt;
             }
             // For muons outside the validated pT range (including pT < low_pt_threshold),
             // or when the smeared pT is clearly unphysical, we return the original pT
@@ -175,11 +177,12 @@ namespace correction {
             return ptc;
         }
 
-        double pt_resol_var(double pt_woresol, double pt_wresol, double eta, string updn,bool useVXBS = false) const {
+        double pt_resol_var(double pt_woresol, double pt_wresol, double eta, string updn, bool useVXBS = false) const {
             const auto& cs = getCSet(useVXBS);
-            double k = (double) get_k(eta, "nom",useVXBS);
+            double k = (double)get_k(eta, "nom", useVXBS);
 
-            if (k==0) return pt_wresol;
+            if (k == 0)
+                return pt_wresol;
 
             double k_unc = cs.at("k_mc")->evaluate({abs(eta), "stat"});
 
@@ -187,36 +190,40 @@ namespace correction {
 
             double pt_var = pt_wresol;
 
-            if (updn=="up"){
-                pt_var = pt_woresol * (1 + (k+k_unc) * std_x_rndm);
-            }
-            else if (updn=="dn"){
-                pt_var = pt_woresol * (1 + (k-k_unc) * std_x_rndm);
-            }
-            else {
+            if (updn == "up") {
+                pt_var = pt_woresol * (1 + (k + k_unc) * std_x_rndm);
+            } else if (updn == "dn") {
+                pt_var = pt_woresol * (1 + (k - k_unc) * std_x_rndm);
+            } else {
                 cout << "ERROR: updn must be 'up' or 'dn'" << endl;
             }
-            if(pt_var / pt_woresol > 2 || pt_var / pt_woresol < 0.1 || pt_var < 0){
+            if (pt_var / pt_woresol > 2 || pt_var / pt_woresol < 0.1 || pt_var < 0) {
                 pt_var = pt_woresol;
             }
 
             return pt_var;
         }
 
-        double pt_scale(bool is_data, double pt, double eta, double phi, int charge, bool useVXBS = false, double low_pt_threshold = 20) const {
+        double pt_scale(bool is_data,
+                        double pt,
+                        double eta,
+                        double phi,
+                        int charge,
+                        bool useVXBS = false,
+                        double low_pt_threshold = 20) const {
             const auto& cs = getCSet(useVXBS);
             // use right correction
             string dtmc = "mc";
-            if (is_data) dtmc = "data";
+            if (is_data)
+                dtmc = "data";
 
-            double a = cs.at("a_"+dtmc)->evaluate({eta, phi, "nom"});
-            double m = cs.at("m_"+dtmc)->evaluate({eta, phi, "nom"});
-            if(pt < low_pt_threshold)
+            double a = cs.at("a_" + dtmc)->evaluate({eta, phi, "nom"});
+            double m = cs.at("m_" + dtmc)->evaluate({eta, phi, "nom"});
+            if (pt < low_pt_threshold)
                 return pt;
 
-            return 1. / (m/pt + charge * a);
+            return 1. / (m / pt + charge * a);
         }
-
 
         double pt_scale_var(double pt, double eta, double phi, int charge, string updn, bool useVXBS = false) const {
             const auto& cs = getCSet(useVXBS);
@@ -224,14 +231,15 @@ namespace correction {
             double stat_m = cs.at("m_mc")->evaluate({eta, phi, "stat"});
             double stat_rho = cs.at("m_mc")->evaluate({eta, phi, "rho_stat"});
 
-            double unc = pt*pt*sqrt(stat_m*stat_m / (pt*pt) + stat_a*stat_a + 2*charge*stat_rho*stat_m/pt*stat_a);
+            double unc =
+                pt * pt *
+                sqrt(stat_m * stat_m / (pt * pt) + stat_a * stat_a + 2 * charge * stat_rho * stat_m / pt * stat_a);
 
             double pt_var = pt;
 
-            if (updn=="up"){
+            if (updn == "up") {
                 pt_var = pt + unc;
-            }
-            else if (updn=="dn"){
+            } else if (updn == "dn") {
                 pt_var = pt - unc;
             }
 

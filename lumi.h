@@ -6,7 +6,7 @@
 #include <boost/json.hpp>
 #include "corrections.h"
 
-class LumiFilter : public correction::CorrectionsBase<LumiFilter> {
+class LumiFilter {
   public:
     using RunType = unsigned int;
     using LumiType = unsigned int;

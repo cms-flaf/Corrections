@@ -4,7 +4,7 @@
 #include "corrections.h"
 
 namespace correction {
-    class JetVetoMapProvider : public CorrectionsBase<JetVetoMapProvider> {
+    class JetVetoMapProvider {
       public:
         JetVetoMapProvider(std::string const& fileName, std::string const& entry_name)
             : corrections_(CorrectionSet::from_file(fileName)) {

@@ -1,7 +1,5 @@
-import os
 import sys
 
-import ROOT
 
 from .CorrectionsCore import *
 
@@ -24,8 +22,6 @@ class qcdScaleWeightProducer:
     nothing else carries it, so entry 4 becomes this producer's Central and the members
     are taken as stored. Either way entry 4 is a divisor or the Central, never a variation.
     """
-
-    initialized = False
 
     uncSource = ["qcd_scale"]
 
@@ -64,12 +60,7 @@ class qcdScaleWeightProducer:
         self.branch = branch
         self.applies_nominal = applies_nominal
         registerSourceScales("qcd_scale", self.scales({}))
-        if not qcdScaleWeightProducer.initialized:
-            header = os.path.join(
-                os.path.dirname(os.path.abspath(__file__)), "qcd_scale.h"
-            )
-            ROOT.gInterpreter.Declare(f'#include "{header}"')
-            qcdScaleWeightProducer.initialized = True
+        declareProviderHeader("qcd_scale.h")
 
     def getWeight(
         self,

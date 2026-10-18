@@ -1,18 +1,11 @@
 import copy
-import os
-import ROOT
 from .CorrectionsCore import *
 
 
 class METCorrProducer:
-    initialized = False
 
     def __init__(self):
-        if not METCorrProducer.initialized:
-            headers_dir = os.path.dirname(os.path.abspath(__file__))
-            header_path = os.path.join(headers_dir, "met.h")
-            ROOT.gInterpreter.Declare(f'#include "{header_path}"')
-            METCorrProducer.initialized = True
+        declareProviderHeader("met.h")
 
     def getMET(self, df, source_dict, MET_type):
         MET_objs = {"Electron", "Muon", "Tau", "Jet"}

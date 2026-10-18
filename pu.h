@@ -4,7 +4,7 @@
 
 namespace correction {
 
-    class puCorrProvider : public CorrectionsBase<puCorrProvider> {
+    class puCorrProvider {
       public:
         static const std::string& getScaleStr(UncScale scale) {
             static const std::map<UncScale, std::string> names = {

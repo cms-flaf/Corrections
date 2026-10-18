@@ -1,8 +1,7 @@
 import os
-import ROOT
 from .CorrectionsCore import *
 
-period_names_Vpt = {
+era_names_Vpt = {
     "Run3_2022": "2022preEE",
     "Run3_2022EE": "2022postEE",
     "Run3_2023": "2023preBPix",
@@ -36,11 +35,10 @@ class VptCorrProducer:
         "Corrections/data/hleprare/DYweightCorrlib/DY_pTll_weights_{0}_v5.json.gz"
     )
     EWK_corr_filePath = "Corrections/data/EWK_Corr_Vpt/{0}"
-    initialized = False
     SFSources = ["Vpt", "ewcorr"]
     DY_w_SFSources = ["DYWeight"]
 
-    def __init__(self, sampleType, period, order="NLO"):
+    def __init__(self, sampleType, era, order="NLO"):
         rootFile_EWKcorr_name = (
             "ZJetsCorr_collection_wek.root"
             if sampleType == "DY"
@@ -52,25 +50,26 @@ class VptCorrProducer:
         )
         jsonFile_EWKcorr_recoil = os.path.join(
             os.environ["ANALYSIS_PATH"],
-            VptCorrProducer.EWK_corr_jsonPath_recoil.format(period_names_Vpt[period]),
+            VptCorrProducer.EWK_corr_jsonPath_recoil.format(era_names_Vpt[era]),
         )
         jsonFile_EWKcorr_weight = os.path.join(
             os.environ["ANALYSIS_PATH"],
-            VptCorrProducer.EWK_corr_jsonPath_weights.format(period_names_Vpt[period]),
+            VptCorrProducer.EWK_corr_jsonPath_weights.format(era_names_Vpt[era]),
         )
         print(jsonFile_EWKcorr_weight)
         self.order = order
         hist_name = "eej_pTV_kappa_EW" if sampleType == "DY" else "evj_pTV_kappa_EW"
         hist_nominal_weight = "ewcorr"
         self.sampleType = sampleType
-        if not VptCorrProducer.initialized:
-            headers_dir = os.path.dirname(os.path.abspath(__file__))
-            header_path = os.path.join(headers_dir, "Vpt.h")
-            ROOT.gInterpreter.Declare(f"""#include "{header_path}" """)
-            ROOT.gInterpreter.ProcessLine(
-                f"""::correction::VptCorrProvider::Initialize("{rootFile_EWKcorr}", "{jsonFile_EWKcorr_weight}","{jsonFile_EWKcorr_recoil}", "{hist_name}", "{hist_nominal_weight}")"""
-            )
-            VptCorrProducer.initialized = True
+        declareProviderHeader("Vpt.h")
+        self.provider = CppProvider(
+            "correction::VptCorrProvider",
+            rootFile_EWKcorr,
+            jsonFile_EWKcorr_weight,
+            jsonFile_EWKcorr_recoil,
+            hist_name,
+            hist_nominal_weight,
+        )
 
     def getDYSF(self, df, isCentral, return_variations):
         sf_sources = VptCorrProducer.DY_w_SFSources
@@ -93,7 +92,7 @@ class VptCorrProducer:
                     if self.sampleType == "DY":
                         df = df.Define(
                             f"{branch_SF_name}_double",
-                            f"""::correction::VptCorrProvider::getGlobal().getDY_weight(LHE_Vpt, "{self.order}",
+                            f"""{self.provider.ref}->getDY_weight(LHE_Vpt, "{self.order}",
                                         ::correction::VptCorrProvider::UncSource::{source}, ::correction::VptCorrProvider::DYUncScale::{scale_def} )""",
                         )
                         # for scale_def in scale_defs[order][scale]:
@@ -138,7 +137,7 @@ class VptCorrProducer:
                 if self.sampleType == "W" or self.sampleType == "DY":
                     df = df.Define(
                         f"{branch_SF_name}_double_sc",
-                        f"""::correction::VptCorrProvider::getGlobal().getSF_fromRootFile(
+                        f"""{self.provider.ref}->getSF_fromRootFile(
                                         LHE_Vpt, ::correction::VptCorrProvider::UncSource::{source}, ::correction::UncScale::{scale} )""",
                     )
                     df = df.Define(

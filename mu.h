@@ -5,7 +5,7 @@
 
 namespace correction {
 
-    class MuCorrProvider : public CorrectionsBase<MuCorrProvider> {
+    class MuCorrProvider {
       public:
         enum class UncSource : int {
             Central = -1,
@@ -330,8 +330,8 @@ namespace correction {
             };
             return RecoSFMap;
         }
-        static std::string& getUncSourceName(UncSource source) {
-            static std::string k = "Central";
+        static std::string getUncSourceName(UncSource source) {
+            std::string k = "Central";
 
             if (source == UncSource::NUM_GlobalMuons_DEN_genTracks)
                 k = "NUM_GlobalMuons_DEN_genTracks";
@@ -466,7 +466,7 @@ namespace correction {
         std::map<std::string, Correction::Ref> muIDCorrections;
     };
 
-    class HighPtMuCorrProvider : public CorrectionsBase<HighPtMuCorrProvider> {
+    class HighPtMuCorrProvider {
       public:
         enum class UncSource : int {
             Central = -1,
@@ -577,8 +577,8 @@ namespace correction {
         }
 
       private:
-        static std::string& getUncSourceName(UncSource source) {
-            static std::string sourcename = "Central";
+        static std::string getUncSourceName(UncSource source) {
+            std::string sourcename = "Central";
             if (source == UncSource::NUM_GlobalMuons_DEN_TrackerMuonProbes)
                 sourcename = "NUM_GlobalMuons_DEN_TrackerMuonProbes";
             if (source == UncSource::NUM_HighPtID_DEN_GlobalMuonProbes)
@@ -621,7 +621,7 @@ namespace correction {
         std::map<std::string, Correction::Ref> highPtmuCorrections;
     };
 
-    class LowPtMuCorrProvider : public CorrectionsBase<LowPtMuCorrProvider> {
+    class LowPtMuCorrProvider {
       public:
         enum class UncSource : int {
             Central = -1,
@@ -683,8 +683,8 @@ namespace correction {
         }
 
       private:
-        static std::string& getUncSourceName(UncSource source) {
-            static std::string sourcename = "Central";
+        static std::string getUncSourceName(UncSource source) {
+            std::string sourcename = "Central";
             if (source == UncSource::NUM_LooseID_DEN_TrackerMuons)
                 sourcename = "NUM_LooseID_DEN_TrackerMuons";
             if (source == UncSource::NUM_MediumID_DEN_TrackerMuons)

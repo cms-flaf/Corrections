@@ -5,7 +5,7 @@
 #include "corrections.h"
 
 namespace correction {
-    class bTagCorrProvider : public CorrectionsBase<bTagCorrProvider> {
+    class bTagCorrProvider {
       public:
         enum class UncSource : int {
             Central = -1,

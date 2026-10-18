@@ -22,7 +22,7 @@ inline std::ostream& operator<<(std::ostream& os,
 
 namespace correction {
 
-    class TauCorrProvider : public CorrectionsBase<TauCorrProvider> {
+    class TauCorrProvider {
       public:
         enum class UncSource : int {
             Central = -1,
@@ -89,8 +89,10 @@ namespace correction {
                                                                {8, "VVTight"}};
             return wpnames.at(wp_value);
         }
-        static const std::string& getScaleStr(UncSource source, UncScale scale, const std::string year) {
-            static const std::map<std::pair<UncSource, UncScale>, std::string> names = {
+        using ScaleNames = std::map<std::pair<UncSource, UncScale>, std::string>;
+
+        static ScaleNames makeScaleNames(const std::string& year) {
+            return {
                 {{UncSource::Central, UncScale::Central}, "nom"},
                 {{UncSource::TauES_DM0, UncScale::Down}, "down"},
                 {{UncSource::TauES_DM0, UncScale::Up}, "up"},
@@ -161,7 +163,10 @@ namespace correction {
                 {{UncSource::syst_highpT_extrap, UncScale::Up}, "syst_highpT_extrap_up"},
                 {{UncSource::syst_highpT_extrap, UncScale::Down}, "syst_highpT_extrap_down"},
             };
-            return names.at(std::make_pair(source, scale));
+        }
+
+        const std::string& getScaleStr(UncSource source, UncScale scale) const {
+            return scale_names_.at(std::make_pair(source, scale));
         }
 
         static bool sourceApplies(UncSource source, const LorentzVectorM& p4, int decayMode, GenLeptonMatch genMatch) {
@@ -264,7 +269,8 @@ namespace correction {
               wps_map_(wps_map),
               tauType_map_(tauType_map),
               year_(year),
-              use_decayMode_(year_.starts_with("202"s)) {}
+              use_decayMode_(year_.starts_with("202"s)),
+              scale_names_(makeScaleNames(year_)) {}
 
         RVecLV getES(const RVecLV& Tau_p4,
                      const RVecI& Tau_decayMode,
@@ -282,7 +288,7 @@ namespace correction {
                     const UncScale tau_scale =
                         sourceApplies(source, Tau_p4[n], Tau_decayMode.at(n), genMatch) ? scale : UncScale::Central;
                     const UncSource tau_source = tau_scale == UncScale::Central ? UncSource::Central : source;
-                    const std::string& scale_str = getScaleStr(tau_source, tau_scale, year_);
+                    const std::string& scale_str = getScaleStr(tau_source, tau_scale);
                     double sf = 1;
                     if (deepTauVersion_ == "DeepTau2017v2p1") {
                         sf = tau_es_->evaluate({Tau_p4[n].pt(),
@@ -337,7 +343,7 @@ namespace correction {
                     sourceApplies(source, Tau_p4, Tau_decayMode, genMatch) ? scale : UncScale::Central;
                 const UncSource tau_had_source = tau_had_scale == UncScale::Central ? UncSource::Central : source;
                 const std::string& scale_str =
-                    scale != UncScale::Central ? getScaleStr(tau_had_source, tau_had_scale, year_) : "nom";
+                    scale != UncScale::Central ? getScaleStr(tau_had_source, tau_had_scale) : "nom";
                 const auto sf =
                     year_ == "2025"
                         ? tau_vs_jet_->evaluate({Tau_p4.pt(),
@@ -356,7 +362,7 @@ namespace correction {
                 const UncScale tau_ele_scale =
                     sourceApplies(source, Tau_p4, Tau_decayMode, genMatch) ? scale : UncScale::Central;
                 const UncSource tau_ele_source = tau_ele_scale == UncScale::Central ? UncSource::Central : source;
-                const std::string& scale_str = getScaleStr(tau_ele_source, tau_ele_scale, year_);
+                const std::string& scale_str = getScaleStr(tau_ele_source, tau_ele_scale);
                 const auto sf = use_decayMode_
                                     ? tau_vs_e_->evaluate({Tau_p4.eta(), Tau_decayMode, Tau_genMatch, wpVSe, scale_str})
                                     : tau_vs_e_->evaluate({Tau_p4.eta(), Tau_genMatch, wpVSe, scale_str});
@@ -366,7 +372,7 @@ namespace correction {
                 const UncScale tau_mu_scale =
                     sourceApplies(source, Tau_p4, Tau_decayMode, genMatch) ? scale : UncScale::Central;
                 const UncSource tau_mu_source = tau_mu_scale == UncScale::Central ? UncSource::Central : source;
-                const std::string& scale_str = getScaleStr(tau_mu_source, tau_mu_scale, year_);
+                const std::string& scale_str = getScaleStr(tau_mu_source, tau_mu_scale);
                 const auto sf =
                     (year_ == "2024" || year_ == "2025")
                         ? tau_vs_mu_->evaluate({Tau_p4.eta(), Tau_genMatch, wpVSmu, wpVSe, wpVSjet, scale_str})
@@ -384,6 +390,7 @@ namespace correction {
         const std::map<Channel, std::string> tauType_map_;
         const std::string year_;
         const bool use_decayMode_;
+        const ScaleNames scale_names_;
     };
 
 }  // namespace correction

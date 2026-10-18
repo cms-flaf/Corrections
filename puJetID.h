@@ -5,7 +5,7 @@
 
 namespace correction {
 
-    class PUJetIDCorrProvider : public CorrectionsBase<PUJetIDCorrProvider> {
+    class PUJetIDCorrProvider {
       public:
         enum class UncSource : int {
             Central = -1,

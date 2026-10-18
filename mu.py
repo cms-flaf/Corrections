@@ -1,5 +1,4 @@
 import os
-import ROOT
 from .CorrectionsCore import *
 
 # https://twiki.cern.ch/twiki/bin/viewauth/CMS/SWGuideMuonSelection
@@ -20,7 +19,6 @@ class MuCorrProducer:
     LowPtmuIDEff_JsonPath = (
         "/cvmfs/cms-griddata.cern.ch/cat/metadata/MUO/{}/latest/muon_JPsi.json.gz"
     )
-    initialized = False
 
     ##### dictionaries containing ALL uncertainties ######
 
@@ -430,7 +428,6 @@ class MuCorrProducer:
             "NUM_IsoMu24_DEN_CutBasedIdMedium_and_PFIsoMedium",
         ],
     }
-    period = None
 
     inputColumns = [
         "pfRelIso04_all",
@@ -445,40 +442,34 @@ class MuCorrProducer:
     ]
 
     def __init__(self, *, era, columns):
-        period = period_names[era]
+        campaign = campaign_names[era]
         jsonFile_eff = os.path.join(
             os.environ["ANALYSIS_PATH"],
-            MuCorrProducer.muIDEff_JsonPath.format(pog_folder_names["MUO"][period]),
+            MuCorrProducer.muIDEff_JsonPath.format(pog_folder_names["MUO"][campaign]),
         )
         jsonFile_eff_highPt = os.path.join(
             os.environ["ANALYSIS_PATH"],
             MuCorrProducer.HighPtmuIDEff_JsonPath.format(
-                pog_folder_names["MUO"][period]
+                pog_folder_names["MUO"][campaign]
             ),
         )
         if era not in ("Run3_2025", "Run3_2026"):
             jsonFile_eff_lowPt = os.path.join(
                 os.environ["ANALYSIS_PATH"],
                 MuCorrProducer.LowPtmuIDEff_JsonPath.format(
-                    pog_folder_names["MUO"][period]
+                    pog_folder_names["MUO"][campaign]
                 ),
             )
-        if not MuCorrProducer.initialized:
-            headers_dir = os.path.dirname(os.path.abspath(__file__))
-            header_path = os.path.join(headers_dir, "mu.h")
-            ROOT.gInterpreter.Declare(f'#include "{header_path}"')
-            ROOT.gInterpreter.ProcessLine(
-                f'::correction::MuCorrProvider::Initialize("{jsonFile_eff}", "{era}")'
+        declareProviderHeader("mu.h")
+        self.provider = CppProvider("correction::MuCorrProvider", jsonFile_eff, era)
+        self.highPt_provider = CppProvider(
+            "correction::HighPtMuCorrProvider", jsonFile_eff_highPt
+        )
+        if era not in ("Run3_2025", "Run3_2026"):
+            self.lowPt_provider = CppProvider(
+                "correction::LowPtMuCorrProvider", jsonFile_eff_lowPt
             )
-            ROOT.gInterpreter.ProcessLine(
-                f'::correction::HighPtMuCorrProvider::Initialize("{jsonFile_eff_highPt}")'
-            )
-            if era not in ("Run3_2025", "Run3_2026"):
-                ROOT.gInterpreter.ProcessLine(
-                    f'::correction::LowPtMuCorrProvider::Initialize("{jsonFile_eff_lowPt}")'
-                )
-            MuCorrProducer.period = period
-            MuCorrProducer.initialized = True
+        self.campaign = campaign
         self.low_available = era.startswith("Run3") and era not in (
             "Run3_2025",
             "Run3_2026",
@@ -493,8 +484,8 @@ class MuCorrProducer:
         SF_branches = []
 
         sf_sources = (
-            MuCorrProducer.MediumMuIDIso_SF_Sources[MuCorrProducer.period]
-            + MuCorrProducer.MediumMuReco_SF_sources[MuCorrProducer.period]
+            MuCorrProducer.MediumMuIDIso_SF_Sources[self.campaign]
+            + MuCorrProducer.MediumMuReco_SF_sources[self.campaign]
         )
         sf_scales = [central, up, down] if return_variations else [central]
         for source in sf_sources:
@@ -532,7 +523,7 @@ class MuCorrProducer:
                     df = df.Define(
                         f"{branch_name}_double",
                         f"""{legType} == Leg::mu && ({genMatch_bool})
-                            ? ::correction::MuCorrProvider::getGlobal().getMuonSF(
+                            ? {self.provider.ref}->getMuonSF(
                                 {p4}, {pfRelIso04_all}, {tightId}, {tkRelIso}, {highPtId}, {mediumId},{looseId},
                                 ::correction::MuCorrProvider::UncSource::{source},
                                 ::correction::UncScale::{scale},
@@ -612,7 +603,7 @@ class MuCorrProducer:
                     df = df.Define(
                         f"{branch_name}_double",
                         f"""{legType} == Leg::mu && ({genMatch_bool})
-                            ? ::correction::HighPtMuCorrProvider::getGlobal().getHighPtMuonSF(
+                            ? {self.highPt_provider.ref}->getHighPtMuonSF(
                                 {p4}, {pfRelIso04_all}, {tightId}, {highPtId}, {tkRelIso}, {mediumId},
                                 ::correction::HighPtMuCorrProvider::UncSource::{source},
                                 ::correction::UncScale::{scale})
@@ -682,7 +673,7 @@ class MuCorrProducer:
                     df = df.Define(
                         f"{branch_name}_double",
                         f"""{legType} == Leg::mu && ({genMatch_bool})
-                            ? ::correction::LowPtMuCorrProvider::getGlobal().getLowPtMuonSF(
+                            ? {self.lowPt_provider.ref}->getLowPtMuonSF(
                                 {p4}, {pfRelIso04_all}, {tightId}, {tkRelIso}, {highPtId}, {mediumId},
                                 ::correction::LowPtMuCorrProvider::UncSource::{source},
                                 ::correction::UncScale::{scale})

@@ -1,7 +1,5 @@
-import os
 import sys
 
-import ROOT
 
 from .CorrectionsCore import *
 
@@ -22,8 +20,6 @@ class psWeightProducer:
 
     See parton_shower.h for the index ordering and why the size guard matters.
     """
-
-    initialized = False
 
     uncSource = ["isr", "fsr"]
 
@@ -46,11 +42,7 @@ class psWeightProducer:
         # at that point. RDF's Define does not consume the source column, so PSWeight
         # is still live at the other AnaTuple call site too.
         self.branch = branch
-        if not psWeightProducer.initialized:
-            headers_dir = os.path.dirname(os.path.abspath(__file__))
-            header_path = os.path.join(headers_dir, "parton_shower.h")
-            ROOT.gInterpreter.Declare(f'#include "{header_path}"')
-            psWeightProducer.initialized = True
+        declareProviderHeader("parton_shower.h")
 
     @staticmethod
     def branchName(source, scale):

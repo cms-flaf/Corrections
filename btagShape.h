@@ -7,7 +7,7 @@
 #include <set>
 
 namespace correction {
-    class bTagShapeCorrProvider : public CorrectionsBase<bTagShapeCorrProvider> {
+    class bTagShapeCorrProvider {
       public:
         enum class UncSource : int {
             Central = -1,
@@ -160,8 +160,7 @@ namespace correction {
             for (size_t jet_idx = 0; jet_idx < Jet_p4.size(); ++jet_idx) {
                 if ((Jet_bTag_score[jet_idx] > 1.0 || Jet_bTag_score[jet_idx] < 0.0) ||
                     std::abs(Jet_p4[jet_idx].eta()) >= 2.5 || Jet_p4[jet_idx].pt() < 20.0 ||
-                    !allowed_flavors.contains(Jet_Flavour[jet_idx]))
-                {
+                    !allowed_flavors.contains(Jet_Flavour[jet_idx])) {
                     continue;
                 }
                 const UncScale jet_tag_scale = sourceApplies(source, Jet_Flavour[jet_idx]) ? scale : UncScale::Central;

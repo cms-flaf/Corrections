@@ -1,12 +1,10 @@
 import os
-import ROOT
 from .CorrectionsCore import *
 
 # Bosonic recoil corrections following recommendations from https://cms-higgs-leprare.docs.cern.ch/htt-common/V_recoil/
 
 
 class BosonicRecoilCorrection:
-    initialized = False
 
     json_map = {
         "Run3_2022": "Recoil_corrections_2022preEE_v5.json.gz",
@@ -18,8 +16,8 @@ class BosonicRecoilCorrection:
         "Run3_2026": "Recoil_corrections_2024_v5.json.gz",  # placeholder
     }
 
-    def __init__(self, period, config, isData, dataset_name, process_name, process_cfg):
-        self.period = period
+    def __init__(self, era, config, isData, dataset_name, process_name, process_cfg):
+        self.era = era
         self.config = config
         self.isData = isData
         self.dataset_name = dataset_name
@@ -29,17 +27,11 @@ class BosonicRecoilCorrection:
         json_file = os.path.join(
             os.environ["ANALYSIS_PATH"],
             "Corrections/data/hleprare/bosonicRecoil",
-            self.json_map[period],
+            self.json_map[era],
         )
 
-        if not BosonicRecoilCorrection.initialized:
-            headers_dir = os.path.dirname(os.path.abspath(__file__))
-            header_path = os.path.join(headers_dir, "bosonicRecoil.h")
-            ROOT.gInterpreter.Declare(f'#include "{header_path}"')
-            ROOT.gInterpreter.ProcessLine(
-                f'::correction::BosonicRecoilProvider::Initialize("{json_file}")'
-            )
-            BosonicRecoilCorrection.initialized = True
+        declareProviderHeader("bosonicRecoil.h")
+        self.provider = CppProvider("correction::BosonicRecoilProvider", json_file)
 
     def applyBosonicRecoilCorrections(self, df, process_cfg, to_apply):
         if self.isData:
@@ -98,7 +90,7 @@ class BosonicRecoilCorrection:
             )
             df = df.Define(
                 "recoil_nom_result",
-                f"::correction::BosonicRecoilProvider::getGlobal().correctMET("
+                f"{self.provider.ref}->correctMET("
                 f'"{recoil_order}", '
                 f"static_cast<double>(recoil_njet), "
                 f"static_cast<double>(recoil_ptll), "
@@ -164,7 +156,7 @@ class BosonicRecoilCorrection:
                         static_cast<double>(PuppiMET_phi)
                     );
                 }}
-                return ::correction::BosonicRecoilProvider::getGlobal().correctMET(
+                return {self.provider.ref}->correctMET(
                     "{recoil_order}",
                     static_cast<double>(recoil_njet),
                     static_cast<double>(recoil_ptll),
@@ -208,7 +200,7 @@ class BosonicRecoilCorrection:
                 if has_gen_recoil_inputs:
                     df = df.Define(
                         result_name,
-                        f"::correction::BosonicRecoilProvider::getGlobal().applyUncertainty("
+                        f"{self.provider.ref}->applyUncertainty("
                         f'"{recoil_order}", '
                         f"static_cast<double>(recoil_njet), "
                         f"static_cast<double>(recoil_ptll), "
@@ -234,7 +226,7 @@ class BosonicRecoilCorrection:
                                 static_cast<double>(PuppiMET_phi_recoil)
                             );
                         }}
-                        return ::correction::BosonicRecoilProvider::getGlobal().applyUncertainty(
+                        return {self.provider.ref}->applyUncertainty(
                             "{recoil_order}",
                             static_cast<double>(recoil_njet),
                             static_cast<double>(recoil_ptll),

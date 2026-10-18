@@ -39,8 +39,8 @@ def _setup_root():
         f'#include "{os.environ["FLAF_PATH"]}/include/AnalysisTools.h"'
     )
     ROOT.gInterpreter.Declare(f'#include "{os.path.join(_HERE, "electron.h")}"')
-    ROOT.gInterpreter.ProcessLine(
-        f'::correction::EleCorrProvider::Initialize("{_ID_FILE}", "{_SS_FILE}", "Electron-ID-SF", "SmearAndSyst")'
+    return ROOT.correction.EleCorrProvider(
+        _ID_FILE, _SS_FILE, "Electron-ID-SF", "SmearAndSyst"
     )
 
 
@@ -67,8 +67,8 @@ def _vec(kind, values):
 class TestElectronScaleAndSmearing(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        _setup_root()
-        cls.provider = ROOT.correction.EleCorrProvider.getGlobal()
+        cls.provider = _setup_root()
+        cls.provider_ref = f"reinterpret_cast<const ::correction::EleCorrProvider*>({hex(ROOT.addressof(cls.provider))})"
         cset = correctionlib.CorrectionSet.from_file(_SS_FILE)
         cls.scale = cset.compound["Scale"]
         cls.smear = cset["SmearAndSyst"]
@@ -146,7 +146,7 @@ class TestElectronScaleAndSmearing(unittest.TestCase):
             .Define("event", f"static_cast<ULong64_t>({event})")
             .Define(
                 "pt_out",
-                "::correction::EleCorrProvider::getGlobal().getESEtDep_MC(Electron_p4_nano, Electron_superclusterEta,"
+                f"{self.provider_ref}->getESEtDep_MC(Electron_p4_nano, Electron_superclusterEta,"
                 " run, luminosityBlock, event, Electron_r9, ::correction::EleCorrProvider::UncSource::Central,"
                 " ::correction::UncScale::Central)[0].pt()",
             )

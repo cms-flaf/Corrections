@@ -4,7 +4,7 @@
 #include "corrections.h"
 
 namespace correction {
-    class JetCorrectionProvider : public CorrectionsBase<JetCorrectionProvider> {
+    class JetCorrectionProvider {
       public:
         enum class UncSource : int {
             Central = -1,

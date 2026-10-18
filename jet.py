@@ -83,8 +83,6 @@ regrouped_files_names = {
 class JetCorrProducer:
     jsonPath_btag = "/cvmfs/cms-griddata.cern.ch/cat/metadata/BTV/{}/btagging.json.gz"
 
-    initialized = False
-
     jet_algorithm = "AK4PFPuppi"
     fatjet_algorithm = "AK8PFPuppi"
 
@@ -116,7 +114,7 @@ class JetCorrProducer:
     # jersmear_jsonPath = "/cvmfs/cms-griddata.cern.ch/cat/metadata/JME/JER-Smearing/latest/jer_smear.json.gz"
     jersmear_jsonPath = "/cvmfs/cms-griddata.cern.ch/cat/metadata/JME/JER-Smearing/2026-09-18/jer_smear.json.gz"
 
-    # maps period to JER tag (only for MC!)
+    # maps campaign to JER tag (only for MC!)
     jer_tag_map = {
         "2022_Summer22": "Summer22_22Sep2023_JRV2_MC",
         "2022_Prompt": "JR_Winter22Run3_V2_MC",
@@ -129,7 +127,7 @@ class JetCorrProducer:
         "2026_Summer24": "Summer24Prompt26_RunBD_JRV1_MC",  # RunC (low PU) has its own JER, but no certified luminosity
     }
 
-    # maps period to JEC tag
+    # maps campaign to JEC tag
     jec_tag_map_mc = {
         "2022_Prompt": ["Winter22Run3_V4_MC"],
         "2022_Summer22": [
@@ -156,7 +154,7 @@ class JetCorrProducer:
         "2026_Summer24": ["Summer24Prompt26_V1_MC"],
     }
 
-    # maps period to base tag
+    # maps campaign to base tag
     # for DATA: jec_tag = {base_tag}_Run{letters}_V{version}_DATA
     jec_tag_map_data = {
         "2022_Prompt": ["Winter22Run3_Run{}_V4_DATA"],
@@ -190,7 +188,7 @@ class JetCorrProducer:
         ],
     }
 
-    # maps period to JER tag (only for MC!)
+    # maps campaign to JER tag (only for MC!)
     fatjer_tag_map = {
         "2022_Summer22": "Summer22_22Sep2023_JRV2_MC",
         "2022_Prompt": "JR_Winter22Run3_V2_MC",
@@ -203,7 +201,7 @@ class JetCorrProducer:
         "2026_Summer24": "Summer24Prompt26_RunBD_JRV1_MC",  # RunC (low PU) has its own JER, but no certified luminosity
     }
 
-    # maps period to JEC tag
+    # maps campaign to JEC tag
     fatjec_tag_map_mc = {
         "2022_Summer22": ["Summer22_22Sep2023_V4_MC"],
         "2022_Prompt": ["Winter22Run3_V4_MC"],
@@ -282,10 +280,9 @@ class JetCorrProducer:
     }
 
     # Sources = []
-    period = None
 
     def __init__(
-        self, period, isData, sample_name, use_corrlib=True, use_regrouped=False
+        self, campaign, isData, sample_name, use_corrlib=True, use_regrouped=False
     ):
         self.isData = isData
         self.sample_name = sample_name
@@ -296,64 +293,59 @@ class JetCorrProducer:
             self.uncSources_toUse = JetCorrProducer.uncSources_regrouped
         else:
             self.uncSources_toUse = JetCorrProducer.uncSources_minimal
-        self.year = int(period[:4])
-        self.period = period
+        self.year = int(campaign[:4])
+        self.campaign = campaign
         if not self.use_corrlib:
             print("Initializing old JetCorrProducer")
-            JEC_dir = directories_JEC[period]
-            JER_dir = directories_JER[period]
+            JEC_dir = directories_JEC[campaign]
+            JER_dir = directories_JER[campaign]
             type_suffix = "DATA" if isData else "MC"
             JER_SF_txt = (
                 f"{JER_dir}_{type_suffix}/{JER_dir}_{type_suffix}_SF_AK4PFchs.txt"
             )
             JER_PtRes_txt = f"{JER_dir}_{type_suffix}/{JER_dir}_{type_suffix}_PtResolution_AK4PFchs.txt"
-            JEC_Regrouped_txt = f"{JEC_dir}/{regrouped_files_names[period]}"
+            JEC_Regrouped_txt = f"{JEC_dir}/{regrouped_files_names[campaign]}"
             ptResolution = getJMEFile("JRDatabase", JER_PtRes_txt)
             ptResolutionSF = getJMEFile("JRDatabase", JER_SF_txt)
             JEC_Regrouped = getJMEFile("JECDatabase", JEC_Regrouped_txt)
-            if not JetCorrProducer.initialized:
-                ROOT.gSystem.Load("libJetMETCorrectionsModules.so")
-                ROOT.gSystem.Load("libCondFormatsJetMETObjects.so")
-                ROOT.gSystem.Load("libCommonToolsUtils.so")
-                headers_dir = os.path.dirname(os.path.abspath(__file__))
-                header_path = os.path.join(headers_dir, "jet.h")
-                JME_calc_base = os.path.join(headers_dir, "JMECalculatorBase.cc")
-                JME_calc_path = os.path.join(
-                    headers_dir, "JMESystematicsCalculators.cc"
-                )
-                ROOT.gInterpreter.Declare(f'#include "{JME_calc_base}"')
-                ROOT.gInterpreter.Declare(f'#include "{JME_calc_path}"')
-                ROOT.gInterpreter.Declare(f'#include "{header_path}"')
-
-                ROOT.gInterpreter.ProcessLine(
-                    f"""::correction::JetCorrProvider::Initialize("{ptResolution}", "{ptResolutionSF}","{JEC_Regrouped}", "{periods[period]}")"""
-                )
-                JetCorrProducer.period = period
-                JetCorrProducer.initialized = True
+            ROOT.gSystem.Load("libJetMETCorrectionsModules.so")
+            ROOT.gSystem.Load("libCondFormatsJetMETObjects.so")
+            ROOT.gSystem.Load("libCommonToolsUtils.so")
+            headers_dir = os.path.dirname(os.path.abspath(__file__))
+            declareHeader(os.path.join(headers_dir, "JMECalculatorBase.cc"))
+            declareHeader(os.path.join(headers_dir, "JMESystematicsCalculators.cc"))
+            declareProviderHeader("jet.h")
+            self.provider = CppProvider(
+                "correction::JetCorrProvider",
+                ptResolution,
+                ptResolutionSF,
+                JEC_Regrouped,
+                campaign_years[campaign],
+            )
         else:
             print("Initializing new JetCorrProducer")
 
             jet_path = JetCorrProducer.jet_jsonPath.format(
-                pog_folder_names["JERC"][period]
+                pog_folder_names["JERC"][campaign]
             )
             jet_jsonFile = os.path.join(os.environ["ANALYSIS_PATH"], jet_path)
             jersmear_path = JetCorrProducer.jersmear_jsonPath
             jetsmear_jsonFile = os.path.join(os.environ["ANALYSIS_PATH"], jersmear_path)
-            year = period.split("_")[0]
+            year = campaign.split("_")[0]
             jec_tag_map = (
                 JetCorrProducer.jec_tag_map_data
                 if self.isData
                 else JetCorrProducer.jec_tag_map_mc
             )
 
-            jec_tag_array = jec_tag_map[period]
+            jec_tag_array = jec_tag_map[campaign]
             jec_tag = jec_tag_array[0]
             other_jec_tag = (
                 jec_tag_array[1] if len(jec_tag_array) > 1 else jec_tag_array[0]
             )
             # print(f"jec_tag is {jec_tag}")
             fatjet_path = JetCorrProducer.fatjet_jsonPath.format(
-                pog_folder_names["JERC"][period]
+                pog_folder_names["JERC"][campaign]
             )
             fatjet_jsonFile = os.path.join(os.environ["ANALYSIS_PATH"], fatjet_path)
             fatjec_tag_map = (
@@ -362,7 +354,7 @@ class JetCorrProducer:
                 else JetCorrProducer.fatjec_tag_map_mc
             )
 
-            fatjec_tag_array = fatjec_tag_map[period]
+            fatjec_tag_array = fatjec_tag_map[campaign]
             fatjec_tag = fatjec_tag_array[0]
             other_fatjec_tag = (
                 fatjec_tag_array[1]
@@ -371,8 +363,8 @@ class JetCorrProducer:
             )
 
             if self.isData:
-                letter_list = JetCorrProducer.run_letters[period]
-                version_list = JetCorrProducer.run_versions[period]
+                letter_list = JetCorrProducer.run_letters[campaign]
+                version_list = JetCorrProducer.run_versions[campaign]
                 sample_letter = ""
                 sample_version = ""
                 if sample_name[-1].isalpha():
@@ -381,7 +373,7 @@ class JetCorrProducer:
                     tokens = sample_name.split("_")
                     sample_version = tokens[-1]
                     sample_letter = tokens[-2][-1]
-                if period in ("2025_Summer24", "2026_Summer24"):
+                if campaign in ("2025_Summer24", "2026_Summer24"):
                     sample_version = ""
 
                 # print(
@@ -424,37 +416,31 @@ class JetCorrProducer:
                 other_fatjec_tag = other_fatjec_tag.format(letters)
                 # print(f"fatjec_tag is {fatjec_tag}")
 
-            jer_tag = JetCorrProducer.jer_tag_map[period]
+            jer_tag = JetCorrProducer.jer_tag_map[campaign]
             algo = JetCorrProducer.jet_algorithm
 
-            fatjer_tag = JetCorrProducer.jer_tag_map[period]
+            fatjer_tag = JetCorrProducer.jer_tag_map[campaign]
             fatalgo = JetCorrProducer.fatjet_algorithm
 
-            if not JetCorrProducer.initialized:
-                headers_dir = os.path.dirname(os.path.abspath(__file__))
-                header_path = os.path.join(headers_dir, "jet.h")
-                ROOT.gInterpreter.Declare(f'#include "{header_path}"')
-                is_data = "true" if self.isData else "false"
-                regrouped = "true" if self.use_regrouped else "false"
-                apply_compound = "true"
-                ROOT.gInterpreter.ProcessLine(
-                    f"""::correction::JetCorrectionProvider::Initialize("{jet_jsonFile}",
-                                                                                                  "{jetsmear_jsonFile}",
-                                                                                                  "{jec_tag}",
-                                                                                                  "{other_jec_tag}",
-                                                                                                  "{jer_tag}",
-                                                                                                  "{algo}",
-                                                                                                  "{fatjet_jsonFile}",
-                                                                                                  "{fatjec_tag}",
-                                                                                                  "{other_fatjec_tag}",
-                                                                                                  "{fatjer_tag}",
-                                                                                                  "{fatalgo}",
-                                                                                                  "{year}",
-                                                                                                   {is_data},
-                                                                                                   {regrouped},
-                                                                                                   {apply_compound})"""
-                )
-                JetCorrProducer.initialized = True
+            declareProviderHeader("jet.h")
+            self.provider = CppProvider(
+                "correction::JetCorrectionProvider",
+                jet_jsonFile,
+                jetsmear_jsonFile,
+                jec_tag,
+                other_jec_tag,
+                jer_tag,
+                algo,
+                fatjet_jsonFile,
+                fatjec_tag,
+                other_fatjec_tag,
+                fatjer_tag,
+                fatalgo,
+                year,
+                self.isData,
+                self.use_regrouped,
+                True,
+            )
 
     def getP4Variations(
         self, df, source_dict, apply_JER, apply_JES, apply_forward_jet_horns_fix_=False
@@ -469,18 +455,20 @@ class JetCorrProducer:
             require_run_number = "false"
             if self.isData:
                 require_run_number = "true"
-            if self.period == "2023_Summer23BPix":
+            if self.campaign == "2023_Summer23BPix":
                 require_run_number = "true"
             wantPhi = (
                 "true"
-                if (self.period == "2023_Summer23BPix" and self.isData)
-                or (self.period in ("2024_Summer24", "2025_Summer24", "2026_Summer24"))
+                if (self.campaign == "2023_Summer23BPix" and self.isData)
+                or (
+                    self.campaign in ("2024_Summer24", "2025_Summer24", "2026_Summer24")
+                )
                 else "false"
             )
             if not self.isData:
                 df = df.Define(
                     "Jet_p4_shifted_map",
-                    f"""::correction::JetCorrectionProvider::getGlobal().getShiftedP4_Jet(Jet_pt, Jet_eta, Jet_phi, Jet_mass,
+                    f"""{self.provider.ref}->getShiftedP4_Jet(Jet_pt, Jet_eta, Jet_phi, Jet_mass,
                                                                                                                        Jet_rawFactor, Jet_area, Rho_fixedGridRhoFastjetAll, event, {apply_jer},
                                                                                                                        {reapply_jec}, {require_run_number}, run, {wantPhi}, {apply_forward_jet_horns_fix},
                                                                                                                        GenJet_pt, GenJet_eta, GenJet_phi, Jet_genJetIdx)""",
@@ -488,7 +476,7 @@ class JetCorrProducer:
 
                 df = df.Define(
                     "FatJet_p4_shifted_map",
-                    f"""::correction::JetCorrectionProvider::getGlobal().getShiftedP4_FatJet(FatJet_pt, FatJet_eta, FatJet_phi, FatJet_mass,
+                    f"""{self.provider.ref}->getShiftedP4_FatJet(FatJet_pt, FatJet_eta, FatJet_phi, FatJet_mass,
                                                                                                                        FatJet_rawFactor, FatJet_area, Rho_fixedGridRhoFastjetAll, event, {apply_jer},
                                                                                                                        {reapply_jec}, {require_run_number}, run, {wantPhi}, {apply_forward_jet_horns_fix},
                                                                                                                        GenJetAK8_pt, GenJetAK8_eta, GenJetAK8_phi, FatJet_genJetAK8Idx)""",
@@ -496,17 +484,17 @@ class JetCorrProducer:
             else:
                 df = df.Define(
                     "Jet_p4_shifted_map",
-                    f"""::correction::JetCorrectionProvider::getGlobal().getShiftedP4_Jet(Jet_pt, Jet_eta, Jet_phi, Jet_mass, Jet_rawFactor, Jet_area, Rho_fixedGridRhoFastjetAll, event, {apply_jer}, {reapply_jec}, {require_run_number}, run, {wantPhi}, {apply_forward_jet_horns_fix})""",
+                    f"""{self.provider.ref}->getShiftedP4_Jet(Jet_pt, Jet_eta, Jet_phi, Jet_mass, Jet_rawFactor, Jet_area, Rho_fixedGridRhoFastjetAll, event, {apply_jer}, {reapply_jec}, {require_run_number}, run, {wantPhi}, {apply_forward_jet_horns_fix})""",
                 )
                 df = df.Define(
                     "FatJet_p4_shifted_map",
-                    f"""::correction::JetCorrectionProvider::getGlobal().getShiftedP4_FatJet(FatJet_pt, FatJet_eta, FatJet_phi, FatJet_mass, FatJet_rawFactor, FatJet_area, Rho_fixedGridRhoFastjetAll, event, {apply_jer}, {reapply_jec}, {require_run_number}, run, {wantPhi}, {apply_forward_jet_horns_fix})""",
+                    f"""{self.provider.ref}->getShiftedP4_FatJet(FatJet_pt, FatJet_eta, FatJet_phi, FatJet_mass, FatJet_rawFactor, FatJet_area, Rho_fixedGridRhoFastjetAll, event, {apply_jer}, {reapply_jec}, {require_run_number}, run, {wantPhi}, {apply_forward_jet_horns_fix})""",
                 )
             class_name = "JetCorrectionProvider"
         else:
             df = df.Define(
                 "Jet_p4_shifted_map",
-                f"""::correction::JetCorrProvider::getGlobal().getShiftedP4(
+                f"""{self.provider.ref}->getShiftedP4(
                             Jet_pt, Jet_eta, Jet_phi, Jet_mass, Jet_rawFactor, Jet_area,
                             Jet_jetId, Rho_fixedGridRhoFastjetAll, Jet_partonFlavour, 0, GenJet_pt, GenJet_eta,
                             GenJet_phi, GenJet_mass, event)""",
@@ -523,7 +511,7 @@ class JetCorrProducer:
             if source in apply_jes_list:  # source!=central and source != "JER":
                 source_eff = "JES_" + source_eff
             if source.endswith("_"):
-                source_eff = source_eff + JetCorrProducer.period.split("_")[0]
+                source_eff = source_eff + self.campaign.split("_")[0]
                 source += "year"
             updateSourceDict(source_dict, source_eff, "Jet")
             updateSourceDict(source_dict, source_eff, "FatJet")
@@ -551,11 +539,11 @@ class JetCorrProducer:
         if self.use_corrlib:
             df = df.Define(
                 "Jet_ptRes",
-                "::correction::JetCorrectionProvider::getGlobal().GetResolutions(Jet_pt, Jet_mass, Jet_rawFactor, Jet_eta, Rho_fixedGridRhoFastjetAll)",
+                f"{self.provider.ref}->GetResolutions(Jet_pt, Jet_mass, Jet_rawFactor, Jet_eta, Rho_fixedGridRhoFastjetAll)",
             )
         else:
             df = df.Define(
                 "Jet_ptRes",
-                "::correction::JetCorrProvider::getGlobal().getResolution(Jet_pt, Jet_eta, Rho_fixedGridRhoFastjetAll)",
+                f"{self.provider.ref}->getResolution(Jet_pt, Jet_eta, Rho_fixedGridRhoFastjetAll)",
             )
         return df

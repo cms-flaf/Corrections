@@ -13,3 +13,11 @@ jobs:
   sanity-checks:
     uses: cms-flaf/FLAF/.github/workflows/repo-sanity-checks.yaml@main
     secrets: inherit
+
+  # The tests that read the sources only; the others need ROOT, correctionlib and /cvmfs.
+  unit-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: No process-wide correction state
+        run: python3 -m unittest -v test_no_global_state

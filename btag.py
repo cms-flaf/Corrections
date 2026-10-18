@@ -35,7 +35,6 @@ class bTagCorrProducer:
     jsonPath = "/cvmfs/cms-griddata.cern.ch/cat/metadata/BTV/{}/latest/btagging.json.gz"
     alternative_jsonPath = "/cvmfs/cms-griddata.cern.ch/cat/metadata/BTV/{}/add_2025_b_and_c_WPs/btagging.json.gz"
     bTagEff_JsonPath = "Corrections/data/BTV/{}/btagEff.root"
-    initialized = False
     uncSource_bTagWP = [
         "btagSFbc_uncorrelated",
         "btagSFlight_uncorrelated",
@@ -77,7 +76,7 @@ class bTagCorrProducer:
     def __init__(
         self,
         *,
-        period,
+        campaign,
         jetCollection,
         loadEfficiency=False,
         tagger="particleNet",
@@ -90,59 +89,43 @@ class bTagCorrProducer:
         self.jetCollection = jetCollection
         self.useSplitJes = useSplitJes
         jsonFile = bTagCorrProducer.jsonPath.format(
-            pog_folder_names["BTV"][period]
+            pog_folder_names["BTV"][campaign]
         )  # for 2025 latest is not available, but files are in this folder available: add_2025_b_and_c_WPs (?) bah
         if not os.path.exists(jsonFile):
             jsonFile = bTagCorrProducer.alternative_jsonPath.format(
-                pog_folder_names["BTV"][period]
+                pog_folder_names["BTV"][campaign]
             )
         jsonFile_eff = os.path.join(
             os.environ["ANALYSIS_PATH"],
-            bTagCorrProducer.bTagEff_JsonPath.format(period),
+            bTagCorrProducer.bTagEff_JsonPath.format(campaign),
         )
         if not loadEfficiency:
             jsonFile_eff = ""
-        if not bTagCorrProducer.initialized:
-            headers_dir = os.path.dirname(os.path.abspath(__file__))
-            header_path = os.path.join(headers_dir, "btag.h")
-            headershape_path = os.path.join(headers_dir, "btagShape.h")
-            ROOT.gInterpreter.Declare(f'#include "{headershape_path}"')
-            ROOT.gInterpreter.Declare(f'#include "{header_path}"')
-
-            ROOT.gInterpreter.ProcessLineSynch(
-                f'::correction::bTagCorrProvider::Initialize("{jsonFile}", "{jsonFile_eff}", "{self.tagger}")'
-            )
-            # ROOT.correction.bTagCorrProvider.Initialize(
-            #     jsonFile, jsonFile_eff, self.tagger
-            # )
-            ROOT.correction.bTagCorrProvider.getGlobal()
-            wantShape_str = "false"
-            if wantShape:
-                wantShape_str = "true"
-            ROOT.gInterpreter.ProcessLineSynch(
-                f"""::correction::bTagShapeCorrProvider::Initialize("{jsonFile}", "{periods[period]}", "{self.tagger}", {wantShape_str})"""
-            )
-            # ROOT.correction.bTagShapeCorrProvider.Initialize(
-            #     jsonFile, periods[period], self.tagger
-            # )
-            ROOT.correction.bTagShapeCorrProvider.getGlobal()
-
-            bTagCorrProducer.initialized = True
+        declareProviderHeader("btagShape.h")
+        declareProviderHeader("btag.h")
+        self.wp_provider = CppProvider(
+            "correction::bTagCorrProvider", jsonFile, jsonFile_eff, self.tagger
+        )
+        self.shape_provider = CppProvider(
+            "correction::bTagShapeCorrProvider",
+            jsonFile,
+            campaign_years[campaign],
+            self.tagger,
+            wantShape,
+        )
 
     def getWPValues(self):
         wp_values = {}
         for wp in WorkingPointsbTag:
             root_wp = getattr(ROOT.WorkingPointsbTag, wp.name)
-            wp_values[wp] = ROOT.correction.bTagCorrProvider.getGlobal().getWPvalue(
-                root_wp
-            )
+            wp_values[wp] = self.wp_provider.obj.getWPvalue(root_wp)
         return wp_values
 
     def getWPid(self, df, jetCollection=None):
         jetCollection = jetCollection or self.jetCollection
         df = df.Define(
             f"{jetCollection}_idbtag{self.btag_branch}",
-            f"::correction::bTagCorrProvider::getGlobal().getWPBranch({jetCollection}_btag{self.btag_branch})",
+            f"{self.wp_provider.ref}->getWPBranch({jetCollection}_btag{self.btag_branch})",
         )
         return df
 
@@ -168,7 +151,7 @@ class bTagCorrProducer:
                     btagScore = f"{self.jetCollection}_btag{self.btag_branch}"
                     df = df.Define(
                         f"{branch_name}_double",
-                        f""" ::correction::bTagCorrProvider::getGlobal().getSF(
+                        f""" {self.wp_provider.ref}->getSF(
                                 {p4}, {hadronFlavour}, {btagScore}, WorkingPointsbTag::{wp.name},
                                 ::correction::bTagCorrProvider::UncSource::{source}, ::correction::UncScale::{scale}) """,
                     )
@@ -238,7 +221,7 @@ class bTagCorrProducer:
 
                 df = df.Define(
                     f"{branch_name}_double",
-                    f"""::correction::bTagShapeCorrProvider::getGlobal().getBTagShapeSF(
+                    f"""{self.shape_provider.ref}->getBTagShapeSF(
                     {p4}, {hadronFlavour}, {btagScore},
                     ::correction::bTagShapeCorrProvider::UncSource::{source},
                     ::correction::UncScale::{scale}

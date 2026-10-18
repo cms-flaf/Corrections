@@ -3,7 +3,6 @@ import re
 import itertools
 
 from .CorrectionsCore import *
-from FLAF.RunKit.run_tools import ps_call
 from FLAF.Common.shared_mc import shared_mc_in_era_expr, shared_mc_split
 
 
@@ -23,62 +22,7 @@ def _ana_caches_with_denom_key(ana_caches, key):
     return remapped
 
 
-def findLibLocation(lib_name, first_guess=None):
-    paths_to_check = []
-    if first_guess is not None:
-        paths_to_check.append(first_guess)
-    other_paths = os.environ.get("LD_LIBRARY_PATH", "").split(":")
-    paths_to_check.extend(other_paths)
-    full_lib_name = f"lib{lib_name}.so"
-    for path in paths_to_check:
-        lib_path = os.path.join(path, full_lib_name)
-        if os.path.exists(lib_path):
-            return lib_path
-    raise RuntimeError(f"Library {lib_name} not found.")
-
-
 class Corrections:
-    _global_instance = None
-    _corr_lib_loaded = False
-
-    @staticmethod
-    def initializeGlobal(load_corr_lib=False, **kwargs):
-        if Corrections._global_instance is not None:
-            print(
-                f"WARNING: Global instance of Corrections was already initialized. Overwriting it.",
-                file=sys.stderr,
-            )
-
-        if load_corr_lib and not Corrections._corr_lib_loaded:
-            returncode, output, err = ps_call(
-                ["correction", "config", "--cflags", "--ldflags"],
-                catch_stdout=True,
-                decode=True,
-                verbose=0,
-            )
-            params = output.split(" ")
-            lib_path = None
-            for param in params:
-                if param.startswith("-I"):
-                    ROOT.gInterpreter.AddIncludePath(param[2:].strip())
-                elif param.startswith("-L"):
-                    lib_path = param[2:].strip()
-                elif param.startswith("-l"):
-                    lib_name = param[2:].strip()
-
-            # ROOT.gInterpreter.AddIncludePath(os.environ['FLAF_ENVIRONMENT_PATH']+"/include")
-            corr_lib = findLibLocation(lib_name, lib_path)
-            ROOT.gSystem.Load(corr_lib)
-            Corrections._corr_lib_loaded = True
-
-        Corrections._global_instance = Corrections(**kwargs)
-
-    @staticmethod
-    def getGlobal():
-        if Corrections._global_instance is None:
-            raise RuntimeError("Global instance is not initialized")
-        return Corrections._global_instance
-
     def __init__(
         self,
         *,
@@ -105,7 +49,7 @@ class Corrections:
         self.isData = isData
         self.trigger_dict = trigger_class.trigger_dict if trigger_class else {}
 
-        self.period = self.global_params["era"]
+        self.era = self.global_params["era"]
         self.stage = stage
         self.law_run_version = setup.law_run_version
 
@@ -290,7 +234,7 @@ class Corrections:
         if self.pu_ is None:
             from .pu import puWeightProducer
 
-            self.pu_ = puWeightProducer(period=period_names[self.period])
+            self.pu_ = puWeightProducer(campaign=campaign_names[self.era])
         return self.pu_
 
     @property
@@ -345,7 +289,7 @@ class Corrections:
                 "pt_ll_gen", "pt_ll_gen"
             )
             self.dy_hhbbtautau_ = DYbbtautauCorrProducer(
-                era=self.period,
+                era=self.era,
                 njets_branch=njets_branch,
                 ntags_branch=ntags_branch,
                 pt_ll_gen=pt_ll_gen,
@@ -362,7 +306,7 @@ class Corrections:
             )
             pt_ll = self.to_apply.get("dy_hhbbww", {}).get("pt_ll", "pt_lep1_lep2")
             self.dy_hhbbww_ = DYbbwwCorrProducer(
-                era=self.period,
+                era=self.era,
                 njets_branch=njets_branch,
                 pt_ll=pt_ll,
             )
@@ -375,7 +319,7 @@ class Corrections:
 
             cfg = self.to_apply.get("top_pt", {})
             self.top_pt_ = TopPtCorrProducer(
-                era=self.period,
+                era=self.era,
                 branch=cfg.get("branch", "TTInfo_top_pt"),
                 parameterization=cfg.get("parameterization", "data_nlo"),
                 max_pt=cfg.get("max_pt", None),
@@ -387,7 +331,7 @@ class Corrections:
         if self.Vpt_ is None:
             from .Vpt import VptCorrProducer
 
-            self.Vpt_ = VptCorrProducer(self.to_apply["Vpt"]["type"], self.period)
+            self.Vpt_ = VptCorrProducer(self.to_apply["Vpt"]["type"], self.era)
         return self.Vpt_
 
     @property
@@ -395,7 +339,7 @@ class Corrections:
         if self.JetVetoMap_ is None:
             from .JetVetoMap import JetVetoMapProvider
 
-            self.JetVetoMap_ = JetVetoMapProvider(self.period)
+            self.JetVetoMap_ = JetVetoMapProvider(self.era)
         return self.JetVetoMap_
 
     @property
@@ -404,7 +348,7 @@ class Corrections:
             from .tau import TauCorrProducer
 
             self.tau_ = TauCorrProducer(
-                period=self.period,
+                era=self.era,
                 config=self.global_params,
                 columns=self.to_apply.get("tauID", {}).get("columns", {}),
             )
@@ -416,7 +360,7 @@ class Corrections:
             from .jet import JetCorrProducer
 
             self.jet_ = JetCorrProducer(
-                period_names[self.period], self.isData, self.dataset_name
+                campaign_names[self.era], self.isData, self.dataset_name
             )
         return self.jet_
 
@@ -426,7 +370,7 @@ class Corrections:
             from .fatjet import FatJetCorrProducer
 
             self.fatjet_ = FatJetCorrProducer(
-                period=period_names[self.period],
+                campaign=campaign_names[self.era],
                 ana=self.to_apply.get("fatjet", {}).get("ana", ""),
                 tagger=self.to_apply.get("fatjet", {}).get("tagger", ""),
                 fatjetName=self.to_apply.get("fatjet", {}).get("fatJetName", ""),
@@ -441,7 +385,7 @@ class Corrections:
 
             params = self.to_apply["btag"]
             self.btag_ = bTagCorrProducer(
-                period=period_names[self.period],
+                campaign=campaign_names[self.era],
                 jetCollection=params["jetCollection"],
                 tagger=params["tagger"],
                 loadEfficiency=params.get("loadEfficiency", False),
@@ -464,7 +408,7 @@ class Corrections:
             from .mu import MuCorrProducer
 
             self.mu_ = MuCorrProducer(
-                era=self.period, columns=self.to_apply["mu"].get("columns", {})
+                era=self.era, columns=self.to_apply["mu"].get("columns", {})
             )
         return self.mu_
 
@@ -481,7 +425,7 @@ class Corrections:
             )
             id_selection = self.to_apply["muScaRe"].get("id_selection", "Muon_looseId")
             self.muScaRe_ = MuonEnergyScaleProducer(
-                period_names[self.period],
+                campaign_names[self.era],
                 self.isData,
                 self.to_apply["muScaRe"].get("mu_pt_for_ScaReApplication", "nano"),
                 apply_scare=apply_scare,
@@ -496,7 +440,7 @@ class Corrections:
             from .electron import EleCorrProducer
 
             self.ele_ = EleCorrProducer(
-                period=period_names[self.period],
+                campaign=campaign_names[self.era],
                 columns=self.to_apply.get("ele", {}).get("columns", {}),
                 isData=self.isData,
             )
@@ -507,18 +451,18 @@ class Corrections:
         if self.puJetID_ is None:
             from .puJetID import puJetIDCorrProducer
 
-            self.puJetID_ = puJetIDCorrProducer(period_names[self.period])
+            self.puJetID_ = puJetIDCorrProducer(campaign_names[self.era])
         return self.puJetID_
 
     @property
     def trg(self):
         if self.trg_ is None:
-            if self.period.split("_")[0].startswith("Run3"):
+            if self.era.split("_")[0].startswith("Run3"):
                 from .triggersRun3 import TrigCorrProducer
             else:
                 from .triggers import TrigCorrProducer
             self.trg_ = TrigCorrProducer(
-                period_names[self.period], self.global_params, self.trigger_dict
+                campaign_names[self.era], self.global_params, self.trigger_dict
             )
         return self.trg_
 
@@ -528,7 +472,7 @@ class Corrections:
             from .bosonicRecoil import BosonicRecoilCorrection
 
             self.bosonicRecoil_ = BosonicRecoilCorrection(
-                period=self.period,
+                era=self.era,
                 config=self.to_apply.get("bosonicRecoil", {}),
                 isData=self.isData,
                 dataset_name=self.dataset_name,

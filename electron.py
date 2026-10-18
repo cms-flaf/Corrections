@@ -1,5 +1,4 @@
 import os
-import ROOT
 from .CorrectionsCore import *
 
 # https://twiki.cern.ch/twiki/bin/viewauth/CMS/EgammaUL2016To2018
@@ -81,20 +80,20 @@ ele_files_names = {
 }
 
 
-def electron_id_sf_year(period):
-    year = period.split("_")[0]
-    if period.endswith("Summer22"):
+def electron_id_sf_year(campaign):
+    year = campaign.split("_")[0]
+    if campaign.endswith("Summer22"):
         return year + "Re-recoBCD"
-    if period.endswith("Summer22EE"):
+    if campaign.endswith("Summer22EE"):
         return year + "Re-recoE+PromptFG"
-    if period.endswith("Summer23"):
+    if campaign.endswith("Summer23"):
         return year + "PromptC"
-    if period.endswith("Summer23BPix"):
+    if campaign.endswith("Summer23BPix"):
         return year + "PromptD"
-    if period.startswith("2026"):
+    if campaign.startswith("2026"):
         # 2026 EGM has no electron.json; 2025 ID SF year is 2025Prompt.
         return "2025Prompt"
-    if period.endswith("Summer24"):
+    if campaign.endswith("Summer24"):
         return year + "Prompt"
     return year
 
@@ -103,11 +102,9 @@ class EleCorrProducer:
     EleID_JsonPath = "/cvmfs/cms-griddata.cern.ch/cat/metadata/EGM/{folderName}/latest/{filenameID}.json.gz"
     EleES_JsonPath = "Corrections/data/EGM/{}/EGM_ScaleUnc.json.gz"
     EleES_JsonPath_Run3 = "/cvmfs/cms-griddata.cern.ch/cat/metadata/EGM/{folderName}/latest/{filenameES}.json.gz"
-    initialized = False
     ID_sources = ["EleID"]
     working_points = ["wp80iso", "wp80noiso"]
     energyScaleSources_ele = ["EleES", "EleSmear"]
-    year = ""
 
     inputColumns = [
         "gen_kind",
@@ -115,51 +112,50 @@ class EleCorrProducer:
         "p4",
     ]
 
-    def __init__(self, *, period, columns, isData=False):
+    def __init__(self, *, campaign, columns, isData=False):
         self.isData = isData
-        file_nameID = ele_files_names[period]["eleID"]
+        file_nameID = ele_files_names[campaign]["eleID"]
         file_nameES = (
-            ele_files_names[period]["eleES"]
-            if "eleES" in ele_files_names[period].keys()
-            else ele_files_names[period]["eleES_EtDependent"]
+            ele_files_names[campaign]["eleES"]
+            if "eleES" in ele_files_names[campaign].keys()
+            else ele_files_names[campaign]["eleES_EtDependent"]
         )  # in 2024 there is no electronSS...
         # The 2026 EGM folder has no electron.json: the ID SFs are the 2025 ones, as in electron_id_sf_year.
-        id_period = "2025_Summer24" if period == "2026_Summer24" else period
+        id_campaign = "2025_Summer24" if campaign == "2026_Summer24" else campaign
         EleID_JsonFile = EleCorrProducer.EleID_JsonPath.format(
-            folderName=pog_folder_names["EGM"][id_period], filenameID=file_nameID
+            folderName=pog_folder_names["EGM"][id_campaign], filenameID=file_nameID
         )
 
-        if period.startswith("Run2"):
+        if campaign.startswith("Run2"):
             EleES_JsonFile = os.path.join(
                 os.environ["ANALYSIS_PATH"],
-                EleCorrProducer.EleES_JsonPath.format(period),
+                EleCorrProducer.EleES_JsonPath.format(campaign),
             )
             EleID_JsonFile_key = "UL-Electron-ID-SF"
             EleES_JsonFile_key = "UL-EGM_ScaleUnc"
         else:
             EleES_JsonFile = EleCorrProducer.EleES_JsonPath_Run3.format(
-                folderName=pog_folder_names["EGM"][period], filenameES=file_nameES
+                folderName=pog_folder_names["EGM"][campaign], filenameES=file_nameES
             )  # patch since in 2024 there is no eleES without EtDependent
             EleID_JsonFile_key = "Electron-ID-SF"
             EleES_JsonFile_key = "SmearAndSyst"
-            # if period == "2023_Summer23":
+            # if campaign == "2023_Summer23":
             #     EleES_JsonFile_key = "SmearAndSyst" #"2023PromptC_ScaleJSON"
-            # if period == "2023_Summer23BPix":
+            # if campaign == "2023_Summer23BPix":
             #     EleES_JsonFile_key = "SmearAndSyst" #"2023PromptD_ScaleJSON"
-            # if period == "2024_Summer24":
+            # if campaign == "2024_Summer24":
             #     EleES_JsonFile_key = "SmearAndSyst"  # "compound corrections
-        if not EleCorrProducer.initialized:
-            headers_dir = os.path.dirname(os.path.abspath(__file__))
-            header_path = os.path.join(headers_dir, "electron.h")
-            ROOT.gInterpreter.Declare(f'#include "{header_path}"')
-            ROOT.gInterpreter.ProcessLine(
-                f'::correction::EleCorrProvider::Initialize("{EleID_JsonFile}", "{EleES_JsonFile}","{EleID_JsonFile_key}","{EleES_JsonFile_key}")'
-            )
-            EleCorrProducer.year = electron_id_sf_year(period)
+        declareProviderHeader("electron.h")
+        self.provider = CppProvider(
+            "correction::EleCorrProvider",
+            EleID_JsonFile,
+            EleES_JsonFile,
+            EleID_JsonFile_key,
+            EleES_JsonFile_key,
+        )
+        self.year = electron_id_sf_year(campaign)
 
-            EleCorrProducer.initialized = True
-
-        self.period = period
+        self.campaign = campaign
         self.columns = {}
         for col in EleCorrProducer.inputColumns:
             self.columns[col] = columns.get(col, col)
@@ -172,7 +168,7 @@ class EleCorrProducer:
             updateSourceDict(source_dict, source, "Electron")
             for scale in getScales(source):
                 syst_name = getSystName(source, scale)
-                # if self.period.split("_")[0] == "2024" or self.period.split("_")[0] == "2023" or self.period.split("_")[0] == "2023BPix":
+                # if self.campaign.split("_")[0] == "2024" or self.campaign.split("_")[0] == "2023" or self.campaign.split("_")[0] == "2023BPix":
                 if self.isData:
                     expr = f"getESEtDep_data(Electron_p4_{nano}, Electron_seedGain, Electron_superclusterEta, run, Electron_r9)"
                 else:
@@ -181,7 +177,7 @@ class EleCorrProducer:
                 ::correction::EleCorrProvider::UncSource::{source}, ::correction::UncScale::{scale})"""
                 df = df.Define(
                     f"Electron_p4_{syst_name}",
-                    f"::correction::EleCorrProvider::getGlobal().{expr}",
+                    f"{self.provider.ref}->{expr}",
                 )
                 # else:
                 #     df = df.Define(
@@ -221,8 +217,8 @@ class EleCorrProducer:
                         df = df.Define(
                             f"{branch_name}_double",
                             f"""{legType} == Leg::e && {p4}.pt() >= 10 && ({genMatch_bool})
-                                ? ::correction::EleCorrProvider::getGlobal().getID_SF(
-                                    {p4}, "{working_point}", "{EleCorrProducer.year}",
+                                ? {self.provider.ref}->getID_SF(
+                                    {p4}, "{working_point}", "{self.year}",
                                     ::correction::EleCorrProvider::UncSource::{source},
                                     ::correction::UncScale::{scale})
                                 : 1.""",

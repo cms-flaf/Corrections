@@ -1,24 +1,19 @@
 import os
 import urllib.request
-import ROOT
 from .CorrectionsCore import *
 from FLAF.Common.Utilities import DeclareHeader
 
 
 class MuonEnergyScaleProducer:
-    initialized = False
     # jsonPath = "Corrections/data/MUO/MuonScaRe/{}.json.gz"
     # jsonPath = "/cvmfs/cms-griddata.cern.ch/cat/metadata/MUO/{}/latest/muon_scalesmearing.json.gz"
     jsonPath_VXBS = "Corrections/data/MUO/MuonScaRe/{}/muon_scalesmearing_VXBS.json.gz"  # tmp patch because currently VXBS ScaRe are copied from /afs/cern.ch/user/f/ferrico/cmsonly/JSON_VXBS/
     jsonPath = "Corrections/data/MUO/MuonScaRe/{}/muon_scalesmearing.json.gz"  # tmp patch because currently VXBS ScaRe are copied from /afs/cern.ch/user/f/ferrico/cmsonly/JSON/
-    initialized = False
     uncSources = ["ScaRe"]
-
-    period = None
 
     def __init__(
         self,
-        period,
+        campaign,
         isData,
         pt_for_ScaRe,
         return_variations=True,
@@ -26,32 +21,27 @@ class MuonEnergyScaleProducer:
         apply_fsr_recovery=True,
         id_selection="Muon_looseId",
     ):
-        self.period = period
+        self.campaign = campaign
         self.pt_for_ScaRe = pt_for_ScaRe
         self.apply_scare = apply_scare
         self.apply_fsr_recovery = apply_fsr_recovery
         self.id_selection = id_selection
         jsonFile_path = MuonEnergyScaleProducer.jsonPath.format(
-            pog_folder_names["MUO"][period]
+            pog_folder_names["MUO"][campaign]
         )
         jsonFile_path_VXBS = MuonEnergyScaleProducer.jsonPath_VXBS.format(
-            pog_folder_names["MUO"][period]
+            pog_folder_names["MUO"][campaign]
         )
         self.isData = isData
         self.return_variations = return_variations
         jsonFile = os.path.join(os.environ["ANALYSIS_PATH"], jsonFile_path)
         jsonFile_VXBS = os.path.join(os.environ["ANALYSIS_PATH"], jsonFile_path_VXBS)
-        if not MuonEnergyScaleProducer.initialized:
-            headers_dir = os.path.dirname(os.path.abspath(__file__))
-            DeclareHeader(os.environ["ANALYSIS_PATH"] + "/FLAF/include/Utilities.h")
-            header_path = os.path.join(headers_dir, "MuonScaReProvider.h")
-            ROOT.gROOT.ProcessLine(f'#include "{header_path}"')
-            ROOT.gInterpreter.ProcessLine(
-                f'::correction::MuonScaReCorrProvider::Initialize("{jsonFile}","{jsonFile_VXBS}")'
-            )
-            header_path = os.path.join(headers_dir, "MuonFsrRecoveryProvider.h")
-            ROOT.gROOT.ProcessLine(f'#include "{header_path}"')
-            MuonEnergyScaleProducer.initialized = True
+        DeclareHeader(os.environ["ANALYSIS_PATH"] + "/FLAF/include/Utilities.h")
+        declareProviderHeader("MuonScaReProvider.h")
+        declareProviderHeader("MuonFsrRecoveryProvider.h")
+        self.provider = CppProvider(
+            "correction::MuonScaReCorrProvider", jsonFile, jsonFile_VXBS
+        )
 
     def getP4Variations(self, df, source_dict):
         sources = [central]
@@ -75,7 +65,7 @@ class MuonEnergyScaleProducer:
                             scare_FSR_branch = f"Muon_p4_FSR_{syst_name}"
                         df = df.Define(
                             scare_branch,
-                            f"""::correction::MuonScaReCorrProvider::getGlobal().getES({self.id_selection}, v_ops::pt({p4}), v_ops::eta({p4}), v_ops::phi({p4}), v_ops::mass({p4}), Muon_charge, Muon_nTrackerLayers, isData, event, luminosityBlock, ::correction::MuonScaReCorrProvider::UncSource::{source}, ::correction::UncScale::{scale}, {use_VXBS})""",
+                            f"""{self.provider.ref}->getES({self.id_selection}, v_ops::pt({p4}), v_ops::eta({p4}), v_ops::phi({p4}), v_ops::mass({p4}), Muon_charge, Muon_nTrackerLayers, isData, event, luminosityBlock, ::correction::MuonScaReCorrProvider::UncSource::{source}, ::correction::UncScale::{scale}, {use_VXBS})""",
                         )
                         p4 = scare_branch
                         df = df.Define(

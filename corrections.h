@@ -61,46 +61,4 @@ namespace correction {
                                      ", " + std::to_string(hi) + ") beyond tolerance");
         return std::clamp(value, lo, std::nextafter(hi, lo));
     }
-
-    template <typename CorrectionClass>
-    class CorrectionsBase {
-      public:
-        template <typename... Args>
-        static void Initialize(Args&&... args) {
-            try {
-                if (_getGlobal()) {
-                    std::cerr << typeid(CorrectionClass).name() << " already initialized." << std::endl;
-                    throw std::runtime_error("Class already initialized.");
-                }
-                _getGlobal() = std::make_unique<CorrectionClass>(args...);
-            } catch (std::exception& e) {
-                std::cerr << "Error while initializing " << typeid(CorrectionClass).name()
-                          << " with arguments:" << "\n";
-                print_args(std::forward<Args>(args)...);
-                std::cerr << "exception message: " << e.what() << "\n";
-                throw;
-            } catch (...) {
-                std::cerr << "Error while initializing " << typeid(CorrectionClass).name()
-                          << " with arguments:" << "\n";
-                print_args(std::forward<Args>(args)...);
-                std::cerr << "exception category: unknown\n";
-                throw;
-            }
-        }
-
-        static const CorrectionClass& getGlobal() {
-            const auto& corr = _getGlobal();
-            if (!corr) {
-                std::cerr << typeid(CorrectionClass).name() << " used before initialization";
-                throw std::runtime_error("Class not initialized.");
-            }
-            return *corr;
-        }
-
-      private:
-        static std::unique_ptr<CorrectionClass>& _getGlobal() {
-            static std::unique_ptr<CorrectionClass> corr;
-            return corr;
-        }
-    };
 }  // end of namespace correction

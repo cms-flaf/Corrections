@@ -6,7 +6,7 @@
 
 namespace correction {
 
-    class TrigCorrProvider : public CorrectionsBase<TrigCorrProvider> {
+    class TrigCorrProvider {
       public:
         enum class UncSource : int {
             Central = -1,
@@ -79,7 +79,7 @@ namespace correction {
                          const std::string& deepTauVersion,
                          const wpsMapType& wps_map,
                          const std::string& muFileName,
-                         const std::string& period,
+                         const std::string& year,
                          const std::vector<std::string>& hist_mu_name,
                          const std::vector<std::string>& hist_eff_mu_name,
                          const std::string& eleFileName,
@@ -92,7 +92,7 @@ namespace correction {
               wps_map_(wps_map),
               //mu_corrections_(CorrectionSet::from_file(muFileName)),
               //mu_trg_(mu_corrections_->at(mu_trigger)),
-              period_(period) {
+              year_(year) {
             auto eTauFile = root_ext::OpenRootFile(eTauFileName);
             histo_eTau_ele_SF.reset(root_ext::ReadCloneObject<TH2>(*eTauFile, "SF2D", "SF2D", true));
             histo_eTau_ele_data.reset(root_ext::ReadCloneObject<TH2>(*eTauFile, "eff_data", "eff_data", true));
@@ -441,7 +441,7 @@ namespace correction {
         const wpsMapType wps_map_;
         //std::unique_ptr<CorrectionSet> mu_corrections_;
         Correction::Ref mu_trg_;
-        const std::string period_;
+        const std::string year_;
         std::unique_ptr<TH2> histo_ele_SF;
         std::unique_ptr<TH2> histo_ele_data;
         std::unique_ptr<TH2> histo_ele_MC;

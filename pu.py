@@ -1,6 +1,4 @@
-import os
 import sys
-import ROOT
 from .CorrectionsCore import *
 
 # lumi POG: https://twiki.cern.ch/twiki/bin/view/CMS/TWikiLUM
@@ -13,7 +11,6 @@ from .CorrectionsCore import *
 
 class puWeightProducer:
     JsonPath = "/cvmfs/cms-griddata.cern.ch/cat/metadata/LUM/{folder}/latest/puWeights{suffix}.json.gz"
-    initialized = False
 
     uncSource = ["pu"]
     golden_json_dict = {
@@ -38,19 +35,15 @@ class puWeightProducer:
         "2025_Winter25": "_2025pp_Golden_Summer24_25ns_69200ub",
     }
 
-    def __init__(self, period):
-        suffix = puWeightProducer.pu_file_suffix.get(period, "")
+    def __init__(self, campaign):
+        suffix = puWeightProducer.pu_file_suffix.get(campaign, "")
         jsonFile = puWeightProducer.JsonPath.format(
-            folder=pog_folder_names["LUM"][period], suffix=suffix
+            folder=pog_folder_names["LUM"][campaign], suffix=suffix
         )
-        if not puWeightProducer.initialized:
-            headers_dir = os.path.dirname(os.path.abspath(__file__))
-            header_path = os.path.join(headers_dir, "pu.h")
-            ROOT.gInterpreter.Declare(f'#include "{header_path}"')
-            ROOT.gInterpreter.ProcessLine(
-                f'::correction::puCorrProvider::Initialize("{jsonFile}", "{self.golden_json_dict[period]}")'
-            )
-            puWeightProducer.initialized = True
+        declareProviderHeader("pu.h")
+        self.provider = CppProvider(
+            "correction::puCorrProvider", jsonFile, self.golden_json_dict[campaign]
+        )
 
     @staticmethod
     def branchName(source, scale):
@@ -75,7 +68,7 @@ class puWeightProducer:
                 branch_name = puWeightProducer.branchName(source, scale)
                 df = df.Define(
                     branch_name,
-                    f"""::correction::puCorrProvider::getGlobal().getWeight(
+                    f"""{self.provider.ref}->getWeight(
                                 ::correction::UncScale::{scale}, Pileup_nTrueInt)""",
                 )
                 branches.append(branch_name)
