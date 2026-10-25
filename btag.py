@@ -72,6 +72,17 @@ class bTagCorrProducer:
         "UParTAK4": "UParTAK4B",
     }
 
+    # Campaigns whose BTV shape file starts the light-jet pT binning above the jets in scope: there
+    # light jets below that pT evaluate the lf/hf/lf-hfstats variations at it (btagShape.h,
+    # variationMinPtLight). Summer23BPix (every dated version, every *_shape tagger): the light-jet
+    # edges are [30, 50, 80, 200], and a 20-30 GeV light jet gets the 30-50 GeV central (flow "clamp")
+    # but the variations' >200 GeV content, so up and down sit on the same side of central. Every other
+    # campaign has a 20-30 GeV bin and is untouched. Remove the entry once BTV fixes the file; the
+    # provider refuses to run if the file gets a light-jet central bin below this pT.
+    shape_variation_min_pt_light = {
+        "2023_Summer23BPix": 30.0,
+    }
+
     # important note: From the 2024 campaign onwards, only the UParTAK4 tagger is supported, and only json files are provided.
     def __init__(
         self,
@@ -112,6 +123,7 @@ class bTagCorrProducer:
             campaign_years[campaign],
             self.tagger,
             wantShape,
+            bTagCorrProducer.shape_variation_min_pt_light.get(campaign, 0.0),
         )
 
     def getWPValues(self):
