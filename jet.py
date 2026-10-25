@@ -1,6 +1,4 @@
 import os
-import urllib.request
-import ROOT
 from .CorrectionsCore import *
 
 # https://docs.google.com/spreadsheets/d/1JZfk78_9SD225bcUuTWVo4i02vwI5FfeVKH-dwzUdhM/edit#gid=1345121349
@@ -18,66 +16,6 @@ from .CorrectionsCore import *
 # https://github.com/cms-jet/JRDatabase
 # smearing procedure
 # https://twiki.cern.ch/twiki/bin/viewauth/CMS/JetResolution#Smearing_procedures
-
-# according to recommendation, SummerUL19 should be used but also SummerUL20 are available for JER.
-"""BBEC1_2016postVFP
-
-IMPORTANT
-From: https://twiki.cern.ch/twiki/bin/view/CMS/PdmVRun2LegacyAnalysis
-
-Note: The RunIISummer19UL16(APV) samples have a bug in the beamspot position affecting only (most of the) 2016 samples HN, HN, talk. The RunIISummer19UL16 samples will be invalidated at the end of August. Please migrate to Summer20UL now. All Summer19UL samples are based on an older version of pythia. The difference of Summer19UL and Summer20UL due to the difference in the pythia version was studied and found negligible 1 2 3. Invalidation and deletion of all RunIISummer19 samples, for all years, is scheduled for the end of September 2021
-
-"""
-
-
-def getJMEFile(jme_repo, jme_file):
-    repo_dict = {
-        "JRDatabase": {
-            "url": "https://raw.githubusercontent.com/cms-jet/JRDatabase/refs/heads/master/textFiles/",
-            "path": "data/JRDatabase/textFiles/",
-        },
-        "JECDatabase": {
-            "url": "https://raw.githubusercontent.com/cms-jet/JECDatabase/refs/heads/master/textFiles/",
-            "path": "data/JECDatabase/textFiles/",
-        },
-    }
-
-    if jme_repo not in repo_dict:
-        raise RuntimeError(
-            f"JME repository {jme_repo} not found in available repositories: {repo_dict.keys()}"
-        )
-    repo_entry = repo_dict[jme_repo]
-    this_file_dir = os.path.dirname(os.path.abspath(__file__))
-    jme_file_dir = os.path.join(this_file_dir, repo_entry["path"])
-    jme_file_path = os.path.join(jme_file_dir, jme_file)
-    if not os.path.exists(jme_file_path):
-        if not os.path.exists(jme_file_dir):
-            os.makedirs(jme_file_dir)
-        url = repo_entry["url"] + jme_file
-        print(f"Downloading {jme_file} from {url}")
-        urllib.request.urlretrieve(url, jme_file_path)
-    return jme_file_path
-
-
-directories_JER = {
-    "2018_UL": "Summer19UL18_JRV2",
-    "2017_UL": "Summer19UL17_JRV2",
-    "2016preVFP_UL": "Summer20UL16APV_JRV3",
-    "2016postVFP_UL": "Summer20UL16_JRV3",
-}
-directories_JEC = {
-    "2018_UL": "Summer19UL18_V5_MC",
-    "2017_UL": "Summer19UL17_V5_MC",
-    "2016preVFP_UL": "Summer19UL16APV_V7_MC",
-    "2016postVFP_UL": "Summer19UL16_V7_MC",
-}
-
-regrouped_files_names = {
-    "2018_UL": "RegroupedV2_Summer19UL18_V5_MC_UncertaintySources_AK4PFchs.txt",
-    "2017_UL": "RegroupedV2_Summer19UL17_V5_MC_UncertaintySources_AK4PFchs.txt",
-    "2016preVFP_UL": "RegroupedV2_Summer19UL16APV_V7_MC_UncertaintySources_AK4PFchs.txt",
-    "2016postVFP_UL": "RegroupedV2_Summer19UL16_V7_MC_UncertaintySources_AK4PFchs.txt",
-}
 
 
 class JetCorrProducer:
@@ -281,13 +219,10 @@ class JetCorrProducer:
 
     # Sources = []
 
-    def __init__(
-        self, campaign, isData, sample_name, use_corrlib=True, use_regrouped=False
-    ):
+    def __init__(self, campaign, isData, sample_name, use_regrouped=False):
         self.isData = isData
         self.sample_name = sample_name
         self.use_regrouped = use_regrouped
-        self.use_corrlib = use_corrlib
         self.uncSources_toUse = []
         if self.use_regrouped:
             self.uncSources_toUse = JetCorrProducer.uncSources_regrouped
@@ -295,211 +230,166 @@ class JetCorrProducer:
             self.uncSources_toUse = JetCorrProducer.uncSources_minimal
         self.year = int(campaign[:4])
         self.campaign = campaign
-        if not self.use_corrlib:
-            print("Initializing old JetCorrProducer")
-            JEC_dir = directories_JEC[campaign]
-            JER_dir = directories_JER[campaign]
-            type_suffix = "DATA" if isData else "MC"
-            JER_SF_txt = (
-                f"{JER_dir}_{type_suffix}/{JER_dir}_{type_suffix}_SF_AK4PFchs.txt"
-            )
-            JER_PtRes_txt = f"{JER_dir}_{type_suffix}/{JER_dir}_{type_suffix}_PtResolution_AK4PFchs.txt"
-            JEC_Regrouped_txt = f"{JEC_dir}/{regrouped_files_names[campaign]}"
-            ptResolution = getJMEFile("JRDatabase", JER_PtRes_txt)
-            ptResolutionSF = getJMEFile("JRDatabase", JER_SF_txt)
-            JEC_Regrouped = getJMEFile("JECDatabase", JEC_Regrouped_txt)
-            ROOT.gSystem.Load("libJetMETCorrectionsModules.so")
-            ROOT.gSystem.Load("libCondFormatsJetMETObjects.so")
-            ROOT.gSystem.Load("libCommonToolsUtils.so")
-            headers_dir = os.path.dirname(os.path.abspath(__file__))
-            declareHeader(os.path.join(headers_dir, "JMECalculatorBase.cc"))
-            declareHeader(os.path.join(headers_dir, "JMESystematicsCalculators.cc"))
-            declareProviderHeader("jet.h")
-            self.provider = CppProvider(
-                "correction::JetCorrProvider",
-                ptResolution,
-                ptResolutionSF,
-                JEC_Regrouped,
-                campaign_years[campaign],
-            )
-        else:
-            print("Initializing new JetCorrProducer")
+        print("Initializing new JetCorrProducer")
 
-            jet_path = JetCorrProducer.jet_jsonPath.format(
-                pog_folder_names["JERC"][campaign]
-            )
-            jet_jsonFile = os.path.join(os.environ["ANALYSIS_PATH"], jet_path)
-            jersmear_path = JetCorrProducer.jersmear_jsonPath
-            jetsmear_jsonFile = os.path.join(os.environ["ANALYSIS_PATH"], jersmear_path)
-            year = campaign.split("_")[0]
-            jec_tag_map = (
-                JetCorrProducer.jec_tag_map_data
-                if self.isData
-                else JetCorrProducer.jec_tag_map_mc
-            )
+        jet_path = JetCorrProducer.jet_jsonPath.format(
+            pog_folder_names["JERC"][campaign]
+        )
+        jet_jsonFile = os.path.join(os.environ["ANALYSIS_PATH"], jet_path)
+        jersmear_path = JetCorrProducer.jersmear_jsonPath
+        jetsmear_jsonFile = os.path.join(os.environ["ANALYSIS_PATH"], jersmear_path)
+        year = campaign.split("_")[0]
+        jec_tag_map = (
+            JetCorrProducer.jec_tag_map_data
+            if self.isData
+            else JetCorrProducer.jec_tag_map_mc
+        )
 
-            jec_tag_array = jec_tag_map[campaign]
-            jec_tag = jec_tag_array[0]
-            other_jec_tag = (
-                jec_tag_array[1] if len(jec_tag_array) > 1 else jec_tag_array[0]
-            )
-            # print(f"jec_tag is {jec_tag}")
-            fatjet_path = JetCorrProducer.fatjet_jsonPath.format(
-                pog_folder_names["JERC"][campaign]
-            )
-            fatjet_jsonFile = os.path.join(os.environ["ANALYSIS_PATH"], fatjet_path)
-            fatjec_tag_map = (
-                JetCorrProducer.fatjec_tag_map_data
-                if self.isData
-                else JetCorrProducer.fatjec_tag_map_mc
-            )
+        jec_tag_array = jec_tag_map[campaign]
+        jec_tag = jec_tag_array[0]
+        other_jec_tag = jec_tag_array[1] if len(jec_tag_array) > 1 else jec_tag_array[0]
+        # print(f"jec_tag is {jec_tag}")
+        fatjet_path = JetCorrProducer.fatjet_jsonPath.format(
+            pog_folder_names["JERC"][campaign]
+        )
+        fatjet_jsonFile = os.path.join(os.environ["ANALYSIS_PATH"], fatjet_path)
+        fatjec_tag_map = (
+            JetCorrProducer.fatjec_tag_map_data
+            if self.isData
+            else JetCorrProducer.fatjec_tag_map_mc
+        )
 
-            fatjec_tag_array = fatjec_tag_map[campaign]
-            fatjec_tag = fatjec_tag_array[0]
-            other_fatjec_tag = (
-                fatjec_tag_array[1]
-                if len(fatjec_tag_array) > 1
-                else fatjec_tag_array[0]
-            )
+        fatjec_tag_array = fatjec_tag_map[campaign]
+        fatjec_tag = fatjec_tag_array[0]
+        other_fatjec_tag = (
+            fatjec_tag_array[1] if len(fatjec_tag_array) > 1 else fatjec_tag_array[0]
+        )
 
-            if self.isData:
-                letter_list = JetCorrProducer.run_letters[campaign]
-                version_list = JetCorrProducer.run_versions[campaign]
-                sample_letter = ""
+        if self.isData:
+            letter_list = JetCorrProducer.run_letters[campaign]
+            version_list = JetCorrProducer.run_versions[campaign]
+            sample_letter = ""
+            sample_version = ""
+            if sample_name[-1].isalpha():
+                sample_letter = sample_name[-1]
+            elif sample_name[-1].isnumeric():
+                tokens = sample_name.split("_")
+                sample_version = tokens[-1]
+                sample_letter = tokens[-2][-1]
+            if campaign in ("2025_Summer24", "2026_Summer24"):
                 sample_version = ""
-                if sample_name[-1].isalpha():
-                    sample_letter = sample_name[-1]
-                elif sample_name[-1].isnumeric():
-                    tokens = sample_name.split("_")
-                    sample_version = tokens[-1]
-                    sample_letter = tokens[-2][-1]
-                if campaign in ("2025_Summer24", "2026_Summer24"):
-                    sample_version = ""
 
-                # print(
-                #     f"sample version = {sample_version}, sample letter = {sample_letter}"
-                # )
+            # print(
+            #     f"sample version = {sample_version}, sample letter = {sample_letter}"
+            # )
 
-                # in some cases, sample letter can be compound:
-                # e.g. for 2022_Summer22 run letter is CD
-                # if there is no exact match, take compound letter
-                if sample_letter not in letter_list:
-                    matches = [let for let in letter_list if sample_letter in let]
-                    if len(matches) != 1:
-                        raise RuntimeError(
-                            f"ambiguous deduction of sample letter for {sample_name}: got letter options {matches}"
-                        )
-                    sample_letter = matches[0]
-
-                # same for run version:
-                # e.g. for 2023_Summer23 run version is v123 or v4
-                # if there is no exact match, take compound version
-                # sample_version = v* => need to check that * is in exactly one version in available version list
-                if version_list and sample_version not in version_list:
-                    matches = [v for v in version_list if sample_version[1:] in v]
-                    if len(matches) != 1:
-                        raise RuntimeError(
-                            f"ambiguous deduction of sample version for {sample_name}: got version options {matches}"
-                        )
-                    sample_version = matches[0]
-
-                letters = sample_letter + sample_version
-                if not sample_letter and not sample_version:
+            # in some cases, sample letter can be compound:
+            # e.g. for 2022_Summer22 run letter is CD
+            # if there is no exact match, take compound letter
+            if sample_letter not in letter_list:
+                matches = [let for let in letter_list if sample_letter in let]
+                if len(matches) != 1:
                     raise RuntimeError(
-                        f"sample name {sample_name} doesn't follow expected pattern base_letter_version"
+                        f"ambiguous deduction of sample letter for {sample_name}: got letter options {matches}"
                     )
-                jec_tag = jec_tag.format(letters)
-                other_jec_tag = other_jec_tag.format(letters)
-                # print(f"jec_tag is {jec_tag}")
+                sample_letter = matches[0]
 
-                fatjec_tag = fatjec_tag.format(letters)
-                other_fatjec_tag = other_fatjec_tag.format(letters)
-                # print(f"fatjec_tag is {fatjec_tag}")
+            # same for run version:
+            # e.g. for 2023_Summer23 run version is v123 or v4
+            # if there is no exact match, take compound version
+            # sample_version = v* => need to check that * is in exactly one version in available version list
+            if version_list and sample_version not in version_list:
+                matches = [v for v in version_list if sample_version[1:] in v]
+                if len(matches) != 1:
+                    raise RuntimeError(
+                        f"ambiguous deduction of sample version for {sample_name}: got version options {matches}"
+                    )
+                sample_version = matches[0]
 
-            jer_tag = JetCorrProducer.jer_tag_map[campaign]
-            algo = JetCorrProducer.jet_algorithm
+            letters = sample_letter + sample_version
+            if not sample_letter and not sample_version:
+                raise RuntimeError(
+                    f"sample name {sample_name} doesn't follow expected pattern base_letter_version"
+                )
+            jec_tag = jec_tag.format(letters)
+            other_jec_tag = other_jec_tag.format(letters)
+            # print(f"jec_tag is {jec_tag}")
 
-            fatjer_tag = JetCorrProducer.jer_tag_map[campaign]
-            fatalgo = JetCorrProducer.fatjet_algorithm
+            fatjec_tag = fatjec_tag.format(letters)
+            other_fatjec_tag = other_fatjec_tag.format(letters)
+            # print(f"fatjec_tag is {fatjec_tag}")
 
-            declareProviderHeader("jet.h")
-            self.provider = CppProvider(
-                "correction::JetCorrectionProvider",
-                jet_jsonFile,
-                jetsmear_jsonFile,
-                jec_tag,
-                other_jec_tag,
-                jer_tag,
-                algo,
-                fatjet_jsonFile,
-                fatjec_tag,
-                other_fatjec_tag,
-                fatjer_tag,
-                fatalgo,
-                year,
-                self.isData,
-                self.use_regrouped,
-                True,
-            )
+        jer_tag = JetCorrProducer.jer_tag_map[campaign]
+        algo = JetCorrProducer.jet_algorithm
+
+        fatjer_tag = JetCorrProducer.jer_tag_map[campaign]
+        fatalgo = JetCorrProducer.fatjet_algorithm
+
+        declareProviderHeader("jet.h")
+        self.provider = CppProvider(
+            "correction::JetCorrectionProvider",
+            jet_jsonFile,
+            jetsmear_jsonFile,
+            jec_tag,
+            other_jec_tag,
+            jer_tag,
+            algo,
+            fatjet_jsonFile,
+            fatjec_tag,
+            other_fatjec_tag,
+            fatjer_tag,
+            fatalgo,
+            year,
+            self.isData,
+            self.use_regrouped,
+            True,
+        )
 
     def getP4Variations(
         self, df, source_dict, apply_JER, apply_JES, apply_forward_jet_horns_fix_=False
     ):
-        class_name = ""
         apply_forward_jet_horns_fix = (
             "true" if apply_forward_jet_horns_fix_ else "false"
         )
-        if self.use_corrlib:
-            apply_jer = "true" if apply_JER and not self.isData else "false"
-            reapply_jec = "true"  # by the time being
-            require_run_number = "false"
-            if self.isData:
-                require_run_number = "true"
-            if self.campaign == "2023_Summer23BPix":
-                require_run_number = "true"
-            wantPhi = (
-                "true"
-                if (self.campaign == "2023_Summer23BPix" and self.isData)
-                or (
-                    self.campaign in ("2024_Summer24", "2025_Summer24", "2026_Summer24")
-                )
-                else "false"
-            )
-            if not self.isData:
-                df = df.Define(
-                    "Jet_p4_shifted_map",
-                    f"""{self.provider.ref}->getShiftedP4_Jet(Jet_pt, Jet_eta, Jet_phi, Jet_mass,
+        apply_jer = "true" if apply_JER and not self.isData else "false"
+        reapply_jec = "true"  # by the time being
+        require_run_number = "false"
+        if self.isData:
+            require_run_number = "true"
+        if self.campaign == "2023_Summer23BPix":
+            require_run_number = "true"
+        wantPhi = (
+            "true"
+            if (self.campaign == "2023_Summer23BPix" and self.isData)
+            or (self.campaign in ("2024_Summer24", "2025_Summer24", "2026_Summer24"))
+            else "false"
+        )
+        if not self.isData:
+            df = df.Define(
+                "Jet_p4_shifted_map",
+                f"""{self.provider.ref}->getShiftedP4_Jet(Jet_pt, Jet_eta, Jet_phi, Jet_mass,
                                                                                                                        Jet_rawFactor, Jet_area, Rho_fixedGridRhoFastjetAll, event, {apply_jer},
                                                                                                                        {reapply_jec}, {require_run_number}, run, {wantPhi}, {apply_forward_jet_horns_fix},
                                                                                                                        GenJet_pt, GenJet_eta, GenJet_phi, Jet_genJetIdx)""",
-                )
+            )
 
-                df = df.Define(
-                    "FatJet_p4_shifted_map",
-                    f"""{self.provider.ref}->getShiftedP4_FatJet(FatJet_pt, FatJet_eta, FatJet_phi, FatJet_mass,
+            df = df.Define(
+                "FatJet_p4_shifted_map",
+                f"""{self.provider.ref}->getShiftedP4_FatJet(FatJet_pt, FatJet_eta, FatJet_phi, FatJet_mass,
                                                                                                                        FatJet_rawFactor, FatJet_area, Rho_fixedGridRhoFastjetAll, event, {apply_jer},
                                                                                                                        {reapply_jec}, {require_run_number}, run, {wantPhi}, {apply_forward_jet_horns_fix},
                                                                                                                        GenJetAK8_pt, GenJetAK8_eta, GenJetAK8_phi, FatJet_genJetAK8Idx)""",
-                )
-            else:
-                df = df.Define(
-                    "Jet_p4_shifted_map",
-                    f"""{self.provider.ref}->getShiftedP4_Jet(Jet_pt, Jet_eta, Jet_phi, Jet_mass, Jet_rawFactor, Jet_area, Rho_fixedGridRhoFastjetAll, event, {apply_jer}, {reapply_jec}, {require_run_number}, run, {wantPhi}, {apply_forward_jet_horns_fix})""",
-                )
-                df = df.Define(
-                    "FatJet_p4_shifted_map",
-                    f"""{self.provider.ref}->getShiftedP4_FatJet(FatJet_pt, FatJet_eta, FatJet_phi, FatJet_mass, FatJet_rawFactor, FatJet_area, Rho_fixedGridRhoFastjetAll, event, {apply_jer}, {reapply_jec}, {require_run_number}, run, {wantPhi}, {apply_forward_jet_horns_fix})""",
-                )
-            class_name = "JetCorrectionProvider"
+            )
         else:
             df = df.Define(
                 "Jet_p4_shifted_map",
-                f"""{self.provider.ref}->getShiftedP4(
-                            Jet_pt, Jet_eta, Jet_phi, Jet_mass, Jet_rawFactor, Jet_area,
-                            Jet_jetId, Rho_fixedGridRhoFastjetAll, Jet_partonFlavour, 0, GenJet_pt, GenJet_eta,
-                            GenJet_phi, GenJet_mass, event)""",
+                f"""{self.provider.ref}->getShiftedP4_Jet(Jet_pt, Jet_eta, Jet_phi, Jet_mass, Jet_rawFactor, Jet_area, Rho_fixedGridRhoFastjetAll, event, {apply_jer}, {reapply_jec}, {require_run_number}, run, {wantPhi}, {apply_forward_jet_horns_fix})""",
             )
-            class_name = "JetCorrProvider"
+            df = df.Define(
+                "FatJet_p4_shifted_map",
+                f"""{self.provider.ref}->getShiftedP4_FatJet(FatJet_pt, FatJet_eta, FatJet_phi, FatJet_mass, FatJet_rawFactor, FatJet_area, Rho_fixedGridRhoFastjetAll, event, {apply_jer}, {reapply_jec}, {require_run_number}, run, {wantPhi}, {apply_forward_jet_horns_fix})""",
+            )
+        class_name = "JetCorrectionProvider"
 
         apply_jer_list = []
         if apply_JER:
@@ -536,14 +426,8 @@ class JetCorrProducer:
         return df, source_dict
 
     def getEnergyResolution(self, df):
-        if self.use_corrlib:
-            df = df.Define(
-                "Jet_ptRes",
-                f"{self.provider.ref}->GetResolutions(Jet_pt, Jet_mass, Jet_rawFactor, Jet_eta, Rho_fixedGridRhoFastjetAll)",
-            )
-        else:
-            df = df.Define(
-                "Jet_ptRes",
-                f"{self.provider.ref}->getResolution(Jet_pt, Jet_eta, Rho_fixedGridRhoFastjetAll)",
-            )
+        df = df.Define(
+            "Jet_ptRes",
+            f"{self.provider.ref}->GetResolutions(Jet_pt, Jet_mass, Jet_rawFactor, Jet_eta, Rho_fixedGridRhoFastjetAll)",
+        )
         return df

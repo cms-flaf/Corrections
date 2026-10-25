@@ -2,8 +2,8 @@
 
 Monte-Carlo corrections for the CMS analyses built on
 [FLAF](https://github.com/cms-flaf/FLAF): scale factors, energy scales and their systematic
-variations for jets, taus, muons, electrons, b-tagging, pileup, MET and triggers, across Run 2 and
-Run 3. Used as a submodule by HH_bbtautau, HH_bbWW and H_mumu.
+variations for jets, taus, muons, electrons, b-tagging, pileup, MET and triggers, for the Run 3
+eras. Used as a submodule by HH_bbtautau, HH_bbWW and H_mumu.
 
 **Read `FLAF/.github/copilot-instructions.md` first** for the shared rules on what a useful review
 comment looks like here and what not to flag. The rule that documentation ships in the same PR
@@ -33,9 +33,8 @@ names appear on both sides, in the same order.
 ### Providers are objects, one per era and configuration
 
 - A process may build corrections for several Run 3 eras (a law process merging AnaTuples of
-  two eras, for one). Run 2 and Run 3 trigger corrections cannot share a process: `triggers.h`
-  and `triggersRun3.h` both define `correction::TrigCorrProvider`, so declaring the second one
-  raises. Every C++ provider is an ordinary object created and owned by its Python
+  two eras, for one). Trigger corrections exist for the Run 3 eras only: `Corrections.trg`
+  raises for any other era. Every C++ provider is an ordinary object created and owned by its Python
   producer through `CorrectionsCore.CppProvider`, and every JIT string reaches it through the
   provider's `ref` (`f"{self.provider.ref}->getWeight(...)"`). There is no global `Corrections`
   instance, no static `Initialize`/`getGlobal`, no `initialized` flag and no era value stored on
@@ -142,7 +141,7 @@ Verified 2026-10-17; re-check before relying on any of it.
 | | |
 |---|---|
 | Entry points | `Corrections.py` (one instance per dataset, era and stage; per-stage wiring), `CorrectionsCore.py` (`CppProvider`, campaign names, scale handling) |
-| Per-object modules | `tau`, `jet`, `fatjet`, `electron`, `mu`, `btag`, `pu`, `met`, `triggers`, `triggersRun3`, `puJetID`, `Vpt`, `lumi`, `JetVetoMap`, `bosonicRecoil`, `pdf`, `qcd_scale`, `parton_shower`, `top_pt`, `MuonEnergyScale_corr` (with `MuonScaReProvider.h`, `MuonFsrRecoveryProvider.h`), analysis-specific `DY_hhbbtautau` / `DY_hhbbww` |
+| Per-object modules | `tau`, `jet`, `fatjet`, `electron`, `mu`, `btag`, `pu`, `met`, `triggersRun3`, `puJetID`, `Vpt`, `lumi`, `JetVetoMap`, `bosonicRecoil`, `pdf`, `qcd_scale`, `parton_shower`, `top_pt`, `MuonEnergyScale_corr` (with `MuonScaReProvider.h`, `MuonFsrRecoveryProvider.h`), analysis-specific `DY_hhbbtautau` / `DY_hhbbww` |
 | Data | `data/` (AK8Jet, BTV, DY_corr_hbt, DY_corr_hhbbww, EGM, EWK_Corr_Vpt, MUO, TAU, TRG, golden_json, hleprare) plus JSON POG files from CVMFS |
 | Dependencies | ROOT (PyROOT), `correctionlib`, CVMFS |
 | Workflows | `formatting-check`, `repo-sanity-checks` (FLAF's sanity checks, `test_no_global_state.py`, and FLAF's `run_tools/check_era_rename.py` for leftovers of the `period` → `era` rename and, since FLAF 4d9602c, its era-scope rules: no `self.era[...]` in a task class outside `only_era`, no `era=` in `req()` outside `with_eras`), `trigger-flaf-integration`. Formatting is checked automatically — do not comment on it |

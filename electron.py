@@ -1,4 +1,3 @@
-import os
 from .CorrectionsCore import *
 
 # https://twiki.cern.ch/twiki/bin/viewauth/CMS/EgammaUL2016To2018
@@ -100,7 +99,6 @@ def electron_id_sf_year(campaign):
 
 class EleCorrProducer:
     EleID_JsonPath = "/cvmfs/cms-griddata.cern.ch/cat/metadata/EGM/{folderName}/latest/{filenameID}.json.gz"
-    EleES_JsonPath = "Corrections/data/EGM/{}/EGM_ScaleUnc.json.gz"
     EleES_JsonPath_Run3 = "/cvmfs/cms-griddata.cern.ch/cat/metadata/EGM/{folderName}/latest/{filenameES}.json.gz"
     ID_sources = ["EleID"]
     working_points = ["wp80iso", "wp80noiso"]
@@ -126,25 +124,17 @@ class EleCorrProducer:
             folderName=pog_folder_names["EGM"][id_campaign], filenameID=file_nameID
         )
 
-        if campaign.startswith("Run2"):
-            EleES_JsonFile = os.path.join(
-                os.environ["ANALYSIS_PATH"],
-                EleCorrProducer.EleES_JsonPath.format(campaign),
-            )
-            EleID_JsonFile_key = "UL-Electron-ID-SF"
-            EleES_JsonFile_key = "UL-EGM_ScaleUnc"
-        else:
-            EleES_JsonFile = EleCorrProducer.EleES_JsonPath_Run3.format(
-                folderName=pog_folder_names["EGM"][campaign], filenameES=file_nameES
-            )  # patch since in 2024 there is no eleES without EtDependent
-            EleID_JsonFile_key = "Electron-ID-SF"
-            EleES_JsonFile_key = "SmearAndSyst"
-            # if campaign == "2023_Summer23":
-            #     EleES_JsonFile_key = "SmearAndSyst" #"2023PromptC_ScaleJSON"
-            # if campaign == "2023_Summer23BPix":
-            #     EleES_JsonFile_key = "SmearAndSyst" #"2023PromptD_ScaleJSON"
-            # if campaign == "2024_Summer24":
-            #     EleES_JsonFile_key = "SmearAndSyst"  # "compound corrections
+        EleES_JsonFile = EleCorrProducer.EleES_JsonPath_Run3.format(
+            folderName=pog_folder_names["EGM"][campaign], filenameES=file_nameES
+        )  # patch since in 2024 there is no eleES without EtDependent
+        EleID_JsonFile_key = "Electron-ID-SF"
+        EleES_JsonFile_key = "SmearAndSyst"
+        # if campaign == "2023_Summer23":
+        #     EleES_JsonFile_key = "SmearAndSyst" #"2023PromptC_ScaleJSON"
+        # if campaign == "2023_Summer23BPix":
+        #     EleES_JsonFile_key = "SmearAndSyst" #"2023PromptD_ScaleJSON"
+        # if campaign == "2024_Summer24":
+        #     EleES_JsonFile_key = "SmearAndSyst"  # "compound corrections
         declareProviderHeader("electron.h")
         self.provider = CppProvider(
             "correction::EleCorrProvider",
@@ -168,7 +158,6 @@ class EleCorrProducer:
             updateSourceDict(source_dict, source, "Electron")
             for scale in getScales(source):
                 syst_name = getSystName(source, scale)
-                # if self.campaign.split("_")[0] == "2024" or self.campaign.split("_")[0] == "2023" or self.campaign.split("_")[0] == "2023BPix":
                 if self.isData:
                     expr = f"getESEtDep_data(Electron_p4_{nano}, Electron_seedGain, Electron_superclusterEta, run, Electron_r9)"
                 else:
@@ -179,12 +168,6 @@ class EleCorrProducer:
                     f"Electron_p4_{syst_name}",
                     f"{self.provider.ref}->{expr}",
                 )
-                # else:
-                #     df = df.Define(
-                #         f"Electron_p4_{syst_name}",
-                #         f"""::correction::EleCorrProvider::getGlobal().getES(Electron_p4_{nano}, Electron_genMatch,  Electron_seedGain, run,
-                #     Electron_r9,::correction::EleCorrProvider::UncSource::{source}, ::correction::UncScale::{scale})""",
-                #     )
                 df = df.Define(
                     f"Electron_p4_{syst_name}_delta",
                     f"Electron_p4_{syst_name} - Electron_p4_{nano}",
