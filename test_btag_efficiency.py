@@ -37,6 +37,8 @@ def live():
 for header in ["AnalysisTools.h", "RootExt.h"]:
     declareHeader(os.path.join(os.environ["FLAF_PATH"], "include", header))
 ROOT.gInterpreter.Declare(generate_enum_class(WorkingPointsbTag))
+# RDataFrame loaded first, as in test_jer_gen_match.py: without it cling cannot construct the
+# provider from the declared headers.
 ROOT.RDataFrame(1)
 counts = {"start": live()}
 producer = bTagCorrProducer(
