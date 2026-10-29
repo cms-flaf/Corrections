@@ -16,10 +16,9 @@ df = df.Define("weight_pu_Central", f"{self.provider.ref}->getWeight(::correctio
 ```
 
 The C++ classes are declared once per process (`declareProviderHeader`); several Run 3 eras in
-one process each get their own objects. Run 2 and Run 3 trigger corrections cannot share a
-process, since `triggers.h` and `triggersRun3.h` both define `correction::TrigCorrProvider`.
-Since `ref` holds the object's address, the `Corrections` instance must live as long as every
-dataframe built with it.
+one process each get their own objects. Trigger corrections exist for the Run 3 eras only:
+`Corrections.trg` raises for any other era. Since `ref` holds the object's address, the
+`Corrections` instance must live as long as every dataframe built with it.
 
 `era` is the FLAF era (`Run3_2022`, …) and `campaign` the POG campaign of the correction files
 (`2022_Summer22`, …); `CorrectionsCore.campaign_names` maps one onto the other.

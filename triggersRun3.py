@@ -145,7 +145,6 @@ class TrigCorrProducer:
             "2023PromptD" if campaign.endswith("Summer24") else self.ele_year
         )
 
-        # ROOT.gInterpreter.ProcessLine(f"""::correction::TrigCorrProvider::Initialize("{jsonFile_Mu}","{jsonFile_e}", "{jsonFile_Tau}", "{self.muon_trg_dict[campaign]}","{self.ele_trg_dict['McEff'][campaign]}", "{self.tau_trg_dict[campaign]}", "{campaign}")""")
         mu_trg_key_mc, mu_trg_key_data = None, None
         ele_trg_key_mc, ele_trg_key_data = None, None
 

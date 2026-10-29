@@ -1,8 +1,7 @@
 """No process-wide correction state: every provider is an object owned by its producer.
 
-A process may build corrections for several Run 3 eras (Run 2 and Run 3 trigger corrections
-cannot share one: triggers.h and triggersRun3.h both define correction::TrigCorrProvider), so
-nothing that depends on the era may be kept per class or per process. Checked here: no
+A process may build corrections for several Run 3 eras, so nothing that depends on the era may
+be kept per class or per process. Checked here: no
 `initialized` flags, no era, campaign or year values and no providers (CppProvider objects,
 `_shared` or `*provider*` attributes) stored on a class, no providers created at module level,
 no static provider singletons and no mutable function-local statics in the headers. These are

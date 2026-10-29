@@ -457,10 +457,12 @@ class Corrections:
     @property
     def trg(self):
         if self.trg_ is None:
-            if self.era.split("_")[0].startswith("Run3"):
-                from .triggersRun3 import TrigCorrProducer
-            else:
-                from .triggers import TrigCorrProducer
+            if not self.era.split("_")[0].startswith("Run3"):
+                raise RuntimeError(
+                    f"Trigger corrections exist for the Run 3 eras only, not for era {self.era}."
+                )
+            from .triggersRun3 import TrigCorrProducer
+
             self.trg_ = TrigCorrProducer(
                 campaign_names[self.era], self.global_params, self.trigger_dict
             )
@@ -526,8 +528,6 @@ class Corrections:
         if "muScaRe" in self.to_apply:
             if self.stage == "AnaTuple":
                 df, source_dict = self.muScaRe.getP4Variations(df, source_dict)
-            elif self.stage == "HistTuple" or self.stage == "AnalysisCache":
-                df = self.muScaRe.getP4VariationsForLegs(df)
             else:
                 raise RuntimeError("No known stages for muon ScaRe application")
         if (
